@@ -264,3 +264,14 @@ Behaviour
 - Every sentence of the three pages against its code. Read here: the round's delta in full; the code of HELP.md:24, :34, :138, :159-167, :173, :177, :195, :201-205, :209-215, :233-237, :318, :336-338, :352-356, :494, :512, :522-546; and data-map.md:132-160, :173 and :377.
 
 Reviewer usage: af6f8bb10a8b887c8, claude-opus-5-5, 261745 tokens, 78 tool uses, 10.0 min
+
+## Closed
+
+- Repair round 1, S1: every removal it names is on the page in the worktree: the Alt-drag float (HELP.md, Pages and panes), Show Hidden Files and the two other toggles kept per tab (Files), the tmux panes and Attach to Session (Terminal), one debug session at a time (Debug), a changed file asks again (TeX view), and the no-primary sentence (data-map.md, the workspace file). Fixed at landing.
+- Repair round 1, S2: HELP.md, Position Leads, gives the rule of `isExpired` (`src/lib/state/feeds/leads.ts:155-166`): a lead with a deadline goes to Expired once the day has passed, rolling or not, and a lead with no day stays live until it is closed. Fixed at landing.
+- Repair round 1, S3: no verdict; `README.md:95` reads true of the new Help and stays.
+- Repair round 1, S4: each removal it lists was read against the code and the strings. On the page at landing: Mine only on at the start and drawn, with Role, only while a person has `self: true` (`src/lib/state/boards/focus/filter.ts:107`, `src/lib/views/boards/focus/FocusFilter.svelte:33`), and the Map's one and two arrows (`src/lib/state/boards/structure/graph.ts:194-200`). Shown by the screen and left off: the approximate months (`config/text/views/sources/venues.yml:16`) and the disabled Applied (`config/text/views/feeds/leads.yml:8`). False on the tree and left off: a project that stops waiting leaving the Awaiting board, which holds exactly the projects counted at the press (`src/lib/state/boards/board/presets.ts:566-570`). Left off, no code for them found at landing: the Files view following the disk within a couple of seconds, the first account of a provider opening Account setup, the Tasks section sentence and the title bar strip sentence.
+- Repair round 1, P1: the 32 MB paste limit (Files) and the refusal of a write over a file a source tab holds unsaved (Source) are on the page. Fixed at landing.
+- Repair round 1, P2: the paths are corrected in `agents/reviews/O165-report.md`, "Paths corrected at landing".
+- Repair round 1, P3: `tests/checks/source/history.test.ts` runs at landing in the gate, quoted in the booking.
+- Repair round 1, ST1 and ST2: no verdict; named in the booking.

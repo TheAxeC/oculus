@@ -425,3 +425,7 @@ Departures kept, each with why it needs its form:
 ## Anything in the brief that was wrong or impossible
 
 Nothing in the brief or the round-1 brief was wrong or impossible.
+
+## Paths corrected at landing
+
+A file named by its file name alone stands for the file below. `private.ts` is `src/lib/server/machine/apps/reach/private.ts`; `editor-keys.ts` is `src/lib/data/helpers/keys/oculus/editor-keys.ts`; `literature-key.ts` is `src/lib/server/edit/feeds/literature-key.ts`; `folders.ts` is `src/lib/server/files/workspace/folders.ts`; `hub-keys.ts` at the F2 row is `src/lib/server/machine/lsp/adapters/yaml/hub-keys.ts` and elsewhere `src/lib/data/shapes/hub-keys.ts`; `latex-editing.ts` is `src/lib/ui/controls/editor/kit/latex/latex-editing.ts`; `markdown.ts` is `src/lib/data/prose/markdown/markdown.ts`; `order.ts` is `src/lib/data/shapes/boards/order.ts`; the leads files are `src/lib/state/feeds/leads.ts` (`isExpired`) and `src/lib/data/accounts/leads.ts`.

@@ -22,7 +22,7 @@ import { git, isolateGit, put, repositoryAt } from './refs/repo.ts';
 
 isolateGit();
 
-/** The two lines around the block oculus owns, as docs/HELP.md names them. */
+/** The two lines around the block oculus owns, as docs/data-map.md names them. */
 const BLOCK_START = '# BEGIN nested-repos';
 const BLOCK_END = '# END nested-repos';
 

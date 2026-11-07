@@ -1,6 +1,13 @@
 # Oculus
 
-Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view. `README.md` says how to run and check it; the [Apps guide](apps.md) says how to build an app; the [Decks guide](decks.md) says how to write a deck; the [templates](templates.md) give every YAML file oculus reads and the file of each update task.
+Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. Four guides stand beside this one:
+
+- the [Data map](data-map.md): the files and their keys;
+- the [Decks guide](decks.md): how to write a deck;
+- the [Apps guide](apps.md): how to build an app;
+- the [templates](templates.md): every file oculus reads.
+
+`README.md` says how to run and check oculus.
 
 ## Contents
 
@@ -10,637 +17,623 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ## The window
 
-- Oculus runs in a browser tab, or in its own app (`oculus.app`, the Linux folder of a release, or Electron from the checkout).
-- The app starts the server and stops it when it quits; tmux terminals keep running. Started again, it opens its windows where they were.
-- When the server ends on its own, a dialog says why and offers Restart. Open windows keep their pages, unsaved text and terminals, and reconnect.
-- The app adds: windows that remember their place, floats that become windows, a native folder panel, a find bar, spelling suggestions, and the keys marked "in the app" under [The keys](#the-keys).
-- In the app a link to another site opens in the default browser, and the presenter screen opens the audience window on another display when there is one.
-- The app's menu bar holds oculus, File, Edit, View, Go, Run, Terminal, Window and Help.
-- A menu item runs what its key or its palette command runs, in the window you are in, and shows that key.
-- On macOS a key that holds neither Cmd nor Ctrl (`?`, F1, F5, F9, F10, F11) is shown on no menu item.
-- Settings..., oculus Help and Keyboard Shortcuts open in the main window you used last.
-- A menu item ending in "..." opens the palette typed with its command.
-- Settings... opens Settings, and Open Folder... and Add Folder to Workspace... open the folder panel.
-- Open Recent lists the recent workspaces, a file that is gone greyed out.
-- Open in Browser opens the window's server in the default browser.
-- A menu command that cannot run says why in a notice.
-- No menu item runs while the palette, the update tray or a confirm is open.
-- No menu item runs while the audience window of a presentation or an undocked DevTools window has the focus.
+Oculus runs in a browser tab, or as its own app (`oculus.app`, the Linux folder of a release, or Electron from the checkout), on macOS, Linux and Windows through WSL2. The menu bar's items run what their keys and palette commands run.
 
-### On Linux and WSL2
+The app starts the server, and a quit stops it and leaves the tmux sessions running. When the server ends on its own, a dialog gives its exit code and reason and offers Restart, and the open windows reconnect to the new server.
 
-- Oculus runs on Linux, and on Windows through WSL2, in a browser tab or as the app: `npm run app` from the checkout, or the Linux archive of a release, unpacked, started by its `oculus` program.
-- The folder panel of Add Folder to Workspace and Open Folder is `zenity`. Without it the panel says that no folder panel is installed; the rest of oculus works.
-- Open in Program, Open Folder and a link to another site go through `xdg-open`, and under WSL2 through `wslview`, so the program the desktop names for the file opens it. Reveal in Finder is Open Containing Folder there, as in VS Code, and opens the folder that holds the file. A `.desktop` file and a file with its execute bit set are refused, since opening one runs it.
-- At start a missing `zenity` or opener is named, with the package that holds it (`zenity`, `xdg-utils`, `wslu`), in the terminal or in the app's start sheet; oculus starts all the same.
-- A plain terminal runs the shell `SHELL` names, else `/bin/bash`.
-- An app's secrets live in the keyring, which on Linux is the desktop's Secret Service. A machine with none says that the keyring is not available and stores nothing.
-
-### The title bar
-
-- A strip runs across the top of the window in the app. A page in a browser draws none: there Go Back, Go Forward, the dock toggles and the palette are reached through their keys and the palette, and every pane keeps its own Split Right and `...`. Left: Go Back and Go Forward. Middle: the Command Center, the open workspace's name (with its hub's name in front when the two differ); a press opens the palette, as Cmd+K does. Right: the three dock toggles.
-- The Command Center is the strip's button that opens the palette. The Focus board's "Command center" is a different thing: the board's panel of what wants attention.
-- Go Back and Go Forward walk the tabs you made active, on any page, pane or float, and in a source tab the places you jumped to (Go to Definition, a search result, a problem) and caret moves of more than 10 lines. Back or Forward to a closed tab opens it again in the page, pane or float it was closed from, at its place among the tabs there, while that page and pane are still there; otherwise it opens in the pane you are in on the page on screen. A step whose file is gone is skipped. Each window keeps its own last fifty steps until it reloads, and a button is disabled at either end. The keys are under [The keys](#the-keys); the palette has `:go-back` and `:go-forward`.
-- Toggle Left Dock, Toggle Bottom Dock and Toggle Right Dock hide or show the float docked at that edge. A toggle is drawn pressed while its float shows and disabled when no float is docked there. Docking a float at a hidden edge, by drag or from a menu, or opening a view in its float, shows the edge again. Which edges are hidden is saved with the layout. The palette has `:toggle-left-dock`, `:toggle-bottom-dock` and `:toggle-right-dock`.
-- With the options `show_tabs: none` and `editor_actions: strip`, set in Settings or the open workspace file's `settings:`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar, and in a browser, which has no strip, each pane draws them in a title row of its own.
-- In the app the window has no title bar of the system's: the strip moves the window, the window buttons sit at its left on macOS and over its right end elsewhere, where they take the strip's colours of the theme on screen (no room is kept for them in full screen, where macOS hides them), and a double press on its empty part does what macOS's "Double-click a window's title bar to" setting says: zoom, minimise or nothing. The find bar opens under the strip.
-- A float's window in the app has the same strip, with the name of the float's tab in the middle and no toggles; its Back and Forward walk that window's own steps. A browser tab opened for a float draws no strip.
+On Linux the folder panel is `zenity` and the opener `xdg-open`, and under WSL2 the opener is `wslview`. A missing one is named at start, and oculus starts all the same.
 
 ### The rail
 
-- One button per entry of the rail list in force: `rail:` in `config/defaults/layout.yml`, with the entries of the open workspace file's `settings:` laid over it by `page`. An entry is `{ label, glyph, page }`, where `page` names an arrangement under `arrangements:`. The entry carrying `project_boards: true` (Projects in oculus's rail) holds the project boards of `boards:` in its group; the Settings rail list sets it with the entry's Project boards tick. With no entry carrying it the boards are in no group and are listed with the views no group holds, and with two the first holds them; either is a finding, and so is a `project_boards` that is not true or false, which is then read as absent.
-- A button shows its page, made from the arrangement the first time and as you left it after that. Its badge is the sum of the counts its page's views give the rail, which are the views whose row of `counts` in `config/defaults/layout.yml` says `rail: true`: Projects, Supervision, Coauthor and Personal the count of their projects in the categories of `categories` in `config/catalogs/vocab.yml` that carry `rail: true` (in flight), in the colour `rail_color` in `config/catalogs/vocab.yml` gives (the primary hub's own `rail_color` on every board, and another hub's on a board whose `hub:` names it), Inbox, Findings, the sessions the Sessions tab shows as needing input, in amber, Funding, Education, Applications, Tasks and Talks & Events. Its tooltip names each count above zero, and the badge takes the most urgent of their colours, red before amber before green before any other colour, such as Funding's violet, or the accent when none has one. A page whose views count nothing shows the first mark among them, such as LinkedIn's overdue post. A tab says how much is in the view; the rail says only what needs you now. Every tab keeps its own count, and the views whose row says `rail: false`, Repositories, Problems, Position Leads, Processes, Calendar, Live HPC, Archive and Software, count on their tabs only. A row's `tab: false` takes the count off the view's tabs.
-- Drag a button to move it. Right-click it (or Shift+F10) to hide it, reset its page, or open the rail list in Settings. A move or a hide is written into the open workspace file's `settings:`, and History undoes it. Reset asks first.
-- Every view sits on one rail page, or in the float (Live HPC, Usage, Workbenches). The Views catalogue lists them by group: each rail button is a group, with its `chord` letter and its heading glyph `group_glyph`, then the float of `nav_groups`; `docs` adds documents to a group.
-- A click on a catalogue entry opens the view on the page you came from. A view that is already open somewhere is shown where it is. Shift-click opens it in a new pane to the right. The right-click menu has Open on this page and Open beside on this page; a view the page already holds is shown where it is by either.
-- The Help page holds this manual, the hub's documents (each `docs:` entry with `group: help`), the Keyboard Shortcuts view, the Apps guide, the Templates, the Data map, the Palette and the Decks guide. A `docs:` entry whose `group` is another page's key becomes a tab of that page.
-- A tab you closed stays closed; a document added to `docs:` later is added once. Reset puts every document back. A view or a document oculus adds to a page's arrangement later is given once: a view after the view listed before it, a document after the nearest tab before it that the page still holds. One you closed is not given again.
-- The foot of the rail holds Workbenches and Update.
+The rail holds one button per entry of `rail:` in `config/defaults/layout.yml`, with the open workspace file's `settings:` laid over it entry by entry, by `page`.
 
-### Pages and the pane tree
+- A button shows its page, made from its arrangement under `arrangements:` the first time and as you left it after that. Reset gives the arrangement back.
+- A badge is the sum of the counts the page's views give the rail, those whose row of `counts` says `rail: true`, in the most urgent of their colours, red before amber before green.
+- A drag moves a button, and Hide in its right-click menu hides it. Both are written into the open workspace file's `settings:`.
+- The entry carrying `project_boards: true` (Projects) holds the project boards of `boards:` in its group.
+- The entry carrying `unplaced_collections: true` (Registries) holds the collection views whose `collections:` entry names no group.
+- Update, at the foot, opens the update tray: the schedules of the schedules file and the four update tasks, each a file `.oculus/tasks/<task>.md` of a hub that a Claude session follows. The tray offers the task of every hub that holds its file.
+- Chat, in the update tray, starts a Claude session over the portfolio, whose index holds the projects of every hub and the files of the collections each hub's `chat_context` names.
+- A schedule runs a task, a command of a repository's `.oculus/commands.yml` or a prompt on a cron pattern, in local time. A run missed while oculus was stopped starts once when it starts again, and a due run while the last one still works is skipped. The entries' keys are in the [Data map](data-map.md#bookmarks-schedules-and-tasks).
+- Run unattended starts Claude on a task or a prompt with `--dangerously-skip-permissions`. A scheduled command runs only while you have approved its chain of commands.
 
-- A page is a working surface: a tree of splits and panes, each pane a strip of tabs. The layout is saved as it changes, by the server into `~/.oculus/layouts.json`, one arrangement per workspace, and every browser tab and app window of one server shares it: two pages that change the layout at the same moment keep both changes.
-- The Pages view lists every page with show, rename and close; a rail page also has Reset. Drag a page's row onto a pane's edge to show it there.
-- Settings has Reset all pages: it rebuilds every rail page and the floats, and leaves your own pages and workbenches alone. It asks first, and about each tab with unsaved text; Save saves that tab first, and a save that fails stops the reset with nothing done.
-- Eleven views exist once: Settings, Focus, Usage, Live HPC, Findings, History, Processes, Pages, Workbenches, Status and Apps. Opening one goes to wherever it is. Files, Search, Terminal, Sessions and Session can be open on several pages.
-- Split a pane by dragging a tab onto its edge, or from the pane menu. Every drag has a menu equivalent; Shift+F10 opens the menu of the focused control.
-- Show a page here... (pane menu) draws another page inside this one. It is the same page, so a tab opened in it is open everywhere that page shows.
-- Float (pane menu or tab right-click), or a drag with Alt held, floats a pane over every page. Drag its strip to move it, its edges to resize it. Let go within 24 px of the left, right or bottom edge to dock it. Return to Page puts it back.
-- A view opened for something (a project, a person, an entry, a document, a file, a diff) never covers the tool views. It lands, in this order: in a workbench's documents pane; in the pane that took the last such tab; in the pane you are in, if it holds such tabs; in an empty documents pane; in a new pane split off to the right.
-- A pane from the arrangement stays, empty, when its last tab closes; a pane you split off closes with its last tab. Lock Group (pane right-click) makes a pane take no tab opened from elsewhere.
-- Hide Tab Row (pane menu) hides that pane's tab row and its path bar, so the view fills the pane. They show again over the view while the pointer is at the pane's top edge or over the row, while a menu opened from the row or its path bar is open, while the focus is in the row and a key brought it there, and while a tab of the pane is dragged. With `editor_actions: hidden` the item is in the strip's right-click menu. Show Tab Row brings the row back. A pane that draws no tab row and no path bar does not offer it.
-- The tabs a page starts with are pinned. Cmd+W on a pinned tab closes nothing; Close in its menu does. Pin and unpin from the tab's menu, Pin Editor in the palette, Cmd+K Shift+Enter in the editor, or by dragging into the pinned tabs.
-- Reopen Closed Tab (Cmd+Shift+T in the app, `:reopen-closed-tab` in the palette) reopens the tabs the last close closed, in the pane you are in on the page on screen. The window keeps twenty until it reloads.
-- A new tab opens right after the active one; closing the shown tab shows the one shown before it.
-- The options `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` set the tab strip; Settings and the strip's right-click menu write them into the open workspace file's `settings:`.
-- New Text File (right-click on a strip's empty part) opens an untitled text. Its first Save asks for a folder and a name.
-- Open View (right-click on a strip's empty part or in an empty pane) lists the views the Views catalogue lists, so not a view opened only for something (a project, an entry, a file) and not the view of an app that is not active. It has a section per rail page in the rail's order, among them Apps with each app and the views your apps add, then Float with the float's views (Live HPC, Usage, Workbenches). A pick opens the view as a new tab of that pane. A view that exists once and is open somewhere names its page, or Floating pane, at the end of its row, and the pick shows it there.
-- A tab showing a file draws its path as a breadcrumb. Press a folder to show it in Files; in a source tab the path goes on with the symbols around the caret.
-- A dot in place of the close control means unsaved text. Closing that tab, its pane or its page asks whether to save it first. Save (the default, Enter) saves each such tab and closes the ones that saved; a tab whose save fails, or that has nothing to save it to (an untitled tab), stays open with its text. Don't Save closes and loses the text. Cancel or Escape keeps every tab and its text. Unsaved text survives a tab switch and a reload.
-- While a tab holds unsaved text of a file, every control that would write that file is disabled, and any write to it is refused, so your text is never overwritten.
-- The rail is one Tab stop; each tab strip is one, with its pane menu after it. Arrow keys move inside a strip.
+### Pages and panes
+
+A page is a working surface: a tree of splits and panes, each pane a strip of tabs.
+
+- The layout is saved as it changes, into `~/.oculus/layouts.json`, one arrangement per workspace, and every browser tab and app window of one server shares it.
+- Eleven views exist once: Settings, Focus, Usage, Live HPC, Findings, History, Processes, Pages, Workbenches, Status and Apps. Opening one goes to wherever it is.
+- A view opened for something (a project, a person, an entry, a document, a file, a diff) lands in the first of these places that exists:
+  1. a workbench's documents pane;
+  2. the pane that took the last such tab;
+  3. the pane you are in, if it holds such tabs;
+  4. an empty documents pane;
+  5. a new pane split off to the right.
+- A single click on a file opens a preview tab, which the next single click replaces. Typing, a double click or a second click keeps it.
+- Float, in the pane menu or a tab's menu, or a drag of a tab with Alt held, floats a pane over every page. Let go within 24 px of the left, right or bottom edge to dock it. Return to Page puts it back where it stood, or splits it off the page's largest pane when the page was rearranged so that its place is gone.
+- A pane from the arrangement stays, empty, when its last tab closes, and a pane you split off closes with its last tab.
+- Lock Group keeps a pane's tabs to the ones opened in it.
+- The tabs a page starts with are pinned, and only Close in a tab's menu closes one.
+- Reopen Closed Tab reopens the tabs the last close closed, and the window keeps twenty until it reloads.
+- Go Back and Go Forward walk the tabs you made active and, in a source tab, the places you jumped to. Each window keeps its last fifty steps until it reloads.
+- The unsaved text of a source tab or a form survives a tab switch and a reload.
+- Shift+F10 or the menu key opens the right-click menu of the focused control.
 
 ### Workbenches
 
-- A workbench is a page for one folder, the same shape as the Explorer page. Left: Files, Repositories, Deposit (for a project with a deposit), Sessions, Search and the TeX view, each limited to the folder. Right: the documents pane above, and the bottom pane below it with Terminal, Problems, References and Debug Console. The arrangement is `workbench:` in `config/defaults/layout.yml`.
-- The Explorer page and a workbench each have a bottom pane of pinned tabs. A file or document you open from a list lands in the documents pane above it, and a press in the Sessions list shows the session in the bottom Terminal tab. On a workbench Problems is limited to the folder and Terminal starts in it, from New, `n` or the tab's menu. Files keeps its Follow control and the Sessions tab's sections follow the picked session; no other default tab follows the selection.
-- Open Workbench is on a project card, a collection card whose `link` is a folder, an entry page, and a person's folder block; Open in New Files is on a folder or root in Files. A workbench for a project or entry opens that item first.
-- A folder has at most one workbench. A limited tab says `In <root>/<path>` and has a control that widens it to the whole root.
-- Workbenches, at the foot of the rail, lists the open ones; Manage Workbenches opens the Workbenches view.
-- The Workbenches view (`w` then `3`) has Open (one row per open workbench, with its folder and branch) and Closed (kept layouts, last closed first). Reopen restores a kept layout; Forget drops it. New workbench opens one for a root, or for a folder picked in the folder panel.
-- Closing a workbench keeps its layout (twenty at most). Reset layout rebuilds it from `workbench:`.
+A workbench is a page for one folder, laid out as the rail's Explorer page, with Files, Repositories, Deposit (for a project), Sessions, Search and the TeX view limited to that folder.
+
+- Open Workbench is on a project card, a collection card whose `link` is a folder, an entry page and a person's folder block.
+- Open in New Files, on a folder in Files, opens a workbench for that folder.
+- A folder has one workbench at most.
+- On a workbench Problems is limited to the folder and Terminal starts in it.
+- Closing a workbench keeps its layout, twenty at most, for the Workbenches view to reopen. Reset layout rebuilds it from `workbench:` in `config/defaults/layout.yml`.
 
 ### The palette
 
-- Cmd+K opens the palette outside the editor. In the editor Cmd+K starts the editor's chords, as in VS Code (Cmd+K, then Cmd+C comments the line), and Cmd+Shift+P, F1 and Cmd+P open the palette. Empty, the palette lists the views. A typed word matches fuzzily, letters in order (`rpls` finds RAW-PLS), across views, projects and entries.
-- With a source tab on screen it also lists the editor's commands; with a Present tab, the slide commands.
-- `:` starts a command. `:` and a number goes to that line. `:language`, `:interpreter`, `:compile-database`, `:theme`, `:file-icons`, `:tab` and `:goto` list what they choose from, the one in force marked; typing narrows the list. In `:theme` and `:file-icons` moving the selection shows each choice, Esc puts back the one in force, and Enter keeps the one chosen. `:theme` draws the themes under a heading per group, in the order Settings draws them: the arrow keys pass over the headings, and a group whose themes the typed words all leave out shows no heading.
-- `:task-add <title>` adds a task with `status: todo` to the Tasks file of the hub that holds one. When more than one hub holds one, the palette then lists those hubs, the primary first and selected, and the hub pressed takes the task. Shift+Enter, at the title or at the hub, also opens it. History undoes it.
-- Every command is listed in [the palette page](palette.md), written by `npm run docs:palette`.
-- Cmd+P finds a file by name across the served folders (at most 200 rows). It lists hidden files, honours `.gitignore`, and skips `node_modules`, `.git` and `.svelte-kit`. `search.timeout_s` and `search.max_names` limit it.
-- `#` (Cmd+T in the app) searches the workspace's symbols through the language server.
-- In a float's own window the palette opens views and files in that window; a view that exists once goes to wherever it is.
+The palette finds views, projects, entries, files and commands by typing.
 
-### The update tray and schedules
+- Cmd+K opens it outside the editor. In the editor Cmd+K starts the editor's chords, and Cmd+Shift+P, F1 and Cmd+P open the palette.
+- A typed word matches fuzzily, letters in order (`rpls` finds RAW-PLS). `:` starts a command, and `:` and a number goes to that line. Every command is listed in [the palette page](palette.md).
+- `#` searches the workspace's symbols through the language server.
+- Cmd+P finds a file by name across the served roots, the folders of the workspace, in at most 200 rows. It lists hidden files, honours `.gitignore`, and skips `node_modules`, `.git`, `.svelte-kit` and `.svelte-kit-app`. The list holds at most `search.max_names` names, and each root's list is given `search.timeout_s` seconds.
+- `:task-add <title>` adds a task, with the status of `statuses` that carries `default_task` (`todo` in oculus's), to the Tasks file of a hub that holds one. With more than one such hub it asks which.
 
-- Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task is a file of the primary hub, `.oculus/tasks/litwatch.md`, `scout.md`, `linkedin.md` or `inbox.md`, and runs as a Claude session in a terminal that is asked to follow that file step by step. The tray offers only the tasks whose file the hub holds, and says so in one line when it holds none; [templates](templates.md) has a template of each file. A task's row gives its last run ("Last run:", or "Last post:" for LinkedIn) and, after a bar, the schedule that runs it next ("Next:"). A pressed task, and a schedule's Run now, turn a sync glyph until the terminal opens or the refusal is said. Chat starts a Claude session over the portfolio, whose index holds the projects of every hub of the workspace and the files of the collections each hub's `chat_context` names.
-- A schedule or a request that names a task whose file the primary hub lacks is refused and starts nothing, and the Focus board's refresh lines name only the tasks that have a file.
-- A schedule runs a task, a command of a repository's `.oculus/commands.yml` or a prompt on a cron pattern, in local time. The dialog shows the next three runs before it saves.
-- An entry is `name`, `runs` (`{ task: litwatch }`, `{ command: build, folder: ... }` or `{ prompt: "...", folder: ... }`), `when`, and optional `paused` and `unattended`. Without `when` it runs only from Run now. The template is in [templates](templates.md).
-- You may edit the file by hand; the dialog, Pause and Resume change only their own keys and keep your comments.
-- A run missed while oculus was stopped starts once when it starts again. A due run while the last one still works is skipped.
-- Run unattended starts Claude with `--dangerously-skip-permissions`, so nobody is asked. A command never runs unattended.
-- Schedule... on the right-click menu of an entry with a `run` opens the dialog on that command. The dialog lists the lines each run starts, the commands it depends on first, and Save approves them. A scheduled command runs only while its chain is approved: an entry of `commands.yml` written or changed by hand, or by a pull, runs on its schedule once its chain is approved through Edit or Schedule...; until then its due run starts nothing and the tray says why.
-- A schedules file or run record (`~/.oculus/schedule.json`) that does not read stops every schedule, and the tray says so.
+### The status bar
 
-### The status bar and notifications
+The status bar, along the window's foot, follows the repository and the file of the active tab.
 
-- The repository, branch and sync items follow one repository: the one holding the active tab's file, else the workbench's folder, else the one you picked from the repository item's list (`status_bar.repository`), else the hub's.
-- Switching branch and Sync ask first. Sync pushes when only ahead, otherwise pulls then pushes; with no upstream it offers Publish Branch.
-- The problems item toggles the Problems view. The debug item lists the launch configurations. Right-click the bar to hide or show any item; the hidden items are `status_bar.hidden`.
-- In a source tab: the blame item opens the commit in the graph; the line and column open `:`; indentation, encoding and line ending convert the text; the language server item restarts or shows the server.
-- The LaTeX item shows during a LaTeX tab or a build, and opens the TeX view. It turns amber while a build waits for your approval.
-- When the bar is too narrow, every item stays drawn and the bar scrolls sideways: swipe, turn the wheel over it, or Tab to an item. It opens at its left end, with the right group following the left.
-- The bell counts unread notifications. Do Not Disturb is `status_bar.quiet`, so it holds on every page and after a reload. A toast shows for eight seconds.
-- The status bar's choices are options, written into the open workspace file's `settings:` like every option Settings sets; with no workspace file open, oculus offers Save Workspace As... and writes nothing.
+- The repository, branch and sync items follow the first of these that exists:
+  1. the repository holding the active tab's file;
+  2. the workbench's folder;
+  3. the repository picked from the repository item's list;
+  4. the hub's repository.
+- Switching branch and Sync ask first. Sync pushes when the branch is only ahead, and otherwise pulls then pushes.
+- The bar's right-click menu hides or shows an item, and writes what you hide into the open workspace file's `settings:`. With no workspace file open, the menu offers Save Workspace As... in place of the items.
+- Do Not Disturb, in the notifications list of the bell, keeps new notifications from showing as toasts. It holds on every page and after a reload.
+
+## The views
+
+### Focus
+
+The deadlines, follow-ups and tasks across the portfolio, the projects waiting on someone, and the projects on their lanes.
+
+- Its sections, and their order, are `focus.sections` of `config/defaults/behavior.yml`: the command center, the tasks, the quick add, the Awaiting box, the band and the lanes.
+- A project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`. Dropping a card on a lane writes what the lane's `move_writes` names: the stage, or the chip.
+- The command center, at the top, lists the dates of the records while they lie within `deadline_horizon_days` of `focus:`, a project's deadline until its stage carries `deadline_met`, and the feed lines: what the Lit Watch, Inbox and Scout feeds say needs doing, and the nudges to refresh a stale feed.
+- Mine only, in the Filter list, keeps what names you in `lead:`, `collaborators:` or `supervisors:` and what names no one. It is on at the start, and it and Role are drawn only while a person has `self: true`. A feed line stays whatever the filter.
+- The band, above the lanes, is the work that is not a project, in three columns: the funding schemes by `fund_stages`, the entries of the files flagged `band_positions` by `position_stages`, and those flagged `band_teaching` by `teaching_stages`.
+
+### Awaiting board
+
+The projects behind one name of the Awaiting box of Focus: a name of Waiting on or Under review, or Blocked's count, opens it.
+
+- It holds the projects the name counts under the Focus filter in force at the press.
+
+### Project boards
+
+The projects a board's rule takes, as cards or as a list: Projects, Supervision, Coauthor, Archive, Personal and Software in oculus's `boards:`.
+
+- Each key of `boards:` in `config/defaults/layout.yml` is a board view. A project shows on every board whose keys it meets: its `tier`, your role on it, its `stages`, `chips` and `forms`, its `hub` and any `match` field.
+- Your role is the first row of `roles` whose field holds the person `self` names:
+  - Lead: `lead:`;
+  - Supervisor: `supervisors:`;
+  - Collaborator: `collaborators:`;
+  - Other: any other project that names people.
+- A board draws one section per row of `categories` that holds a project, the first row holding it, in that order, then "other". Inside a section the pinned projects come first, then each follows the row's `sort`.
+- New project writes the project's manifest, `<folder>/<id>/project.yml`, with a README, the board's tier and you in the field of the board's role, in the folder `new_project_dir` gives for the tier. It is on the boards whose rule takes the project it writes.
+- A project card's title opens the project page beside the board as a preview tab, which the next project opened from the board replaces.
+- A project no board takes, a manifest without `lead:` and a `tier` that is no word of `tiers` are findings.
+
+### Project
+
+One project's page, in the layout every record page shares: the card with its fields in two columns (one in a narrow pane), a row of count buttons, one per row of `categories` and then the total, then the record's blocks under small labels. A count button opens the record's board, "Projects of <name>", with that row's projects picked, and the total opens it with all of them. A project's row counts the projects it is related to by `related:`, either way, and its blocks are its files, its subtasks and its follow-ups.
+
+- The FILES block lists the files of the extensions in `file_index.ext`, newest first, at most `file_index.max_per_project`.
+- A follow-up's `after:` keeps it off Focus until that date, and Done keeps it on the card, struck through.
+
+### Editor
+
+The form of one record: a project, an entry, a person, a lead, a Lit Watch paper or the career file. Edit, on a card's menu and on a record's page, opens it.
+
+- It has one control per field of the file's `schema:` (for a project, of `manifest-schema.yml` and the hub's `manifest_fields`), grouped by the `section:` of each field.
+- F2 on the primary key in the file renames it everywhere it is named.
+- Save writes only the changed fields and keeps the file's other lines and comments. A refused field keeps what you typed, and unsaved edits survive a tab switch and a reload.
+- A field that picks people offers Add person with the typed name when no person matches, and writes the person to the people file of the record's hub.
+
+### Deposit
+
+The code deposit of one project: a mirror clone of its `code/` folder, and its Zenodo record.
+
+- The mirror is kept under `~/.oculus/deposits`, synced from the project's `code/`, with its own commits, pushes and branches. Snapshot replaces the mirror's remote with one commit of what would ship, after asking.
+- For review stops the upload at a file whose bytes still hold a term of `code_availability.anonymize`.
+- Publish sends a new version of the record the `doi` names, or a new record when there is none.
+- Both write `doi`, `zenodo_status`, `zenodo_date` and, for review, `review_link` into the manifest's `code_availability`. The `deposit.zenodo` keys are in [the hub's settings](data-map.md#the-hubs-settings), and the `downloads` rows in [this machine's values](data-map.md#this-machines-values).
+
+### Inbox
+
+Your mailboxes, with what each thread asks of you and a drafted answer.
+
+- Each account is a `mail` row of [this machine's values](data-map.md#this-machines-values).
+- A thread is on your plate when it is unread in the inbox, carries the `todo` label, or is one unlabelled message that is no reply or forward. A thread whose newest message is your own, or that is in the trash, leaves it.
+- The notes per thread are in `triage.json` in the folder `mail_dir` names, written by the card and by the Inbox update task.
+- Send and Archive are the only writes to a mailbox.
+
+### Position Leads
+
+The academic openings the scout update task found, from the `leads` feed.
+
+- Applied leaves the new entry in the Applications file's unsaved text until you save it, and lists the hubs that could take it with the primary first.
+- Each status control writes the one word of `lead_statuses` carrying its flag (`lead_applied`, `lead_declined`, `default_lead`).
+- A lead with a `deadline` goes to Expired once the day has passed, `rolling: true` or not. A lead with no day stays live until it is closed.
+
+### LinkedIn
+
+The posts and post ideas of the folder `linkedin_dir` names, one file each.
+
+### Calendar
+
+Your calendars, read-only.
+
+- Oculus reads the calendars that the `calendars` rows of [this machine's values](data-map.md#this-machines-values) name. Their tokens and calendar links are files at mode 0600 in the folder `calendar_dir` names.
+- `calendar.poll_min`, `calendar.days_back` and `calendar.days_ahead` set the polling.
+
+### Post
+
+A LinkedIn post with its body rendered, opened from the title of its card in LinkedIn.
+
+- Edit opens the post's text file in a source tab. Mark posted moves the tab to the numbered file.
+
+### Files
+
+The folders of the workspace as a tree, with Open Editors, Outline, Backlinks, Timeline, Bookmarks, Notes and Tags.
+
+- Every create, rename, move, copy, paste, upload and delete is undoable in History. Delete moves to the Trash after asking, and an undone delete restores files up to 5 MB.
+- Before each save the old text of a file up to 256 KB is kept in the local history (`~/.oculus/history`, the newest 50 copies per file). The Timeline section lists those copies and the file's commits.
+- The star on a row bookmarks it in the bookmarks file.
+- Show Hidden Files, Show Ignored Files and File Nesting are kept per tab.
+- A notes folder is `.oculus/notes/` of each hub. A note saves itself 800 ms after the last edit (`notes.autosave_ms`).
+- `[[name]]` links to a note of the same hub, and renaming or moving a note rewrites every link that names it in its hub.
+- A note's name is refused when it is empty, starts with a dot, is over 200 characters, or holds a control character or one of `/ \ : [ ] # ^ |`.
+- A pasted picture is saved to `attachments/` of the hub's notes folder, up to 32 MB.
+- Make Folder a Hub..., Make Folder a Project, Make Folder a Git Repository and Add Repository Configuration..., in a folder's menu, write the files the [Data map](data-map.md#the-files) names, from their templates. Make Folder a Hub... writes nothing when a file it would write is there already, and names that file.
+- The private folders, the `secrets` folder of every hub and `~/.oculus`, are left out of search, the language servers, linter fixes and apps.
+
+### Repositories
+
+VS Code's Source Control over every repository of the workspace: its folders, the repositories below them, and the folders projects are cloned into.
+
+- The repositories below a folder are searched down to `repository_scan_depth` levels: the global option takes 0 to 3, 1 when unset, and a workspace folder's own `repository_scan_depth` takes any whole number from -1, which means no limit ([the workspace file](data-map.md#the-workspace-file)).
+- Pull is `git pull`, Sync pulls then pushes, and Fetch runs `git fetch --prune`. Only a deposit's snapshot is force-pushed.
+- `git.autofetch_minutes` above 0 fetches every repository with a remote once each period. The default is 0.
+- A failed fetch is named with the kind and the fix of the first row of `connections.failures` whose `match` git's or ssh's error output holds.
+- A write that runs the repository's hooks, and Stage All's add of new files, has no time limit and Cancel stops it. Other git commands time out after 10 seconds (60 for Fetch).
+- A git host you signed in to in Account setup answers git's requests for credentials at its `credential_address`, through oculus's credential helper.
+- Removing a worktree refuses while it holds uncommitted work.
+- Oculus keeps the repositories below a hub out of the hub's git, as the [Data map](data-map.md#repositories-below-a-hub) says.
+
+### Sessions
+
+The agent sessions on this machine and oculus's terminals. The sections of the picked session stand under them.
+
+- The sessions are grouped by workspace: pinned first, then those that need input, then newest.
+- A press shows the session's terminal, or its transcript, in the page's Terminal tab.
+
+### Search
+
+A pattern across the files of the workspace, with replace.
+
+- It runs ripgrep over the served roots and leaves out:
+  - ignored files and files over 2 MB;
+  - folders whose name starts with a dot, apart from each hub's `.oculus/notes/`;
+  - `node_modules`, `.git`, `.svelte-kit` and `.svelte-kit-app`;
+  - the private folders.
+- Find in Folder, in a folder's menu in Files, limits it to that folder.
+- An answer holds at most `search.max_hits` hits, and each root's search is given `search.timeout_s` seconds.
+- Replace All over the whole answer is one History record. A file changed since the search, locked, binary or over 256 KB stops Replace All at that file, and the answer names the files written before the stop.
+
+### TeX view
+
+Commands, Structure and Math Symbols for the LaTeX file in front.
+
+- A file builds through its root, the first of these that exists:
+  1. the file a `% !TEX root = <path>` comment names;
+  2. the file itself, if it has `\documentclass`;
+  3. the main file that includes it;
+  4. the only main file of its folder.
+- `% !TEX program = xelatex` or `lualatex` picks the engine and `% !LW recipe = <name>` a recipe. The recipes and tools are `latex.recipes` and `latex.tools`.
+- A build that would read a `latexmkrc` or run document code (`Rscript`, `julia`, `pweave`, `quarto`, `R CMD Sweave`) waits until you approve it, and a changed file asks again.
+- `latex.auto_build` is `on_file_change` (the default), `on_save` or `never`. A failed build's errors go to Problems and the editor.
+- texlab serves LaTeX and BibTeX tabs, and `latex.formatter` picks the formatter of Format Document.
+
+### Terminal
+
+Terminals running Claude, Codex or a shell, inside tmux, so they survive a server restart.
+
+- An option that makes the agent ask less (Accept edits, Auto, Bypass permissions, Full access) asks first, every time.
+- A start from a task's `agent` button runs the task's text only after Approve and Start, kept in the approvals file. A changed text asks again.
+- An agent typed in a shell terminal is detected from the process table within five seconds.
+- Each pane of a tmux session you started yourself is a terminal while Claude or Codex runs in it. Attach to Session takes it in, and closing its tab leaves the tmux session running.
+- Lock this tab keeps the tab's boxes and grids from taking typing until it is unlocked, and holds after a reload.
+- A terminal starts with git's credential settings for the git hosts you signed in to.
+- Closing a tab, pane or page ends its terminals, asking when one runs a program. Moving and reloading keep them running.
+
+### Problems
+
+The errors and warnings of language servers, commands, LaTeX builds and linters.
+
+- ChkTeX, Ruff, ESLint and ShellCheck run on the saved file. `lint.chktex`, `lint.ruff`, `lint.eslint`, `lint.shellcheck` and `lint.writing` switch them, and ESLint waits for your approval of the repository's configuration.
+- The writing rules warn on Markdown, YAML and comments, and skip the files of `lint.writing_skip`.
+- The filter takes comma-separated terms: a word, a path glob, or a term after `!` to leave out.
+
+### References
+
+Find All References, implementations, call and type hierarchies, and the places that name a hub key.
+
+- A location in a library opens a read-only tab.
+
+### Debug
+
+The debugger: a program of cathedra's rite language (`.rite`) under oculus's own adapter `rite_dap`, or another language under an app's debugger. One debug session runs at a time.
+
+- Its configurations are `configurations:` of the repository's `.oculus/launch.yml` ([the files](data-map.md#the-files)). With none, Start runs the open file with its debugger's first configuration. `before` names a project command that runs first.
+- Each launch of `rite_dap` asks first, and the yes is kept. `rite_dap_bin` in this machine's values names the adapter's program.
+- Breakpoints and watches are kept in `~/.oculus/debug.json`.
+
+### Debug Console
+
+The program's output, and expressions evaluated while the debugger is paused.
+
+### Notes Graph
+
+The notes of every hub as a graph: a node per note and an edge per `[[link]]`, filtered to one hub.
+
+### Session
+
+The Details, Changes, Timeline and Agents of one agent session, in a tab of its own.
+
+### Source
+
+One text file in the editor, with its language server.
+
+- A file locked, too long, not UTF-8, or a version at a commit opens read-only. A save is atomic and refuses a file with a NUL byte or that is not UTF-8.
+- When the file changes on disk, a tab with no unsaved text reloads it, and a tab with unsaved text keeps it and says so.
+- On save: `editor.trim_trailing_whitespace`, then the language's `format_on_save`, then `editor.final_newline`. One Cmd+Z undoes all of it. `editor.autosave` is `off`, `after_delay` or `on_focus_change`.
+- Indentation, word wrap and rulers come from the first of these that sets them:
+  1. the tab's own choice;
+  2. the file;
+  3. the repository's `.oculus/settings.yml`;
+  4. `editor.languages`;
+  5. the global keys.
+- Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) have a language server per folder, which stops 60 seconds after the last tab closes. A repository's own interpreter, `svelte.config.*` and `vite.config.*` wait for your approval.
+- clangd uses a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml`.
+- In a hub YAML file a value whose schema field has `foreign_key:` is a link to its entry, and F2 renames the key in every file after a Refactor Preview.
+- An edit a server makes to other files is one History record. It is refused whole when a file it names is:
+  - open in another page;
+  - outside the workspace, or in `secrets` or `~/.oculus`;
+  - over 5 MB;
+  - changed on disk.
+- A write over a hub file that a source tab of the page holds unsaved text of is refused, whichever control sent it, with a note to save or revert the tab first.
+
+### File
+
+A picture, a PDF in oculus's viewer, or, for any other file the editor leaves to it, the file's name with a link.
+
+### Document
+
+A local HTML file in one of the served roots, in a frame of its own so its stylesheets and scripts run.
+
+### Doc
+
+A document of the hub's `docs:`, or a guide of oculus's own folder, rendered. A relative link to another Markdown file opens that document as a tab.
+
+### Markdown Preview
+
+One Markdown file rendered, as it was last saved.
+
+- `$...$` and `$$...$$` are typeset with KaTeX, here and in the text fields of the cards. A formula KaTeX cannot typeset shows as its source in red.
+
+### Math Preview
+
+The math at the caret of a `.tex` tab, rendered.
+
+### Diff
+
+The diff of a file staged or changed, a commit, a stash, a worktree against its branch, or the edits a replace or a refactor would make.
+
+- In a file's own diff each hunk can be staged, unstaged or reverted, whole or for the lines selected in it.
+
+### Merge
+
+The three-way merge of one conflicted path, Incoming and Current above the Result. Complete Merge writes the Result over the file and stages it.
+
+### Refactor Preview
+
+A language server's edit before anything is written, one check per file and edit. Apply writes the checked edits.
+
+### Customization
+
+One file the Sessions view's Customizations section lists, read-only: an account's `CLAUDE.md`, a skill, a subagent or a settings file.
+
+### Language server output
+
+The last 2000 lines one language server wrote to its standard error, read-only.
+
+### Collection views
+
+The entries of one data file as cards or as a table: Funding, Talks & Events, Education & Service, Applications and Tasks on the Academic Life page, Statements, People, Organisations and Resources on Registries, and Literature on its page.
+
+- The file is the one the collection's entry of `collections:` names ([collection files](data-map.md#collection-files)). A collection has a view while a hub lists it.
+- A card is headed by the entry's display, the filled field of the lowest `display:` rank of its file's schema, else its primary key.
+- The cards go pinned first, then by the `sort:` of the collection's entry.
+- Add asks for the new entry's primary key and the fields its schema marks required, writes the entry to the file of the hub whose `collections:` lists the collection, and opens its page. With more than one such hub it asks which.
+- The entries of a file with no primary key are read-only, and the Findings view offers Set as primary key on it.
+- More, in the view's bar, holds a Projects section on a collection whose cards draw a strip of projects at their foot: Category, Stage, Form, Tier, Role and Pillar. A pick narrows each card's strip to the projects it picks and hides a card whose strip it leaves empty.
+
+Literature has its own rules for adding a paper:
+
+- A paper's key is the first author's surname, the year and the first word of the title, with `b`, `c` and on added when the key is taken.
+- Add looks a DOI, an arXiv paper or a PubMed paper up through the sources of the Literature search and saves the paper they merge into. Any other address is saved as an entry of its address.
+- Save to Literature, on a Literature search hit or a Lit Watch paper, writes the paper to the Literature file of a hub that holds one. With more than one such hub it asks which.
+- A paper with the DOI of one already kept, or with its title when either has no DOI, is refused.
+
+### Memories
+
+The pictures of every hub's memories folder, `memories_dir`, and of every folder under it.
+
+- The walk skips a folder whose name starts with a dot and a link to a folder.
+- Add takes a JPEG or PNG and puts it in the primary hub's folder.
+
+### Career
+
+The career file of the primary hub, drawn as record cards: the strategy, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from.
+
+- Edit opens the editor on the career file beside the page.
+- Write the website writes one History record per file. A manifest that carries `publication:` at a stage without `public`, or with `negative` or `dead_end`, gives a finding in place of an entry.
+
+### Entry
+
+The page of one entry, a lead or a Lit Watch paper, laid out as a project's page. An entry's row counts the projects that name it, and the people, funding schemes and settings that name it are a line of tags on its card. When its `link` is a folder of the hub, that folder's documents, files and sessions are its blocks. A lead or a paper draws its feed's card with no row. The title of an entry card opens the page.
+
+- Delete asks first, naming the records that refer to the entry, and Undo in History brings it back.
+
+### Pillars
+
+The research lines of the `pillars` file, and the projects whose `pillars:` name each.
+
+- The lines are drawn in one section per row of `pillar_kinds`, then Other. The Orphans card is drawn in the first row's section and the Archival card in the section of `offpillar`.
+
+### Domains
+
+The projects by application domain, in the colour of their cards, from the `domains` file.
+
+### Map
+
+The pillars and the projects as a graph, linked by pillar membership and by `related:` edges. An edge one manifest lists has one arrow, from that manifest, and an edge each manifest lists has two.
+
+- The layout is Graphviz's neato from a seed the tab keeps, so a page saved with a map draws the same picture again.
+- A link drawn in link mode writes a `related:` edge into the manifest.
+- With no stage picked the map draws the projects at stages without the `terminal` flag.
+
+### Listing
+
+The projects of the Archival, Orphans or No funding card, as closed project cards, opened from that card's title.
+
+### Venues
+
+The venue catalogue of the `venues` file, in one section per row of `venue_categories`.
+
+- A row with `ribbon: true` draws the month ribbon of its venues' deadlines and meetings.
+- Read from the browser asks the hub's journal browser by the venue's first ISSN, then the next while no hit answers, and writes the fee and the open-access status of the one journal it finds.
+
+### Journal Browser
+
+The journal browser of a hub, the row `venues.browser` of its `.oculus/config.yml`, searched by words.
+
+- Only a press asks the browser: Search and More send one request each. Add writes the journal into the hub's venues file.
+
+### Data
+
+The datasets of the `data` file, with their provenance and the sources each comes back from.
+
+- A set whose sources are all of kinds its hub's `recover.sources` rows name has a Recover control.
+
+### Person
+
+The page of a person, laid out as a project's page. The row counts the projects whose `lead:`, `collaborators:` or `supervisors:` name them, then "<n> waiting on <name>" for the projects whose `waiting-on:` names them. A student's supervision folder is its block.
+
+### Recover
+
+The files of one dataset, fetched and checked on this Mac or on a cluster of `slurm.resource`.
+
+- Fetch downloads every missing, partial or different file, and a partial file resumes. It waits for the `downloads` row a source's `auth` needs.
+- A run goes on when the view or the window closes.
+- On a cluster the download runs on the login node, and Verify and Unpack are `sbatch` jobs. Unpack there fetches Node.js from the folder `recover.node_download` names.
+
+### Literature search
+
+One query to the sources of `literature.sources`, oculus's rows laid over by the primary hub's by `key`.
+
+- A source whose row's `auth` needs a `downloads` row is asked once you have set that row.
+- Results with one DOI, PubMed id or arXiv id merge, each field taken from the source `literature.prefer` puts first.
+
+### Lit Watch
+
+The new papers that touch the active and the manuscript projects, from the `radar` feed, one group per bucket of `radar_buckets`. Running Lit Watch from the update tray sweeps again.
+
+### Present
+
+A deck on screen, with its overview, full screen, presenter screen and PDF export. The [Decks guide](decks.md) gives a deck's files and keys.
+
+- The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files.
+- A slide's edit, add, duplicate and delete, from its right-click menu, and every change in the Overview are written at once, and History undoes each.
+- In a browser, Export to PDF opens the print dialog.
+- A deck whose groups hold project decks draws the Projects board's filter, which narrows the slides on screen and leaves the deck's files as they are.
+
+### Apps
+
+The installed apps and the state of each.
+
+- An app needs your approval, and runs, in a sandboxed frame, only while its files are the ones you approved.
+- An app reaches the folders of the workspace apart from `~/.oculus`, oculus's `config/`, a hub's `secrets` folder and every `local.yml`.
+- What an app adds shows while it is approved and enabled. The [Apps guide](apps.md) has the rest.
+
+### Help
+
+This manual. The Help page beside it holds the Keyboard Shortcuts view, oculus's guides and the hub's documents whose `docs:` entry names the group `help`.
+
+### Keyboard Shortcuts
+
+The keys the workbench, the palette, the debugger, the editor, the LaTeX tab and the apps bind, and in the app the desktop app's own, each with what it does, built from the code that binds it.
+
+### Settings
+
+The options by scope, with a search over them.
+
+- The scope is the file the rows write:
+  - Workspace: [the workspace file](data-map.md#the-workspace-file);
+  - Primary hub and Hub: [a hub's settings](data-map.md#the-hubs-settings);
+  - This machine: [this machine's values](data-map.md#this-machines-values);
+  - Repository: a folder's `.oculus/settings.yml` ([the files](data-map.md#the-files)).
+- A change is held as unsaved until Save, and a save is one write of the file, its comments and its other keys kept.
+- Reset takes your value out of its file. An entry of oculus's you remove is written as `removed: true` in a list or `null` in a map.
+- The value of a `downloads` secret stays on the server.
+
+### Account setup
+
+Your own app registration at Google and Microsoft, the sign-in to a git host, and the key and account of each cluster.
+
+- Your app's client is saved to `~/.oculus/connect/`, and a git host's token in `git-<key>.json` there, at mode 0600.
+- Make key runs `ssh-keygen` with the type `clusters.key_type` names and keeps a key file that is there. The host's key is added to `~/.ssh/known_hosts` once you compare its fingerprints and trust them.
+- Put the key on the cluster logs in once with the password you type, which goes to that one ssh alone. Save writes the cluster's row of `clusters:` in [this machine's values](data-map.md#this-machines-values) of the primary hub.
+
+### Views
+
+The views and documents by group, each with its key.
+
+### Pages
+
+The pages, the rail's and your own. A press on a page's row shows that page.
+
+### Status
+
+The connection, the snapshot (the hubs' records the page holds, with a count of each kind), the Claude Code hooks block, and the Gallery of every interface primitive on sample data.
+
+### Findings
+
+The problems found in the hubs' files, each with its file and line, and in the Audit section what the hub is missing.
+
+- Each convention under `audit:` ([the hub's settings](data-map.md#the-hubs-settings)) applies once the hub sets it.
+- Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`.
+- A Website finding of a generated file that differs offers Write the website.
+
+### History
+
+The writes oculus made on this machine, newest first, each with Undo.
+
+- The log is `~/.oculus/changes.jsonl`, and `changes.keep` sets how many writes are kept. A source tab's saves go to the local history.
+
+### Processes
+
+The terminals, the processes matching `processes.patterns` and the app programs, the program of each app whose `app.yml` names a `host`.
+
+### Live HPC
+
+The queue and quota of each cluster `slurm.resource` names, one section each.
+
+- Each cluster is an entry of the resources file ([collection files](data-map.md#collection-files)), reached over ssh with your row of `clusters:` ([this machine's values](data-map.md#this-machines-values)).
+- It runs `squeue`, `sacct` and `sinfo` on each cluster over ssh every `slurm.poll_min` minutes.
+- Submit Job, on a `.slurm` file, shows the plan (the folders, the rsync arguments, the `sbatch` command) before it runs, warns when the script does not use `/local/$SLURM_JOB_ID`, and copies with rsync, which adds and updates files on the cluster.
+
+### Usage
+
+What each agent account of the `accounts` rows has spent, refreshed every `usage_refresh_min` minutes.
+
+### Workbenches view
+
+The open workbenches and the closed ones whose layout is kept.
 
 ## The keys
 
-`?`, the palette's `:keys` and the app's Help > Keyboard Shortcuts open the Keyboard Shortcuts view, a tab of the Help page: every key the workbench, the palette, the editor, the LaTeX tab, the debugger, the desktop app (in the app) and the apps bind, with what it does, and a box that searches them. The editor's chords under Cmd+K are listed with their actions like its other keys. A letter then a digit opens a view: the letter is the group's `chord` (on its `rail:` entry, or in `nav_groups` for the float), the digit its place. The table below also holds the keys a control answers while it has the focus.
+Off macOS, Cmd is Ctrl.
+
+`?`, the palette's `:keys` and the app's Help > Keyboard Shortcuts open the Keyboard Shortcuts view. It lists the keys of the workbench, the palette, the debugger, the editor, the LaTeX tab and the apps, and in the app the desktop app's own.
+
+A letter then a digit opens a view. The letter is the group's `chord` (on its `rail:` entry, or in `nav_groups` for the float), and the digit is the view's place, so the first nine views of a group have a chord.
 
 | Key | What it does |
 |---|---|
 | 1-9 / Ctrl+1-9 | show that rail page / that tab of the focused pane |
 | Ctrl+] / Ctrl+[ | next / previous tab of the focused pane |
 | Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab (in the app) |
-| Cmd+W | close the active tab, asking over unsaved text; on a pinned tab, show the first unpinned one (in the app) |
+| Cmd+W | close the active tab, asking over unsaved text (in the app) |
 | Cmd+Shift+T | reopen the tabs closed last (in the app) |
-| Ctrl+- / Ctrl+Shift+- | go back / forward through the tabs and places visited; off macOS back is Ctrl+Alt+- (in a terminal the program gets them) |
+| Ctrl+- / Ctrl+Shift+- | go back / forward through the tabs and places visited; off macOS back is Ctrl+Alt+- |
 | Cmd+N; Cmd+Shift+N / Cmd+Shift+W; Cmd+,; Cmd+R | new text file; new window / close window; settings; reload (in the app) |
 | Tab / Shift+Tab | move between controls; in an editor Tab indents, and Escape then Tab moves on |
 | arrows, Home / End | along the rail or a tab strip |
-| arrows, Home / End, a letter | in a tree: move a row, open or close a folder, first / last row, next row starting with that letter; Shift extends; Cmd+A selects every row |
-| Delete | close the focused tab (not a pinned one) |
-| f1, p1-p4, e1-e4, s1-s9, c1-c7, l1-l3, r1-r7, b1-b3, t1, y1-y8 | open a view of a group (f Focus, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r Registries, b Literature, t Present, y System) |
+| arrows, Home / End, a letter | in a tree: move a row, open or close a folder, first / last row, next row starting with that letter |
+| Delete | close the focused unpinned tab |
+| f1, p1-p6, e1-e4, s1-s9, c1-c7, l1-l3, r1-r7, b1-b3, t1, y1-y8 | open a view of a group (f Focus, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r Registries, b Literature, t Present, y System) |
 | w1-w3 | Live HPC, Usage, Workbenches |
-| a1-a9 | the Apps view, then the apps |
-| h1-h9 | the Help page's tabs |
-| j / k, i / o | move the card cursor left / right, cursor up / down a row |
-| Enter | open what the cursor is on (a card, an Audit row, a Settings card, a row of Open Editors, Outline, Backlinks, Timeline, Bookmarks or Notes; a Tags row opens Search over the notes) |
+| a1-a9 | the Apps view, then the apps and the views they add |
+| h1 / h2 / h3-h7 / h8, h9 | Help / Keyboard Shortcuts / the Apps guide, Templates, Data map, Palette and Decks guide, in the Help page's order / the hub's `docs:` entries of the Help group |
+| j / k, i / o | move the card cursor left / right, up / down a row |
+| Esc | clear the card cursor |
+| Enter | open what the cursor is on |
 | / | focus the board's search; in Search, back to the query box |
-| Cmd+Shift+F / Cmd+Shift+H | Search / Search with replace |
-| Enter; Up / Down | in a Search box: run; walk the last twenty texts |
-| Esc / Enter | in a Files name box: cancel / accept |
-| Esc | in Files: close the line of messages at its foot |
-| Alt+Up / Alt+Down | move a root, bookmark, note or section of Files |
 | g g / G | top / bottom of the page |
 | n | new agent session in the page's Terminal tab |
-| Cmd+S | save the source tab, or the Settings scope on screen |
+| Cmd+Shift+F / Cmd+Shift+H | Search / Search with replace |
+| Enter; Up / Down | in a Search box: run; walk the last twenty texts |
+| Cmd+Alt+Enter / Cmd+Shift+1 / Cmd+Backspace | in Search: Replace All / replace the focused row / dismiss it |
+| Enter, F2 | on a Files row: rename |
+| Cmd+Down / Space | on a Files row: open / open in the background |
+| Cmd+Enter | on a Files or Repositories row: open beside |
+| Cmd+Backspace | on a Files row: delete |
+| Cmd+C / Cmd+X / Cmd+V; Esc | on a Files row: copy / cut / paste; drop the cut |
+| Cmd+Alt+C / Cmd+Alt+Shift+C | on a Files row: copy the path / the relative path |
+| Cmd+Z / Cmd+Shift+Z | in the Files tree: undo / redo the last file operation |
+| Cmd+A; Shift+Up / Shift+Down | in the Files tree: select every row; extend the selection up / down |
+| Esc / Enter | in a Files name box: cancel / accept |
+| Alt+Up / Alt+Down | move a root, bookmark, note or section of Files |
+| Cmd+S | save the source tab, the Settings tab's changes, or an app's tab |
 | Alt+Z | toggle word wrap |
 | Cmd+Shift+M; F8 / Shift+F8 | Problems view; next / previous problem |
 | Cmd+Shift+B / Cmd+Alt+T | default build / default test of the repository |
 | Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | LaTeX build / clean / view PDF, in a `.tex`, `.sty` or `.cls` tab |
 | Cmd+Alt+J | LaTeX: show the caret's line in the PDF, in a `.tex` tab |
-| Cmd+click | in a PDF: open the source line |
 | Cmd+Alt+M / Cmd+Alt+X | Math Preview, in a `.tex` tab / TeX view |
 | Cmd+Alt+[ / Cmd+Alt+] | promote / demote sections, in a `.tex` tab |
-| Enter / Alt+Enter | in a list environment: new `\item` / plain new line |
+| Enter / Alt+Enter | in a LaTeX list environment: new `\item` / plain new line |
 | Cmd+L, then Cmd+B, I, U, E, R, T, S, C, N, 6 or - | wrap in `\textbf`, `\textit`, `\underline`, `\emph`, `\textrm`, `\texttt`, `\textsl`, `\textsc`, `\textnormal`, `\textsuperscript`, `\textsubscript`, in a `.tex` or `.bib` tab |
 | Cmd+L, then Cmd+Enter / Cmd+W | insert `\item` / surround with a command, in a `.tex` tab |
-| Cmd+L, then Cmd+L / Ctrl+Shift+M | select the line / toggle whether Tab moves the focus, in a `.tex` tab; off macOS Ctrl+L, then Ctrl+M |
+| Cmd+L, then Cmd+L / Ctrl+Shift+M | select the line / tab focus mode, so Tab leaves the editor, in a `.tex` tab; off macOS the second is Ctrl+M |
 | Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb`, `\mathcal`, in a `.tex` or `.bib` tab |
-| Shift+F10 | the right-click menu of the focused control |
-| arrows, Enter, Escape | in a menu: move, open a submenu, go back |
-| arrows | on a docked float's handle: resize it |
 | Cmd+K | open the palette, or close it when open; in the editor, the first key of the editor's chords |
-| Shift+Enter | palette, on `:task-add`: add and open |
-| Cmd+P | find a file by name |
+| Cmd+K Shift+Enter | in the editor: pin or unpin the tab |
 | Cmd+Shift+P, F1 | palette in command mode |
+| Cmd+P | find a file by name |
 | Cmd+T | symbols of the workspace (in the app) |
-| F2 | rename the symbol; on a hub key in YAML, rename it in every file; Cmd+Enter shows a Refactor Preview first |
-| F12 / Cmd+click | go to definition; on a hub key, open its entry; on a Markdown link, follow it |
-| Shift+F12 / Shift+Alt+F12 | links to a heading / all references and implementations |
-| F4 / Shift+F4; Shift+Alt+H | next / previous reference; call hierarchy |
-| Cmd+.; Shift+Alt+F; Shift+Alt+O; Alt+O | quick fix; format; organize imports; switch source and header |
+| Shift+Enter | palette, on `:task-add`: add and open |
 | : | command line |
-| Esc | clear the cursor |
+| F2 | rename the symbol; on a hub key in YAML, rename it in every file |
+| F12 / Cmd+click | go to definition; on a hub key, open its entry; on a Markdown link, follow it |
+| Shift+Alt+F12 | all references and implementations |
+| F4 / Shift+F4; Shift+Alt+H | next / previous reference; call hierarchy |
+| Alt+O | switch source and header |
 | Alt+F5 / Shift+Alt+F5 | next / previous change |
 | F5 | start or continue debugging |
 | Shift+F5 / Cmd+Shift+F5 | stop / restart debugging |
 | F9 | toggle a breakpoint |
 | F10 / F11 / Shift+F11 | step over / into / out |
+| Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
 | Cmd+F | find in a terminal, or in the app's window for a view with no find of its own |
 | Ctrl+Enter / Cmd+Enter | commit; send a diff comment |
-| Cmd+Enter | on a Repositories row: open beside |
-| Cmd+Alt+Enter / Cmd+Shift+1 / Cmd+Backspace | in Search: Replace All / replace the focused row / dismiss it |
-| Enter | on a Problems row: open it |
-| Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
-| arrows, Enter, Shift+Enter, Delete | on a terminal row: show / split / kill (twice) |
+| Enter, Shift+Enter, Delete | on a terminal row: show / split / kill (twice) |
+| Shift+F10 | the right-click menu of the focused control |
+| arrows | on a docked float's handle: resize it |
 | F / P / O | in Present: full screen / presenter screen / overview |
 | Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |
 | Home / End | in Present: first / last slide |
-
-Off macOS, Cmd is Ctrl.
-
-## The views
-
-| Id | Name | What it is for |
-|---|---|---|
-| `focus` | Focus | What wants attention: deadlines, follow-ups, the week's ticker, the lanes. |
-| `projects` | Projects | The research projects you lead that are not done, as cards or a list. |
-| `supervision` | Supervision | The research projects you supervise and do not lead. |
-| `coauthor` | Coauthor | The research projects you collaborate on, or that name others and not you. |
-| `archive` | Archive | The research projects you lead that are done. |
-| `personal` | Personal | The projects with `tier: personal`. |
-| `software` | Software | The projects with `tier: software`. |
-| `pillars` | Pillars | The research pillars and their projects. |
-| `domains` | Domains | The application domains and their projects. |
-| `map` | Map | The projects as a graph of what links them. |
-| `venues` | Venues | The venue catalogue. |
-| `venues-browser` | Journal Browser | A hub's journal browser, searched by words, its journals added to the venues. |
-| `data` | Data | The datasets. |
-| `statements` | Statements | Reusable manuscript statements. |
-| `people` | People | The people. |
-| `organisations` | Organisations | The organisations. |
-| `resources` | Resources | Clusters, machines and storage. |
-| `files` | Files | The folders of the workspace, with Open Editors, Outline, Backlinks, Timeline, Bookmarks, Notes and Tags. |
-| `repositories` | Repositories | VS Code's Source Control over every repository. |
-| `search` | Search | A pattern across the files, with replace. |
-| `references` | References | Find All References, implementations, call and type hierarchies, and the places that name a hub key. |
-| `notes-graph` | Notes Graph | The notes of every hub as a graph: a node per note, an edge per `[[link]]`, filtered to one hub. |
-| `latex` | TeX view | Commands, Structure and Math Symbols for the LaTeX file in front. |
-| `problems` | Problems | Errors and warnings of language servers, commands, LaTeX builds and linters. |
-| `debug` | Debug | The debugger: configurations, Variables, Watch, Call Stack, Breakpoints. |
-| `debug-console` | Debug Console | The program's output, and expressions evaluated while paused. |
-| `funding` | Funding | Funding schemes and applications. |
-| `events` | Talks & Events | Talks and events. |
-| `education` | Education & Service | Teaching and service. |
-| `applications` | Applications | Position applications. |
-| `tasks` | Tasks | Tasks. |
-| `present` | Present | A deck, with overview, full screen, presenter screen and PDF export. |
-| `radar` | Lit Watch | The literature radar. |
-| `literature-search` | Literature search | One query to the sources of `literature.sources` in the primary hub's `.oculus/config.yml`; a source whose row needs a `downloads` row is off without it. |
-| `literature` | Literature | The papers kept, from the file of the `literature` collection. |
-| `leads` | Position Leads | Position leads. |
-| `inbox` | Inbox | Your mailboxes, with each thread's wish and a drafted answer. |
-| `linkedin` | LinkedIn | Posts and post ideas. |
-| `session-list` | Sessions | Every agent session on this machine and oculus's terminals, with the sections of the session picked under them. A press shows the session in the page's Terminal tab. |
-| `session-detail` | Session | The tab of one pinned session: Details, Changes, Timeline, Agents. It stands on no page by itself. |
-| `terminal` | Terminal | Terminals running Claude, Codex or a shell, inside tmux, and a session's turns. Live or Transcript on the bar, Lock in the header; an agent typed in a shell is detected. |
-| `status` | Status | The connection, the snapshot, the hooks block, and the Gallery, a closed section with every UI primitive on sample data. |
-| `findings` | Findings | Every problem found in the hub's files, with file and key, and in its Audit section what the hub is missing: open markers, manifest gaps, and what breaks the conventions the hub's `audit:` sets. |
-| `hpc` | Live HPC | The queue and quota of each cluster. |
-| `usage` | Usage | What each agent account has spent. |
-| `help` | Help | This manual. |
-| `memories` | Memories | The photo wall of every hub. |
-| `career` | Career | The career strategy and the career record the website's CV is written from, and Write the website. |
-| `calendar` | Calendar | Your calendars, read-only. |
-| `account-setup` | Account setup | Registering your own app at Google and Microsoft for calendar and mail, signing in to a git host, and the key and account of each cluster. |
-| `history` | History | Every write oculus made, newest first, with Undo. |
-| `processes` | Processes | What oculus started, matching local processes, and app hosts, with Stop and Restart. |
-| `catalogue` | Views | Every view and document by group, with its key. |
-| `apps` | Apps | Every app, with its state, Add app from folder, Disable, Enable, Remove. |
-| `settings` | Settings | Every option, with search. |
-| `pages` | Pages | Every page, with New page. |
-| `workbenches` | Workbenches | Open and closed workbenches. |
-
-Views opened for one thing, and not in the catalogue: `project`, `person`, `entry`, `listing` (a set of projects), `post` (a LinkedIn post), `editor` (the form of a record), `deposit`, `doc`, `math-preview`, `refactor-preview`, `source`, `document` (a local HTML file), `file` (a picture, a PDF, or a download), `customization`, `repositories-diff`, `repositories-merge`, `markdown-preview` and `lsp-output`. A saved page that names a view oculus no longer has shows that tab as an unknown view and keeps the rest.
-
-### Entries and their editor
-
-- A card is headed by the entry's display, the filled field of the lowest `display:` rank of its file's schema, else its primary key, else its first filled text. The title of an entry with a key opens its page: its card opened out, what refers to it, and, when its `link` is a folder of the hub, that folder's documents, files and sessions. A person opens the Person view. A venue, a dataset, a domain and a pillar line draw on their page the card their view draws. An entry with a key in a file with no `schema:` list that reads, a lead and a Lit Watch paper among them, opens a read-only page: its card's fields under a line saying the file has no schema, with no control that writes; an entry with no key opens no page, its title being words.
-- A card leaves out the fields of its schema's `Website` section, which feed the website. The entry's page draws them after its other fields, in a group headed by that word: each filled field with its label, a checkbox reading Yes or No, and no group for an entry that fills none. Search reads every field, so a Website word finds an entry whose card does not show it.
-- A list of records whose rows name a person draws the people by name. A card shows its label and one person control per row. The page shows its label over one line per row: the person control, then the row's other text fields. A control opens that person.
-- Edit, on a card's menu and in the strip of a card on its page, opens the editor beside the page. Every record edits in this one editor: a project, an entry, a person, a lead, a Lit Watch paper and the career file. A file with no `schema:` has no Edit. An entry with no key has Edit off, its tip saying why, and Edit in File is where the key is written.
-- The editor has one control per field of the file's `schema:`, grouped by the `section:` of each row. A section the list `manifest_schema.sections` names comes in the order of that list, any other section after them, and the rows with no section last, under Other. The primary key, the field the schema flags `primary_key: true`, names the entry and cannot be edited there; F2 in the file renames it everywhere it is named. A venue's `name` can be edited, and every project's `venue` stays, since it names the venue's `id`.
-- A file has no primary key when its schema flags no field, flags two, or flags a field whose value is a list or a map, when its schema does not read, when its `collections:` entry names a `primary_key:` beside the schema's flag, or when it has neither a schema nor a named key. Such a file is drawn with a finding, and its entries take no edit, Add or remove; the reason its cards give for their disabled controls, and every refused write, name the cause and what takes it away. The Findings view offers, on the first finding of a file's key, a pick of its fields and Set as primary key, which writes the key where the reader reads it: the schema's flag on the field picked (and the `collections:` entry's `primary_key:` taken away when it names one), or, for a file with no schema, `primary_key:` on its `collections:` entry.
-- Save writes only the changed fields and keeps the file's other lines and comments. A refused field keeps what you typed and says why. Unsaved edits survive a tab switch and a reload.
-- A `period` field, such as an entry's `when` or a project's Year, is one line whose hint gives examples of its forms: a year (2025), a month (2025-09), a day written year-month-day and a span (2025-09/2026-09). A span still running is written `2025/..`. The line is marked wrong while its text is no period, and Save refuses such a text with the same examples.
-- Add asks for the new entry's primary key, the fields its schema marks required and its `lead`, `supervisors` and `collaborators`, in the schema's order, each by its type: a `select` field as a pick of its options or of its `foreign_key`'s entries or words, a `tags` field with a `foreign_key` or options as a multi-pick (a people field offering the hub's people, Lead starting with you picked where the hub's people hold you), any other field with a `foreign_key` as a pick, and every other field as a typed line. A pick or a multi-pick with nothing to offer in the hub, such as Lead in a hub with no people collection, is a typed line instead, a multi-pick's split on commas. A field required only under a condition is asked as an optional one. Add stays off while a required field is unanswered: a typed line holding only spaces, a list holding only commas and spaces, or a pick or a multi-pick holding nothing. It writes a pick as its id, a multi-pick as its list of ids and a typed line trimmed, leaves out a field that is not required and is left empty, writes the entry to the file of the hub whose `collections:` lists the collection (for the Venues, Data, Pillars and Domains views, the entry whose `registry:` names that registry, whatever its key) and opens its page. A taken key is refused, and the box comes back with what was typed and picked. When more than one hub lists the collection, Add also asks which hub's file takes the entry, the primary listed first and chosen when it lists the collection; when it does not, no hub is chosen and Add stays off until one is picked. Answered with a hub other than the one whose choices it offered, Add writes nothing and asks again with that hub's choices, the typed lines kept. The Literature view's Add asks the same when it is given a DOI or an address. A write that names no hub while several hubs could take it and the primary is not among them is refused with a sentence asking which hub, so no order of the hubs decides where a record goes.
-- A field that picks people, a project's `lead:` and `collaborators:` and the This machine row `self`, offers Add person with the typed name when the name matches no person. A field picks people when the collection its `foreign_key:` names is the hub's `people` registry, whatever its key. It writes the person, with that name under the field the people schema ranks `display: 1` and a key made from it under its primary key, to the people file of the hub of the record being edited (the primary hub for `self`) and picks them. History undoes it as it undoes an Add.
-- **A collection's bar and list.** The bar has a project board's two lines. The first holds the search, Mine only (below), then a button for each group: Role, Hub while the workspace has more than one hub (each hub by its name, keeping the entries of the hubs picked; with one hub the group is not drawn and a hub picked earlier hides nothing), then one group per field whose schema line says `filter: true`, headed by its label, its values by their option labels, a period field and a text field whose values are all whole numbers listing them newest first. The buttons that do not fit move into More, the last first. The second line holds the status field's values as slices with their counts, in the order the entries first carry them, and, in the Funding view while projects have no scheme, No funding after them, which keeps the card of those projects; then how many entries are shown ("12 entries", or "5 of 12 shown" while the bar hides some) and, while a value is picked, Clear all, which takes every pick out and leaves the search and Mine only. A collection whose schema has no status field draws no slices. A pick keeps the entries that hold any of the picked values, a group with nothing picked keeps every entry, and each count is how many entries the search, Mine only and the other groups leave at that value; a picked value no entry holds is listed at 0. A collection whose cards draw a strip of projects (Funding, People and any other whose entries name projects) has a Projects section last in More, under the heading Projects, with the groups Category (the rows of `categories:` in their colours, dead-ends left out, and "other" for the projects in no row), Stage, Form, Tier, Role (while a person is marked as you) and Pillar, in list mode too. A project value's count is how many projects of the strips of the entries the other groups leave carry it under the other Projects picks, a project in two strips counted once. A Projects pick narrows each card's strip to the projects that carry a picked value of every Projects group with a pick, and hides a card it leaves with no project, the No funding card included, or its row in list mode; while no Projects value is picked, a card with no strip is shown. The entry groups and the slices count over the entries the Projects picks leave. The entry's own page always draws its whole strip. The picks are kept per tab, and Clear all takes the Projects picks out too. The cards go pinned first, then by the `sort:` of the collection's `collections:` entry: its fields in their order, a status in the order of the schema's options, a date oldest first, a period newest first (Events and Education by status and then period, Funding by status, period and deadline, Applications by status, deadline and period), any other field alphabetically, an entry missing the value last, then the file's order; a collection with no `sort:` goes by the card's title, and a hub's own entry may give its own `sort:`. When a write changes a card's pin or a field the collection's cards are sorted by, the card moves to its place. The header's Cards and List draw the entries as cards or as one table, cards at first; in list mode the Columns menu shows or hides a column per field of the schema of the types select, text, tags, chips, date and period, the primary key and the title field left out, the title always shown and opening the entry's page, by default the status field, the people fields and the `filter: true` fields, and the tab remembers the choice. A cell shows an option by its label, a list joined by commas and a person by name; the columns that do not fit are left out from the right; the No funding card is drawn above the table.
-- Delete asks first and names everything that refers to the entry; those references become findings. History undoes it.
-- The undo of an Add or a Delete, a lead's and a Lit Watch entry's Delete included, gives the file back as it was, quotes, empty fields and blank lines kept, while the file still holds what the write left. A file edited by hand since keeps the hand edit, and the entry is written back from its record.
-- An entry's fields are edited in the editor or through its card's menu: the menu's Status submenu lists the statuses the file allows, the one in force ticked, and a pick is written at once; the Add run's Deadline changes the deadline. The card draws the status as a chip in its top row, a deadline as a tag with the deadline glyph and a date as its words. A deadline tag reads as a project card's does: "overdue 2d" in red once the day has passed, the days left in amber within 14 days of it, and the date otherwise.
-- A card's Subtasks block adds, ticks, snoozes, edits and deletes the lines of `subtasks:`; Edit turns a line into a form with its text, its deadline and its people. Its Follow-ups block does the same for `followup:`, a list of notes `{ do, after, done }`: Edit changes a note's text, its date and its people; Done writes `done: true`, and the note stays in the block struck through, with Reopen in place of Done; Del takes the note out, and the `followup:` key with the last one. A subtask line and a note may name people in `lead`, `supervisors` and `collaborators`, each a key of the people registry or a list of keys; the block draws their names after the line's text in muted small text, lead first, then supervisors, then collaborators, and a key no hub holds as the key. A note stays off the Focus board until its `after:` date, and the card says "not until" while that date is ahead. A `followup:` that is not such a list holds no note and is a finding.
-- A card's menu has an Add run of Follow-up, Subtask and Deadline, in that order. Each opens its form on the card, one at a time, a second pick closing the first.
-  - Follow-up and Subtask are offered on every record a line can hang under. Deadline is offered on a project and on an entry whose file's schema has a `deadline` field. An entry of a file with no schema has no Add run.
-  - The form has a rule above it, a heading and a label over each box. A follow-up is headed "New follow-up" and asks What, Not before, Lead, Supervisors and Collaborators; a subtask is headed "New subtask" and asks What, Deadline, Lead, Supervisors and Collaborators. Lead, Supervisors and Collaborators each pick any number of the people the registry holds. A line's Edit form asks the same, its three picks starting from the line's people, and a save writes only the fields it changed.
-  - A deadline is headed "New deadline", or "Change deadline" when the record has one, and asks Deadline. The box holds the record's deadline: a date box for a field of `type: date` and a project's `deadline:`, a text box for any other type. An emptied box clears the deadline.
-  - Save is off while the text is empty, while the deadline is unchanged, and while the file cannot be written; then every row of the Add run is off too, its tip saying why.
-  - What a save answered is said on the view's outcome line, and the form closes on a write the server took.
-- Edit in File opens the file at the entry. Each view drawn from one file has a control, last in its toolbar, that opens the file.
-- An entry with an empty or shared key cannot be written; Findings lists it.
-
-### Notes on single views
-
-- **Groups.** A view that groups what it draws heads each group with one strip: the fold control, the group's glyph, its label in its colour and its count, and at the right end what acts on the whole group, such as the Schedules' Add or a Views group's key chord. The strip stays at the top of the pane while its group scrolls under it, and the next group's strip takes its place at the end of the group. A press on the fold control, or Enter or Space on it, folds or unfolds the group, and the tab keeps it folded, so a reload or a move of the tab keeps it; the Update tray keeps its folds until the page reloads. A find-in-page match inside a folded group unfolds it, and so does a card revealed from the palette or a press in Settings' table of contents on the group or a section in it. A search never folds or unfolds a group, and a heading's count is what the search leaves. Dismissed, Expired, the run log, Triaged, Muted and the Gallery start folded, and every other group starts open; a folded Gallery draws nothing until it is opened. A heading inside a group is a plain label that does not fold, such as a Settings section or a sub-heading of the Gallery or the Views catalogue, or a group that folds, such as a kind of the Audit section or a section of the Gallery, whose strip stands under the outer one and reads one level under it: its label and its count at the small size, and the words of its strip indented by one fold control and the gap after it. The Repositories view and the Sessions tab head their groups with group rows of their tree instead: the fold's chevron, the label, and the count as a badge at the right edge. Such a row scrolls with its rows rather than staying at the top; a press on it, or Left and Right, folds the group, the tab keeps the fold, and a folded group's rows are not drawn, so find-in-page does not reach them.
-- **Focus.** One page, top to bottom, of the sections `sections` under `focus:` in `config/defaults/behavior.yml` lists, in its order: oculus's list is the command center (`command_center`), the tasks (`tasks`), the quick add (`quick_add`), the Awaiting box (`awaiting`), the Funding | positions | teaching band (`band`) and the lanes (`lanes`, with the message of a board with no project). A section the list leaves out is not drawn; a word that is no section and a section listed twice are findings, and the rest is drawn once each; a value that is no list is a finding and oculus's list is drawn. The line saying what a write answered is drawn after the quick add, or at the top of the board when the list leaves the quick add out. The lanes are grouped by the clusters of `focus_clusters` in `vocab.yml`, in its order, each lane in the cluster its row of `focus_lanes` names: a `columns` cluster draws its lanes side by side under a heading of its `glyph` and `label` words with the count of the cards on its lanes (Now, Parked and Incubation in oculus's list), its lanes muted when its row says `muted: true`; a `full_width` cluster draws each of its lanes as a section of its own under the lane's label in the lane's colour with the lane's count (the Idea lane). Each cluster, each such lane section and the Funding | positions | teaching band is a group headed by its count, and folds as every group does (Groups, above). A cluster with `sort: title` orders its cards by title, the others by deadline, then title, and the Awaiting box counts the projects on the lanes of the clusters with `awaiting: true`. A lane naming no cluster, or one no readable row has, is a finding and is not drawn. The Filter action in the header opens a list that stays open while you pick: Mine only, on at the start, which keeps what names you in `lead:`, `collaborators:` or `supervisors:` and what names no one; Role, the roles that have a field, all ticked, where unticking a role hides what you hold that role on; Tier, the words of `tiers:`, all ticked, which applies to projects only; Pillar, one row per pillar of the workspace by its title, all ticked, with its hub's name after it while the workspace has more than one hub, drawn only while a pillar exists, where a record whose pillars hold no ticked pillar is hidden (a project by its `pillars:`, a funding scheme by the pillars its projects name, and a collection entry by its `pillars` field, read in its own hub, where its file's `schema:` declares `pillars`), and a record that names no pillar is always kept; and Hub, one row per hub, all ticked, drawn only while the workspace has more than one hub. Mine only and Role are drawn only while a person has `self: true`. Whether Mine only is offered is read on the whole page, with every role, tier, pillar and hub ticked: when it would hide nothing there it is drawn disabled, its tip saying everything here is yours, and is not applied; when it would hide something it applies together with the rest of the choice. The filter applies to the command center, the tasks, the Awaiting box, the band and the lanes. A calendar line, a lead and a refresh nudge are never hidden, and a collection entry is filtered by role only when its file's `schema:` declares `lead`, `collaborators` or `supervisors`. A subtask or follow-up line that names people of its own is kept or hidden by Mine only and Role on those people, read under the roles of its record's hub, whatever its record names, so a line naming you under a project that does not stays on the board while the project's card is hidden; a line that names nobody follows its record, and a line's hub, tier and pillars are its record's. The Filter button is drawn pressed while the filter hides something, each section that hides rows says how many on its heading ("3 hidden"), and a lane the filter empties keeps its heading and its count. The tab keeps the choice, so a reload or a move of the tab keeps it. Each lane's heading draws its glyph, the `icon` of its row of `focus_lanes:`, and the Focus glyph for a row naming none or a name the glyph catalog lacks. A project sits on the lane its `stage:` gives: Run exploring, Push in-prep and submit-ready, Revise revision, Review submitted, Scope scoping, De-risk de-risking, Build building, and the Idea lane nascent, which takes a project of any tier. A project whose `status.chips` carry `blocked` or `parked` sits on Blocked or Backburner whatever its stage, and on Blocked when it carries both, unless its stage is done. An accepted, published, released, failed or stopped project sits on no lane, and one carrying `blocked` or `parked` is an audit finding naming the chip. A card draws its name alone on its first line, with its deadline and its menu, and under it its tags, each a glyph and its words with a tip naming its kind ("Stage: Submitted"), as a project board card draws its facts. The tags are every status mark its lane does not already say: its stage, unless the lane lists that stage alone, in the stage's colour, its form and its chips but the lane's own chip, each in its word's colour and a chip carrying `blocked` in red, each word once; then the year the paper appeared, its manifest's `year` ("Year: 2025"), at a stage that carries both `terminal` and `public`, which with oculus's lanes is on no lane, since an accepted or published project sits on none; then your role on the project, only while a person has `self: true`, and its tier, each unless its row of `roles:` or `tiers:` carries `unmarked: true` (oculus sets it on Lead and on `research`, and a hub may set it on any number of roles and tiers, or none); and the venue's short name, or its name when it has none, at a stage that carries `placed`, with the venue's whole name in the tip. Every tag is drawn, the tags wrapping onto further lines when the card is narrow, and a long venue name is cut with an ellipsis. Under the tags a card says whom it waits on, the people and projects its `waiting-on:` names, or Blocked while a chip carries `blocked`, in red after the waiting glyph; a submitted project's review is said only in the Awaiting box. Dropping a card on a lane, or picking the lane in the card's menu, writes what the lane's `move_writes` in `focus_lanes` names: onto a lane of chips (Blocked, Backburner) its `chip`, when the card carries none of the lane's chips, with the chips of the other lanes of chips taken off and the stage kept; onto a lane of stages its `stage` when the lane does not hold the card's stage, with `blocked` and `parked` taken off. Oculus's lanes write Run exploring, Push in-prep, Revise revision, Review submitted, Blocked `blocked`, Backburner `parked`, Scope scoping, De-risk de-risking, Build building and Idea nascent. A lane without `move_writes` takes no move, and a `move_writes` naming a word the lane does not list, both fields or the field of the other kind of lane is a finding naming the lane. The card's menu offers only the lanes it may go to, so a done project has no Blocked or Backburner lane. A move that changes both the stage and the chips is two changes, and one Undo takes back one of them. A project whose stage is in flight or an idea and that no lane takes, which happens only when a hub's `focus_lanes:` leaves its stage out, is named in the command center's Needs attention group, with a link that opens it. The command center holds the deadlines and dates of the records: papers, venues, funding, applications, position leads, events, teaching and joint work; applications and position leads are two groups, each with its own glyph. Due follow-ups, open subtasks and the open entries of the tasks file are lines of the Tasks section, dated or not, whatever `deadline_horizon_days` says. A task of the tasks file with open subtasks that are not snoozed is drawn under Tasks as a subheading with its subtasks under it. The Subtasks group holds the subtasks of every other record, and those of a task whose own line is not drawn (snoozed, its status dropping it, or hidden by the filter). A snoozed subtask, follow-up or task is drawn in the command center's Snoozed group instead while it is snoozed, whatever its date. A dated line there carries its date as its tail ("in 3d", "3d ago"), red once past and amber within 14 days. In each group of the section the dated lines come first, the most overdue first, then the undated ones, and the subtasks under a task's subheading come in the same order among themselves. A line that names people carries their names after its words. A follow-up line has Done, which marks the note done, and Remove, which deletes the note; a done note leaves the section and is not counted as hidden. A line of the tasks file carries Remove last, which asks the card's Delete question under the section, naming any file that refers to the entry: its yes deletes the entry and the board's outcome line says so, and No closes it with nothing written. The quick add offers + follow-up, + subtask and + deadline; a press opens two dropdowns, Kind and Record, and under them the form of that line, which writes to the record picked: a follow-up with its Not before date, a subtask with its deadline, a deadline into the project's manifest or the entry. The kinds are Project, then each collection of the workspace's hubs whose file has a schema, by the words its view carries, and for a deadline only the collections whose schema has a `deadline` field. The records are the live projects of the board, or the collection's entries by their display title, sorted, each carrying its hub's name after it while the workspace has more than one hub and its primary key after it when two read the same. A kind with no record leaves Save off. The form closes on a write that changed the file, a second press of the same control and Escape. A line of the command center or the tasks that names a collection entry opens that entry's page, as a card's title does: a funding scheme's deadline, follow-up and subtask lines the scheme's page, a dated entry's line (a talk, a teaching entry, a task of the tasks file) and an entry's follow-up and subtask lines the entry's page, a snoozed line of an entry or a scheme the same page, a conference call the venue's page, and an entry of the people registry its person page. A line whose page cannot be found (a scheme whose hub names no funding collection, a venue the registry does not hold) opens its collection's view; a project's line opens the project, and a lead's line shows the lead in the Leads view. A venue line of Needs attention opens the venue's page, and the Venues view at the venue when the registry does not hold it. An entry whose status keeps its lines live (`live_subtasks`) shows its follow-ups as it shows its subtasks. A dated deadline stays while it lies inside `deadline_horizon_days` of `focus:` and until the project's stage carries `deadline_met` (`submitted`). A band card whose status has met or closed its deadline, a status carrying `deadline_met` (`submitted`) or `closes_deadline` in its hub's words, shows no countdown. A task line has an `agent` button that opens the composer with the task. The Awaiting box has one row per kind that has something (Waiting on, Under review, Applications, Grants, Blocked), and a name that counts more than one project carries their number, as in "BSPC (2)", a project counted once however many of its `waiting-on:` values give the name. Every name is a button. An application opens its entry's page and a grant the funding scheme's page; two entries of one title are two names, a name of a hub other than the primary carries its hub's name after it while the workspace has more than one hub, and a grant whose hub names no funding collection is plain words. A name of Waiting on or Under review, and Blocked's count, opens a tab of its own titled by the row and the name ("Under review: BSPC", "Waiting on: Maryam", "Blocked"), drawing as board cards, in sections by `categories:`, exactly the projects the name counts under the Filter choice in force at the press, each project once, its Mine only starting as the Filter's. The tab follows the projects, so a project that stops waiting leaves it, and a second press on the name brings the tab forward with the Filter choice of that press. It offers no New project, has no count on the tab or the rail and is not in the view catalogue; opened from the palette, it says it was opened for no name. The Awaiting box's Applications are the entries of the files flagged `awaiting`, and its Grants the funding schemes, whose status carries `deadline_met` in their hub's words (`submitted`, `under-review`, `applied`, `interview` and `offered` in oculus's). The band's three columns, Funding, Job applications and Teaching & supervision, stack their cards by the stages of `fund_stages`, `position_stages` and `teaching_stages` in `vocab.yml`. Each stage is a block in its colour under its label, a stage with no card is not drawn, and a card whose status two stages name is drawn in both. A column's heading counts its cards, and a press on a card's title opens its entry's page.
-- **Projects.** `+ new idea`, on a project board that takes the project it writes (the board's tier, you in the field below, the one stage carrying `new_idea`, no chip and no form; with the shipped boards every board but Archive, which takes done work), asks for an id, title, short handle, domain, description and folder (from `new_project_dir`, keyed by tier, inside a `scan:` folder), and writes `<folder>/<id>/project.yml` with a README, the board's tier and, while a person has `self: true`, you in the field of the board's first role that has one (`lead:` on Projects, `supervisors:` on Supervision, `collaborators:` on Coauthor), or on a board naming no `role:` in the field of the first row of `roles:` that has one (`lead:` on Personal and Software), so the new project shows on the board it was made on. The board's tier is the one tier its `tier` names; for a board naming several, the tier of `tiers` carrying `default: true` (`research` in oculus's words) when it is among them; and for a board naming none, that default tier. A board naming several tiers without the default among them, and a board naming none while no tier carries `default: true` or two do (a finding naming both), offers no `+ new idea`, and no stage is written while two stages carry `new_idea`. With more than one hub in the workspace it also asks the hub, the primary first and chosen; the domains offered are that hub's, and the folder starts empty for a hub other than the primary, which then takes the folder its own `new_project_dir` names for the tier and refuses when it names none. Lit Watch's new project asks the hub the same way and names you as `lead:`.
-- **A project card.** A card on a board is always drawn closed. Its title, its Open project page action and Enter on the keyboard cursor open the project page beside the board as a preview tab. The project page lands in the first of these panes of the page the board is on: on a workbench, its documents pane; the pane holding the project page or document opened there last, while that tab is still open; an empty pane, an empty documents pane before an empty terminals pane; a pane holding only tabs opened this way, such as project pages and documents; and else a new pane split right of the board. Apart from a workbench's documents pane, a pane holding a tool view, such as Files or Terminal, is not taken, and a locked pane and the board's own pane never are. A preview tab already in the pane the page lands in is replaced, so the next project opened from the board takes that preview tab. A project page you typed in, double-clicked on its tab or opened a second time is kept, and the next project opens in a new preview tab beside it. Under the pointer a card draws Ask, Open Workbench (when its hub is served) and, on a board, Open project page, then "...". Its menu, and the menu a right-click or Shift+F10 opens on the card, lists every action: under Open, Project Page (on a board), Folder, Show in Files, Workbench (when served) and Presentation (when the project has a deck); under Add, Follow-up, Subtask and Deadline, which open their forms on the card whether or not the project has any, on a board the form alone, without the lines already there, and on the project page in the right column with its Subtasks and Follow-ups; then Ask, Edit Manifest, Pin to Top (Unpin while pinned), Copy Context, Deposit and Clone, or the folder the repository is cloned in. A card's top row says what the project is, each fact with its glyph and, on hover, a title naming its kind: Lead ("Role: Lead"), its Focus lane ("Focus lane: Review"), its form ("Form: journal article") and its chips ("Status: parked (not being worked)"), a chip carrying `blocked` in red, the year the paper appeared, its manifest's `year` ("Year: 2025"), drawn only at a stage that carries both `terminal` and `public` (accepted and published in oculus's words), its code status ("Code: deposited"), Reproduced, each compute resource ("Compute: " and its name), and last the name of the project's folder, its whole path in its tip, which opens the folder. Under it come the labelled lines: WAITING ON, a red tag with the waiting glyph for each value of `waiting-on:` (a person opens the Person view, a project opens it, and a value that names neither is shown as written), and BLOCKED in red while a chip carries `blocked`, each drawn when it holds, then Funding, Pillars, Datasets, Team, Related, which holds only the related projects the strip at the card's foot does not draw, and Venue, which reads the icon of the venue's tier in the tier's colour, the tier its tip on hover and, since the icon takes a tab stop of its own, on keyboard focus as well, then the venue's name, quartile and JIF; the venue's cost is on the Venues view. A venue with no tier, or a tier its hub's `venue_tiers` lacks, takes the row marked `assignable: false`, `unrated` in oculus's list, and no row when the list has none. A venue left with no row, and one whose row names no glyph or a glyph the glyph catalog lacks, draw the venue glyph, as `unrated` does. The ELI5 follows, and NEXT, the first sentence of `next`, drawn the same way. At the card's foot is the strip of the projects it is related to, one group per row of `categories:` that holds one of them, in the rows' order (by default in review, in flight, idea, publications, other outputs and released), then "other" for the projects in no row; each group is headed by its row's label in the row's colour with its count, carries the warning mark while one of its projects is blocked, and opens to its projects by stage. A project in dead-ends is left out of the strip and stays on the Related line.
-- **A record card.** Every card of a record is drawn the same way: a project, an entry of a collection, a venue, a dataset, a domain, a pillar line, a lead, a Lit Watch paper, a LinkedIn post, an inbox thread, a Literature search hit, and the Archival, Orphans and No funding cards.
-  - The head is the title, which opens the record's page where it has one, then a row of the record's hub mark, its chips and tags, the strip of at most three actions drawn under the pointer, and "...". The strip and "..." stay beside the chips when they all fit, and otherwise lie over the card's top right corner, so the card does not grow under the pointer.
-  - The "...", a right-click on the card, and the context menu key or Shift+F10 on one of its controls open the menu. A card with no action has no "..." and no menu of its own.
-  - The menu lists every action of the card in runs, each drawn only when it holds a row. Open holds Page, Folder, Show in Files (one row per path of an entry), Workbench, Presentation, then the record's own openers, such as the posting, the paper, the provider's page and the PDF. Add holds Follow-up, Subtask and Deadline. Status is a submenu of the statuses the card may write, the one in force ticked. A run with no heading holds Ask, Edit Manifest or Edit, Edit in File, Pin to Top or Unpin, Copy Context, Deposit, Clone, the record's own actions, then Archive and Delete last; each that asks first asks.
-  - The body draws, each when the record fills it, the facts row, the labelled lines, the text, the record's own blocks, the Subtasks, the Follow-ups and the open add form. An entry, a venue, a dataset, a domain and a pillar line list their Subtasks and Follow-ups on the card; a lead and a Lit Watch paper list them on their page, and their card in the feed draws the add form alone. The add form's buttons read Save and Cancel. A venue's deadline tag reads as an entry's. The foot is the strip of the projects the record lists, grouped as a project card's strip is: one group per row of `categories:`, "other" last and dead-ends left out, each project filed under its own hub's rows, and the projects of several hubs on one strip standing in the order of every hub's rows. A person's card draws one strip per row of `roles` whose field is `lead:`, `supervisors:` or `collaborators:` (Lead, Supervisor, Collaborator), each headed by the role's label and holding the projects that name the person in that field, and a role with no project draws none; an organisation's card lists the projects whose team holds a person affiliated to it, and a resource's card the projects whose `compute:` names it. The Archival card's strip has one group per stage, its projects in the order of the snapshot, and opening one stage closes the other.
-  - The strips: a project has Ask, Open Workbench and Open project page; an entry Open Workbench at its folder and Page; a venue, a dataset, a domain and a pillar line Page; a lead Applied and Page; a Lit Watch paper Dismiss (Restore while dismissed) and Page; a LinkedIn post Mark posted while an idea, and Edit; an inbox thread Draft reply, Triaged (Restore once triaged) and Archive. On a record's own page Edit stands where Page stood. A card of the Career page has Edit. A Literature search hit has none, its Open PDF, Copy BibTeX, Add to Lit Watch and Save to Literature drawn in its top row. Archival, Orphans and No funding have none; their title opens a page listing their projects as closed project cards.
-- **The project page.** Its card draws the project's blocks in two columns: STATUS, LATEST, NEXT (the whole `next`), RESULTS, OUTCOME and IDEAS / AVENUES on the left, REPRODUCED, DISSEMINATED IN, FILES, SUBTASKS and FOLLOW-UPS on the right; in a pane too narrow for two columns the right column goes under the left. The FILES block lists the files of the extensions in `file_index.ext`. On the project page the card has no Open project page action, and its title opens the project's tab.
-- **A project's team.** A card's Team tags and a board list's With column name the people of the project's `lead:`, then those of its `collaborators:`, then those of its `supervisors:`, by their names in the people file and without you, the person `self` names; the With cell reads "with" and the names. A project whose team is only you shows no Team tags and an empty With cell. The Map's team toggle draws the same people, and the search finds a project by any person of its team, you included.
-- **Boards, categories and roles.** A project shows on every board of `boards` in `config/defaults/layout.yml` whose keys it meets (its `tier`, your `role` on it, its `stages`, `chips` and `forms`, its `hub` and any `match` field), and opens from elsewhere on the first of them. Each key of `boards` is a view of its own, listed in that order in the group of the rail entry carrying `project_boards: true` (Projects in oculus's rail), its tab named and drawn by the text-catalog words its `label` and `glyph` name by their dotted keys (`views.projects` and `views.projects_glyph` for Projects). A board naming no `label` or `glyph`, or a word the catalog lacks, is a finding naming the board and the field, and the board is drawn with its key in place of a label and the glyph `views.board_glyph` names. A key that is the id of another view or the key of a collection is a finding naming the board, and that board is not listed. A board added in Settings appears in its group as the page runs, and a board taken out leaves the rail, the catalogue and its open tabs. Your role on a project is the first row of `roles` in `vocab.yml` whose field holds the person with `self: true`: Lead (`lead:`), Supervisor (`supervisors:`), Collaborator (`collaborators:`), and Other for a project that names people but not you. A project's category is the first row of `categories` in `vocab.yml` that holds it: in review, in flight, idea, publications, other outputs, released, dead-ends. Every row names its `color`; a row naming none is a finding and is drawn with no colour. The cards and the list draw one section per category the board holds, in that order, each under a heading of the fold control, the category's label in its colour and its count, the projects in no category under "other" last; a press on a heading's fold control folds its section, the board remembers the folded sections, and a heading stays at the top of the pane while its section scrolls under it. Inside a section, on a board and in the Awaiting box's tab alike, the pinned projects come first, and the pinned and the unpinned each follow the category's `sort` in `vocab.yml`, a list of `stage`, `year` (newest first, no year last) and `title` read left to right: publications and other outputs go by stage, then newest year, then title, and every other category by stage, then title; a `sort` of another word or kind is a finding naming the row, and the row then goes by stage, then title. A deck's group orders the decks it discovers by the same `sort`, its categories in the order of `deck_order` in `vocab.yml` (Present, below). A board's `cards: grid` draws one section with no heading instead, its cards pinned first, then by stage, then title. The slices of the bar's second line split the same categories by stage, or by form for publications and other outputs. While a person has `self: true`, each board draws the Role group, which counts the cards under each role, and a Lead badge on a card you lead, and a project board draws the Mine only toggle, on by default, which keeps the projects naming you in `lead:`, `collaborators:` or `supervisors:` and those naming no one; on a board where every project is kept by it, it is drawn disabled, its tip saying every project here is yours, and is not applied. A collection whose `schema:` declares `lead`, `collaborators` or `supervisors` draws the Mine only toggle, on by default, the Role group and the Lead badge over its entries, and, while the workspace has more than one hub, its bar draws the Hub group after the Role group (a collection's bar is described above). A project no board takes, a manifest without `lead:` and a project with a `tier` that is no word of `tiers` are findings.
-- **A project board's bar.** It has two lines. The first holds the search, the stale toggle, the deadline toggle with how many of the board's projects carry a deadline ("deadline 3"), the waiting toggle with how many of them wait on someone or something ("waiting 1"), which keeps only those projects, Mine only while a person has `self: true`, then a button for each group that has values: Form, Situation (the project's chips), Role, Year, Domain, Venue, Waiting on and, while the workspace has more than one hub, Hub, which lists the hubs, the primary first, and keeps the projects of the hubs picked (a project's hub is the hub it was read from; with one hub the group is not drawn and a hub picked earlier hides nothing), then More, which holds Tier (the project's `tier`, each by its label in `tiers`, in that order), Pillar, Funding, Datasets, Compute, Reproduced, Code and Sessions. Waiting on lists each person and project the board's projects wait on, each once by name, and each `waiting-on:` value that names neither as it is written; picking values keeps the projects that wait on any of them. A button reads its group's name, or, while values are picked, the first of them and how many more ("Form: journal article +1"); More reads how many of its values are picked. The buttons that do not fit in the line's width move into More, the last first. The second line holds the slices: for each category the board holds, its label in small capitals in its colour, then a chip per stage of its projects, or per form for publications and other outputs, with its words and its count ("journal article 9"). A press on a slice picks it or takes it out, and a press on a category's label picks every slice of it, or takes them all out when all are picked; the slices that do not fit fold into a "+n" button that lists them and reads how many of them are picked ("+5, 1 picked"). The line ends with how many projects the board holds ("16 projects"), or how many are shown while a filter, a toggle or the search hides some ("5 of 16 shown"), and, while a value is picked, Clear all, which takes every picked value out, the slices included, and leaves the search and the toggles as they are.
-- **The group lists.** A group's button opens a list with a search field at its top, then the values, each with a dot in its colour, its words and its count, the picked ones ticked. Typing filters the values by their words, the arrows move, a press or Enter picks or unpicks a value and the list stays open, and Escape or a press outside closes it. More's list heads each group with its name, and the Venue list draws a bar behind each count, as long as the count against the largest. A pick keeps the projects at any of the picked values; with nothing picked in a group, that group keeps every project. A picked value is drawn filled in its colour: a slice in its stage's, a slice of publications or other outputs in its category's, a domain or a pillar in its own, any other value in its group's.
-- **The counts.** Each value's count is how many projects the search, the stale, deadline, waiting and Mine only toggles and every other group leave at that value, so a group's own pick does not change its counts. A value the other filters leave no project for reads 0 and keeps its place, and a picked value no project holds any more is listed at 0, so it can be taken out. The counts on the controls are taken over the board's projects before any filter: the deadline toggle's, the waiting toggle's, a red badge on Situation with how many projects are blocked ("2 blocked"), and an amber mark on Venue while a venue has at least `venue_conc_warn` of `focus:` projects at a live stage, its tip naming the venue ("BSPC: 5 live projects, the warning is 4").
-- **The list.** In list mode each section is a table of its own under its heading, each row one line high, a cell cut short showing its whole text on hover. The columns are the board's `columns`, by default Project, Stage, Venue, Lane, Next (the first sentence of `next`) and With; the Columns menu in the header shows or hides any of them and Domain, Pillar and Funding, Project always shown, and the board remembers the choice. The columns that do not fit in the list's width are left out from the right, so nothing scrolls sideways.
-- **The board's header.** After New project come Cards and List, the one in force pressed, Full titles, pressed while the cards and rows show full titles instead of short handles, and, in list mode, Columns.
-- **Personal and Software.** A personal or software project has the same card as any project. A repository is a project once it is a folder of the workspace holding `.oculus/project.yml`. When the manifest's `repository.url` is not cloned anywhere, the card offers Clone.
-- **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`. Its Zenodo section sends `code/` to Zenodo: For review sends an anonymised copy, each term of `code_availability.anonymize` replaced in the paths, the text files, the title and the description and the author Anonymous, its files open only through a share link; Publish sends the real files and authors, public, as a new version of the concept the `doi` names or a new record. Both ask first, need the `downloads` row `zenodo` of the primary hub's `.oculus/local.yml` (the row `deposit.zenodo.auth` names), and write `doi`, `zenodo_status`, `zenodo_date` and, for review, `review_link` into the manifest; a binary or compressed file holding a term refuses For review by name. For review of a Zenodo `doi` with no `zenodo_status` goes on only when the latest version of that record is the anonymous review copy, and is refused otherwise. Cancel ends a press up to the publish and deletes its draft; once the publish is sent the press runs to its end. A failed publish reads the draft first: a record Zenodo has published keeps its DOI, written to the manifest, and only an unpublished draft is deleted.
-  - `deposit.zenodo` in a hub's `.oculus/config.yml` sets, for that hub's projects, the address every Zenodo call is built from (`address`, Zenodo's API by default, such as its sandbox for a trial), the seconds one upload is given (`timeout_s`, 600) and the token's header (`auth`); a hub that sets only `address` keeps the rest.
-- **Map.** The pillars and the projects, linked by pillar membership and by directed related edges: a one-way edge has one arrow, from the manifest that lists the other, and a mutual edge, where each manifest lists the other, has two arrowheads and its own colour. The layout is Graphviz's neato. Press a node to fix it, drag to move it; re-tune lays the map out again from another start. A press on a project opens its project page. The map fills the pane. A link drawn in link mode, a project added or taken away and a pane resized leave the other nodes where they are; a new project is placed beside the nodes it links to. A label with no room on the right of its node sits on its left. A label that would cross another label, a node or a line, or that would be cut by the pane's edge, shows when its node is hovered or focused. The Map's bar has a project board's two lines. The first holds the search; Show, which lists Projects, Pillars and Team (the people of the projects' teams, you left out), each ticked while its kind of node is drawn and counted by the nodes of its kind it draws, and Connected only, which leaves out a project with no membership of a pillar drawn; Mine only while a person has `self: true`, off at first; then Stage, Form, Situation, Role, Year, Domain, Venue, Pillar, Tier and, while the workspace has more than one hub, Hub, the buttons that do not fit moving into More, which holds the board's other groups. Stage lists every stage a project is at, in its colour; with none picked the map draws the projects at a stage that does not carry `terminal` and the projects with no stage, and with stages picked the projects at those. A Pillar pick keeps its projects and draws only the pillars of the keys picked, every hub's. With Projects off, the pillars and the team the kept projects reach are drawn without edges. The second line holds the slices, how many projects the filters keep ("4 of 5 shown" while a project is at a terminal stage), and, while a value is picked, Clear all, which takes every pick out and leaves the search, Mine only and Show.
-- **Data.** The datasets of the file the `data` entry of the hub's collections list names, with their provenance and the sources each comes back from. The bar ends with how many datasets there are and their access summary, as in "4 datasets (2 open | 2 credentialed)". A card shows the dataset's folder (`path:`), its notes and how it comes back. A set whose sources are all of kinds its hub's `recover.sources` rows name has a Recover control, and a source of a kind no row names says so on the card; a library set, a set to ask its owner for and a set built from another show the call, the contact, or the sets and the script instead.
-  - Recover opens the dataset's Recover view beside the Data view. Choose This Mac or one of the clusters of `slurm.resource`, by its name, at the top; the folder and its free space are shown there. When the cluster does not answer over ssh, the view says so and offers Retry.
-  - The plan lists every file the sources list, with its size, its checksum and its state: verified, present, partial, different or missing.
-  - Fetch downloads every missing, partial or different file, and a partial file resumes. The row's own Fetch downloads that file alone.
-  - Fetch is disabled until access is set up for a source whose row's `auth` needs a `downloads` row: add the row the view shows, as its help says, under `downloads:` in the primary hub's `.oculus/local.yml`.
-  - Verify checks every file against its source's checksum. Unpack opens the archives of a source marked `unpack: true`.
-  - A source can name a `folder` inside its archives: Unpack places only that folder's contents in the archive's folder, and an archive without it is not unpacked.
-  - An archive 7-Zip ends with an error is not unpacked, and the log names the code; a 7-Zip warning is logged and the archive is unpacked.
-  - Stop ends this dataset's run. A run goes on when the view or the window closes; open the view again to see it.
-  - While a run goes the view follows it live: the server pushes its state, the bytes its folder holds with their rate and the log, every three seconds on this Mac, with the bytes and rate of each file, and on the cluster once a minute and at each Live HPC poll. The plan, the sources and the access are read when the view opens and again after a press or the refresh control.
-  - The log under the plan lists every request, command and result with its time. On a cluster the download runs on the login node and that cluster's Login node section in Live HPC lists it; Verify and Unpack there are sbatch jobs, and the job of a dataset is kept on this Mac per cluster, in `~/.oculus/recover/<hub>/clusters/<cluster>/<key>.job.json`, so the runs of one dataset on two clusters are followed apart. Unpack on a cluster fetches the official Node build from the folder `recover.node_download` names, `https://nodejs.org/dist/` unless the hub's `config.yml` sets another.
-- **Venues.** The venues of the file the `venues` entry of the hub's collections list names, in one section per row of `venue_categories` in `vocab.yml`, in its order, each headed by the row's `label` and its count, then an Other section for the venues whose category no row names; a section with no venue is not drawn. A row with `ribbon: true` draws the month ribbon of its venues' deadlines and meetings over its cards (oculus sets it on Conferences). The months of a ribbon are approximate, since a call and its dates move from year to year. A section folds as every group does (Groups, above), and a folded section shows no cards and no ribbon. With several hubs the rows are the union of every hub's, each key once with the first hub's row. A card draws the venue's fee and open-access status from its `fee` and `open_access` fields. Read from the browser, in a card's menu, asks the hub's journal browser by the venue's first ISSN, then by the next while no journal answers, and writes the fee and the open-access status of the one journal it finds into the entry, undoable in History; no journal, or several, writes nothing and says so. With no ISSN, or a hub that names no browser asking by ISSN, it is off with the reason.
-- **Journal Browser.** Searches the journal browser of a hub, the row `venues.browser` of its `.oculus/config.yml`, by words, with the filter, the sort and the page size its row offers. Search and More each send one request, and nothing else asks the browser. Each journal shows its title, ISSNs, publisher, fee and open-access status, and Add writes it into the hub's venues file as a new entry with its name, ISSNs, fee and open-access status, through the venues Add. With no hub naming a browser the view says so and where it is set.
-- **Present.** A deck is a folder with a `present.yml` and Markdown slides (several per file, split by `---`). The [Decks guide](decks.md) gives every key of `present.yml` and every slide kind, each with an example. The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files. Right-click a slide to edit, add, duplicate or delete it; History undoes each. A dropped image is copied into the deck. Export to PDF writes `<name>.pdf` in the deck's folder (in the app; the print dialog in a browser). Notes come from the slide's `notes:` key. A deck whose groups hold project decks draws the Projects board's filter under the toolbar, the same bar and rules over the projects whose decks those groups hold: the search, the stale, deadline and waiting toggles, Mine only, the groups and More, then the slices, the shown count and Clear all. Mine only is on by default where it applies, as on a board. A control that narrows the bar narrows every group of project decks to the decks of the projects it shows, a deck that is no project's left out: the slides a group draws, `{{<group>.count}}`, the summaries, the grids, the legend, the Overview's tiles and counts, the presenter screen, the audience window and the PDF. Line 2 reads "n of m shown" while a control narrows, each project counted once however many groups hold its deck, and Clear all takes every pick out. The controls are the pane's, kept with it when its page comes back and set back as a board starts when it opens another deck, and no control writes `present.yml` or a slide file. A change of the controls leaves the pane on the slide on screen when the filtered deck holds it, and puts it on the first slide when the filter takes it out. Export to PDF holds the deck's export until its print page has the filter, at most 10 s, and a second Export of the same deck meanwhile says an export is in progress (in a browser, the tab it opened closes again), and a browser that blocks the print tab is said to have blocked it; a print page that no pane answers within 5 s says so and prints nothing. The Overview (`O`) shows every slide drawn small, in the order of the deck's `order:`, with each group under its heading, and is where the deck is arranged; every change is written at once and History undoes it. A slide is laid out in its deck's frame, 1280 by 720 px unless the deck's `deck.frame` (`{ width, height }`) or the setting `defaults.frame` says otherwise; the pane, the presenter screen, the audience window and the PDF all draw that frame. A slide with no title of its own (no level-1 heading, or for a project or an idea slide no `title:` and no name from its project or card) is a finding of its deck, listed under Findings for the portfolio deck and the projects' decks. A slide the Present view has drawn taller than its frame is listed under Findings as "slide too tall" and marked Too tall on its Overview tile, until it fits, leaves the deck or the page is reloaded.
-    - Press a slide's tile to show that slide; right-click it for the slide's menu and the arranging acts.
-    - Drag a tile, a placeholder or a group's heading to move its entry of the order; drop it on a group to put it before or after that group.
-    - Drag a deck's tile within its group to move it, or onto another group to move it there; Move Earlier and Move Later in the menus do the same from the keyboard. While the filter narrows the deck, a tile moves past the next tile drawn and the decks the filter hides keep their places in the group's list.
-    - Remove from Group takes a deck the group names out of it; a deck the group found by discovery has no such item.
-    - The Add tile at the end of a group lists the decks its rule finds that it does not hold; pick one to add it.
-    - A group shows the decks its `slides:` names first, in that order, then the decks it discovers in the deck order: category by category in the order of `deck_order` in `vocab.yml`, then the categories it leaves out, inside a category by the row's `sort` and then the board's own order, stage then title (Boards, categories and roles, above), then the decks in no category, by folder. A deck reads no pin: a pinned project's deck is placed as any other.
-    - A group's heading names its decks that are missing or that another group also finds, and the sentence under it says what its rule finds; Edit Rule sets the group's Find and Discover, written at Apply.
-    - Edit, beside the deck's title, sets the deck's title and tag tones, written at Apply.
-    - An entry that places no slide is a placeholder tile naming what is wrong; a deck that draws no slide is a title tile.
-    - A slide of a project's deck carries a strip of the project's facts at its foot, in the pane, the presenter screen, the Overview's tiles, the audience window and the PDF.
-    - The strip shows each of form, stage, status chips, domain, pillars, datasets, lead, supervisors, collaborators, year, venue, funding, compute, code, reproduced and tier that holds a value, in the words of the project card: a small muted capital label, then the value, with no box, under a thin rule.
-    - The form, the stage, the status chips and the domain carry their hue as a dot before the value. The strip shows the stage as it is, `failed` and `stopped` included.
-    - A list shows its first entry and how many more ("Maryam Amir Haeri +2"), and a value too long for its room is cut with an ellipsis; the tooltip gives the whole fact.
-    - The strip runs across the slide's whole width and wraps to as many lines as its facts need, so every fact is shown; the slide's content takes the room above it.
-    - A project's domain, on its slides, its strip, a legend, a summary row and a grid card, is the one its manifest's `domain:` names in its own hub, else in the one other hub of the workspace that holds that key. A key no hub holds, the empty `domain:` among them, names no domain: it is the finding of the manifest's `domain:` line under Findings, and the project's slides are drawn in the neutral tone.
-    - The Project facts toggle in the toolbar, drawn while the slide on screen comes from a project's deck, shows or hides the strip's words in the pane and its presenter screen, audience window and PDF.
-    - The toggle is on by default, kept with the pane and when it opens another deck. The strip keeps its room while hidden, so the slide's layout and its Too tall finding do not change with the toggle.
-    - `{{project.<field>}}` in a slide's text, front matter included, is filled from the manifest of the project whose deck holds the slide, in the strip's words, every entry of a list joined with ", " where the strip draws the first and a count, spaces inside the braces allowed.
-    - The fields are `form`, `stage`, `chips`, `domain`, `pillars`, `datasets`, `lead`, `supervisors`, `collaborators`, `year`, `venue`, `funding`, `compute`, `code`, `reproduced` and `tier`.
-    - A field with no value is filled with nothing. A name that is no field (`{{project.Venue}}` among them), or a placeholder in a deck that is no project's, stays as written. Each is a finding of the slide's file.
-    - `{{project.count}}` stays the count of a group named `project`. In a deck with no such group it stays as written, with the count's finding alone.
-- **Literature search.** Sends the query only to the sources that are on, the rows of `literature.sources`, oculus's eight laid over by the primary hub's `.oculus/config.yml` by `key`, in their order. Results with one DOI, PubMed id or arXiv id merge, each field taken from the source `literature.prefer` puts first. A paper's address and its PDF come from the `links` rows; a link whose row is missing is not drawn. Copy BibTeX writes no file. Add to Lit Watch and Save to Literature are the writes.
-- **Literature.** The papers kept, one entry each, keyed by citation key: the first author's surname, the year and the first word of the title (`faes2024blockterm`), with `b`, `c` and on added when the key is taken. Save to Literature on a Literature search card and on a Lit Watch card writes the paper to the Literature file of a hub that holds one, named in its settings or at the engine's path: with more than one, the button opens a menu of those hubs, the primary first, and the hub picked takes it; with one, the press saves there. It says under the button what the save answered, and is undoable in History; a card whose paper any of those hubs holds reads In Literature. A paper with the DOI of one already kept, or with the title of one when either has no DOI, is refused. Add asks for one value: a DOI or its doi.org address, an arXiv id or address, or a PubMed id or address is looked up through the sources the search asks and saved, and any other address is saved as it is with a key made from its last path word. When every source fails nothing is saved and Add names them; an empty answer asks for the new entry's key, as Add does on every collection. A venue that names an entry of the venues registry opens it. Copy BibTeX on an entry, and in the toolbar for the entries shown, fetches each entry's BibTeX by DOI or makes it from the fields, under the entry's own key, and says how many were copied and which were not.
-- **Lit Watch.** The new papers that touch the active and the manuscript projects, each in a bucket of `radar_buckets` in `vocab.yml`, one group per bucket under its glyph, its label and its colour: oculus's list is Pre-emption risk, Idea sparks (the cross-pollination tied to the ideas folder), Cite / baseline and Adjacent. The bar ends with how many papers are tracked and the date of the last sweep. Running Lit Watch from the Update tray sweeps again. Dismissed holds the papers dismissed.
-- **Pillars.** The research lines of the file the `pillars` entry of the hub's collections list names, and the projects on each: a project is on a line when its manifest's `pillars:` names it. The lines are drawn in one section per row of `pillar_kinds` in `vocab.yml`, in its order, each headed by the row's `label` in its colour with its count, then an Other section for the lines whose `kind:` names no row, a line with no `kind:` among them. Oculus's list is Pillar, Provisional (a candidate line not yet promoted to a pillar, drawn apart so it is seen without counting as one) and Off-pillar (work outside the current programme, kept as an explicit marker so it does not read as an orphan). The Orphans card is drawn in the first row's section, and the Archival card, while a project is archived, in the Off-pillar section, or under Other when the list holds no `offpillar` row. An off-pillar line's card is muted and carries no in-flight or venue-tier counts.
-- **Domains.** The projects by application domain, the field, in the colour of their cards, from the file the `domains` entry of the hub's collections list names. Pillars group the same projects by method.
-- **Person.** The page draws the person's card, then the projects of whose team they are and the projects waiting on them, each as closed project cards, then a student's supervision folder. Edit on the card opens the editor; a person of a people file with no `schema:` has no Edit. The "this is me" button, in the toolbar beside Delete, marks who you are. It is pressed on your own person, and pressing it on another person writes that person's key to `self` in the primary hub's `.oculus/local.yml`, undoable in History; the file is made, at mode 600 and named in `.oculus/.gitignore`, when it is not there. The key is read from the primary hub first, so a person of another hub is marked by it only when the primary holds no person of that key and no third hub holds it; on any other person of another hub the button is disabled and its tip says which person the key names. With no primary hub the button is disabled. The This machine row `self` in Settings sets the same key from a list of the people, and clears it.
-- **Position Leads.** Academic openings, scouted automatically (BE/NL/LU); a card's fit chip is strong, moderate or reach. The bar ends with the count of the live leads, and Expired / actioned, which starts folded, is headed by the count of the expired leads. Applied, in the card's strip and in its menu's Status submenu, opens a new Applications entry filled from the lead and marks the lead applied. When more than one hub holds Applications, Applied opens the menu of those hubs, the primary first, and the entry goes to the Applications file of the hub picked. Decline, in the Status submenu, marks it declined; Reopen undoes that. Each control writes the one status of the hub's `lead_statuses` carrying its flag (`lead_applied`, `lead_declined`, `default_lead`), and is drawn disabled, its tip saying why, while no status carries it or two do (a finding naming both). The declined toggle holds back the leads whose status carries `lead_declined`: `declined` in oculus's words; `dismissed` carries only `lead_closed`, so a dismissed lead is off the radar and the toggle does not hold it back.
-- A lead card's deadline line prints the lead's `deadline` day, Rolling for a posting that reads applications as they arrive (`rolling: true`), or both, the day first and the two parted by " | ". A live lead with neither prints no line, and an expired one prints "no deadline". A lead with a day goes to Expired / actioned once the day has passed; a rolling lead with no day stays live until it is closed.
-- **Inbox.** Send and Archive are the only writes to a mailbox, each after a confirmation. No draft is made at the provider. Refresh now, here and on the Calendar, turns its glyph until that refresh answers.
-- **LinkedIn.** One file per post in `linkedin_dir`. Add asks for a title and a category and opens the new file. Mark posted on an idea renames it to the next number and sets its `date:` to the day you press it and `publish:` to `True`. A card's title opens the post's page, with its body rendered, and Mark posted there moves the tab to the numbered file. Edit opens the text file. A post whose file is gone says so.
-- **Sessions.** The Explorer's third tab. A fold headed Sessions holds the list, at most ten rows tall and scrolled inside itself; under it stand the sections of the session picked, then Customizations, and the pane scrolls them all. A row is one line: the session's state as a dot, its title, how long ago it moved, with its agent, model, files and prompts in its hover words. A terminal row has the same height, with its folder in its hover words. Each group, a workspace or Terminals, is a group row with its count as a badge, and its rows stand one step in. The list is one Tab stop: arrows walk the rows and the group rows, and a press on a group row, or Left and Right, folds the group. A press picks the session and shows it in the page's Terminal tab, and the sections follow; a terminal running a session moves them too, and a terminal with no session leaves them as they were. A double press, or Rename in the row menu, opens the title as a field: Enter writes the title, Enter on an empty field clears it, Escape closes it with nothing written, and the field stays open when the focus leaves it. A line across the whole width of the pane stands between the list and the sections, or Customizations alone when no session is picked. Customizations' kinds are group rows with their counts as badges. The row menu's Open in its own pane opens a Session tab in the documents pane.
-- **Session.** Details, Changes (the git state of the session's folder), Timeline (its turns over time, in a box that follows the newest event while you are at its foot) and Agents (its subagents). A tab that pins no session shows the one it showed before a reload. The Sessions tab and each Session tab keep their closed sections and their order apart. Opening a session again from the list, a card or a notice keeps its tab's closed sections and their order. Details is three folding groups of one-line rows, Session, Model and Usage: a fact's name at the left and its value at the right, cut at the pane's width and whole in its tooltip; a fact with no value is left out, and the context row holds the window's meter. Rename, Pin, Resume and Open the transcript are the controls on the Details head, and Rename, Pin and Resume open Details first when it is closed. Closing Details drops a title typed and not written, a Resume asked once and the row of what the last write or resume answered. Rename opens the title row's value as a field that answers as the list's does. In the Sessions tab, opening Details' field closes the list's and opening the list's closes Details'; a Session tab's Details field stands alone. Pin is a menu of "(scored)", then the areas of the session's workspace, then every project of every hub of the workspace, grouped by hub, whether a session touched it or not, the one in force marked; what a pin, a rename or a resume answered stands in a muted row at the top of Details. Resume asks once and runs on the second press, and is disabled while the session runs. Changes holds two folding group rows with their counts as badges: one over the files the session touched, and The repository. Under The repository stand the branch line, the new-branch field and the commit box, then the change groups the Repositories view draws, with their actions, right-click menus, selection and folders; the control on the Changes head draws them as lists or as folders. Each tab keeps the folds of these group rows, the mode and the selection. A press on an agent row opens that agent's own transcript in a Terminal tab of its own, on Transcript; a row whose transcript cannot be read opens nothing and says why in its tooltip: "This agent's own transcript is not available."
-- **Live HPC.** The clusters are the keys `slurm.resource` of the primary hub's `config.yml` lists, each a `kind: cluster` entry of the resources registry whose `host` is the ssh alias, DNS name or address ssh connects to. This machine's row of `clusters:` in `local.yml` gives the user name and the key file for a cluster, each handed to ssh as an argument of its own; a cluster with no row connects as your ssh configuration says. The view draws one section per cluster, in that order and under its name, each with its own status, refresh, capacity, queue, recent jobs, quota, Login node section and log, and under its head what `ssh -G` says the connection resolves to: the host name, the user, the port and the key files. It runs `squeue`, `sacct` and `sinfo` on each cluster over ssh every `slurm.poll_min` minutes. A failed connection whose error output holds the `match` of a row of `connections.failures`, oculus's six with the hub's own rows before them whose `for` holds `cluster`, or that has no `for`, shows that row's kind and fix; any other failure shows what ssh wrote. Submit Job (on a `.slurm` file) offers one button per cluster: the one cluster the project's `compute:` names is picked at the start, and with none or several you pick one. It shows the plan for the cluster picked (folders, rsync arguments, the `sbatch` command) before it runs, and warns when the script does not use `/local/$SLURM_JOB_ID`. Its glyph turns while the plan is prepared and again while the job is sent. It never uses rsync `--delete`. Cancel runs `scancel` on the cluster the job's row came from, and a job's log is read from that cluster. The status bar's HPC item counts the running and pending jobs of every cluster whose queue is current, its tooltip has one line per cluster, and it is drawn in the warning tone while any cluster's poll failed; the notice of a finished or failed job names its cluster. The Login node section lists the Recover downloads that run on the login node, with the bytes each folder holds and its rate, and follows them live: the same poll reads them, and once a minute while a Recover run on the cluster is followed, so opening the section sends no request. When `squeue` answers and `sacct` or `sinfo` does not, the head says Slurm down with this poll's queue and its time, the queue's controls, the log and the Login node section stay live, and the Recent or Capacity table whose command failed keeps its last rows with "stale, from" and their time in its heading, or "stale, not read since the server started"; the mark stays on that table through later failed polls while the table is older than the queue.
-- **Processes.** Lists terminals, processes matching `processes.patterns`, and app hosts. Stop asks first. Its tab counts the programs it lists as running: the processes in its table and the app hosts that are running or starting.
-- **Usage.** Refreshed every `usage_refresh_min` minutes. Refresh on a Claude account turns its glyph until that refresh answers, and stays shown on its card, turning, until then.
-- **Findings.** The view holds two sections under one search: Files, the errors in the files themselves, and Audit, what the hub is missing. The search reads the name a Files row shows, its key and its message, and the scope, place and message of an Audit row. A Files row whose file lies under a root other than the primary carries that root's chip, and a press on a row's file name opens the file at the finding's line, or shows a folder in Files; a file no root serves stays plain words. Its count on the tab, the rail and the status bar is the file findings and the open Audit findings, whatever the search leaves.
-- **Audit.** The conventions a hub sets under `audit:` in its `.oculus/config.yml` are each off until set, and Settings lists them under Audit checks. Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`, and the finding moves to Muted and leaves the Findings count. A finding of the Website section that a generated file differs offers Write the website, as the Career view's button does.
-- **Memories.** The wall shows the pictures of the memories folder and of every folder under it, by their path in the folder; a folder whose name starts with a dot, and a link to a folder, are not read. Add takes a JPEG or PNG and puts it in the folder itself. The wallpaper folder is read the same way, and `wallpaper:` names a picture by `<hub name>/<file path>`.
-- **Career.** The career file of the primary hub (`career_file`, `.oculus/data/academic/career.yml` by default), drawn as record cards: the strategy card, with the goal, the milestone and its day, the note and the order of work, then one group per list of the career record the website's CV is written from, the positions, the degrees, the awards, the references and the employer CVs' profiles, one card per row, a row the file keeps off the CV tagged so. The strategy card and each list have their own colour, the bar down the card's left edge. The keyboard cursor draws its outline and the card's actions. Edit, on every card and in the toolbar, opens the editor on the file, whose sections are Strategy and the five lists: rows are added, changed and removed there, and Save writes the file. A hub with no career file, or a career file with no `schema:`, draws the line saying so and has no Edit. Write the website, in the header, builds the three files `website.files.cv`, `website.files.papers` and `website.files.industry` name in the folder `website.folder` names from the hub's files and writes them through the Files view's writer, one History record each that Undo takes back, then runs the command `website.cv` names in that folder as a task terminal of the Processes view; the first run of a command text asks for its approval, and nothing is written or run until it is given. The line under the header says the files written and the command's run, running or ended with its status, or why a press was refused: the user not known, `website.folder` empty or naming a folder that is not there, a path of `website.files` that cannot be used, which it names with its key, the last run of the command still running, or a file the writer could not take, which it names, none of the three then being written. While the user is not known or `website.folder` is empty the button is off, its tip saying which.
-- Write the website prints every period in one form: a year as `2025`, a month or a day as its month and year (`Sep. 2025`), the months abbreviated, a span as its two ends (`Sep. 2025 - Sep. 2026`, one end alone when both print the same), and an open end as Current (`Jan. 2026 - Current`). An award prints its period's first day on the website's CV, as its awards read it, and its period text on an employer CV. A record with no `when` prints no period.
-- **Settings.** The header picks the scope, the file the rows write: Workspace (the open workspace file's `settings:`), Primary hub and Hub (a hub's `.oculus/config.yml`), This machine (a hub's `.oculus/local.yml`) and Repository (a folder's `.oculus/settings.yml`, `editor.languages` alone). Each scope draws only the keys its file takes. A change is held as unsaved until Save, Cmd+S or Save All, and a save is one write of the file, its comments and every key it does not change kept, undoable in History; an unsaved workspace asks for a file at its first change. A reader row of `literature.sources`, `recover.sources` and `venues.browser` is a card that shows the fields its row sets, with an Add field menu offering the others, each value nested deeper drawn by a control of its own. A value differing from oculus's is marked Modified, and Reset takes your value out of its file. A list or map is written as you see it, and an entry of oculus's you remove or hide is written as `removed: true` (a list) or `null` (a map), so it stays out. A value whose shape its editor does not draw is said on its row and kept as the file has it. Each heading has Show Defaults, which opens oculus's defaults file to read only. A `downloads` secret is shown as Set or Not set and is never sent to the page. Search takes `@modified` and `@id:`. A list past five entries starts folded under a line with its name and its count, nested lists and maps included. A search draws the entries it finds in a row as the row comes into view, 25 in a row at most, with the lists above them open and a line saying how many more match; an entry you edit stays drawn while the search stands. A press on a fold line under a search folds or unfolds that part at once and stands for that search: new words, or clearing the search, bring the folds you kept back.
-- **Refactor Preview.** Shows a language server's edit before anything is written, one check per file and edit. Apply writes the checked edits; Discard writes nothing.
-- **Problems.** The filter takes comma-separated terms: a word, a glob, or `!` to exclude. A press shows the place in a preview tab.
-- **TeX view.** Follows the LaTeX file in front. A Math Symbol inserts its command. Math Preview (Cmd+Alt+M) renders the math at the caret.
-- **References.** A press opens the location. A location in a library opens a read-only tab.
-
-### LaTeX builds
-
-- A file builds through its root: a `% !TEX root = <path>` comment, else the file itself if it has `\documentclass`, else the main file that includes it, else the only main file of its folder.
-- `% !TEX program = xelatex` or `lualatex` picks the engine; `% !LW recipe = <name>` picks a recipe. Recipes and tools are the options `latex.recipes` and `latex.tools`, with LaTeX Workshop's placeholders, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. `latex.out_dir` and `latex.aux_dir` set the output folders.
-- A build runs in a terminal. A build that would read a `latexmkrc` or run document code (`Rscript`, `julia`, `pweave`, `quarto`, `R CMD Sweave`) waits until you approve it; a changed file asks again.
-- `latex.auto_build`: `on_file_change` (default), `on_save` or `never`. `latex.auto_clean`, `latex.clean_and_retry` and `latex.texcount_autorun` do what their names say.
-- A failed build posts a notice with Open Compiler Log and Show Problems; its errors go to Problems and the editor.
-- The PDF opens in oculus's viewer and keeps its place per file. SyncTeX: Cmd+Alt+J goes from source to PDF, Cmd+click from PDF to source.
-- In a LaTeX tab: hover shows math, pictures, `\ref` targets and package documentation; completion covers environments, sub- and superscripts, `\cite` keys and labels; the editing commands (matching environment, select, toggle display math, close, wrap, promote, demote) are each one undo.
-- texlab serves LaTeX and BibTeX tabs (install with `brew install texlab`). A `.bib` tab has Align and Sort. Citation Browser inserts `\cite{key}`. Count Words runs `texcount`.
-- Format Document uses `latex.formatter`: `none` (default), `latexindent`, `tex-fmt` or `badness`.
-
-## Files and the editor
-
-- The Files view follows the disk within a couple of seconds. Show Hidden Files, Show Ignored Files and File Nesting are toggles of the view, kept per tab. A tab lists hidden files (dotfiles and the build folders) and the files git ignores until its menu turns them off. The file tree of a project card lists neither.
-- A workspace is a file `.oculus/workspaces/<name>.yml` of a hub: `folders:` (each `{ name, path }`) and `primary:`. The template is in [templates](templates.md). With no workspace open, the workspace is unsaved and starts empty.
-- The `...` menu and the palette (`:workspace`, `:workspace-save`, `:workspace-new`, `:workspace-close`, `:folder`) switch, save, make and close workspaces. Each workspace keeps its own pages.
-- Add Folder to Workspace opens the folder panel; Remove Folder takes a folder out. From the palette, Open Folder and Add Folder to Workspace close the palette as the panel opens. Both keep the file's comments and are undoable. Drag folders to reorder them.
-- A folder entry may set `repository_scan_depth` (0 up, -1 for no limit) for the Repositories view.
-- The filter box matches names already read; Fuzzy Match matches letters in order.
-- On a row: Enter or F2 renames, Cmd+Down opens, Cmd+Enter opens beside, Cmd+Backspace deletes, Cmd+C / X / V copy, cut and paste, Option+Cmd+C copies the path. A name with `/` makes the folders between.
-- Show in Files on a card or a link opens Files at that folder or file.
-- The star on a row bookmarks it in `.oculus/bookmarks.yml` of the primary hub. The Bookmarks section lists them: a file bookmark opens the file, a folder bookmark shows it in Files. Bookmarks can be renamed, removed and reordered.
-- An app can add a badge and a colour to a row.
-- Delete moves to the Trash after asking. Do not ask me again writes `files: { confirm_delete: false }` to the open workspace file's `settings:`.
-- A file's icon sits where its sibling folders' arrows sit. `files: { file_icon_at_arrow: false }` in the workspace file's `settings:`, or the Settings toggle Files: File Icon At Arrow, lines it up with their icons instead, as VS Code does.
-- Drag onto a folder to move (Option to copy). Files dragged in from the system upload.
-- Every create, rename, move, copy, paste, upload and delete is undoable in History (Cmd+Z in Files). An undone delete restores files up to 5 MB.
-- Before each save, the old text is kept in the local history (`~/.oculus/history`, 50 copies per file, none over 256 KB). The Timeline section lists those copies and the file's commits; Restore writes a copy back.
-- A single click opens a preview tab (italic); typing, a double click or a second click keeps it.
-- A file locked, too long, not UTF-8, or a version at a commit, opens read-only with a line saying why.
-- Every text file opens in a source tab, unless an approved app's editor is the default for it.
-- A save is atomic and refuses a file with a NUL byte or that is not UTF-8.
-- When the file changes on disk: a tab with no unsaved text reloads it; a tab with unsaved text keeps it and says so, and its Save offers Compare, Overwrite and Revert.
-- A deleted file keeps its tab, struck through; Save writes it again.
-- `editor.autosave`: `off`, `after_delay` (`editor.autosave_delay_ms`) or `on_focus_change`.
-- On save: `editor.trim_trailing_whitespace`, then the language's `format_on_save`, then `editor.final_newline`. One Cmd+Z undoes all of it.
-- Indentation, word wrap and rulers come from, in order: the tab's own choice, the file, the repository's `.oculus/settings.yml`, `editor.languages`, the global keys. The template of `settings.yml` is in [templates](templates.md).
-
-### Notes
-
-- Notes are Markdown files in each hub's `.oculus/notes/`. The Notes section lists every hub's notes, one group per hub, with folders; `attachments/` shows as a folder and `order.json` (the order of the list) is hidden.
-- New Note and New Folder on a group write into that hub; New Note on the head writes into the primary hub. A hub's notes folder is made with its first note.
-- A note's name is its file name without `.md`. A name is refused when it is empty, starts with a dot, is over 200 characters, or holds a control character or one of `/ \ : [ ] # ^ |`. Two names that differ only in letter case or in how an accent is encoded are the same name.
-- Rename (F2), Move to Trash, a drag onto a folder and Undo work as for any file. Alt+Up / Alt+Down or a drag reorders notes in a folder; a note not yet ordered is listed first.
-- A note saves itself 800 ms after the last edit (`notes.autosave_ms`), whatever `editor.autosave` says, and closing its tab saves it first.
-- `[[name]]` links to a note of the same hub (`[[folder/name]]` when two folders hold one name), `[[name#heading]]` to a heading, and `[[name|words]]` shows the words. A link to a missing note is drawn dashed, and a press makes the note. A link never reaches another hub, and `[[...]]` in code is text.
-- The Markdown server completes note names after `[[` and headings after `#`, goes to a note, and lists the links to it. Renaming or moving a note rewrites every `[[...]]` that names it in its hub, each in History; it is refused when a note it would rewrite is open in another page.
-- `![[picture.png]]` shows a picture from the notes folder, `![[name]]` the text of another note, and `![[name#heading]]` that section. Inside a line of text the embedded note is shown as plain text, its other blocks as their source. An embed of its own note stops at the second level.
-- A pasted picture is saved to `attachments/` as `Pasted image <yyyymmddhhmmss>.<ext>`, a dropped file under its own name, and `![[<name>]]` goes in at the caret. Files over 32 MB are refused.
-- A tag is a `#word` in the text (letters, digits, `_`, `-`, `/`; not only digits; not in code, a link, a heading mark or an address) or an entry of the front matter's `tags:`. The Tags section lists every tag with its count, nested on `/`. A press on a tag opens Search over the notes of every hub, listing each place the tag stands.
-- A note's front matter runs from a first line `---` to the next line that is `---` or `...`, either line allowed to end in spaces or tabs; a note without that closing line has none. The preview, an embed, the Outline and the tags all take the same lines as front matter, except that the tags skip a byte-order mark before the first line, as the Outline does while no Markdown server serves the note, and the preview and an embed do not, and that in a note whose lines end in a carriage return alone the tags, and the Outline while the Markdown server serves the note, read front matter that the preview and an embed do not.
-- On a note you can edit that has no front matter, Markdown: Add Front Matter in the palette, on the tab in view, and Add Front Matter in the tab's menu, once the tab has been shown since the page loaded, write `---`, `tags: []` and `---` at its top as one edit that one Undo takes back; a note with front matter and a file that is no note are not offered it.
-- Backlinks lists the notes of the same hub that link to the note in front, with the lines that hold the links.
-- The Notes Graph view (in the catalogue, or Graph on the Notes head) draws every note as a node and every link between notes as an edge; a press opens the note, and the menu filters to one hub.
-- A code block of a rendered Markdown document has a Copy control at its top right, which puts the block's text on the clipboard and says Copied.
-- In every Markdown preview, and in the text fields cards draw from a hub's files (a pillar's blurb, a venue's scope, a dataset's description), `$...$` and `$$...$$` are typeset with KaTeX. A formula KaTeX cannot typeset shows as red source. `$` in code and amounts like `$5 and $10` stay text.
-
-### Language servers
-
-- Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) are served by a language server per folder. It stops 60 seconds after the last tab closes; the Markdown server a move in the Files view starts to update links, with no Markdown tab open, stays while the page is open and stops 60 seconds after the page closes. Restart is in the status bar's language menu.
-- A server gives hover, go to definition, references, completion, signature help, diagnostics and the Outline; format, organize imports and hierarchies where it offers them. clangd also gives inlay hints, inactive regions and Switch Source/Header.
-- pyright uses the repository's `.venv` or `venv`, else `python3`, else `:interpreter`. A repository's own interpreter runs only after you approve it.
-- clangd uses the compile database the status bar names: a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml` (template in [templates](templates.md)). The compile database item's palette lists Edit Configuration and Delete Configuration for each configuration of `.oculus/cpp.yml`, and Add Configuration, each a form of the fields `cpp-schema.yml` gives.
-- The Svelte server runs a repository's `svelte.config.*` and `vite.config.*` only after `:svelte-config` approves them.
-- The YAML server checks a hub file against its schema: undeclared keys, wrong values, keys that name nothing, missing required fields. `local.yml` is checked against the options catalog.
-- The Markdown server marks links to missing files and renames a heading with its links. After a move in Files, it offers to update the links that broke, as a Refactor Preview. It also serves the notes in each hub's `.oculus/notes/`, and no other file under a dot folder.
-- A definition outside the workspace opens in a read-only library tab.
-- An edit a server makes to other files is one History record. It is refused whole if a file it names is open in another page, outside the workspace, in `secrets` or `~/.oculus`, over 5 MB, or changed on disk, or if it creates, renames or deletes a file.
-- Apps can add languages and servers ([Apps guide](apps.md), The tools). When oculus and an app both serve a language, their lists are joined, and single answers come from oculus first.
-
-### Hub keys in YAML
-
-- In a hub YAML file, a value whose schema field has `foreign_key:` is a link to the entry of that collection whose primary key (the field its schema flags `primary_key: true`) holds the value: Cmd+click opens the entry, Find All References lists every place that names it.
-- F2 renames a key in every file, after a Refactor Preview. It is refused for a project's folder name, a vocabulary word, an empty or taken key.
-
-### Linters
-
-- ChkTeX (`.tex`), Ruff (`.py`), ESLint (TypeScript, JavaScript, Svelte) and ShellCheck (`.sh`, `.bash`, `.slurm`) run on the saved file, never while typing. `lint.chktex`, `lint.ruff`, `lint.eslint`, `lint.shellcheck` and `lint.writing` switch them.
-- The `lint.*_path` keys set where a program is. ESLint is the repository's own and runs only after you approve its configuration in `:eslint-config`.
-- The writing rules warn on Markdown, YAML and comments: `em-dash`, `en-dash`, `curly-quote`, `ellipsis`, `arrow`, `nbsp`, `wrapped-paragraph`. `lint.writing_skip` lists globs to skip and `lint.writing_glyphs` globs of files where arrows are allowed; both are settings of the hub, empty until its `.oculus/config.yml` sets them. Fix All Writing Problems in Folder fixes many files at once, as one History record.
-- A finding with a fix offers it in Quick Fix (Cmd+.), with Show documentation and a comment that silences it.
-- The status bar shows `not found`, `failed`, `timed out` or `not approved` for a linter that did not run.
-
-## Searching the files
-
-- A pattern runs on Enter. `word`, `case` and `regex` decide what it means; without `case` it ignores case.
-- It searches the workspace's folders with a local ripgrep. It skips ignored and hidden files, `node_modules`, `.git` and files over 2 MB. Find in Folder (Files menu) limits it to one folder, which is searched even when hidden or ignored. The notes in each hub's `.oculus/notes/` are searched too, listed under their hub; nothing else under a root's own `.oculus` is.
-- `search.max_hits` and `search.timeout_s` limit it. A line with two matches is two rows.
-- A running search draws a moving line above its results until it answers, in the Search view and in the Literature search.
-- Replace: in regex mode `$0` to `$99` are groups, `\n` and `\t` escapes, and `\u`, `\U`, `\l`, `\L` change case. Preserve Case keeps the match's capitals.
-- Replace All asks first. A file changed since the search, locked, binary or open with unsaved text is skipped and named. The whole replace is one History record.
-- With the replace row shown, a press on a hit opens its Replace Preview, a diff beside the Search view.
-
-## Terminals
-
-- A Terminal tab holds terminals running Claude, Codex or a shell, in tmux, so they survive a server restart. A new tab shows the composer: workspace, agent, account, options, first prompt.
-- New worktree, beside the composer's branch, is offered for a folder inside a repository Source Control watches. Type a name: Start makes `<root>/.agents/worktrees/<name>` on a new branch, as Source Control's New worktree does, then starts Claude, Codex or the shell there, in the same subfolder (a project's folder starts in that project's folder of the new worktree). Esc or a second press takes the choice back. A refused name or write starts nothing; a worktree made whose start failed stays picked, so Start again starts there. The folder list offers the folder the composer was opened in, and the new worktree's folder once it is made, until a start from that composer lands, even when no place lists either.
-- An option that makes the agent ask less (Accept edits, Auto, Bypass permissions, Full access) asks first, every time. A value of `catalogs/agents.yml` with `confirm: true` asks too.
-- A start from a hub task (a task's `agent` button, Start Agent) opens the composer in the task's folder with the task as prompt. The task's text runs only after Approve and Start, kept in `~/.oculus/approvals.json`; a changed text asks again.
-- Once an agent runs, the steer box sends more text and Stop interrupts.
-- An agent typed in a shell terminal is detected from the process table within five seconds: the terminal takes the agent's icon and title and gains the steer box, and loses them when the agent quits. Send after a quit, while the list has not caught up, types nothing and says no agent is running.
-- A terminal running a session has Live and Transcript on its bar. Live draws the grids and Transcript the session's turns, with one steer box under them and Jump to the last turn in the header; the grid comes back with its text when you press Live.
-- A press on a session shows its terminal, on the choice the tab has. Open the transcript shows it on Transcript. A session with no terminal opens in a Terminal tab on Transcript, read-only, with Live disabled until the session has a terminal; a press on another session reuses that tab. New in that tab starts a terminal there and leaves the session. A prompt you typed in a tab that went on to read a session comes back: New on that page goes to that tab first.
-- A tab on Transcript stays when its last terminal ends and goes on reading that session. A tab on Live closes, unless it is pinned: a pinned Terminal tab left with no terminal stands, shows its composer and takes the next press.
-- In Transcript a person's turn carries the accent bar and opens an exchange, an answer reads as a document, and tool calls are muted.
-- A right-click on selected text in Transcript offers Copy, wherever in the list of turns the selection started.
-- Transcript opens on the last turns of the session. Older turns load as you scroll up, and what you are reading stays where it is. When a read fails, the line at the top says why, and Try again on that line asks once more.
-- Transcript draws only the turns near the view, so the browser's Find reaches only those turns. Cmd+A draws every turn held, which can take a moment on a very long session, and Copy gives their whole text.
-- Tool calls next to each other are one line, such as `17 tools: WebSearch 15, Write, Bash`. Press it to list each call with its clock, name and summary. A press is kept; a line you have not pressed opens by itself when a call in it fails, and a closed line says `error` or `running` when it holds one.
-- The text size buttons on the bar size what the tab shows. The grid and the transcript each keep their own size, and the reset returns only the one showing.
-- Lock in the header leaves every grid and steer box of the tab read-only: no typing, paste or file drop. It survives a reload. A comment sent from a diff to that session still goes.
-- A tmux session you started yourself is not a terminal, but each of its panes running Claude or Codex is, for as long as the agent runs in it. Attach to Session takes it in. Its grid shows that pane alone at the pane's own size, and scrolls when the pane does not fit. Oculus types into it only what the steer box and the grid send: it has no Kill, Rename, Change Icon, Change Color or Clear, and closing its tab leaves the tmux session running.
-- From two terminals on, a list at the right names them. Split, Kill (two presses; a press elsewhere, inside an app's or a document's page included, Esc or four seconds take the first back), rename (double click). Drag a row to reorder it or move it to another tab. Attach to Session takes in a terminal no tab owns.
-- Drag the list's left edge to size it; double click it for the default width. Narrow, it shows each terminal's icon alone. A pane too narrow for it draws it narrower, then as icons, then not at all: the bar names the shown terminal, and the header's terminals menu shows any other. A row's Split and Kill give way before its name.
-- Kill stays where it is when its first press arms it, so the second press lands on it. The armed words take a line of their own under the row, wrapped to the list's width; a list narrowed to icons leaves them to the terminal's bar.
-- Cmd+click opens a web address. A paste with a line break asks first. A file dropped from Files types its path.
-- A terminal starts with git's credential settings for the git hosts you signed in to in Account setup, so a `git` run in it uses the token as oculus's own git does (Source Control and worktrees, below).
-- Change Icon lists each icon in words with its name beside it. Type to narrow the list by either.
-- Closing a tab, pane or page ends its terminals, asking when one runs a program. Moving and reloading end none.
-- A terminal scrolled up comes back at the lines it showed after a reload, a move to another pane, Float and Return to Page.
-- A terminal given a new size (a pane or a window resized) is drawn again from what tmux holds, so the grid shows the lines tmux's pane holds at that size. A terminal scrolled up keeps its lines.
-- The sessions list groups sessions by workspace: pinned first, then those that need input, then newest.
-
-## Project commands
-
-- A repository's commands come from `.oculus/commands.yml` and from what oculus finds (CMake presets, `package.json` scripts, `Makefile` targets).
-- `commands.yml` is a list `commands:` of `name`, `run`, optional `cwd`, `depends_on` and `default` (`build` or `test`). The template is in [templates](templates.md).
-- Add Command... on a repository's command bar adds an entry to the end of that repository's `commands.yml`, and makes the file from its template when there is none. The form lists the lines a press would run, the commands it depends on first; Save approves them, so the command runs without asking. Edit and Delete, on the right-click menu of an entry with a `run`, change only that entry and keep your comments and its other keys. A file that does not read is not written, and the form says why.
-- Commands show above the commit box in Repositories, on a project card, and in Run Command on a folder in Files.
-- `depends_on` runs each command of the chain once, in order, and stops at the first failure.
-- `${file}`, `${fileDirname}`, `${fileBasename}`, `${fileBasenameNoExtension}`, `${lineNumber}`, `${selectedText}` and `${workspaceFolder}` reach the command as environment variables.
-- A command runs only after you approve its exact text on this machine; a Save of the form, or of the schedule dialog that Schedule... opens, is that approval. A changed line, folder or `depends_on`, by hand or by a pull, asks again; an entry written or changed by hand runs on a schedule once its chain is approved through Edit or Schedule....
-- The terminal stays after the command ends, with a check or a cross. Rerun and Restart run it again. A `file:line: error:` line opens that file.
-- An app can add tasks and problem matchers ([Apps guide](apps.md)).
-
-## Debugging
-
-- The Debug view runs a `.rite` program under `rite_dap`, and other languages under an app's debugger. F9 sets a breakpoint, F5 starts; when it stops, Variables, Watch, Call Stack and the Debug Console show the state.
-- Configurations are in the repository's `.oculus/launch.yml`. The Debug view's Edit Configuration opens a form of the configuration's fields, and Delete Configuration takes it out; each is a write in History. With none, F5 runs the `.rite` file on screen. The template is in [templates](templates.md):
-
-```yaml
-configurations:
-    - name: Debug the open file
-      program: ${file}
-    - name: Benchmark
-      program: utils/benchmark/fib.rite
-      cwd: utils
-      before: build
-```
-
-- `program` is a `.rite` path or uses `${file}`-style placeholders. `cwd` is a folder of the repository. `before` names a project command that runs first; if it fails, you choose Debug Anyway, Show Errors or Abort.
-- `type` (`rite`, or an app's debugger) and `request` (`launch` or `attach`) are optional. An entry with a fault is left out and shown as a finding.
-- Each launch of `rite_dap` asks first; the yes is kept. `rite_dap_bin` in `local.yml` names the adapter.
-- One session at a time. Unsaved `.rite` tabs are saved first. Stop asks first.
-- `rite_dap` has no pause, conditional breakpoints or Set Value; an app's debugger offers what it declares.
-- Breakpoints and watches are kept in the browser.
-
-## Apps
-
-- An app is a folder of web files with an `app.yml`, drawn in a tab. A machine app lives in `.oculus/apps/<name>/` of the hub; a root app in `.oculus/apps/<name>/` of another folder of the workspace. The template is in [templates](templates.md).
-- An app runs only after you approve it, and only while its files are the ones you approved. Keep approved while I edit lets you work on it.
-- An app runs in a sandboxed frame with no access to your files. It reads the channels and makes the writes its manifest lists; every write is in the change log. A delete asks you first.
-- An app with a host runs a program on this machine with your rights; the approval panel says so.
-- The Apps page: the Apps view, with one row per app and its state, beside a pane where app tabs open.
-- Disable and Enable (also per workspace) are in the app's menus. Remove (machine apps) moves the folder to the Trash and deletes its secrets.
-- Add app from folder copies a folder into the apps folder.
-- What an app adds (commands, keys, menus, status items, views, editors, settings, themes, display languages, languages, servers, debuggers, tasks, terminals, source controls, file badges) shows only while it is approved and enabled.
-- An app's settings are written to `app_settings` of the hub's `config.yml`.
-- No app can reach `~/.oculus`, oculus's `config/`, a hub's `secrets` folder or any `local.yml`.
-- Limits are the options under `apps:`, set in the open workspace file's `settings:` over oculus's `config/defaults/behavior.yml`. The [Apps guide](apps.md) has the manifest, the bridge and an example.
-
-## Source Control and worktrees
-
-- Repositories lists the repositories of the workspace: its folders, the repositories below them down to `repository_scan_depth` levels (1 by default, at most 3), and cloned projects. An agent's worktree is listed under its repository's Worktrees.
-- A commit made in a terminal shows within two seconds.
-- Cmd+press and Shift+press select rows of a group. Stage, Unstage and Discard on a selected row, from its controls or its right-click menu, act on every selected row of the group, and so does Add to .gitignore from the menu; Discard asks once, naming how many. On a row outside the selection they act on that row, and the menu's open items open the row pressed. Every write runs from a press; discarding work, reaching a remote and committing ask first (not Fetch).
-- These are fixed: Pull is plain `git pull`; Sync pulls then pushes; Fetch prunes; signing follows `commit.gpgsign`; a commit needs a configured name and email; Stage All never stages new files. Nothing force-pushes except a deposit's snapshot.
-- `git.autofetch_minutes` fetches on a timer; 0 (default) never.
-- When a fetch fails, the automatic one or Fetch, the repository's view says so under its commit box, and the status bar's sync item is drawn in the warning tone and says it first in its tooltip: with the kind and the fix of the first row of `connections.failures`, oculus's six with the hub's own rows before them, whose `for` holds `git`, or that has no `for`, and whose `match` a line of git's or ssh's error output holds, else the line git or ssh wrote. A fetch, a pull or a sync that succeeds clears it.
-- A git host you signed in to in Account setup answers git's requests for credentials at its `credential_address`, while its row of `sign_in` names the address its token was granted for; a token whose row is gone or names another address is given to no git. Every git oculus starts is given `-c credential.<address>.helper=` and then `-c credential.<address>.helper=` naming oculus's credential helper, so a helper your own git configuration names for that address does not answer first; every terminal oculus opens is given the same pairs as `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>` and `GIT_CONFIG_VALUE_<n>`, which a shell that sets `GIT_CONFIG_COUNT` itself replaces. The helper is named for the row's key and address, reads the login and the token from that host's file in `~/.oculus/connect/` and answers only for that address, and only when the file's `credential_address` is that address; the token is never in an argument or a variable. A sign in or a sign out holds for the next git oculus starts; a terminal opened before a sign in has no helper until it is opened again. When the path of oculus's program or of the helper holds a single quote, git is given no helper, and that is a finding on `sign_in`.
-- The commit box keeps one message per repository. With nothing staged it becomes Sync Changes or Publish Branch. The button in the field writes a message from the staged diff.
-- Hooks run. A write that runs them, and Stage All on Untracked, whose time grows with the files it stages, has no time limit; Cancel stops a running write. Other git commands time out after 10 seconds (60 for Fetch).
-- While a commit, push, pull, fetch, sync, publish, checkout, merge or stash runs, or a commit message is written, a moving line is drawn under the repository's name in the Repositories list (under the section's head while the list is folded), and the repository's view says what runs ("Committing...", "Pushing...", "Writing the commit message..."); the Suggest glyph turns while the message is written. The status bar's sync item turns its glyph while a push, pull, fetch, sync or publish runs, as does its Publish Branch item while a publish runs, which takes no press until the publish answers. Any other write says "Working". Under the system's reduce-motion setting the line and the glyph stay still.
-- A changed row opens its diff, side by side or inline, with the changes git finds. Each block is a hunk as `git add -p` offers it, with Stage Block, Revert Block (asks) and Unstage Block; a line selection narrows them. A file whose type changed (a file turned into a symbolic link, or back) reads T, type changed, and opens one diff that says which side is the file and which the link.
-- A merge, pull or stash that stops on conflicts lists them under Merge Changes. The merge editor writes the Result; Complete Merge stages it.
-- Stash, Stash (Include Untracked), Stash Staged; Apply, Pop, Drop. Create Tag, Delete Tag, Push Tags. Create, Delete and switch Branch; Checkout (Detached).
-- The Graph shows the history of the branch and its upstream together, fifty commits at a time, each commit once: a commit only the upstream holds is marked incoming and one only the branch holds outgoing, each with a dashed circle. Incoming Changes and Outgoing Changes stand above their commits with their count, and a press on one lists the files changed over its whole range, each opening that range's diff. The checked-out branch and the local branches, the remote branches (with a cloud) and the branch's base are drawn in colours of their own; a tag is plain. Cherry Pick and the Compare commands are on a commit.
-- Untracked lists every new file on its own row, a new folder's files under that folder in tree view; a repository inside the repository is one folder row, whose press shows it in Files. A group of more than 200 changes shows the first 200 under a warning that says so.
-- Discard on an untracked file moves it to the Trash. Add to .gitignore appends the path.
-- Open File (HEAD) on a Staged or Changes row opens the file as the last commit holds it, and Open File (Index) opens it as staged; both tabs are read-only, and an Index tab stays on the staged version across saves, reloads and new commits.
-- Close Repository hides a repository from that tab; Reopen Closed Repositories brings it back. Open Worktree adds a worktree's folder to the workspace; Open Worktree in New Window also opens a new window.
-- In a source tab the gutter marks changes; Blame shows who changed each line.
-- New worktree makes `<root>/.agents/worktrees/<name>` on a new branch and opens a shell (or Claude, or Codex) there. Merging it back is `git merge`, refused with uncommitted changes. Removing it is a separate control and refuses uncommitted or untracked files.
-- An app can add a source control as a row of its own.
-
-## Configuration and the data
-
-- Every setting is in one of four places: oculus's `config/defaults/` folder, which holds oculus's own values and is never written; the open workspace file's `settings:`, which holds your values and is where Settings and every control that sets an option write; a hub's `.oculus/config.yml`, for the keys of the hub; and a hub's `.oculus/local.yml`, for this machine's, which Settings writes in its This machine scope and the Person page writes `self` in, in the primary hub's file. A saved change applies at once, on every page.
-- `config/` holds:
-  - `defaults/appearance.yml`: the theme, the theme the app's window starts on (`app_theme`), the text size, the terminal themes' `rice.icons`, `rice.brackets` and `rice.monospace`, the theme list, the wallpaper and the CRT overlay, the code theme and the lists that shape its choice (`code_themes`), file icons, the terminal's look, the tab strip.
-  - `defaults/behavior.yml`: thresholds, cadences and limits; `focus:` (the Focus sections, horizons, thresholds and cadences); the `editor`, `files`, `literature`, `recover`, `venues`, `links`, `apps`, `open`, `git`, `lint`, `latex`, `search`, `mail`, `calendar`, `changes`, `processes`, `status_bar` and Live HPC keys; `audit`, the conventions the audit holds a hub's projects to, which a hub sets in its `.oculus/config.yml`.
-  - `defaults/layout.yml`: the rail, the arrangements, `workbench:`, `nav_groups`, `docs:`.
-  - `defaults/sources.yml`: what the portfolio reads, and `languages:`, the map from file names to languages.
-  - `defaults/present.yml`: `defaults.tag_tones` and `defaults.frame` (the size in px every slide is laid out in, 1280 by 720, which a deck's `deck.frame` overrides) for every deck. The [Decks guide](decks.md) gives both beside a deck's own keys.
-  - `options/`: one file per defaults file, one for `local.yml` and one for the workspace's words (`text.yml`), and under `options/catalogs/` and `options/schemas/` one per catalog or schema file a hub or a workspace sets (`vocab.yml`, the agents, file nesting, glyphs, icons, LaTeX tables, Unicode math, and `manifest-schema.yml` for a hub's form fields), describing every option (its help, heading, section and control) and each group of dotted options; Settings and the completion menu show these words.
-  - `catalogs/`: the composer's agents, file nesting, glyphs, icons, LaTeX tables, Unicode math, and `vocab.yml` (the palette, `stages`, `forms`, `chips`, `statuses`, `lead_statuses`, `tiers`, `roles`, `categories`, `research_audit`, Focus lanes, venue tiers, radar buckets, pillar kinds).
-- Each word has one home in `vocab.yml`: a project's stage is a word of `stages`, the form of its output a word of `forms`, its chips words of `chips`, a collection entry's status a word of `statuses` and a Position Lead's a word of `lead_statuses`. What a word does is a flag on it: which stage is live, an idea, submitted or a dead end, which chip counts as blocked, which entry status is waiting or met. A word a hub adds behaves as its flags say. A status that is no word of its list is a finding naming the closest word when that word is within half the written word's length in single-letter changes, rounded down, and a stage word or a form written as a chip is a finding naming the field it belongs in.
-  - `schemas/`: the forms of `project.yml`, a deck's `present.yml` and `cpp.yml`.
-  - `text/`: every word on screen.
-- A hub sets its own words in its `.oculus/config.yml` under the keys of `vocab.yml`, each laid over oculus's by its shape. A map (`palette`, `stages`, `forms`, `chips`, `statuses`, `lead_statuses`, `focus_lane_tones`, `facet_tones`, `tiers`, `research_audit`, `leads_fit`, `data_access`) is merged word by word: a word the hub names replaces oculus's in oculus's place, a new word comes after oculus's, and `<word>: null` takes one out. `categories` is merged row by row by `key` the same way, `{ key: idea, removed: true }` taking a row out. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding, position or teaching stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. Settings compares a value with oculus's as the hub reads it, so the removal draws no modified bar. `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`, `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers`, `radar_buckets` and `deck_order` are replaced whole, since their order is their meaning, and a hub's `rail_color` replaces oculus's. A key of a hub's own `deck_order` that no row of its `categories` holds is a finding naming the hub's file and the key's place, and is not read. A null or a removal naming a word oculus does not hold, `removed` holding anything but `true`, and a word named twice are findings naming the hub's file and the key, and oculus's word stands. A list replaced whole other than `focus_clusters` with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages, one word in `deck_order`), is a finding naming the hub's file and the row's place, and oculus's list stands; `focus_clusters` is read row by row, a row of the wrong kind or naming the key of an earlier row being a finding and not read.
-- Each record is drawn in its own hub's words: a card of a hub that relabels `exploring` shows its label, and the same card of another hub shows oculus's. A list drawn over the records of several hubs (a board's slices, the filters, the legends) holds the words of every hub, the primary's first, then each other hub's in the workspace's order, each word once with the row of the first hub that holds it. A folder that is no hub is drawn in oculus's own words. With a primary, the records of such a folder are the primary's; with none, the lists take the hubs and each folder that is no hub, with oculus's words, in the workspace's order.
-- A hub adds fields to the form of its own projects under `manifest_fields` in its `.oculus/config.yml`. A row is a field of the form with `field:`, the key of `project.yml` it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `foreign_key`, `options` and `required`. The field is drawn after oculus's fields of its section in the hub's order, and is a known key of that hub's manifests only. A row with no field, naming a field the form already has or an earlier row names, a section the form lacks, a type the form does not draw or a `foreign_key` that names no collection of the hub's `collections:`, `projects` or vocab list is a finding naming the hub's file, and the row is left out.
-- Every option is described in its file under `config/options/` and set in Settings. A wrong value is a finding, and that option takes oculus's value. A key each hub's own `.oculus/config.yml` is read for (a hub's words, its categories, its form fields among them) is set in that hub's Hub scope, and a key read from the primary hub's file alone in the Primary hub scope, which a workspace with no primary does not offer. A workspace's catalogs and words are written to the workspace file. A hub's words and a workspace's catalogs are written as what changed from oculus's: the words changed or added, a null or a removal for each of oculus's taken out, and nothing for a word as oculus ships it. Their rows have no Move, since the merge keeps oculus's order.
-- `locale`, an option of `appearance.yml` set in the workspace file's `settings:`, is the display language: `en`, oculus's English words, or the `languageId` of a display language an approved, enabled app contributes by its `localizations` point ([Apps guide](apps.md)). The language's words are laid over oculus's English words, a word the language lacks is drawn in English, and the workspace's `text` is laid over both. A `locale` no approved, enabled app contributes is a finding naming the workspace file and `settings.locale`, and English is drawn; a key of a language file that oculus's catalog lacks is a finding naming the file, the language and the app, and the key is not used.
-- The theme list is the `themes:` rows of `appearance.yml`; each row's `group` is the words of the heading it is drawn under, in Settings and in `:theme`, the rows with no group first, and an app's themes are drawn under the app's title. The Code theme choice reads a list of its own: the VS Code code themes are the rows of `code_themes.vscode` in `appearance.yml`, each a `class` with TextMate rules in `src/lib/themes/vscode-rules.json`, a `label` and a `group`, drawn under its group. Your workspace file adds, renames or takes out a code theme by its class in `code_themes.vscode` without changing the theme list, and a change to the theme list leaves the Code theme choice as it is. The Shiki code themes are the rows of `code_themes.shiki`, each an `id` of a theme Shiki bundles, a `label` and a `group`, drawn under its group; your workspace file renames, regroups or takes out a Shiki code theme by its id the same way, with `{ id: <id>, removed: true }` to take one out. In the app a window starts on the theme `theme` names, or on the theme `app_theme` names while `theme` names none it can draw, and is filled with that theme's background until its page draws; from then on the window is filled with the background of the theme its page draws. Either option may name an app's colour theme: when the app is approved and enabled and the theme's file resolves, the page draws it from its first paint and the app fills a new window with its background. For an app's theme whose app is not approved and enabled, or whose file does not resolve, the page draws the start theme, the one `app_theme` names in the app and the first theme of the list in a browser.
-- The open workspace file's `settings:` holds keys as the defaults files hold them, with no file names: `code_theme: vscode-dark-2026`, `terminal: { font_px: 14 }`. It also sets the six catalogs under the key each holds in the merged config, `agents`, `patterns` (file nesting), `glyphs`, `icons`, `latex_editing` and `latex_unimath`, each laid over oculus's in oculus's place: a name the workspace names replaces oculus's entry where it stands, a new name comes after oculus's, `<name>: null` takes one out, and a Unicode math row is matched by its `command`, `{ command: mbfalpha, removed: true }` taking one out. An agent keeps every `confirm: true` oculus ships, and a start of a value the workspace adds or whose passed words it changes is asked about first. `text` replaces words of the interface by the dotted key of the text catalog (`text: { views.settings: Preferences }`); a key the catalog lacks, or a value that is no text, is a finding and the catalog's word stands. Any other value replaces oculus's whole, except a list whose entries have a key field (`rail` by `page`, `floats` by `view`, `themes`, `latex.recipes` and `latex.tools` by `name`, `code_themes.vscode` by `class`, `code_themes.shiki` by `id`) and a map such as `arrangements` or `counts`, which override oculus's entries one by one: your entries come first in your order, then oculus's others. `{ page: focus, removed: true }` in such a list takes oculus's entry out, and `focus: null` in such a map takes oculus's key out. A key of a hub's `config.yml`, a key no option names and a value its option refuses are findings naming the workspace file and the key, and oculus's value stands. The template is in [templates](templates.md).
-- In a YAML file the editor checks, Ctrl+Space completes the keys, each with its description: the options of the defaults files, a workspace file's `settings:`, a hub's `config.yml` and `local.yml`, the catalogs, the schemas and the hub's data files. A value of a choice or a multi whose words oculus holds is completed from them, and a word outside them is marked. A family written as a list of rows where its file takes a map, or as a map where its file takes a list, is marked in the words of the config check (`boards must be a map, not a list`).
-- Over a wallpaper, `wallpaper.panel_opacity` sets how solid the panes stay, from 0 to 1. A group's heading, a table's header row that stays in place, the Calendar's day and date headings, the file headings of a diff of several files and the Processes table's Stop column stay solid whatever it is set to, so nothing scrolling under them shows through. `editor.opacity` sets the editor's share (a Source tab's editor and its read-only code window, the files of the Diff view, the Merge view) and `terminal.opacity` the Terminal view's, each on its own; a key left out, as the defaults leave both, takes `panel_opacity`. Settings lists them under Source editor and under the terminal's Display and keys, and a workspace file sets them as `editor: { opacity: 0.6 }` and `terminal: { opacity: 0.9 }`. A diff drawn inside another view, as the Deposit view draws one, takes that view's share, and an editor or a Terminal view inside a free float takes the float's.
-- A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](templates.md)); any other key is a finding. A key of `vocab.yml` is laid over oculus's by its shape and `manifest_fields` adds its rows to the form, as above; any other key it sets replaces oculus's value whole, inside a map per dotted path. The command center's deadline groups are the words of `ticker_categories` in `vocab.yml`, in the order they are drawn, each naming the words of its heading, its glyph and the nouns of its due and overdue sentences; the one word with `manifests: true` holds the projects' own deadlines, and while two words carry it (a finding naming both) the projects' deadlines are not listed. Its `collections:` lists the hub's data files, each a `key` and a `file` with the fields that say what the file is, so a hub keys its files as it likes: `registry:` the registry or feed it is (`leads` and `radar` the Position Leads and Lit Watch feeds); the flags of the features that read it (`band_positions`, `band_teaching`, `awaiting`, `open_badge`, `lead_applications`, `dissemination` with `dissemination_skip:`, `tasks`); `ticker:` the word of `ticker_categories` its lines carry, which names the command center group of its dated lines, with `undated: true` when an undated entry is open work (the lines of the file flagged `tasks` are lines of the Tasks section, dated or not); and `group:`, `order:`, `label:`, `glyph:` and `about:`, where its view sits in the view catalogue and the words of its name, its glyph and its line in Make Folder a Hub. A view whose entry names no `group:` sits in the group of the rail button carrying `unplaced_collections: true` in `layout.yml` (Registries in oculus's rail), after that group's placed collection views in the list's order; with no button carrying it, the view is listed with the views no group holds. A field naming a word the catalogs lack, a `ticker:` or `dissemination_skip:` not of its shape, a registry or `lead_applications` or `tasks` on two entries, and a plain collection keyed by one of oculus's view ids are findings.
-- A hub sets the conventions the Audit holds its projects to under `audit:` in its `.oculus/config.yml`, each off until set. `required_files` lists the files a project must hold, each row requiring its file when every key it names is met: the project's stage meets `stages`, a word block of the stages (`{ not_flags: [terminal] }` holds every stage without the flag `terminal`, and a project with no stage), the project holds the folder `folder`, and it lies under one of the hub folders `folders`. `required_sections` lists the headings a file of a project must hold while a dotted key of its `project.yml` has a value: a list with an item, a text that is not empty, a number or `true`; a line holds the heading when it is the heading or starts with it and a space, so `## Data + reproduction` holds `## Data` and `## Database` does not. `stage_folders` lists the hub folders a project at the stages `stages` is kept under, matched by whole path segments. A project of a tier `research_audit.skip_tiers` names is held to none of them, and a project of a workspace repository to no row that names hub folders and to no `stage_folders`. A part of `audit:` that is not of its shape is a finding naming the hub's `.oculus/config.yml` and the dotted key, and the rest runs. The template shows each key ([templates](templates.md)).
-- The primary hub names the website its files are written into under `website:` in its `.oculus/config.yml`, read from the primary hub alone. `folder` is the website's folder in the hub: empty, the default, writes nothing and checks nothing, and a folder that is not there is an Audit finding naming it. `cv` is the command run in that folder after a write; empty runs none. `kinds` lists the sections of the publications file: a manifest that carries `publication:` goes to the first row whose `stages` and `forms` hold its own, a side left out holding every one; the sections come in the rows' order, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. `files` gives the website's four files, each a path relative to its folder and a key of its own: `site`, its own file, and `cv`, `papers` and `industry`, the three a write gives. A hub sets any of them alone and the others stay as shipped, `_data/website.yml`, `_data/data.yml`, `_data/publications.yml` and `_data/industry.yml`. A path that is empty, is absolute, leaves the website's folder (a symbolic link is followed) or names the file of another key stops Write the website, which names the key, and is one Audit finding naming the key, with none of the four files read. The website's own file holds the headings of its sections and the CV's own parts, which its templates read; the three files hold what the hub gives, and `programs:` of the website's own file are the research lines a paper may name. A manifest that carries `publication:` at a stage without `public`, or with `negative` or `dead_end`, gives no entry and a finding, and so does a paper that names you in none of `lead`, `supervisors` and `collaborators` under a row with `order`. The Audit's Website section compares the three files the hub gives with the files on disk by their parsed values, the order of the sections, of the entries and of a links list counted and the order of the keys inside an entry not, and names each file that differs with the first place it differs at. The template shows each key ([templates](templates.md)).
-- A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
-- A hub's `.oculus/local.yml` is this machine's: the port, who you are (`self`), your user name and key file on each cluster (`clusters`), the programs, the agent accounts, the calendar and mail accounts, the contact address the Literature search sends (`literature.mailto`), the download accounts (the secrets of the services the reader rows' `auth` names), and where oculus keeps this machine's files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows and the `clusters` rows are joined over every hub, the primary's first). `self` is the key of your own person in any hub, read from the primary hub first: the primary's person of that key, else the person of the one other hub that holds it; a key no hub holds, or one two other hubs hold, marks nobody and is a finding on the file. The keys are in its template.
-- `commit_message_account` in `local.yml` names the Claude account the suggested commit message runs under: the label of a `claude` row of `accounts:` in any hub's file. Empty or absent, it runs on `~/.claude`; a label no Claude row holds is a finding and `~/.claude` is used. The run saves no session, so it is never listed in Sessions.
-- The rest of `.oculus/` (bookmarks, workspaces, schedules, update tasks, data files, notes, apps, pictures) is listed in the Data map ([data map](data-map.md)).
-- `~/.oculus/` is oculus's own state: the open workspace, the page state the server saves for every page (`layouts.json`, each workspace's arrangement and its unread copy; `layout-writes.json`, the last 500 layout writes; `views.json`, each tab's view state; `debug.json`, the debugger's breakpoints and watches), the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
-- The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
-- A hub's data files, their keys and the views that show them are in the Data map ([data map](data-map.md)), a tab of the Help page. A collection's default file is under `.oculus/data/`, in the folder of its kind: `research`, `pillars`, `literature`, `people` or `academic`.
-- A collection no hub of the workspace lists under `collections:` has no view: its tab is left out of its page, and a pane left with no tab names the missing key. The tab comes back when a hub lists the key.
-- A hub's settings that name no `collections:` list take oculus's list, and the hub lists the collections whose file it holds at their default path. A hub whose list names no entry of a registry or feed reads oculus's entry of it.
-
-### Hubs and projects
-
-- A folder of the workspace with `.oculus/config.yml` is a hub. Every hub is read and merged into one portfolio. Every record, the primary's included, has the id `<hub>:<key>`, and a record of a hub other than the primary shows that hub's chip.
-- A reference to a key names the record of that key in its own hub, and else the record of the one other hub that holds the key. A key that two other hubs hold and its own hub does not names no record, and the Audit reports it.
-- A field that chooses records (a venue, a pillar, the people of a project) lists the records of the hub of the record it edits first, then those of the other hubs, each with its hub's chip.
-- Renaming a key rewrites every reference that names the renamed record, in every hub, and leaves a reference that names another hub's record of the same key.
-- The Audit checks each hub against its own records, and a finding of a hub other than the primary shows that hub's chip.
-- The `categories` rows a hub writes are checked against that hub's own words, its stages and its forms, and each finding names the hub's `.oculus/config.yml`.
-- The words a hub writes in its `.oculus/config.yml` (its flags, its Focus clusters and its lanes) are checked against that hub's own vocabulary, and each finding names that file. For a hub other than the primary, that includes a finding on one of oculus's lanes whose cluster the hub's `focus_clusters` leaves out.
-- Make Folder a Hub..., in the Files view's menu of a folder, opens a dialog of two groups. Hub files: `config.yml`, always written; `local.yml` with the `.oculus/.gitignore` that keeps it out of git, written readable by you alone; `schedules.yml`. Collections: a box per collection of the templates. Every box starts ticked, and each row says what the file or collection holds, a collection's line being the word its template entry's `about:` names, with its path under that line. Make writes the folder's `.oculus/config.yml`, whose `collections:` holds the ticked entries as the template writes them, each at its default path under `.oculus/data/` with every field its template line sets, the ticked hub files, and each ticked collection's data file, each from its template in `docs/templates.md` with every key commented out. It writes over no file: when one of them is there, it says which and writes nothing. It is offered on a folder that is no hub, lies in no hub and is no project (it holds no `project.yml` and no `.oculus/project.yml`).
-- Make Folder a Project writes the folder's `.oculus/project.yml` from its template. It is offered on a folder that is no hub and no project.
-- Make Folder a Git Repository runs `git init` in the folder, with no dialog. It is offered on a folder or root with no `.git` of its own that lies inside no `.git` folder; a folder inside another repository becomes a repository of its own inside it.
-- Add Repository Configuration..., on a repository (a folder of the workspace, or a folder holding `.git`) that lacks one of `.oculus/settings.yml`, `.oculus/commands.yml`, `.oculus/launch.yml` and `.oculus/cpp.yml`, opens a dialog with a row per file: a file that is there is shown as there, and each missing one is ticked. Add writes the ticked files from their templates, every entry commented out, so the repository reads as before until you fill one in.
-- None of the four is offered on the home folder, on oculus's own folder `~/.oculus` or on a folder under it. History undoes a make, as it does New File, by moving what the make wrote, the `.git` folder of a git make included, to the Trash.
-- A change goes to its own hub's file. A new record goes to the file of the hub that lists its collection, and Add asks which one when more than one hub does.
-- A project is a folder holding `project.yml` or `.oculus/project.yml`, found by a `scan:` folder or as a folder of the workspace. Its id is the folder's name. Its `tier` is its kind (research, personal or software), its `stage` where it stands and its `form` the form of its output; its `lead:`, `collaborators:` and `supervisors:` name its people.
-- A folder of the workspace is a project wherever it lies: inside a hub, inside a `scan:` folder or holding a hub. Each manifest is one project, so a folder whose manifest a hub's `scan:` folder already reads is that hub's project, with no second card. The folder stays a folder of the workspace either way, with its files, its git and its terminal, and an edit to the project writes the manifest it was read from.
-- A project's `repository:` block (`url`, `visibility`, `description`, `homepage`, `topics`, `date`) says where its code lives. It counts as cloned wherever a repository of the workspace has that `url` as `origin`. A linked worktree counts as one clone with its main checkout, so a repository with worktrees is not reported as cloned twice.
-- Clone (on a project) asks for a folder and checks the repository out there. `:clone` lists your GitHub repositories (through `gh`) and clones one into a folder you pick. Afterwards oculus asks: Open (the clone alone) or Add to Workspace. While a clone runs, its Clone control turns its glyph and a notice with a moving line says "Cloning <name>..."; clearing the notice does not stop the clone.
-- oculus keeps one block in the hub's git `info/exclude`, between `# BEGIN nested-repos` and `# END nested-repos`, listing the repositories below the hub so the hub's git ignores them. Nothing else in that file changes.
-- The `secrets` folder of every hub is private: no search, language server, linter fix or app reads it.
-
-### Mail and calendar
-
-- `calendars` and `mail` in `local.yml` list your accounts (`provider`: `google`, `microsoft`, or `ics` for a calendar link). Add account and Remove in the views write them.
-- The first account of a provider opens Account setup, which saves your app's client to `~/.oculus/connect/`. Tokens and calendar links live in files with mode 0600 and are never shown or logged.
-- The addresses and scopes Google and Microsoft are asked at are the `google` and `microsoft` rows of `sign_in`, which oculus ships and the primary hub's `config.yml` may change by `key`. With a row taken out, or missing a field a step needs, Connect, the refresh and Account setup say which key and field are missing, and nothing is sent.
-- The options `mail.poll_min`, `calendar.poll_min`, `calendar.days_back` and `calendar.days_ahead`, set in Settings or the open workspace file's `settings:`, set the polling.
-- An Inbox thread is on your plate when it is unread in the inbox, labelled `todo`, or a single unlabelled message. The notes per thread are in `<mail_dir>/triage.json`, written by the card and by the Inbox update task.
-
-### Git hosts and clusters
-
-- Account setup's Git hosts section has one part per git host, a row of `sign_in` in the primary hub's `config.yml` with a `credential_address` (its template has a `github` row). Register an OAuth App of your own at the row's `register` page with the device flow on, and save its client ID. Sign in asks the host for a code, opens the address to type it at in the browser when it is an https address, and shows the code and the address until you have typed it, the host refuses or the code expires. The token is saved with your login in `git-<key>.json` in `~/.oculus/connect/`, at mode 0600, and is never shown or logged. Sign out takes the token out and keeps the client ID. A saved token whose row is gone from `sign_in`, or whose row names another `credential_address` than the one it was granted for, is listed under the hosts with its login, the reason git is given none, and Sign out, which deletes its file when the row is gone.
-- Account setup's Clusters section has one part per cluster of `slurm.resource`, under its name, with numbered steps: your user name on the cluster; the key file, filled from `clusters.key_file` (`~/.ssh/id_{type}_{resource}` unless the hub's `config.yml` sets another) with `{type}` and `{resource}` put in, which must lie under your home folder; Make key, which runs `ssh-keygen` with the type `clusters.key_type` names (`ed25519` unless set) and never overwrites a key file or its `.pub` that is there; the host's key, read with `ssh-keyscan` when `~/.ssh/known_hosts` does not hold the host and shown as its SHA256 fingerprints, appended to that file only after you compare and trust them; Put the key on the cluster, offered once the host's key is trusted, which logs in once with the password you type and adds the public key to the cluster's `~/.ssh/authorized_keys` without changing a line the file holds, and not again when it holds it; and Save, which writes the cluster's row of `clusters:` in the primary hub's `.oculus/local.yml`; a row of the resource `mac` is a finding and is not read, since `mac` names this Mac. The password goes to that one ssh alone and is in no file, log, argument or variable. Beside the Put step, the public key of the key file in the field is shown with a copy press whenever its `.pub` is there, with no password typed, so a cluster that takes the key another way can be given it by hand; a cluster that takes no password also shows the cluster entry's `access` text. Under the steps is what `ssh -G` says the connection resolves to.
-- Settings' This machine scope, for the hub picked, lists the rows of `clusters:` of that hub's `local.yml` with their user name and key file, and adds a row for a cluster of `slurm.resource` that no row of any hub's `local.yml` holds; its Save writes that file, each changed row alone, every other byte of the file kept.
+| Escape | in Present: close the overview, then end presenting |

@@ -1921,7 +1921,7 @@ title: Career strategy
 
 ## present.yml
 
-A deck: this file and Markdown slides in one folder. The [Decks guide](decks.md) gives every key and every slide kind, each with an example. The Present view draws the Projects board's filter over a deck's project decks: its controls are kept with the pane and write nothing to this file.
+A deck: this file and Markdown slides in one folder. The [Decks guide](decks.md) gives every key with its value when unset, and an example of every slide kind. The Present view draws the Projects board's filter over a deck's project decks: its controls are kept with the pane and write nothing to this file.
 
 ```yaml
 deck:

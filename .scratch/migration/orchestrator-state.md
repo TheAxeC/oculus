@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O165
-  brief_check: .scratch/migration/agents/reviews/O165-brief-check.md (abe81b76d36c73c6b, claude-opus-5-5, 156582 tokens, 43 tool uses, 8.6 min)
-  base: 9dfe43d14
-  worktree: .agents/worktrees/migration-O165
-  executor: agent
-  worker: claude:opus
-  session_id: af4ed91caba9dc0c9 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O165-report.md
-  builder_usage: "build: 189316 tokens, 328 tool uses, 73.8 min; round 1: 321249 tokens, 301 tool uses, 41.1 min"
-  reviewer_report: .scratch/migration/agents/reviews/O165-refuter.md (afbf839ba49f56236, claude-opus-5-5, 279824 tokens, 87 tool uses, 18.4 min); over round 1: af6f8bb10a8b887c8, claude-opus-5-5, 261745 tokens, 78 tool uses, 10.0 min
-  round: 1 (agents/briefs/O165-round-1.md, sent 2026-11-07)
-  landing: not-started
-  carries: "at its landing, the `docs/HELP.md` sentences O166 made false (agents/reviews/O166-report.md, HELP sentences of check 6: :271 twice, :272, :305, :359, numbered on O166's base) brought true for the record pages as O166 landed them (the row of count buttons, the Named by line, the two columns, the dead-ends group on every card's strip)"
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -854,6 +840,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-07 (O165 landed). O165, the guides redesigned, landed on Axel's approval (booking in `plan.md`, `agents/reviews/O165-landing.md`): Help, the Data map and the Decks guide rewritten, with the review over round 1 closed at landing. Axel: "Once 165 is landed, please start on the queued steps"; O151, O167, O168, O169 and O170 are prepared next through /spec, in that order. Open items: none. In flight (0 of 6).
 - 2026-11-07 (looks O49 to O166 taken; flaws booked as O167 to O170). Every look of O49 to O166 that the browser can take was taken on a copy server on 8797 over a full copy of the home folder's hubs (`agents/reviews/owed-looks.md`, Taken); the flaws found are steps O167 to O170 in `plan.md` (ruling Look flaws). Not taken: the PDF file (the print dialog), O149 ruling 9, O152 C11, O155's order before, O161's real Cmd+F, O158's 400 px frame. The copy's workspace file names the real repository by absolute path under `status_bar.repository`, so the copy's status-bar git controls act on the real repository; none was pressed. Nothing is dispatched: O151 waits on Axel's go, O165 on his approval, O167 to O170 on his go. Open items: none. In flight (1 of 6): O165.
 - 2026-11-07 (O151 deleted again). On Axel's word O151 is deleted entirely (`plan.md` Rulings, "O151 deleted again"): its landing d6bb91263 undone on main (the four code files back, booking removed, step unticked), every O151 brief, review, report, look and landing file deleted, the research hub's decks and `README.md` back to their committed text, the scratch copies removed. O151 waits for Axel's go before it is redone. Open items: none. In flight (1 of 6): O165 (waiting on Axel's approval of the three pages). Next: O165's landing on Axel's approval; O151 on his go.
 - 2026-11-07 (O161 landed; O151 building). O161, cheaper cards, landed (booking in `plan.md`, `agents/reviews/O161-landing.md`), merged with O166 in the gate: Lit Watch's 678 cards in the page at about 4.2 s against 8.7 s on main's head, its longest main-thread task about 1.3 s against 6.1 s; the Projects board at about 2.0 s against 2.5 s; every card's text, menus, tooltips and keys the same as main's at the look. Open items: none. In flight (2 of 6): O151 (building), O165 (its /writing findings, then Axel's approval). Next: O165's /writing findings applied, the HELP sentences O166 made false, and Axel's approval; O151's report when its builder hands back.

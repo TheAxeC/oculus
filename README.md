@@ -92,11 +92,11 @@ To have Claude Code sessions tell oculus when they want you, merge the hooks blo
 
 ## Documentation
 
-- [docs/HELP.md](docs/HELP.md) is the manual: every view, key, setting and file. The app shows it on its Help page.
+- [docs/HELP.md](docs/HELP.md) is the manual: each part of the window and each view, with the rules, files and limits behind what its screen shows, and the keys. The app shows it on its Help page.
 - [docs/templates.md](docs/templates.md) gives every YAML file oculus reads as a template to copy.
-- [docs/data-map.md](docs/data-map.md) maps a hub's data files, the views that show them and the keys that link them.
+- [docs/data-map.md](docs/data-map.md) maps the files oculus reads from a hub and from a repository: where each is, its keys and the keys that link them.
 - [docs/apps.md](docs/apps.md) shows how to build an app, a folder of web files oculus draws in a tab.
-- [docs/decks.md](docs/decks.md) shows how to write a deck: every key of `present.yml` and every slide kind, each with an example.
+- [docs/decks.md](docs/decks.md) shows how to write a deck: its files, every key of `present.yml` and of a slide's front matter with its value when unset, and an example of every slide kind.
 - [docs/palette.md](docs/palette.md) lists every palette command and key. `npm run docs:palette` writes it from the code.
 - [docs/third-party.md](docs/third-party.md) names the bundled programs under other licenses.
 

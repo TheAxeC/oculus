@@ -1,16 +1,16 @@
-In flight (1 of 6 slots in use):
-- O165 (the guides redesigned): writing findings applied, waiting on Axel's approval of the three pages.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order:
-- O151 (a deck for every research project, and the facts strip made smaller): deleted entirely; redone from its line only on Axel's go.
-- O167 (the shell's controls hold one behaviour): booked from the looks of 2026-11-07; on Axel's go.
-- O168 (the boards and record lists drawn whole): booked from the same looks; on Axel's go.
-- O169 (connections and their failures said in full): booked from the same looks; on Axel's go.
-- O170 (Literature and Present said and drawn plainly): booked from the same looks; on Axel's go.
+- O151 (a deck for every research project, and the facts strip made smaller): redone from its line; /spec next (Axel's go, 2026-11-07).
+- O167 (the shell's controls hold one behaviour): /spec next.
+- O168 (the boards and record lists drawn whole): /spec next.
+- O169 (connections and their failures said in full): /spec next.
+- O170 (Literature and Present said and drawn plainly): /spec next.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
 Landed, newest first:
+- O165 (the guides redesigned), 2026-11-07, this landing's commit.
 - O161 (cheaper cards), 2026-11-07, ccabf01ef.
 - O166 (the record pages made one design), 2026-11-07, 6038e7fdc.
 - O159 (one folder search per hub), 2026-11-07, db4244173.
