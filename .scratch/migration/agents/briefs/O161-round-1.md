@@ -1,0 +1,10 @@
+# O161, repair round 1
+
+The review is `.scratch/migration/agents/reviews/O161-refuter.md` in the main checkout; read it whole first. Each item below is closed in this round. The brief, the cases ruling `O161-cases.md`, the clash ruling `O161-clash.md` and the redo ruling `O161-redo.md` stand.
+
+1. **Proof 1, C2 reaches the memo.** In `tests/state/forms/page-entry.test.ts:323-347`, the sources the case hands `createPages` carry `reads: createReadMemo()`, as the app's pages store does (`context.ts:180`), so `feedPage` takes the path through `reads.held(entries, 'feed index <kind>', ...)` in `idents.ts`. The case keeps its two feeds: the first list, then a new list for the same kind, and `pageOf` finds the new list's entry. The report quotes the case's passing run after the change.
+2. **Spec 3, the Glyph callers.** The report's "Where each memo comes from" names all 72 components that import `Glyph` (`grep -rln "import Glyph from" src | wc -l` prints 72), `src/lib/ui/menu/trigger/MenuOpener.svelte` among them, each with where its memo comes from.
+3. **Spec 1 and Spec 2, nothing claimed from an unapproved script.** The jsdom harness and the profile scripts under the scratchpad's `anal/` are not run again, and no new script is written. Each sentence of the report that rests on the harness or on those scripts' output (item 1's table, the bits-ui and DOMPurify split, "the harness below matches the unchanged tree", the first-event hand-over of the tooltip) is marked as resting on an unapproved script whose output is not used, and names the look on the scratch server or the profile taken at landing as the check that stands for it.
+4. **Standards 1, the full list.** `npm run test:quick` runs once after the last change of this round, and once more only after a red line in a file the step changes is fixed. The report gives the count of full-list runs of this round.
+
+Every edit is made with Edit and Write only. The brief's checks for the files this round changes are rerun and quoted, and the report rewritten to its final state with each item closed.

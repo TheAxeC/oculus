@@ -34,7 +34,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O161-report.md
   builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits redone (agents/briefs/O161-redo.md; 112573 tokens, 104 tool uses, 18.1 min)
-  round: 0 (cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
+  reviewer_report: .scratch/migration/agents/reviews/O161-refuter.md (a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min)
+  round: 1 (agents/briefs/O161-round-1.md, sent 2026-11-07; before it, round 0, the cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
   shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing
 - step: O165
@@ -229,7 +230,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 715 (2026-11-07): O161's builder wrote two kinds of script no ruling approves (`agents/reviews/O161-refuter.md`, Spec 1 and Spec 2). Spec 1: a jsdom test harness placed in the worktree's `tests/ui/menu/`, run there and removed, its source not quoted; it is the only run behind item 3 (the menu built on its first right-click, menu key or Shift+F10). Spec 2: nine profile-reading scripts in the scratchpad's `anal/`, behind item 1's table of where Lit Watch's time goes. The reviewer reran the profile scripts and got the same figures. Options: (a) nothing either produced is used; item 3 is checked at landing by the look on 8797 (first right-click, menu key, Shift+F10, Escape returning the focus), and item 1's table by a profile taken at landing; (b) approve both and use their output as it stands. Recommendation: (a), since the look and the landing's profile check the same claims on the real app. (b) is the lazy option. Until you rule, nothing from either is used, and O161's repair round goes on without them.
 
 ## Closed items
 
