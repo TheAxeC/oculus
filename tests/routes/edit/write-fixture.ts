@@ -20,6 +20,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { PortfolioConfig, Project } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
@@ -147,7 +148,8 @@ export function targetOver(
         projects: () => [],
         bookmarks: files.bookmarks,
         glyphs: [],
-        changes: { file: files.changes, keep, writes: fsWrites() }
+        changes: { file: files.changes, keep, writes: fsWrites() },
+        deckGlobs: folderGlobs()
     };
 }
 
@@ -323,7 +325,8 @@ export function deckTarget(): PrimaryTarget {
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
         glyphs: [],
-        changes: { file: changes, keep: 500, writes: fsWrites() }
+        changes: { file: changes, keep: 500, writes: fsWrites() },
+        deckGlobs: folderGlobs()
     };
 }
 

@@ -2,6 +2,7 @@
 // opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
 
 import { workspaceVocabs } from '../../../src/lib/data/index.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { latexBuild } from '../../../src/lib/data/sources/config/settings/writing/latex.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
@@ -196,6 +197,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         credentials: overrides.credentials ?? noCredentials(),
         cloning: overrides.cloning ?? new Set<string>(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
+        deckGlobs: overrides.deckGlobs ?? folderGlobs(),
         folderPicker: overrides.folderPicker ?? pickerState(),
         hpcLogPaths: new Map(),
         hpcSubmits: submitState(),

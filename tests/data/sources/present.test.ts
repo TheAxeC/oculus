@@ -14,6 +14,7 @@ import {
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { outlineOf } from '../../../src/lib/data/sources/deck/outline.ts';
 import { splitSlides } from '../../../src/lib/data/sources/deck/split.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
@@ -186,7 +187,8 @@ describe('the deck reader', () => {
             tagTones: { measured: 'green' },
             frame: frameSetting(VOCAB),
             catalog: CATALOG,
-            order: deckOrderOf(VOCAB)
+            order: deckOrderOf(VOCAB),
+            globs: folderGlobs()
         });
         return reader.read({ key: 'hub', dir }, 'deck');
     }
@@ -298,6 +300,7 @@ describe('the deck reader', () => {
                 frame: frameSetting(VOCAB),
                 catalog: CATALOG,
                 order: deckOrderOf(VOCAB),
+                globs: folderGlobs(),
                 ...(keep === undefined ? {} : { keep: new Set(keep) })
             }).read({ key: 'hub', dir }, 'deck');
         const rows: {
@@ -521,7 +524,8 @@ describe('the deck reader', () => {
             tagTones: {},
             frame: frameSetting(VOCAB),
             catalog: CATALOG,
-            order: deckOrderOf(VOCAB)
+            order: deckOrderOf(VOCAB),
+            globs: folderGlobs()
         };
         const escaped = 'A\\*B\\_\\<x\\>';
         const filled = {
@@ -799,6 +803,7 @@ describe('the order of the decks a group discovers', () => {
             frame: frameSetting(VOCAB),
             catalog: CATALOG,
             order: deckOrderOf(vocab),
+            globs: folderGlobs(),
             ...(keep && { keep: new Set(keep) })
         }).read({ key: 'hub', dir }, 'deck');
         const kept = Object.keys(decks).filter((id) => keep === undefined || keep.includes(id));

@@ -9,6 +9,13 @@
 // entry, the slide or group they would have made is left out, and the rest of the deck is
 // read.
 //
+// The matches of a group's `find.folders` globs come from the store the context names
+// (sources/documents/folder-globs.ts), which its owner, the server for the process, keeps across
+// readers and drops a key of when a folder under the pattern is made, moved or removed, so the hub
+// is walked once per pattern rather than once per reader. Everything after the walk is the
+// reader's own and runs at every read: each match is resolved inside the root, one that leaves it
+// is a Finding, and a matched folder is a deck only while it holds a `present.yml`.
+//
 // Counts, legends, summaries and grids read any group of the deck whose slide they sit in, placed
 // or not. A deck reached again while it is being read is a cycle: it is reported and places
 // nothing the second time.
@@ -38,7 +45,7 @@
 // no value is filled with nothing, and a name that is no field, or a placeholder in a deck that is
 // no project's, is left as written; each is a Finding on the slide's file at its line.
 
-import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
@@ -61,6 +68,7 @@ import { FACT_FIELDS } from '../../model/index.ts';
 import { fileBytesUrl } from '../../helpers/files/address.ts';
 import { mustBe } from '../config/catalog/value-words.ts';
 import { deckFrame, type FrameSetting } from '../config/settings/present.ts';
+import type { FolderGlobs } from '../documents/folder-globs.ts';
 import { realOf, resolveIn, type DeckRoot } from './files.ts';
 import { keptMembers, resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
 import { buildSlide, type DeckProject, type KindContext } from './kinds.ts';
@@ -99,6 +107,11 @@ export type DeckContext = {
      * (`DeckProject.id`); undefined for no filter, which keeps every member of every group.
      */
     keep?: ReadonlySet<string>;
+    /**
+     * The store of folder-glob matches a group's `find.folders` is read through
+     * (sources/documents/folder-globs.ts), shared by every reader of its owner.
+     */
+    globs: FolderGlobs;
 };
 
 /** A reader that keeps what it has read. */
@@ -214,7 +227,6 @@ export function createReader(context: DeckContext): DeckReader {
     const files = new Map<string, RawSlide[] | null>();
     /** The 1-based first line of each slide of a slide file, by the file's path. */
     const firstLines = new Map<string, number[]>();
-    const globbed = new Map<string, Doc[]>();
     /** The frame each deck is laid out in, by the deck's real folder. */
     const frames = new Map<string, DeckFrame>();
     let cuts = 0;
@@ -336,7 +348,7 @@ export function createReader(context: DeckContext): DeckReader {
         return found;
     }
 
-    /** The decks the globs of a group find under a root. */
+    /** The decks the globs of a group find under a root, the matches read through the store. */
     function under(root: DeckRoot, patterns: string[], raise: Raise): Doc[] {
         const found: Doc[] = [];
         for (const pattern of patterns) {
@@ -344,24 +356,19 @@ export function createReader(context: DeckContext): DeckReader {
                 raise('find', 'findings.deck.path_outside', pattern, root.dir);
                 continue;
             }
-            const cacheKey = `${root.dir}\n${pattern}`;
-            let docsHere = globbed.get(cacheKey);
-            if (docsHere === undefined) {
-                docsHere = [];
-                for (const match of globSync(pattern, { cwd: root.dir })) {
-                    const at = resolveIn(root, root.dir, match);
-                    if ('error' in at) {
-                        if (at.error === 'outside') {
-                            raise('find', 'findings.deck.path_outside', match, root.dir);
-                        }
-                        continue;
+            for (const match of context.globs.matches(root.dir, pattern)) {
+                const at = resolveIn(root, root.dir, match);
+                if ('error' in at) {
+                    if (at.error === 'outside') {
+                        raise('find', 'findings.deck.path_outside', match, root.dir);
                     }
-                    const dir = basename(at.path) === DECK_FILE ? dirname(at.path) : at.path;
-                    if (existsSync(join(dir, DECK_FILE))) docsHere.push(docAt(root, dir));
+                    continue;
                 }
-                globbed.set(cacheKey, docsHere);
+                const dir = basename(at.path) === DECK_FILE ? dirname(at.path) : at.path;
+                if (!existsSync(join(dir, DECK_FILE))) continue;
+                const one = docAt(root, dir);
+                if (!found.includes(one)) found.push(one);
             }
-            for (const one of docsHere) if (!found.includes(one)) found.push(one);
         }
         return found;
     }

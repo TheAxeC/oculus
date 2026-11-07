@@ -39,6 +39,7 @@ import { hubProjects, type HubRecords } from '../../snapshot/hubs/deck-facts.ts'
 import { frameSetting } from '../config.ts';
 import type { DeckProject } from '../deck/kinds.ts';
 import { createReader, type DeckReader } from '../deck/read.ts';
+import type { FolderGlobs } from './folder-globs.ts';
 
 /** A hub a deck is read under: its name, its folder and its settings. */
 type DeckHub = { key: string; dir: string; config: PortfolioConfig };
@@ -54,6 +55,8 @@ type DeckInput = {
     drafts?: ReadonlyMap<string, string>;
     /** The keys of the projects a filter keeps; none for no filter. */
     keep?: ReadonlySet<string>;
+    /** The store of folder-glob matches the groups' `find.folders` are read through. */
+    globs: FolderGlobs;
 };
 
 /**
@@ -91,6 +94,7 @@ export function deckReader(input: DeckInput): DeckReader {
         frame: frameSetting(hub.config.merged),
         catalog: hub.config.text,
         order: deckOrderOf(hub.config.merged),
+        globs: input.globs,
         ...(input.drafts === undefined ? {} : { drafts: input.drafts }),
         ...(input.keep === undefined ? {} : { keep: input.keep })
     });
@@ -107,17 +111,19 @@ type BuildHub = {
 /**
  * The snapshot build's read of the decks of the hub `read`: its project decks, by project id, its
  * portfolio deck, and the findings of the read. The hub's projects resolve their references in
- * `own`, the hub's records, then in `others`, the other hubs of the workspace.
+ * `own`, the hub's records, then in `others`, the other hubs of the workspace. The groups' globs
+ * are read through `globs`, the store the deck route and the deck writes read through too.
  */
 export function readDecks(
     read: BuildHub,
     own: HubRecords,
-    others: readonly HubRecords[]
+    others: readonly HubRecords[],
+    globs: FolderGlobs
 ): { decks: Record<Id, RawDeck>; findings: Finding[] } {
     const { config } = read;
     const hub = { key: read.root, dir: read.hub, config };
     const made = hubProjects(read.raw.manifests, own, others, config);
-    const reader = deckReader({ hub, projects: made.projects, words: made.words });
+    const reader = deckReader({ hub, projects: made.projects, words: made.words, globs });
     const decks: Record<Id, RawDeck> = {};
     for (const one of reader.projectDecks()) decks[one.id] = { path: one.path, tags: one.tags };
     if (config.portfolioDeck !== null) {

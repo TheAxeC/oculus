@@ -14,6 +14,7 @@ import { readCollections } from '../../../../src/lib/data/sources/collections.ts
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { PortfolioConfig, Snapshot } from '../../../../src/lib/data/model/index.ts';
 import type { OpenWorkspace } from '../../../../src/lib/server/files/workspace/open.ts';
 import { primaryConfig } from '../../../../src/lib/server/files/roots.ts';
@@ -44,8 +45,8 @@ function built(
             : [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
     const order = open.folders.map((one) => one.name);
     const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
-    return buildHubs({ primary, others, config, order, self: '' }, 0, createChecker(), null)
-        .snapshot;
+    const read = { primary, others, config, order, self: '' };
+    return buildHubs(read, 0, createChecker(), null, folderGlobs()).snapshot;
 }
 
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */

@@ -66,19 +66,9 @@ dispatch:           # steps in flight, up to six (Z632)
   cases_ruling: .scratch/migration/agents/briefs/O166-cases.md
   landing: not-started
   shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
-- step: O159
-  brief_check: .scratch/migration/agents/reviews/O159-brief-check.md (a1e03b87281fab689, claude-opus-5-5, 250038 tokens, 80 tool uses, 13.5 min)
-  base: 2e8c2c4dd
-  worktree: .agents/worktrees/migration-O159
-  executor: agent
-  worker: claude:opus
-  session_id: a1fc9c46cf69b0c9f (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O159-report.md
-  builder_usage: "build: 301370 tokens, 330 tool uses, 91.5 min; round 1: 229668 tokens, 143 tool uses, 37.2 min"
-  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min); .scratch/migration/agents/reviews/O159-refuter.md (a864d9923908a74ce, claude-opus-5-5, 268862 tokens, 59 tool uses, 15.6 min); over round 1: ab49ab10318c7d20f, claude-opus-5-5, 252595 tokens, 62 tool uses, 16.4 min
-  round: 1 (agents/briefs/O159-round-1.md, sent 2026-11-07)
-  landing: not-started
+- step: O151
+  brief_check: "running: a9884b252a619f8e8"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -192,7 +182,7 @@ dispatch:           # steps in flight, up to six (Z632)
 
 ## The pause
 
-In force from 2026-11-07, Axel: "This is still not permission to continue". Nothing is dispatched, resumed, refuted, landed or prepared, and no /writing finding is applied, until he says go.
+Lifted 2026-11-07 by Axel: "You may continue again. Please first start O151 (the brief check and such), then the landings one by one". Before it, from 2026-11-07, Axel: "This is still not permission to continue". Nothing is dispatched, resumed, refuted, landed or prepared, and no /writing finding is applied, until he says go.
 
 Lifted 2026-10-26 by Axel: "Please resume the builders". O86's, O89's and O84's builders are resumed by message with their context. Before it, from 2026-10-26, Axel: "Can you pause the 3 agents?". The three builders were stopped through the stop tool: O86's (a932a66494c50d411) mid repair round 1, O89's (a6462cf6ae75f9bfa) mid repair round 1 (it was at item 7, the palette page), and O84's (a6b9bb9efcca75eff) mid its first build. Each worktree keeps its partial edits; each builder can be resumed by message with its context.
 
@@ -891,6 +881,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+
+- 2026-11-07 (O159 landed). O159, one folder search per hub, landed (booking in `plan.md`, `agents/reviews/O159-landing.md`): a filter change of the portfolio deck over the research hub reads in 18.4 ms with the warm store against 1157.4 ms with a fresh one. Axel: "The text size for the facts strip is faaar too large"; measured on 8797, the strip's values are 18 px in the 1280 by 720 frame, the size of the slide's paragraphs and above its 13.5 px lists; the fix goes into O151's brief with the brief check's findings. Open items: none. In flight (4 of 6): O151 (brief check back, its findings closed next), O161, O165, O166 (each at landing). Next: O151's brief check closed and its builder launched, then /land O166 and /land O161 one at a time.
 
 - 2026-11-06 (O164 landed). O164, a card's links open their page, landed (booking in `plan.md`, `agents/reviews/O164-landing.md`), every press seen opening its entry's page on the scratch server. Open items: none. In flight (1 of 6): O161 (building on the round-0 cases ruling). Queued: O165 (/spec now), O151 and O159 (/spec again now), O166 (/spec now: O164 has landed).
 - 2026-11-06 (O163 landed). O163, the hub's portfolio deck written again, landed (booking in `plan.md`, `agents/reviews/O163-landing.md`): the demo fixture's comment line on main, the hub's `deck/` and `README.md:60` changed on disk in the research hub, their commit waiting on Axel's word. O161's round-0 cases ruling to 713 (a) sent and its builder resumed after a network drop. O164's review over round 1 found nothing; /land O164 next. Open items: none. In flight (2 of 6): O161 (building), O164 (/land next). Queued: O165 (/spec now), O151 and O159 (/spec again now: O163 has landed), O166 (after O164).

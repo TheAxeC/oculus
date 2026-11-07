@@ -6,7 +6,10 @@
 // with that kind, key and `undoes`. The undo is checked first, for all of them: each file must hold
 // the text the act left (an image its hash), and a file that is not there must be what the act made
 // away. Then the texts go back and the files the act made go to the Trash, and the undo is recorded
-// as an act of its own, which a further undo takes back in turn.
+// as an act of its own, which a further undo takes back in turn. The keys of the store of
+// folder-glob matches that cover a file or folder the undo wrote, made or removed are dropped once
+// the files are written, the failure that puts them back included, before the answer, since the
+// page reads the deck at once after it.
 //
 // A dropped image whose file the undo trashed is not brought back by taking that undo back: the
 // record holds its hash and never its bytes, so the records of that undo offer no undo.
@@ -14,6 +17,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import trashLibrary from 'trash';
+import { dropUnder } from '../../../../../../data/sources/documents/folder-globs.ts';
 import { writtenWith, type Change, type ChangeRecord } from '../../../../../core/changes.ts';
 import { writeTextAtomic } from '../../../../../core/json.ts';
 import { inside, realPath } from '../../../../../core/paths.ts';
@@ -67,6 +71,8 @@ export async function undoDeckEdit(
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
     // The files the undo has changed so far, which a failure puts back as the act left them.
     const done: Part[] = [];
+    // The files and folders the undo writes, makes or removes, whose folder-glob keys it drops.
+    const touched = parts.map((one) => one.path);
     try {
         for (const one of parts.filter((part) => part.before !== '')) {
             mkdirSync(dirname(one.path), { recursive: true });
@@ -94,8 +100,10 @@ export async function undoDeckEdit(
                 writeTextAtomic(one.path, one.after);
             }
         }
+        dropUnder(into.deckGlobs, touched);
         return { error: 'unwritable' };
     }
+    dropUnder(into.deckGlobs, touched);
     // An undo that trashed an image cannot be taken back, so its records offer no undo.
     const undo = parts.some((one) => one.change.field === IMAGE_BYTES) ? 'none' : 'field';
     for (const one of parts) {

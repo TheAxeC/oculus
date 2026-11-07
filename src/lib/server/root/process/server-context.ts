@@ -6,6 +6,7 @@
 
 import type { LocalConfig } from '../../../data/sources/config.ts';
 import type { HostInfo } from '../../../data/model/index.ts';
+import type { FolderGlobs } from '../../../data/sources/documents/folder-globs.ts';
 import type { AccountBook } from '../../accounts/connect/actions.ts';
 import type { CalendarWatcher } from '../../accounts/calendar/poll.ts';
 import type { ConnectStates } from '../../accounts/connect/oauth.ts';
@@ -150,6 +151,11 @@ export type ServerContext = {
     cloning: Set<string>;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
+    /**
+     * The matches of the decks' folder globs, which the snapshot build, the deck route and the deck
+     * writes read through and the portfolio watcher drops a key of when its folders change.
+     */
+    deckGlobs: FolderGlobs;
     /**
      * The folder panel open now, as the controller that ends it, so a second request while it is
      * open is answered busy and `close` ends it.

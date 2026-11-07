@@ -30,6 +30,7 @@ import { readHubBeforeDecks, readOtherHub } from '../../../src/lib/data/index.ts
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { DeckReader } from '../../../src/lib/data/sources/deck/read.ts';
 import { deckReader } from '../../../src/lib/data/sources/documents/decks.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { hubProjects } from '../../../src/lib/data/snapshot/hubs/deck-facts.ts';
 import { factRecords } from '../../../src/lib/data/snapshot/normalise.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
@@ -240,7 +241,12 @@ function buildReaders(hubs: readonly HubAt[]): (key: string) => DeckReader {
         const others = records.filter((_, index) => index !== at);
         const made = hubProjects(one.raw.manifests, records[at], others, one.config);
         const hub = { key, dir: one.dir, config: one.config };
-        return deckReader({ hub, projects: made.projects, words: made.words });
+        return deckReader({
+            hub,
+            projects: made.projects,
+            words: made.words,
+            globs: folderGlobs()
+        });
     };
 }
 
@@ -314,6 +320,8 @@ export function factsWorkspace(): FactsWorkspace {
         readOtherHub({ key: 'lab', dir: lab }, settings(lab)),
         readOtherHub({ key: 'far', dir: far }, settings(far))
     ];
+    // One store for the build and the route's read, as the server holds one.
+    const globs = folderGlobs();
     const built = buildHubs(
         {
             primary: { key: 'hub', dir: hub, portfolio, workspace: null },
@@ -324,7 +332,8 @@ export function factsWorkspace(): FactsWorkspace {
         },
         0,
         createChecker(),
-        null
+        null,
+        globs
     );
     const snapshot = built.snapshot;
     const source: DeckSource = {
@@ -333,7 +342,8 @@ export function factsWorkspace(): FactsWorkspace {
         config: portfolio,
         projects: Object.values(snapshot.entities.projects),
         entities: (kind) => snapshot.entities[kind],
-        hubs: hubTargets(open, settings)
+        hubs: hubTargets(open, settings),
+        globs
     };
     const readers = buildReaders([
         { key: 'hub', dir: hub, config: portfolio, roots: portfolio.repositories },

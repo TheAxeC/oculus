@@ -6,11 +6,16 @@
 // title is one line (a break in it becomes a space) and is written as a single-quoted YAML scalar.
 // Each file is one record holding its text before (empty) and after, under one key, so History
 // takes the act back as one step (deck-undo.ts), which also removes the folder an outline made.
+//
+// Each act drops the keys of the store of folder-glob matches that cover the deck file or the
+// folder it made (data/sources/documents/folder-globs.ts), after the write and before its answer:
+// the page reads the deck at once after the answer, before the watcher's event can drop them.
 
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, posix } from 'node:path';
 import { TEXT_LIMIT } from '../../../../../../data/file-ops.ts';
 import { DECK_FILE } from '../../../../../../data/sources/deck/read.ts';
+import { dropUnder } from '../../../../../../data/sources/documents/folder-globs.ts';
 import { outlineOf } from '../../../../../../data/sources/deck/outline.ts';
 import {
     closingText,
@@ -68,6 +73,7 @@ export function createDeck(
     };
     put(DECK_FILE, presentText(title, [CLOSING]));
     if (!existsSync(join(at.path, CLOSING))) put(CLOSING, closingText(title));
+    dropUnder(into.deckGlobs, [join(at.path, DECK_FILE)]);
     return { changed, refused: [], records, id: folder };
 }
 
@@ -121,5 +127,6 @@ export function outlineDeck(
     put(DECK_FILE, presentText(title, [SLIDES, CLOSING]));
     put(SLIDES, outline.slides);
     put(CLOSING, closingText(title));
+    dropUnder(into.deckGlobs, [folder]);
     return { changed, refused: [], records, id: under };
 }

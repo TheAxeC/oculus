@@ -15,6 +15,7 @@ import {
 import type { PortfolioConfig, RepositoryRoot } from '../../../src/lib/data/model/index.ts';
 import type { SettingsFile } from '../../../src/lib/data/snapshot/references/build.ts';
 import { createChecker, type Checker } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 
 /**
  * The build of the hub at `hub` with the settings `config`, its files named under `root` (the
@@ -31,6 +32,9 @@ export function buildOneHub(
     root: string = basename(hub),
     workspace: SettingsFile | null = null
 ): HubBuild {
-    const [{ read }] = withDecks([{ read: readHubBeforeDecks(hub, config, roots, root) }]);
+    const [{ read }] = withDecks(
+        [{ read: readHubBeforeDecks(hub, config, roots, root) }],
+        folderGlobs()
+    );
     return builtHub(read, { version, checker, engine, workspace, others: {} });
 }

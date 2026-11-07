@@ -15,9 +15,11 @@
 // (data/sources/documents/decks.ts), over the merged snapshot's projects, whose domains and other
 // references the merge has resolved, and over the snapshot's records in the words of the hub the
 // deck is read under, so a deck of a second hub draws that hub's words and a deck both read gives
-// the same slides, projects, domains and facts. Neither read raises a finding on a project's
-// domain: a key no hub holds is the finding of the manifest check (snapshot/schema/check.ts) on
-// the manifest's `domain:` line, and the project's slides are drawn in the neutral tone.
+// the same slides, projects, domains and facts; both read a group's folder globs through the store
+// the server holds (data/sources/documents/folder-globs.ts). Neither read raises a finding on a
+// project's domain: a key no hub holds is the finding of the manifest check
+// (snapshot/schema/check.ts) on the manifest's `domain:` line, and the project's slides are drawn
+// in the neutral tone.
 //
 // The roots are the folders of the open workspace, so a root that is not one of their names and a
 // path that climbs out of a root or leaves it through a link is refused by the rule the file route
@@ -27,6 +29,7 @@
 // members, candidates and missing names through the same function.
 
 import { deckReader } from '../../../data/sources/documents/decks.ts';
+import type { FolderGlobs } from '../../../data/sources/documents/folder-globs.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import type { FactRecordKind, FactWords } from '../../../data/shapes/project-facts.ts';
@@ -47,6 +50,11 @@ export type DeckSource = {
     /** One entity map of the snapshot by internal id, or null while none was published. */
     entities: (kind: FactRecordKind) => Record<string, unknown> | null;
     hubs?: HubTarget[];
+    /**
+     * The store of folder-glob matches the deck's groups are read through: the server's
+     * (`ServerContext.deckGlobs`), so a read walks a pattern only after a change dropped its key.
+     */
+    globs: FolderGlobs;
 };
 
 /** The text an editor holds unsaved for one file, named by a served root and a path under it. */
@@ -98,6 +106,7 @@ export function readDeck(
         projects: source.projects,
         words,
         drafts: draftsOf(source.roots, drafts),
+        globs: source.globs,
         ...(keep === undefined ? {} : { keep: new Set(keep) })
     });
     const deck = reader.read({ key: held.key, dir: held.dir }, path);

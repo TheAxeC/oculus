@@ -24,6 +24,7 @@ import {
     type PortfolioBuild
 } from '../../../data/index.ts';
 import type { PortfolioConfig, RegistryName } from '../../../data/model/index.ts';
+import type { FolderGlobs } from '../../../data/sources/documents/folder-globs.ts';
 import { mergeHubs, type HubPart } from '../../../data/snapshot/hubs/merge.ts';
 import { markSelf } from '../../../data/snapshot/hubs/self.ts';
 import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
@@ -134,35 +135,40 @@ function folderParts(build: HubBuild): HubPart[] {
  * alone reads the workspace's repositories, its settings file, its own `.oculus/local.yml` for the
  * index and oculus's own config folder `engine`. The user is marked once over the merge, the
  * person the key `self` of the primary's `local.yml` names as the primary resolves it
- * (snapshot/hubs/self.ts).
+ * (snapshot/hubs/self.ts). The decks' folder globs are read through `globs`, the store the
+ * server holds for the process, so a rebuild walks only the patterns whose keys an event dropped.
  */
 export function buildHubs(
     read: WorkspaceRead,
     version: number,
     checker: Checker,
-    engine: EngineConfigIn | null
+    engine: EngineConfigIn | null,
+    globs: FolderGlobs
 ): PortfolioBuild {
     const { primary } = read;
-    const hubs = withDecks([
-        ...(primary === null
-            ? []
-            : [
-                  {
-                      ...primary,
-                      read: readHubBeforeDecks(
-                          primary.dir,
-                          primary.portfolio,
-                          primary.portfolio.repositories,
-                          primary.key
-                      )
-                  }
-              ]),
-        ...read.others.map((one) => ({
-            ...one,
-            workspace: null,
-            read: readHubBeforeDecks(one.dir, one.portfolio, [], one.key)
-        }))
-    ]);
+    const hubs = withDecks(
+        [
+            ...(primary === null
+                ? []
+                : [
+                      {
+                          ...primary,
+                          read: readHubBeforeDecks(
+                              primary.dir,
+                              primary.portfolio,
+                              primary.portfolio.repositories,
+                              primary.key
+                          )
+                      }
+                  ]),
+            ...read.others.map((one) => ({
+                ...one,
+                workspace: null,
+                read: readHubBeforeDecks(one.dir, one.portfolio, [], one.key)
+            }))
+        ],
+        globs
+    );
     const folders = primary === null ? readFolders(read.config) : null;
     const lists = [
         ...hubs.map((one) => hubLists(one.read.raw)),

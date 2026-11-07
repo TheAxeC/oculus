@@ -6,6 +6,7 @@
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
 import { createChecker } from '../../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { buildHubs } from '../../../../src/lib/server/root/watch/build.ts';
 import { boardItemFor } from '../../../../src/lib/state/boards/board/items.ts';
@@ -32,7 +33,7 @@ describe('the related tags of a board item', () => {
         };
         const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
         const read = { primary, others: [], config: portfolio, order: ['hub'], self: '' };
-        const { snapshot } = buildHubs(read, 0, createChecker(), null);
+        const { snapshot } = buildHubs(read, 0, createChecker(), null, folderGlobs());
         const project = snapshot.entities.projects['hub:mine'];
         const item = boardItemFor(snapshot, project, presetFor(row.board, config));
         expect(item.related).toEqual([{ id: 'hub:other', label: 'Other', held: true }]);

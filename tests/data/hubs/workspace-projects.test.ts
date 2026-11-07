@@ -13,6 +13,7 @@ import { readOtherHub } from '../../../src/lib/data/index.ts';
 import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { primaryConfig } from '../../../src/lib/server/files/roots.ts';
 import type { OpenWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
@@ -58,7 +59,8 @@ function read(hub: string, folders: FolderSpec[], others: FolderSpec[] = []): Re
         { primary, others: read, config: portfolio, order, self: '' },
         0,
         createChecker(),
-        null
+        null,
+        folderGlobs()
     );
     return { snapshot: built.snapshot, open };
 }

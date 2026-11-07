@@ -14,6 +14,7 @@ import { portfolioConfigFrom, readOtherHub, workspaceVocabs } from '../../../src
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import type { Venue } from '../../../src/lib/data/model/index.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import { boardItemFor } from '../../../src/lib/state/boards/board/items.ts';
@@ -224,7 +225,7 @@ describe("the words of each hub's records", () => {
         const primary = { key: 'home', dir: home, portfolio, workspace: null };
         const others = [readOtherHub({ key: 'lab', dir: lab }, parse(lab))];
         const read = { primary, others, config: portfolio, order: ['home', 'lab'], self: '' };
-        const { snapshot } = buildHubs(read, 0, createChecker(), null);
+        const { snapshot } = buildHubs(read, 0, createChecker(), null, folderGlobs());
         const project = snapshot.entities.projects['home:paper'];
         const item = boardItemFor(snapshot, project, presetFor('projects', OWN.config, vocabOf));
         expect(item.venue?.tier).toEqual({ glyph: 'crown', tone: 'purple', label: 'Top' });

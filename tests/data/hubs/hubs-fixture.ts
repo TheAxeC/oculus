@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { readMachine } from '../../../src/lib/data/sources/config/machine.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { AuditPayload, FeedsPayload, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import type { SchemaSet } from '../../../src/lib/data/snapshot/schema/set.ts';
@@ -23,6 +24,7 @@ import {
     watchPortfolio,
     type WatchOptions
 } from '../../../src/lib/server/root/watch/portfolio/portfolio.ts';
+import { globSource } from '../../../src/lib/server/root/watch/portfolio/glob-watch.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 
@@ -67,7 +69,8 @@ export function watchedOnce(workspace: Workspace, options: WatchOptions = {}): H
             self: () => {
                 const open = workspace.open();
                 return readMachine(open.hubs, open.primary).config.self;
-            }
+            },
+            globs: globSource()
         },
         { debounce: 20, ...options }
     );
@@ -121,6 +124,7 @@ export function hubsTarget(
         engineConfig: () => loadConfig(engineDir()).config,
         career: careerRules(loadConfig(engineDir(), { hub: own.dir }).config),
         projects: () => [],
+        deckGlobs: folderGlobs(),
         glyphs: [],
         hubs: folders
             .filter((one) => one.name !== primary)

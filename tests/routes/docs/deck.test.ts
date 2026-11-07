@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { handleDeck, handleDeckDrafts } from '../../../src/lib/server/content/deck/endpoint.ts';
 import type { DeckSource } from '../../../src/lib/server/content/deck/read.ts';
@@ -37,7 +38,8 @@ function source(): { source: DeckSource; dir: string } {
             primary: { key: 'hub', dir: join(dir, 'hub') },
             config: portfolioConfigFrom(loadConfig(engineDir()).config),
             projects: [],
-            entities: () => null
+            entities: () => null,
+            globs: folderGlobs()
         }
     };
 }
@@ -189,7 +191,8 @@ describe('the deck route', () => {
                 primary: { key: 'hub', dir: hub },
                 config: portfolioConfigFrom(loaded.config, loaded.from),
                 projects: [],
-                entities: () => null
+                entities: () => null,
+                globs: folderGlobs()
             };
             const deck = (await ask(held, `root=hub&path=${path}`).json()) as { state: string };
             expect(deck.state, row).toBe(state);

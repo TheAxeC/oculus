@@ -5,7 +5,8 @@
 // and the records their facts name are the ones this request's server last published, and the
 // configuration is the one read `locals.config()`
 // keeps for the request, taken from the ServerContext's cache of the parse, as each other hub's
-// settings are. The POST reads the same deck over the drafts of the body.
+// settings are. The POST reads the same deck over the drafts of the body. A group's folder globs
+// are read through the ServerContext's store, warm from the snapshot build.
 
 import { portfolioConfigFrom } from '$lib/data/index';
 import { handleDeck, handleDeckDrafts } from '$lib/server/content/deck/endpoint';
@@ -27,7 +28,8 @@ function sourceOf(locals: App.Locals): DeckSource {
         config: portfolioConfigFrom(config, from),
         projects: projects(locals.server.hub),
         entities: (kind) => entities(locals.server.hub, kind),
-        hubs: hubTargets(open, locals.server.configCache.hub)
+        hubs: hubTargets(open, locals.server.configCache.hub),
+        globs: locals.server.deckGlobs
     };
 }
 

@@ -132,6 +132,14 @@ function nestedProjects(base: string, segments: string[] = []): string[][] {
     return found;
 }
 
+/**
+ * Whether the folder `dir` is a project, or holds one at any depth below it as the scan walks
+ * (`nestedProjects`), so a filing folder of projects counts and a dot folder does not.
+ */
+export function holdsProject(dir: string): boolean {
+    return projectFileIn(dir) !== null || nestedProjects(dir).length > 0;
+}
+
 /** What reading one manifest file found. */
 type ManifestFile =
     { kind: 'absent' } | { kind: 'unusable' } | { kind: 'map'; data: Record<string, unknown> };

@@ -10,6 +10,7 @@ import { portfolioConfigFrom, readOtherHub } from '../../../src/lib/data/index.t
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import { choicesFor, type Choice, type FormField } from '../../../src/lib/state/forms/schema.ts';
@@ -89,7 +90,7 @@ function built(files: Record<string, string>, labFiles?: Record<string, string>)
     const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
     const order = ['hub', ...others.map((one) => one.key)];
     const read = { primary, others, config: portfolio, order, self: '' };
-    const { snapshot } = buildHubs(read, 0, createChecker(), null);
+    const { snapshot } = buildHubs(read, 0, createChecker(), null, folderGlobs());
     return { snapshot, config: loaded.config, root: 'hub' };
 }
 

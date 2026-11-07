@@ -29,6 +29,7 @@ import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { deckReader } from '../../../src/lib/data/sources/documents/decks.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { FactWords } from '../../../src/lib/data/shapes/project-facts.ts';
 import type {
     Deck,
@@ -98,7 +99,10 @@ function noRecords(merged: Record<string, unknown>): FactWords {
 function readDeck(read: HubRead, projects: Project[], folder: string): Deck {
     const hub = { key: HUB_KEY, dir: read.hub, config: read.config };
     const words = noRecords(read.merged);
-    return deckReader({ hub, projects, words }).read({ key: hub.key, dir: hub.dir }, folder);
+    return deckReader({ hub, projects, words, globs: folderGlobs() }).read(
+        { key: hub.key, dir: hub.dir },
+        folder
+    );
 }
 
 /** The equations a deck draws: those of its project slides and of its equation slides. */
@@ -325,10 +329,12 @@ describe('the count of written equations', () => {
         });
         const merged = loadConfig(engine).config;
         const root = { key: HUB_KEY, dir: hub, config: portfolioConfigFrom(merged) };
-        const deck = deckReader({ hub: root, projects: [], words: noRecords(merged) }).read(
-            { key: root.key, dir: root.dir },
-            'projects/active/alpha/present'
-        );
+        const deck = deckReader({
+            hub: root,
+            projects: [],
+            words: noRecords(merged),
+            globs: folderGlobs()
+        }).read({ key: root.key, dir: root.dir }, 'projects/active/alpha/present');
         const drawn = drawnEquations(deck).length;
         expect(drawn).toBe(2);
         expect(writtenEquations(text)).toBe(2);

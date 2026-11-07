@@ -13,6 +13,7 @@ import {
     withDecks
 } from '../../../src/lib/data/index.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     graphOf,
@@ -334,7 +335,10 @@ export function plantHub(
         ? { root: HUB_FOLDER, path: CONFIG_IN_HUB }
         : { root: CONFIG_FOLDER, path: '' };
     // The hub is built as the primary is, so its own `.oculus/local.yml` is read for `self`.
-    const [{ read }] = withDecks([{ read: readHubBeforeDecks(hub, config, [], HUB_FOLDER) }]);
+    const [{ read }] = withDecks(
+        [{ read: readHubBeforeDecks(hub, config, [], HUB_FOLDER) }],
+        folderGlobs()
+    );
     const index = builtHub(read, {
         version: 0,
         checker: createChecker(),

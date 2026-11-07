@@ -20,10 +20,11 @@ import type { RepositoryRoot } from '../../../../data/model/index.ts';
 import { AUDIT_PATHS, type AuditSetting } from '../../../content/audit/scan.ts';
 
 /**
- * Folders whose contents never change what the snapshot holds: a project's deposit and its
- * attic hold tens of thousands of files between them.
+ * Folders whose contents never change what the snapshot holds: a project's deposit and its attic
+ * hold tens of thousands of files between them. The file filter here and the folder-glob drop rule
+ * (glob-drop.ts) both leave them out.
  */
-const NEVER = ['code', 'attic'];
+export const NEVER: readonly string[] = ['code', 'attic'];
 
 /** A path as its segments, without empty ones. */
 function segmentsOf(path: string): string[] {

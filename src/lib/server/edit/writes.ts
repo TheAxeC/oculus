@@ -37,6 +37,7 @@ import { appsSettings, changesKeep, type LocalConfig } from '../../data/sources/
 import { FILES_KIND } from '../../data/file-ops.ts';
 import { keyOf } from '../../data/helpers/hub-names.ts';
 import type { FactRecordKind } from '../../data/shapes/project-facts.ts';
+import { folderGlobs, type FolderGlobs } from '../../data/sources/documents/folder-globs.ts';
 import type { HubSettings } from '../../data/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges } from '../core/changes.ts';
@@ -141,6 +142,12 @@ export type WriteTarget = {
      * built without it checks those choices for their type alone, and its decks name no record.
      */
     entities?: (kind: FactRecordKind) => Record<string, unknown> | null;
+    /**
+     * The store of folder-glob matches a deck write reads a deck's groups through and drops a key
+     * of when it makes or removes a deck folder: the server's, or a fresh one for a target built
+     * with no server.
+     */
+    deckGlobs: FolderGlobs;
     bookmarks?: string;
     /**
      * Where this machine's change log is, how much of it is kept, and the chain an append waits
@@ -293,7 +300,8 @@ export function carriedOf(server: {
  *
  * The server is passed in rather than reached from a module, so nothing here is process-wide. A
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the
- * deck write depends on them.
+ * deck write depends on them; its target carries a store of folder-glob matches of its own, which
+ * reads as one walk per target.
  */
 export function target(
     engine: string,
@@ -302,6 +310,7 @@ export function target(
     server?: {
         hub: HubLike;
         fsWrites: FsWrites;
+        deckGlobs: FolderGlobs;
         opsWrites?: FsWrites;
         apps?: {
             held: () => AppsHeld;
@@ -322,6 +331,7 @@ export function target(
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
+        deckGlobs: server?.deckGlobs ?? folderGlobs(),
         bookmarks: perOculus(open.primaryDir, merged).bookmarks ?? undefined,
         glyphs: glyphNames(merged) ?? [],
         hubs: hubTargets(open, settings),

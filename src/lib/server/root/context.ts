@@ -20,7 +20,6 @@ import {
     iconSet,
     type IconMemory,
     failureRows,
-    loadConfig,
     localFile,
     localSentence,
     mailSettings,
@@ -36,7 +35,6 @@ import {
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
-import { workspaceVocabs } from '../../data/index.ts';
 import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { words } from '../core/words.ts';
 import type { Finding, FilesPayload } from '../../data/model/index.ts';
@@ -90,12 +88,11 @@ import { HookStore, recoverPlaces } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
 import type { OpenWorkspace } from '../files/workspace/open.ts';
-import { configOptions, perOculus } from '../files/workspace/paths.ts';
-import { noApps, type AppsHeld } from '../machine/apps/read/held.ts';
-import { languageSource, languageStamp } from '../machine/apps/routes/localization.ts';
+import { perOculus } from '../files/workspace/paths.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
-import { createConfigCache } from './process/config-cache.ts';
+import { contextConfig } from './process/context/config-parse.ts';
 import { createMachine, heldProblems } from './process/context/machine.ts';
+import { globSource } from './watch/portfolio/glob-watch.ts';
 import type { MachineProblem } from '../../data/sources/config/machine.ts';
 import {
     newWorkspaceFindings,
@@ -176,53 +173,9 @@ export function createServerContext(
             heardHeld.delete(listener);
         };
     };
-    // The display language is read from the apps, which are read after the config that names
-    // their folder; until the watcher's first read the holder holds no app and the words are
-    // oculus's own, and the read that changes a language republishes the config.
-    const appsHeld = { now: (): AppsHeld => noApps() };
-    const language = languageSource(() => appsHeld.now());
-    const load = (): ReturnType<typeof loadConfig> =>
-        make.loadConfig(engine, configOptions(open(), language));
     // The parse the start, a request, a finding or a move of the workspace takes while neither
     // config folder changed, so the folders are parsed once for all of them until a file changes.
-    const configCache = createConfigCache({
-        engine,
-        hub: () => open().primaryDir,
-        workspace: () => open().file,
-        load,
-        loadHub: (dir, words) =>
-            make.loadConfig(
-                engine,
-                dir === null
-                    ? {}
-                    : {
-                          hub: dir,
-                          ...(dir !== open().primaryDir && {
-                              other: open().hubs.find((one) => one.dir === dir)?.name ?? dir
-                          }),
-                          ...(words && { words })
-                      }
-            ),
-        language: () => languageStamp(appsHeld.now()),
-        report: reportFindings,
-        primary: () => open().primary,
-        others: () =>
-            open()
-                .hubs.filter((one) => one.name !== open().primary)
-                .map((one) => ({ key: one.name, dir: one.dir })),
-        folders: () => open().folders.map((one) => one.name),
-        vocabs: (read, others, settings, own) =>
-            workspaceVocabs(
-                { name: open().primary, dir: open().primaryDir },
-                read,
-                others,
-                settings,
-                {
-                    folders: open().folders.map((one) => one.name),
-                    own: own.config
-                }
-            )
-    });
+    const { configCache, appsHeld, language } = contextConfig(engine, open, make.loadConfig);
     const { config, from } = configCache.read();
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
@@ -332,6 +285,9 @@ export function createServerContext(
         repositories: [],
         write: Promise.resolve()
     };
+    // The one store of the decks' folder-glob matches, which every watcher the context starts
+    // reads and drops keys of, and every deck read and deck write reads through.
+    const deckGlobs = globSource();
     const startPortfolio = (): PortfolioWatcher =>
         make.watchPortfolio(
             hub,
@@ -346,7 +302,8 @@ export function createServerContext(
                 held: heldFindings,
                 problems,
                 self: () => local.self,
-                follow: followWorkspace
+                follow: followWorkspace,
+                globs: deckGlobs
             },
             {
                 built: () => {
@@ -623,6 +580,7 @@ export function createServerContext(
         credentials,
         cloning: new Set<string>(),
         ignoredCache: ignoredCache(),
+        deckGlobs: deckGlobs.store,
         folderPicker: pickerState(),
         hpcLogPaths: polled.hpcLogPaths,
         hpcSubmits,

@@ -89,7 +89,8 @@ export function hubSpelling(hub: string | null, file: string): string {
 
 /**
  * What a deck is read over for a write: the roots, the primary hub, its settings, its projects and
- * the records their facts name, none for a target built without them.
+ * the records their facts name, none for a target built without them, and the target's store of
+ * folder-glob matches.
  */
 export function deckSourceOf(into: WriteTarget, roots: Root[]): DeckSource {
     return {
@@ -101,7 +102,8 @@ export function deckSourceOf(into: WriteTarget, roots: Root[]): DeckSource {
         config: into.config,
         projects: into.projects(),
         entities: into.entities ?? (() => null),
-        hubs: into.hubs
+        hubs: into.hubs,
+        globs: into.deckGlobs
     };
 }
 

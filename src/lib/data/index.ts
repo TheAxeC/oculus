@@ -56,6 +56,7 @@ import {
 import { engineDir } from './places/engine-dir.ts';
 import { engineFile } from './sources/config/folder.ts';
 import { readDecks } from './sources/documents/decks.ts';
+import type { FolderGlobs } from './sources/documents/folder-globs.ts';
 import { textCatalog, type loadConfig } from './sources/config.ts';
 import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
 import { categoriesFindings } from './sources/config/sections/boards.ts';
@@ -306,10 +307,16 @@ function recordsOf(read: HubRead): HubRecords {
 /**
  * The hub `read` with its decks read through the deck module the deck route reads through
  * (sources/documents/decks.ts) and what was wrong in them added to its findings, its projects'
- * references resolved in `own`, the hub's records, then in `others`, as the merge resolves them.
+ * references resolved in `own`, the hub's records, then in `others`, as the merge resolves them,
+ * and its groups' globs read through `globs`.
  */
-function decked(read: HubRead, own: HubRecords, others: readonly HubRecords[]): HubRead {
-    const deck = readDecks(read, own, others);
+function decked(
+    read: HubRead,
+    own: HubRecords,
+    others: readonly HubRecords[],
+    globs: FolderGlobs
+): HubRead {
+    const deck = readDecks(read, own, others, globs);
     const findings = [...read.raw.findings, ...deck.findings];
     return { ...read, raw: { ...read.raw, decks: deck.decks, findings } };
 }
@@ -371,13 +378,17 @@ function listFileOf(hub: string, config: PortfolioConfig): string {
 /**
  * Each hub of a workspace as read, with its decks read: a project's references, its domain and
  * the records its facts name, resolve in its own hub and then in the other hubs of `hubs`
- * (snapshot/hubs/deck-facts.ts).
+ * (snapshot/hubs/deck-facts.ts). The groups' globs are read through `globs`, the store of
+ * folder-glob matches its owner keeps (sources/documents/folder-globs.ts).
  */
-export function withDecks<T extends { read: HubRead }>(hubs: readonly T[]): T[] {
+export function withDecks<T extends { read: HubRead }>(
+    hubs: readonly T[],
+    globs: FolderGlobs
+): T[] {
     const held = hubs.map((one) => ({ one, records: recordsOf(one.read) }));
     return held.map(({ one, records }) => {
         const others = held.flatMap((other) => (other.records === records ? [] : [other.records]));
-        return { ...one, read: decked(one.read, records, others) };
+        return { ...one, read: decked(one.read, records, others, globs) };
     });
 }
 

@@ -17,6 +17,7 @@ import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
 import type { AuditFinding, AuditPayload } from '../../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { Hub, type Sink } from '../../../../src/lib/server/core/channels.ts';
+import { globSource } from '../../../../src/lib/server/root/watch/portfolio/glob-watch.ts';
 import {
     watchPortfolio,
     type PortfolioWatcher
@@ -122,7 +123,8 @@ describe('the portfolio watcher over the website the primary hub names', () => {
                 settings: (hub) => loadConfig(engineDir(), { hub }),
                 defaults: () => loadConfig(engineDir()),
                 problems: () => [],
-                self: () => SELF
+                self: () => SELF,
+                globs: globSource()
             },
             { debounce: 20 }
         );

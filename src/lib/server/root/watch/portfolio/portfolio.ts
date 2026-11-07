@@ -15,6 +15,15 @@
 // rebuild from the hubs' `audit:` settings). The flat LinkedIn folder also accepts the post
 // filenames read by server/edit/feeds/feeds.ts.
 //
+// An event for a folder names no .yml or .md, so that filter takes none. The store of folder-glob
+// matches the decks are read through, which the server holds and every rebuild reads
+// (glob-watch.ts), hears them instead: each recursive handle runs the store's drop rule
+// (glob-drop.ts) at the event, before the debounce; a project folder made, moved or removed under a
+// scan folder, or a filing folder holding projects moved in, queues a rebuild, so the snapshot
+// names a project at its new folder, while a folder made inside a project queues none; and a key
+// the store takes whose folder no recursive handle covers is heard through a handle of its own,
+// such as the one on a hub's `projects/` for a deck group's `projects/**/present`.
+//
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
 // follows a write to the hub can publish version 1 and then version 2 with the same content. The
@@ -22,7 +31,7 @@
 
 import { existsSync, statSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { basename, dirname, join, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import { readOtherHub, type HubSettings } from '../../../../data/index.ts';
 import { mergedFeeds } from '../../../../data/snapshot/hubs/feeds.ts';
@@ -44,6 +53,8 @@ import {
 import { siteFiles, websiteDir } from '../../../content/audit/website/site.ts';
 import { websiteSettings } from '../../../../data/sources/config/settings/files.ts';
 import { auditFiles, auditPaths, relevantTo } from './audited.ts';
+import { globWatch, type GlobSource } from './glob-watch.ts';
+import { inside } from '../../../core/paths.ts';
 import { namedByConfig, namedByRoots, roleDirectories, watchedDirectories } from './reads.ts';
 import {
     configDir,
@@ -120,6 +131,11 @@ export type WatchPaths = {
      * answer takes the listener away.
      */
     follow?: (listener: () => void) => () => void;
+    /**
+     * The store of folder-glob matches the server holds (glob-watch.ts), which every rebuild reads
+     * its decks through and whose keys the watch events drop, with the keys it takes.
+     */
+    globs: GlobSource;
 };
 
 export type WatchOptions = {
@@ -259,6 +275,19 @@ export function watchPortfolio(
     const isClosed = (): boolean => closed;
     /** The listener the open workspace calls on a move, taken away at close. */
     let unfollow: (() => void) | null = null;
+    /** The folders the recursive handles of `open` watch, which cover a key's folder. */
+    const deep = new Set<string>();
+    /** The scan folders of every hub of the last rebuild, under which a project moved rebuilds. */
+    let scanned: string[] = [];
+    /** The folders of the projects the last snapshot names, whose removal rebuilds. */
+    let projectDirs: string[] = [];
+    const globs = globWatch({
+        source: paths.globs,
+        covered: (dir) => [...deep].some((one) => inside(dir, one)),
+        scanned: () => scanned,
+        projects: () => projectDirs,
+        queue: () => queue(false, false)
+    });
 
     const open = (
         dir: string,
@@ -271,12 +300,15 @@ export function watchPortfolio(
         try {
             handles.set(
                 dir,
-                watch(dir, { recursive }, (_event, filename) => {
-                    if (accepts(typeof filename === 'string' ? filename : null)) {
-                        queue(isConfig, isFeed);
-                    }
+                watch(dir, { recursive }, (event, filename) => {
+                    const name = typeof filename === 'string' ? filename : null;
+                    // The drop of the folder-glob keys runs at the event, before the debounce.
+                    const moved = recursive && name !== null && globs.heard(dir, event, name);
+                    if (accepts(name)) queue(isConfig, isFeed);
+                    else if (moved) queue(false, false);
                 })
             );
+            if (recursive) deep.add(dir);
             refused.delete(dir);
             return true;
         } catch (error) {
@@ -673,6 +705,13 @@ export function watchPortfolio(
                 if (watchHubFolders(one.dir, one.portfolio, [])) withFeeds = true;
             }
             open(engineConfig, true);
+            scanned = [
+                ...(primaryDir === null ? [] : portfolio.scan.map((r) => join(primaryDir, r.dir))),
+                ...others.flatMap((one) => one.portfolio.scan.map((r) => join(one.dir, r.dir)))
+            ];
+            // The keys held before this rebuild, and any whose folder could not be watched, are
+            // heard from here on; a key the build takes is heard as the store takes it.
+            globs.follow();
             const version = hub.nextVersion('portfolio');
             const built = buildHubs(
                 {
@@ -692,9 +731,16 @@ export function watchPortfolio(
                 },
                 version,
                 checker,
-                held
+                held,
+                paths.globs.store
             );
             const snapshot = built.snapshot;
+            const rootDir = new Map(workspace.roots.map((one) => [one.key, one.dir]));
+            projectDirs = Object.values(snapshot.entities.projects).flatMap((one) => {
+                if (isAbsolute(one.folder)) return [one.folder];
+                const dir = rootDir.get(rootOf(one));
+                return dir === undefined ? [] : [join(dir, one.folder)];
+            });
             placeClones(snapshot, options.repositories?.() ?? [], textCatalog(config));
             hub.publish('portfolio', snapshot);
             options.schemas?.(withOwnSchemas(built.schemas), built.references);
@@ -810,8 +856,10 @@ export function watchPortfolio(
             unfollow?.();
             unfollow = null;
             queued.cancel();
+            globs.close();
             for (const handle of handles.values()) handle.close();
             handles.clear();
+            deep.clear();
             for (const handle of rootParents.values()) handle.close();
             rootParents.clear();
         }

@@ -236,3 +236,15 @@ Round items: 1, 2, 4, 5, 6 and 7 closed; 3 closed as the round's text reads, whi
 - The watcher off darwin.
 
 Reviewer usage: ab49ab10318c7d20f, claude-opus-5-5, 252595 tokens, 62 tool uses, 16.4 min
+
+## Closed (at landing, in the gate worktree and then on main)
+
+- First run, Spec 1, Standards 1, Standards 2, Proof 1, Proof 2, Behaviour 1 and the script-made edit (Spec 3): closed in repair round 1 (round items 1 to 7), as the run over the round gives them.
+- First run, Spec 2 (C11 in a fast file of its own, `write-fixture.ts` outside the write list): accepted; G32 in `agents/guarded.md` names `tests/server/edit/deck/deck-globs.test.ts` for C11 and the other three test files of the step.
+- First run, Behaviour 2 (`path_outside` on every deck file of a reader): the finding is right for a match that leaves the root, which every deck reading the pattern now reports; recorded as a host-visible change in the booking.
+- Round 1, Spec 1 (a filing folder holding projects, moved in, rebuilt nothing): `movedFolder` (`glob-drop.ts`) answers a folder now that lies inside a project folder of the last snapshot with no rebuild, and any other folder by `event.manifest()`, which `glob-watch.ts` now answers with `holdsProject` (`src/lib/data/sources/manifests.ts`, the folder a project or holding one below it as `nestedProjects` walks). Two rows added to `tests/server/root/watch/glob-drop.test.ts` ('a filing folder that holds a project below it, moved in, rebuilds'; 'a folder holding a manifest made inside a project of the snapshot rebuilds nothing', failing first: `expected true to be false`) and one case to `tests/server/root/watch/deck-folders.test.ts` ('holds the deck of a project inside a filing folder moved in from outside the hub, after the rebuild', failing first: `Test timed out in 15000ms`, no rebuild); after the fix 27 of 27 and 11 of 11 pass. The head comments of `glob-drop.ts` and `portfolio.ts` and the doc comment of `movedFolder` say the rule as built.
+- Round 1, Proof 1 to 4 (report sentences): the facts are the reviewer's: the `path_outside` example needs two project decks; the hub's scan folders are seven (`.oculus/config.yml:7-21`); check 8 after the round is 8.6 ms against 6.9 ms over the fixture; main's state file then held open item 715. No decision rests on them.
+- Round 1, Standards 1 (the session-transcript reader): it changed no file of the step and nothing it produced is used.
+- Round 1, Standards 2 (two doc comments not rewrapped): `audited.ts`'s `NEVER` comment and `glob-drop.ts`'s `GlobEvent` comment rewrapped whole at 100 columns.
+- Round 1, Standards 3 (`folder-globs.ts` rewrapped with no word changed): kept; the paragraphs are wrapped whole at 100 columns, which the rules file asks of an edited comment, and no word changed.
+- Item 9, the real-hub timing (`node .agents/O159-time.ts ~/workspace/research-hub` from the gate): 95 research projects, keep 48; before (a fresh store per read, 10 reads) mean 1157.4 ms, sd 188.0 ms; after (one warm store, 10 reads) mean 18.4 ms, sd 3.1 ms.

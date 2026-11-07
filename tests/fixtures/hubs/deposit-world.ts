@@ -8,6 +8,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { isolateGit } from '../../server/git/refs/repo.ts';
@@ -76,6 +77,7 @@ export function depositTarget(
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
-        glyphs: []
+        glyphs: [],
+        deckGlobs: folderGlobs()
     };
 }
