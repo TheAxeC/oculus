@@ -1,21 +1,21 @@
-In flight (0 of 6 slots in use): none.
+In flight (3 of 6 slots in use):
+- O167 (the shell's controls hold one behaviour): building, round-0 rulings sent.
+- O169 (connections and their failures said in full): building.
+- O168 (the boards and record lists drawn whole): /spec, premise checks.
 
-Queued, in order:
-- O151 (a deck for every research project, and the facts strip made smaller): redone from its line; /spec next (Axel's go, 2026-11-07).
-- O167 (the shell's controls hold one behaviour): /spec next.
-- O168 (the boards and record lists drawn whole): /spec next.
-- O169 (connections and their failures said in full): /spec next.
+Queued, in order (2 steps):
+- O151 (a deck for every research project): /spec next, from 0.
 - O170 (Literature and Present said and drawn plainly): /spec next.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
 Landed, newest first:
-- O165 (the guides redesigned), 2026-11-07, this landing's commit.
+- O165 (the guides redesigned), 2026-11-07, 3fe97e21a.
 - O161 (cheaper cards), 2026-11-07, ccabf01ef.
 - O166 (the record pages made one design), 2026-11-07, 6038e7fdc.
 - O159 (one folder search per hub), 2026-11-07, db4244173.
 - O164 (a card's links open their page), 2026-11-06, 2ba2827a3.
-- O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; its hub files committed in the hub as a7b8bb6ca.
+- O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; hub a7b8bb6ca.
 - O158 (the Project facts strip redesigned), 2026-11-06, ca24a1132.
 - O162 (the arrow-keys hint removed), 2026-11-06, f3ebd1fa5.
 - O160 (Live HPC shows its refresh running), 2026-11-06, eae89abbe.
