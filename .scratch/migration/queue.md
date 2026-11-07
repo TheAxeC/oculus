@@ -1,10 +1,10 @@
-In flight (3 of 6 slots in use):
+In flight (4 of 6 slots in use):
 - O167 (the shell's controls hold one behaviour): building, round-0 rulings sent.
-- O169 (connections and their failures said in full): building.
-- O168 (the boards and record lists drawn whole): /spec, premise checks.
+- O169 (connections and their failures said in full): review in, repair round 1 sent.
+- O168 (the boards and record lists drawn whole): /spec, brief check running.
+- O151 (a deck for every research project): /spec, brief written, brief check next.
 
-Queued, in order (2 steps):
-- O151 (a deck for every research project): /spec next, from 0.
+Queued, in order (1 step):
 - O170 (Literature and Present said and drawn plainly): /spec next.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.

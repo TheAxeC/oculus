@@ -46,10 +46,15 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a7454e5b279e2a62f (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O169-report.md
-  round: 0
+  builder_usage: first run: 350498 tokens, 229 tool uses, 45.2 min
+  reviewer_report: .scratch/migration/agents/reviews/O169-refuter.md (ae4637ee51aa87981, claude-opus-5-5, 247221 tokens, 84 tool uses, 14.9 min)
+  round: 1
   shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O167 of this plan; O169 writes lines 55-70, O167 lines 130-230, disjoint hunks, so the cherry-pick merges them without a conflict
   landing: not-started
 - step: O168
+  brief_check: "running: ac49bd723d867d915"
+  landing: preparing
+- step: O151
   landing: preparing
 ```
 
@@ -164,6 +169,8 @@ dispatch:           # steps in flight, up to six (Z632)
 - Only related tests at a landing (Axel, 2026-10-22: "From now on, during landing, you are only allowed to run tests related to files that have changed. This is now a new standing demand"): a landing runs the test files that name or import a changed file and the changed test files, wherever they are (under `tests/checks` and tagged slow included), and no other test: never `npm run test:landing`, `npm test`, `npm run test:checks`, `npm run test:slow` or the essential list of `npm run test:quick`. It replaces `npm run test:landing` wherever this file or plan.md names it for a landing (`verify_landing`, Z492). It runs as `npm run test:quick`, whose selection is the related tests only (ruling 240 (a)), in the gate worktree (ruling 241 (b), Z492).
 
 ## The pause
+
+Lifted 2026-11-07 by Axel: "I want you to indeed continue with O168 spec, after that comes the queued steps. Please do O151 WITHOUT breaking rules. You have a worktree, so USE THE FUCKING WORKTREE ... A builder IS NEVER allowed to edit anything outside the worktree unless I (THE HUMAN, NOT YOU) give EXPLICIT (not interpreter, but explicit) permission". O168's /spec, then O151 and O170 in queue order; every write of every builder stays inside its worktree, O151's decks included.
 
 In force for O151 from 2026-11-07, Axel: "I once again demand you DELETE the entirety of O151 ... I will not yet give greenlight for actual implementation". O151 is deleted (`plan.md` Rulings, "O151 deleted again"); it is not prepared, briefed, dispatched or built until he says go.
 
