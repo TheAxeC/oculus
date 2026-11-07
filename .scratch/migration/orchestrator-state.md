@@ -59,8 +59,6 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O167 of this plan; O169 writes lines 55-70, O167 lines 130-230, disjoint hunks, so the cherry-pick merges them without a conflict
   landing: not-started
-- step: O170
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -207,7 +205,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 717 (2026-11-07, the /spec of O168 and O170): both steps share lines with O167, so the skill's Steps 5 would make each wait until O167 lands. O168 (ruling 716's plural mechanism) changes the hand-written picks at `ScopeBar.svelte:140-141` (inside O167's lines 130-230, the header count item 11 changes), `StatusBar.svelte:261-356` (the right group O167's item 3 reorders) and `Header.svelte:36-39` (the count O167's item 8 lays out); O170 moves the export line at `Bar.svelte:112` beside the counter O167 changes at `:113`, and sizes the presenter slides beside the counter O167 changes at `Presenter.svelte:85`. `git grep -n -E "=== 1 \?|_one'"` over those files finds the O168 lines. The skill's order is: write the brief, compare its paths, and on a merge that is not simple delete the brief, remove the dispatch entry and wait; `/spec` run after the landing writes the brief again from Steps 2. For O170 the session judged the overlap from the code and removed its preparing entry without writing the brief first, a departure from that order made without asking; O168's entry was not written. (a) Hold both `/spec` runs until O167 lands, then run `/spec` for O168 and O170 in full from Steps 1, each brief written once against the tree O167 leaves. Pros: each brief is written against the lines it builds on and nothing is written to be deleted. Cons: the two steps depart from the skill's order (brief before compare) for this wait. (b) Run both `/spec` runs in full now: write the two briefs, compare, find the shared lines, delete the briefs and wait; after O167 lands run `/spec` again and write both briefs again from Steps 2. Pros: the skill's order is followed to the letter. Cons: two briefs written now only to be deleted, and written again after the landing. Recommended: (a), since the briefs (b) writes now are deleted by Steps 5 and rewritten after the landing either way; no option here leaves work undone.
 
 ## Closed items
 
