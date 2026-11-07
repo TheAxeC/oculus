@@ -33,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a336874264e7be26f (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O161-report.md
-  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits sent back to be redone (agents/briefs/O161-redo.md)
+  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits redone (agents/briefs/O161-redo.md; 112573 tokens, 104 tool uses, 18.1 min)
   round: 0 (cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
   shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing

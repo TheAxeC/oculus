@@ -1,9 +1,9 @@
 In flight (5 of 6 slots in use):
-- O161 (cards made cheaper, every card kept in the page): the round-0 ruling to 713 (a) sent, its builder resumed and building.
-- O165 (the guides redesigned): its builder building; Axel approves the three pages before they land.
+- O161 (cards made cheaper, every card kept in the page): its builder redoing the script-made edits of twelve files.
+- O165 (the guides redesigned): repair round 1 built, under review; then the prose review of the three pages; Axel approves the three pages before they land.
 - O151 (a deck for every research project): its builder building.
-- O159 (one folder search per hub): its builder building.
-- O166 (the record pages made one design): its builder building.
+- O159 (one folder search per hub): repair round 1 being built.
+- O166 (the record pages made one design): repair round 1 being built.
 
 Queued, in order (0): none.
 
