@@ -4,8 +4,10 @@
 // the props of a record of a registry file, the entry the question before a delete is open for,
 // the record's page, Page, Edit, Edit in File and Delete, disabled with the words saying why while
 // the file cannot be written, and what the card's Add run writes. A card drawn on the record's own
-// page has no Page and its strip holds Edit. A card makes its own with `createRegistryCard` in its
-// script, so nothing is held at module level.
+// page has no Page and its strip holds Edit. The record card's props that every such card hands
+// it alike (`face`: the page opener, the strip, the Add run, the delete question and whether it is
+// drawn on the record's page) are spread onto it. A card makes its own with `createRegistryCard`
+// in its script, so nothing is held at module level.
 
 import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
 import type { ClientState } from '$lib/state/client/context';
@@ -33,16 +35,22 @@ export type RegistryCardProps = {
 
 /** What a card of a registry record holds, read through getters so each stays reactive. */
 export type RegistryCardState = {
-    /** The entry the question before a delete is open for, the record card's `deleting`. */
-    readonly deleting: { collection: string; id: string; onclose: () => void } | undefined;
     /** Page, Edit, Edit in File and Delete, for a record the file holds. */
     readonly actions: RecordAction[];
     /** The record's lines and deadline, which the card's Add run writes; none with no schema. */
     readonly dated: RecordDated | undefined;
-    /** Opens the record's page, for a record the file holds, away from that page. */
-    readonly onpage: (() => void) | undefined;
-    /** The ids of the actions the strip draws. */
-    readonly strip: string[];
+    /** The props of the record card every registry card hands it alike, spread onto it. */
+    readonly face: {
+        /** Opens the record's page, for a record the file holds, away from that page. */
+        ontitle: (() => void) | undefined;
+        /** The ids of the actions the strip draws. */
+        strip: string[];
+        dated: RecordDated | undefined;
+        /** The entry the question before a delete is open for. */
+        deleting: { collection: string; id: string; onclose: () => void } | undefined;
+        /** Whether the card is drawn on the record's own page. */
+        page: boolean;
+    };
 };
 
 /**
@@ -98,20 +106,14 @@ export function createRegistryCard(
             : entryDated(client, collection, entry, schema, blocked, true);
     });
     return {
-        get deleting() {
-            return deleting;
-        },
         get actions() {
             return actions;
         },
         get dated() {
             return dated;
         },
-        get onpage() {
-            return onpage;
-        },
-        get strip() {
-            return strip;
+        get face() {
+            return { ontitle: onpage, strip, dated, deleting, page: props().page === true };
         }
     };
 }

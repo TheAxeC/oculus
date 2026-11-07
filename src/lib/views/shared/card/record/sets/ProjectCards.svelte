@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, shared view partial. A list of projects on a record's page, the person page's
-    // sections and a set's page, as a board draws them: the closed project card
+    // Layer 3, shared view partial. The list of projects of a project set's page
+    // (views/boards/listing/Listing.svelte), as a board draws them: the closed project card
     // (views/shared/card/project/ProjectCard.svelte) in the grid of every list of cards, its ELI5
     // clamped, its title and Page opening the project's page. Which cards are opened out is kept
     // under `more` of the tab's state, as a board keeps it, so a reload keeps it and two tabs each

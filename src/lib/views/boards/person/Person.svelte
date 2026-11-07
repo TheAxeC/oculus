@@ -16,30 +16,31 @@
 <script lang="ts">
     // Layer 3, view. One human as their own tab, in the frame of every record's page
     // (views/shared/card/record/RecordPage.svelte), drawn from the joins state/boards/person.ts
-    // makes: the person's card, the projects of whose team they are (whose `lead:`,
-    // `collaborators:` or `supervisors:` name them), the projects whose `waiting-on:` names them,
-    // and a student's supervision folder.
+    // makes: the person's card, the row of count buttons under it, and a student's supervision
+    // folder.
     //
-    // The card is views/shared/forms/entry/card/EntryCard.svelte, opened out, the card the People
-    // view draws, with no strip of role rows since the sections below list those projects. The page
-    // holds no form: Edit opens the editor beside it (views/boards/editor/Editor.svelte). Delete,
-    // in the toolbar, asks first and names every project that refers to the person. A person of a
-    // people file with no schema, which the page tells by `page.schema`, has a line saying so over
-    // the card and no Edit, Delete or Status, as the page of any entry of such a file.
+    // The row (views/shared/card/record/RecordCounts.svelte) counts the projects of whose team the
+    // person is (whose `lead:`, `collaborators:` or `supervisors:` name them) by row of
+    // `categories:`, then their total, then "<n> waiting on <name>" for the projects whose
+    // `waiting-on:` names them, when there are any; a press opens a board of those projects. A
+    // person with no project and none waiting on them draws no row.
+    //
+    // The card is views/shared/forms/entry/card/EntryCard.svelte, the card the People view draws,
+    // with `page` on: its fields in two columns under the closed card, and no strip of role rows,
+    // since the row counts those projects. The page holds no form: Edit opens the editor beside it
+    // (views/boards/editor/Editor.svelte). Delete, in the toolbar, asks first and names every
+    // project that refers to the person. A person of a people file with no schema, which the page
+    // tells by `page.schema`, has a line saying so over the card and no Edit, Delete or Status, as
+    // the page of any entry of such a file.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
     //
-    // The sections are closed project cards (views/shared/card/record/sets/ProjectCards.svelte), a
-    // press on a title opening the project's page. The folder block is
-    // views/shared/links/FolderFiles.svelte, which lists the folder through the file store rather
-    // than carrying it in the snapshot and opens a file in the source tab exactly as a file browser
-    // row does; the entry page draws it for the folder an entry's link names.
-    //
-    // Projects, Waiting on and the folder are each the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), the folder's controls as its `actions`, and each folds
-    // by its block key (`projects`, `waiting-on`, `folder`) under `folded` of the tab's state
-    // (views/shared/card/pane-fold.ts).
+    // The folder block is views/shared/links/FolderFiles.svelte, which lists the folder through the
+    // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
+    // as a file browser row does; the entry page draws it for the folder an entry's link names. It
+    // is drawn under its small label (views/shared/card/record/RecordField.svelte) with the
+    // folder's controls beside the label, and does not fold.
     //
     // A person of any hub has a "this is me" button in the toolbar, pressed on the person the key
     // `self` of the primary hub's `.oculus/local.yml` names; pressing it on another person writes
@@ -52,7 +53,6 @@
     import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
@@ -61,16 +61,17 @@
     import { blockedBy } from '../../shared/forms/entry-file';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
-    import ProjectCards from '../../shared/card/record/sets/ProjectCards.svelte';
+    import RecordField from '../../shared/card/record/RecordField.svelte';
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import { entryById, hubPathsOf, identityFaults } from '$lib/state/boards/collection';
     import { personJoin, selfStanding } from '$lib/state/boards/person';
+    import { recordRow } from '$lib/state/boards/record-board';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { addressOfId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
-    import { usePaneFold } from '../../shared/card/pane-fold';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -85,9 +86,6 @@
     } = client;
 
     let { instance }: ViewProps = $props();
-
-    /** Which of the page's blocks are open, kept in the tab's state. */
-    const fold = usePaneFold();
 
     /** The person this instance was opened for, from the state the tag handed openView. */
     const key = $derived(stateRecord(instance.state));
@@ -144,6 +142,22 @@
      * included before the snapshot shows it, their key until it is known.
      */
     const title = $derived(page?.title ?? (join.person === null ? keyOf(key) : join.person.name));
+
+    /**
+     * The row of count buttons under the card: the projects of whose team the person is, by row of
+     * `categories:`, their total, and the projects waiting on them.
+     */
+    const row = $derived(
+        join.person === null
+            ? undefined
+            : recordRow(
+                  portfolio(),
+                  { kind: 'person', id: join.person.id },
+                  title,
+                  configMap(),
+                  vocabOf
+              )
+    );
 
     /**
      * Whether this person is the user, the one the key `self` of the primary hub's `local.yml`
@@ -225,6 +239,7 @@
     {instance}
     toolbar={tools}
     {said}
+    {row}
     data-person={join.person?.id}
 >
     {#snippet card()}
@@ -251,59 +266,24 @@
                 onsaid={say}
                 more
                 page
-                roles={false}
             />
         {/if}
     {/snippet}
 
-    {#if join.person !== null}
-        <GroupHead
-            data-block="projects"
-            label={t('person.projects')}
-            open={fold.open('projects')}
-            ontoggle={() => fold.toggle('projects')}
-        >
-            {#if join.projects.length === 0}
+    {#if join.person !== null && folder !== ''}
+        <FolderFiles folder={folderPath} root={hub}>
+            {#snippet heading(controls: Snippet, body: Snippet)}
                 <Surface>
-                    <Empty message={t('person.no_projects')} />
-                </Surface>
-            {:else}
-                <ProjectCards projects={join.projects} onsaid={say} />
-            {/if}
-        </GroupHead>
-
-        <GroupHead
-            data-block="waiting-on"
-            label={t('person.waiting_on')}
-            open={fold.open('waiting-on')}
-            ontoggle={() => fold.toggle('waiting-on')}
-        >
-            {#if join.waitingOn.length === 0}
-                <Surface>
-                    <Empty message={t('person.no_waiting_on')} />
-                </Surface>
-            {:else}
-                <ProjectCards projects={join.waitingOn} onsaid={say} />
-            {/if}
-        </GroupHead>
-
-        {#if folder !== ''}
-            <FolderFiles folder={folderPath} root={hub}>
-                {#snippet heading(controls: Snippet, body: Snippet)}
-                    <GroupHead
+                    <RecordField
                         data-block="folder"
                         label={t('person.folder', folder)}
-                        open={fold.open('folder')}
-                        ontoggle={() => fold.toggle('folder')}
                         actions={controls}
                     >
-                        <Surface>
-                            {@render body()}
-                        </Surface>
-                    </GroupHead>
-                {/snippet}
-            </FolderFiles>
-        {/if}
+                        {@render body()}
+                    </RecordField>
+                </Surface>
+            {/snippet}
+        </FolderFiles>
     {/if}
 </RecordPage>
 

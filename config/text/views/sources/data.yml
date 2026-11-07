@@ -5,6 +5,10 @@ text:
         count_one: '1 dataset ({0})'
         empty: No datasets yet; add some to the hub's data file.
         fetch: Fetch
+        field_description: Description
+        field_details: Details
+        field_notes: Notes
+        field_source: Source
         filters: Dataset filters
         modality_facet: Modality
         path: Folder

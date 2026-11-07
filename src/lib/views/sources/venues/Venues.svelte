@@ -42,7 +42,6 @@
     import VenueCard from '$lib/views/shared/card/record/registry/VenueCard.svelte';
     import {
         parseVenuesState,
-        realProjects,
         venueSearch,
         venueSections,
         venueUsers,
@@ -66,7 +65,7 @@
 
     const file = registryFile(client, 'venues');
     const allVenues = $derived(venues());
-    const allProjects = $derived(realProjects(projects(), configMap(), vocabOf));
+    const allProjects = $derived(projects());
     const held = $derived(parseVenuesState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const labelOf = $derived(themeLabeller(hubVocabs(), 'venue_themes'));

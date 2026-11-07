@@ -10,6 +10,8 @@ text:
         dist: ~{0}mo
         empty: No venues yet; add some to the hub's venues file.
         fee: fee {0}
+        field_details: Details
+        field_wants: Wants
         filters: Venue filters
         held: held
         jif: JIF {0}

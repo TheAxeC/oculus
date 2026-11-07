@@ -24,9 +24,11 @@
     // manifest's `deadline:`, an emptied box taking it out. A project whose folder is a repository
     // also has its project commands, drawn below the facts by the commands bar the Repositories
     // view uses (views/shared/sessions/CommandBar.svelte). The card's ELI5 and the first sentence
-    // of its next action are CardBrief.svelte's. The projects it is related to are the strip at
-    // its foot (views/shared/links/CrossLinks.svelte); those the strip groups under none stay on
-    // the Related line of CardLinks.svelte.
+    // of its next action are CardBrief.svelte's. On a board the projects it is related to are the
+    // strip at its foot (views/shared/links/CrossLinks.svelte), and those the strip groups under
+    // none stay on the Related line of CardLinks.svelte. On the project page the card draws no
+    // strip: the row of count buttons under it counts every related project the portfolio holds
+    // (views/shared/card/record/RecordCounts.svelte), and the Related line lists the rest.
     //
     // Every project is drawn by this card, whatever its tier: its folder is the one `placeOf`
     // names, a repository's own Files root for a project read from a repository. Every card carries
@@ -132,8 +134,13 @@
             vocabOf
         )
     );
-    /** The related projects the strip leaves out, which stay on the Related line. */
+    /**
+     * The related projects the Related line lists: on a board those the strip leaves out, on the
+     * page, which draws no strip and counts every related project the portfolio holds in the row
+     * under the card, those the portfolio does not hold.
+     */
     const unlisted = $derived.by(() => {
+        if (page) return (item.related ?? []).filter((tag) => !tag.held);
         const listed = new Set(related.flatMap((group) => group.members.map((one) => one.id)));
         return (item.related ?? []).filter((tag) => !listed.has(tag.id));
     });
@@ -424,7 +431,8 @@
     {lines}
     {text}
     {blocks}
-    details={page ? details : undefined}
+    {page}
+    {details}
     groups={related}
 />
 

@@ -2,16 +2,25 @@
     // Layer 3, shared view partial, drawn by the Pillars view and, with `page`, by the line's page
     // (views/boards/entry/Entry.svelte). One registry line as the record card
     // (views/shared/card/record/RecordCard.svelte): the tag counting its projects, its portfolio
-    // metrics, its registry prose, and the strip of its projects at the foot. Its heading and the
-    // strip's Page open the line's page; the menu holds Page, the Add run, Edit, Edit in File and
-    // Delete (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is
-    // words and the strip holds Edit. The metrics row is one Tooltip that says what its counts
-    // count, in the tab order so the keyboard reaches the words as the pointer does.
+    // metrics, its registry prose, and the strip of its projects at the foot. Its projects are
+    // every project that names it, dead ends included (state/boards/structure/lines.ts
+    // `lineMembers`), which the tag, the total and the strip count, the dead ends a group of their
+    // own as on the page's row; the in-flight count, the venue tiers and the dormant look read the
+    // real ones among them. Its heading and the strip's Page open the line's page; the menu holds
+    // Page, the Add run, Edit, Edit in File and Delete
+    // (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is words, the
+    // strip holds Edit, the goal, the funding and the blurb are the left of the two columns of a
+    // record's page, each under its small label (views/shared/card/record/RecordDetails.svelte),
+    // and the card draws no strip of projects, which the row under the page's card counts. The
+    // metrics row is one Tooltip that says what its counts count, in the tab order so the keyboard
+    // reaches the words as the pointer does.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
+    import { realProjects } from '$lib/state/sources/registries/venues';
     import {
         createRegistryCard,
         type RegistryCardProps
@@ -61,8 +70,10 @@
     const {
         selectors: { configMap, registryKey }
     } = client;
-    const flight = $derived(inFlight(projects, configMap(), vocabOf));
-    const strip = $derived(tierStrip(projects, venues, tiers, configMap(), vocabOf));
+    /** The line's real projects, which its in-flight and tier metrics and its dormant look read. */
+    const real = $derived(realProjects(projects, configMap(), vocabOf));
+    const flight = $derived(inFlight(real, configMap(), vocabOf));
+    const strip = $derived(tierStrip(real, venues, tiers, configMap(), vocabOf));
     const funding = $derived(optionalText(entry?.fields.funding));
     const tone = $derived(
         line.color === undefined ? undefined : paletteTone(line.color, rootOf(line))
@@ -104,47 +115,82 @@
     {/if}
 {/snippet}
 
+{#snippet goal(words: string)}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+    <p class="goal">{@html inlineMarkdown(words, cardMath(words))}</p>
+{/snippet}
+
+{#snippet fundingLine(words: string)}
+    <p class="funding">
+        <Glyph name="funding" />
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        {@html inlineMarkdown(words, cardMath(words))}
+    </p>
+{/snippet}
+
+{#snippet blurb(words: string)}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+    <p class="blurb">{@html inlineMarkdown(words, cardMath(words))}</p>
+{/snippet}
+
 {#snippet text()}
     {#if line.goal}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="goal">{@html inlineMarkdown(line.goal, cardMath(line.goal))}</p>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render goal(line.goal)}
     {/if}
     {#if funding}
-        <p class="funding">
-            <Glyph name="funding" />
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            {@html inlineMarkdown(funding, cardMath(funding))}
-        </p>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render fundingLine(funding)}
     {/if}
     {#if line.blurb}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="blurb">{@html inlineMarkdown(line.blurb, cardMath(line.blurb))}</p>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render blurb(line.blurb)}
+    {/if}
+{/snippet}
+
+{#snippet left()}
+    {#if line.goal}
+        <RecordField label={t('pillars.field_goal')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render goal(line.goal)}
+        </RecordField>
+    {/if}
+    {#if funding}
+        <RecordField label={t('pillars.field_funding')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render fundingLine(funding)}
+        </RecordField>
+    {/if}
+    {#if line.blurb}
+        <RecordField label={t('pillars.field_blurb')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render blurb(line.blurb)}
+        </RecordField>
     {/if}
 {/snippet}
 
 <div
     class="slot"
-    class:dormant={isDormant(projects, configMap(), vocabOf)}
+    class:dormant={isDormant(real, configMap(), vocabOf)}
     class:muted
     data-pillar={line.id}
 >
     <RecordCard
+        {...card.face}
         id={line.id}
         {cursor}
         title={line.title}
         titleHtml={inlineMarkdown(line.title, cardMath(line.title))}
-        ontitle={card.onpage}
         {tone}
         record={line}
         actions={card.actions}
-        strip={card.strip}
-        dated={card.dated}
         {onsaid}
         {meta}
         {facts}
         {text}
+        {left}
         {projects}
-        deleting={card.deleting}
+        archival
     />
 </div>
 

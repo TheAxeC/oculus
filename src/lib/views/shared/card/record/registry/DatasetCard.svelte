@@ -6,7 +6,10 @@
     // the strip's Page open its page; the menu holds Page and Source in its Open run, the Add run,
     // Edit, Edit in File, Recover and Delete (views/shared/forms/registry/registry-card.svelte.ts).
     // On the page the name is words, the strip holds Edit and the tags wrap, so a long path is
-    // drawn whole.
+    // drawn whole; the description and the notes are the left of the two columns of a record's
+    // page and the tags, the modality and the source the right, each under its small label
+    // (views/shared/card/record/RecordDetails.svelte), and the card draws no strip of projects,
+    // which the row under the page's card counts.
     //
     // A set whose sources are all of kinds a row of its hub's `recover.sources` reads has the
     // Recover action, which opens the dataset's Recover view beside this one for its own hub and
@@ -22,6 +25,7 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
     import {
         createRegistryCard,
@@ -88,6 +92,14 @@
     /** The sources the card states: a library call, a contact, or what the set is built from. */
     const statedSources = $derived(dataset.retrieval.filter(statedSource));
     const notes = $derived(dataset.notes ?? '');
+    /** Whether the dataset has a size, a folder or a fetch kind for its tags. */
+    const hasFacts = $derived(
+        (dataset.size ?? '') !== '' || (dataset.path ?? '') !== '' || kinds.length > 0
+    );
+    /** Whether the dataset has a stated source, a source kind nothing reads or notes. */
+    const hasNotes = $derived(
+        statedSources.length > 0 || (dataset.unread ?? []).length > 0 || notes !== ''
+    );
 
     /**
      * The card's actions: Page, Edit in File and Delete for a dataset the collection file holds,
@@ -133,44 +145,43 @@
     {/if}
 {/snippet}
 
-{#snippet text()}
-    {#if dataset.description}
-        <p class="description">
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            {@html inlineMarkdown(dataset.description, cardMath(dataset.description))}
-        </p>
-    {/if}
+{#snippet description(words: string)}
+    <p class="description">
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+        {@html inlineMarkdown(words, cardMath(words))}
+    </p>
+{/snippet}
 
-    <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
-    {#if dataset.size || dataset.path || kinds.length > 0}
-        <div class="meta">
-            {#if dataset.size}
-                {@const words = `${t('data.size')} ${dataset.size}`}
-                <Tooltip text={words}>
-                    <Tag label={words} wrap={page} />
-                </Tooltip>
-            {/if}
-            {#if dataset.path}
-                {@const words = `${t('data.path')} ${dataset.path}`}
-                <Tooltip text={words}>
-                    <Tag label={words} wrap={page} />
-                </Tooltip>
-            {/if}
-            {#if kinds.length > 0}
-                {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
-                <Tooltip text={words}>
-                    <Tag label={words} wrap={page} />
-                </Tooltip>
-            {/if}
-        </div>
-    {/if}
+{#snippet facts()}
+    <div class="meta">
+        {#if dataset.size}
+            {@const words = `${t('data.size')} ${dataset.size}`}
+            <Tooltip text={words}>
+                <Tag label={words} wrap={page} />
+            </Tooltip>
+        {/if}
+        {#if dataset.path}
+            {@const words = `${t('data.path')} ${dataset.path}`}
+            <Tooltip text={words}>
+                <Tag label={words} wrap={page} />
+            </Tooltip>
+        {/if}
+        {#if kinds.length > 0}
+            {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
+            <Tooltip text={words}>
+                <Tag label={words} wrap={page} />
+            </Tooltip>
+        {/if}
+    </div>
+{/snippet}
 
-    {#if dataset.modality}
-        <div class="tags">
-            <Tag label={dataset.modality} />
-        </div>
-    {/if}
+{#snippet modality(words: string)}
+    <div class="tags">
+        <Tag label={words} />
+    </div>
+{/snippet}
 
+{#snippet noteLines()}
     {#each statedSources as source, at (at)}
         <div class="note">
             <Glyph name="note_back" />
@@ -192,34 +203,90 @@
             <span>{@html inlineMarkdown(notes, cardMath(notes))}</span>
         </div>
     {/if}
+{/snippet}
 
+{#snippet sourceLink(address: string)}
+    <div class="links">
+        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
+        <a href={address} target="_blank" rel="noopener">
+            <Glyph name="link" />
+            {t('data.source')}
+        </a>
+    </div>
+{/snippet}
+
+{#snippet text()}
+    {#if dataset.description}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render description(dataset.description)}
+    {/if}
+    {#if hasFacts}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render facts()}
+    {/if}
+    {#if dataset.modality}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render modality(dataset.modality)}
+    {/if}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render noteLines()}
     {#if dataset.source}
-        <div class="links">
-            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-            <a href={dataset.source} target="_blank" rel="noopener">
-                <Glyph name="link" />
-                {t('data.source')}
-            </a>
-        </div>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render sourceLink(dataset.source)}
+    {/if}
+{/snippet}
+
+{#snippet left()}
+    {#if dataset.description}
+        <RecordField label={t('data.field_description')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render description(dataset.description)}
+        </RecordField>
+    {/if}
+    {#if hasNotes}
+        <RecordField label={t('data.field_notes')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render noteLines()}
+        </RecordField>
+    {/if}
+{/snippet}
+
+{#snippet right()}
+    {#if hasFacts}
+        <RecordField label={t('data.field_details')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render facts()}
+        </RecordField>
+    {/if}
+    {#if dataset.modality}
+        <RecordField label={t('data.modality_facet')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render modality(dataset.modality)}
+        </RecordField>
+    {/if}
+    {#if dataset.source}
+        <RecordField label={t('data.field_source')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render sourceLink(dataset.source)}
+        </RecordField>
     {/if}
 {/snippet}
 
 <div class="slot" data-dataset={dataset.id}>
     <RecordCard
+        {...card.face}
         id={dataset.id}
         {cursor}
         title={name}
         titleHtml={inlineMarkdown(name, cardMath(name))}
-        ontitle={card.onpage}
         record={dataset}
         {actions}
-        strip={card.strip}
-        dated={card.dated}
         {onsaid}
         {meta}
         {text}
+        {left}
+        {right}
         {projects}
-        deleting={card.deleting}
     />
 </div>
 

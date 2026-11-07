@@ -9,7 +9,9 @@
     // a disclosure with its count, a group holding a blocked project carries the warning glyph, and
     // each member opens its tab. A strip handed `oneOpen` keeps one group open at a time. A strip
     // handed a `label` draws it before its groups: a person's card draws one strip per role, each
-    // headed by the role's label (`roleLinks`).
+    // headed by the role's label (`roleLinks`). The card of a project, a person or an entry of a
+    // collection draws no strip on its own page: the row of count buttons under the card counts
+    // those projects (views/shared/card/record/RecordCounts.svelte).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';

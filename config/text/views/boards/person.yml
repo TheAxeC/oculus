@@ -1,4 +1,4 @@
-# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a field of an entry that names a person, the Map's node and a card of the People view, so its words name what the reader came from: the projects, the projects waiting on the person and a student's supervision folder.
+# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a field of an entry that names a person, the Map's node and a card of the People view, so its words name what the reader came from: the person, their toolbar and a student's supervision folder; the row of count buttons under the card takes its words from the projects view.
 text:
     views:
         person: Person
@@ -17,8 +17,4 @@ text:
         of_hub: '{0} ({1})'
         sep: ', '
         delete_tip: 'Delete {0}'
-        projects: Projects
-        no_projects: No project names this person in its team, its `lead:` or its `collaborators:`.
-        waiting_on: Waiting on
-        no_waiting_on: No project names this person in its `waiting-on:`.
         folder: 'Supervision folder ({0})'

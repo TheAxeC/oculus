@@ -3,10 +3,13 @@
     // person, the career file, a project set and a LinkedIn post, so they read as one: the Pane
     // with no tint, one column at a gap of 12 px, the outcome line of the last write on a
     // `Surface`, in the danger colour for a view that says so (`saidError`), the record's card,
-    // then the page's sections, each the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), folded through views/shared/card/pane-fold.ts by the
-    // view that draws it. With no tint under it, a section a view draws outside a card sits on a
-    // `Surface` of its own.
+    // then, for a record whose page counts its projects (`row`), the row of count buttons
+    // (RecordCounts.svelte), then the page's blocks. A project's, a person's and an entry's page
+    // hand the row and draw each block under its small label (RecordField.svelte); a record with no
+    // project and no project waiting on it draws no row. A lead's and a Lit Watch paper's page,
+    // the career file, a project set and a LinkedIn post hand no row, and draw their sections as
+    // they choose. With no tint under it, a block a view draws outside a card sits on a `Surface`
+    // of its own.
     //
     // A board opens a page as the preview tab of the pane beside it, which the next record opened
     // takes over. Typing anywhere in the tab keeps the tab, so a half-typed form is never replaced.
@@ -17,6 +20,8 @@
     import type { HTMLAttributes } from 'svelte/elements';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
+    import RecordCounts from './RecordCounts.svelte';
+    import type { RecordRow } from '$lib/state/boards/record-board';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -31,7 +36,9 @@
         saidError?: boolean;
         /** The record's card, or the line that stands in for it. */
         card?: Snippet;
-        /** The page's sections. */
+        /** The record's row of count buttons, drawn under the card; none draws no row. */
+        row?: RecordRow;
+        /** The page's blocks. */
         children?: Snippet;
     };
 
@@ -42,6 +49,7 @@
         said = '',
         saidError = false,
         card,
+        row,
         children,
         ...attributes
     }: Props = $props();
@@ -64,6 +72,11 @@
             </Surface>
         {/if}
         {@render card?.()}
+        {#if row !== undefined && (row.total > 0 || row.waiting > 0)}
+            <Surface>
+                <RecordCounts {row} />
+            </Surface>
+        {/if}
         {@render children?.()}
     </div>
 </Pane>

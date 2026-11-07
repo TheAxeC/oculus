@@ -3,11 +3,17 @@
     // (views/boards/entry/Entry.svelte). One catalogue venue as the record card
     // (views/shared/card/record/RecordCard.svelte): its metadata, its deadline as a tag with the
     // deadline glyph and the countdown and tone of a project's due, and the strip of its project
-    // users at the foot. The venue's name and the strip's Page open its page; the menu holds Page
-    // and Show in Files in its Open run, the Add run, whose Deadline changes the venue's deadline,
-    // Edit, Edit in File and Delete (views/shared/forms/registry/registry-card.svelte.ts). On the
-    // page the name is words and the strip holds Edit. The project list is already restricted to
-    // real users, and concentration arrives as a flag, drawn as the card's ring.
+    // users at the foot, its dead ends a group of their own as on the page's row. The venue's name
+    // and the strip's Page open its page; the menu holds Page and Show in Files in its Open run,
+    // the Add run, whose Deadline changes the venue's deadline, Edit, Edit in File and Delete
+    // (views/shared/forms/registry/registry-card.svelte.ts). On the page the name is words, the
+    // strip holds Edit, the venue's wants are the left of the two columns of a record's page and
+    // its metadata line and its themes the right, each under its small label
+    // (views/shared/card/record/RecordDetails.svelte), and the card draws no strip of projects,
+    // which the row under the page's card counts. The project list is every project that targets
+    // the venue, dead ends included (state/sources/registries/venues.ts `venueUsers`), and
+    // concentration, read over the real ones among them, arrives as a flag, drawn as the card's
+    // ring.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
     // (hubPathsOf of state/boards/collection/): a path is offered only as the action that selects
@@ -29,6 +35,7 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
     import { createRegistryCard } from '$lib/views/shared/forms/registry/registry-card.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -263,7 +270,7 @@
     {/if}
 {/snippet}
 
-{#snippet text()}
+{#snippet metaLine()}
     <div class="meta">
         {#each metadata as item, at (item.label)}
             {#if at > 0}
@@ -294,38 +301,75 @@
             {/if}
         {/each}
     </div>
+{/snippet}
 
+{#snippet wants(words: string)}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+    <p class="wants">{@html inlineMarkdown(words, cardMath(words))}</p>
+{/snippet}
+
+{#snippet themes()}
+    <div class="themes">
+        {#each venue.themes as theme (theme)}
+            <Tag label={themeWordLabel(labels, theme)} />
+        {/each}
+    </div>
+{/snippet}
+
+{#snippet text()}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render metaLine()}
     {#if venue.wants}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="wants">{@html inlineMarkdown(venue.wants, cardMath(venue.wants))}</p>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render wants(venue.wants)}
     {/if}
-
     {#if venue.themes.length > 0}
-        <div class="themes">
-            {#each venue.themes as theme (theme)}
-                <Tag label={themeWordLabel(labels, theme)} />
-            {/each}
-        </div>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render themes()}
+    {/if}
+{/snippet}
+
+{#snippet left()}
+    {#if venue.wants}
+        <RecordField label={t('venues.field_wants')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render wants(venue.wants)}
+        </RecordField>
+    {/if}
+{/snippet}
+
+{#snippet right()}
+    {#if metadata.length > 0}
+        <RecordField label={t('venues.field_details')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render metaLine()}
+        </RecordField>
+    {/if}
+    {#if venue.themes.length > 0}
+        <RecordField label={t('venues.themes_facet')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render themes()}
+        </RecordField>
     {/if}
 {/snippet}
 
 <div class="slot" data-venue={venue.id}>
     <RecordCard
+        {...card.face}
         id={venue.id}
         {cursor}
         title={venue.name}
         titleHtml={inlineMarkdown(venue.name, cardMath(venue.name))}
-        ontitle={card.onpage}
         ring={concentrated ? 'violet' : undefined}
         record={venue}
         {actions}
-        strip={card.strip}
-        dated={card.dated}
         {onsaid}
         {meta}
         {text}
+        {left}
+        {right}
         {projects}
-        deleting={card.deleting}
+        archival
     />
 </div>
 

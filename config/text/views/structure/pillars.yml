@@ -2,8 +2,11 @@
 text:
     pillars:
         archival: Archival
-        archival_blurb: Dead-ends (failed or stopped), kept for provenance; they count toward no line.
+        archival_blurb: Dead-ends (failed or stopped), kept for provenance; a line counts them among its projects, never in flight.
         counts_tip: 'in flight: projects at a live stage; venue tiers: the venues of those projects'
+        field_blurb: About
+        field_funding: Funding
+        field_goal: Goal
         in_flight: in flight
         kind_other: Other
         no_orphans: No orphans

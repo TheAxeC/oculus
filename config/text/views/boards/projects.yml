@@ -69,6 +69,15 @@ text:
         quick_stale_tip: only the projects whose manifest is behind their documents
         quick_waiting: waiting {0}
         quick_waiting_tip: only the projects waiting on someone or something
+        record_count: '{0} {1}'
+        record_count_tip: 'Open the projects of {0} that are {1}'
+        record_gone: "The record this tab was opened for is gone. Press a count under a record's card to open its projects."
+        record_row: 'The projects of {0}'
+        record_title: 'Projects of {0}'
+        record_total_tip: 'Open every project of {0}'
+        record_waiting: '{0} waiting on {1}'
+        record_waiting_tip: 'Open the projects waiting on {0}'
+        record_waiting_title: 'Waiting on {0}'
         repro_no: not reproduced
         repro_yes: reproduced
         search_default: Search
@@ -101,6 +110,8 @@ text:
         personal_glyph: spark
         projects: Projects
         projects_glyph: focus
+        record_board: Projects of a record
+        record_board_glyph: cards
         software: Software
         software_glyph: code
         supervision: Supervision

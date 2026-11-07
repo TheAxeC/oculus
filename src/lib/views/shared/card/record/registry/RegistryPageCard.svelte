@@ -1,10 +1,13 @@
 <script lang="ts">
     // Layer 3, shared view partial of the entry page (views/boards/entry/Entry.svelte). The card an
     // entry of a registry file is drawn with on its own page: the card its view draws, with `page`
-    // set, its projects read as that view reads them. Which card is decided by the `registry:` the
-    // collection names: VenueCard, DatasetCard, DomainCard or LineCard, each opened out. A domain's
-    // page draws with no member too, which the Domains view leaves out. An entry the snapshot holds
-    // no entity for, and a collection that is no such registry, draw `children`, the card of every
+    // set, its projects read as that view reads them: a venue's, a domain's and a pillar line's
+    // every project that names it, dead ends included, the list the row under the page's card
+    // counts too, and a dataset's its users. Which card is decided by the `registry:` the
+    // collection names: VenueCard, DatasetCard, DomainCard or LineCard, each opened out, its fields
+    // in the two columns of a record's page and no strip of projects at its foot. A domain's page
+    // draws with no member too, which the Domains view leaves out. An entry the snapshot holds no
+    // entity for, and a collection that is no such registry, draw `children`, the card of every
     // other collection.
 
     import type { Snippet } from 'svelte';
@@ -13,7 +16,7 @@
     import LineCard from './LineCard.svelte';
     import VenueCard from './VenueCard.svelte';
     import { datasetUsers } from '$lib/state/sources/registries/datasets';
-    import { realProjects, venueUsers } from '$lib/state/sources/registries/venues';
+    import { venueUsers } from '$lib/state/sources/registries/venues';
     import {
         OFFPILLAR,
         domainMembers,
@@ -71,12 +74,7 @@
 </script>
 
 {#if venue !== null}
-    {@const use = venueUsers(
-        venue,
-        realProjects(projects(), configMap(), vocabOf),
-        configMap(),
-        vocabOf
-    )}
+    {@const use = venueUsers(venue, projects(), configMap(), vocabOf)}
     <VenueCard
         {...shared}
         {venue}
@@ -87,17 +85,13 @@
 {:else if dataset !== null}
     <DatasetCard {...shared} {dataset} projects={datasetUsers(dataset.projectIds, projects())} />
 {:else if domain !== null}
-    <DomainCard
-        {...shared}
-        {domain}
-        projects={domainMembers(domain, projects(), configMap(), vocabOf)}
-    />
+    <DomainCard {...shared} {domain} projects={domainMembers(domain, projects())} />
 {:else if line !== null}
     <LineCard
         {...shared}
         {line}
         muted={line.kind === OFFPILLAR}
-        projects={lineMembers(line, projects(), configMap(), vocabOf)}
+        projects={lineMembers(line, projects())}
         venues={venues()}
         tiers={venueTiers(vocabOf().venue_tiers)}
     />

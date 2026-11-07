@@ -23,11 +23,14 @@
     // then Follow-ups, then the deadline form), and the foot: the strip of the projects the record
     // lists (views/shared/links/CrossLinks.svelte), from `projects` grouped by the rows of
     // `categories:` (state/boards/structure/cross-links.ts `groupProjects`) or from the `groups` a
-    // kind makes itself, or in its place one labelled strip per row of `rows` (a person's card, one
-    // per role), then the kind's own `foot`. A kind that draws the dated lines inside a block of
-    // its own, the project page's right column, hands `details`, which is given them. A kind that
-    // hands `deleting` has the question before a delete (views/shared/forms/entry/DeleteAsk.svelte)
-    // asked under the card for that entry.
+    // kind makes itself, or in its place one labelled strip per row of `rows` (a person's card,
+    // one per role), then the kind's own `foot`. Drawn on the record's own page (`page`), the card
+    // draws neither strip, since the row under the page's card counts those projects, and draws
+    // the page's body: a kind that hands the fields of the page's two columns (`left`, `right`)
+    // has them drawn in RecordDetails.svelte, the dated lines after the right one, in place of its
+    // lines, its text and its blocks, and a kind whose page holds more hands `details`, given the
+    // dated lines, in place of its blocks. A kind that hands `deleting` has the question before a
+    // delete (views/shared/forms/entry/DeleteAsk.svelte) asked under the card for that entry.
     //
     // The Add run of the menu is this card's, from `dated`: Follow-up and Subtask where a line can
     // hang under the record (`target`), or where the line goes to a record picked on the card
@@ -47,6 +50,7 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import CardActions from './CardActions.svelte';
+    import RecordDetails from './RecordDetails.svelte';
     import RootChip from '../RootChip.svelte';
     import DatedForm from '../../forms/dated/DatedForm.svelte';
     import Followups from '../../forms/dated/Followups.svelte';
@@ -110,10 +114,28 @@
         lines?: Snippet;
         text?: Snippet;
         blocks?: Snippet;
-        /** Draw the kind's block that holds the dated lines, given them. */
+        /**
+         * Drawn on the record's own page, where the row under the card counts its projects: the
+         * foot draws no strip of projects and no labelled strip, and the page's body is drawn.
+         */
+        page?: boolean;
+        /** The fields of the left column of the record's page, drawn on it alone. */
+        left?: Snippet;
+        /** The fields of the right column of the record's page, drawn on it alone. */
+        right?: Snippet;
+        /**
+         * Draw the kind's own body of the record's page, given the dated lines, for a kind whose
+         * page holds more than the two columns; drawn on the page alone.
+         */
         details?: Snippet<[Snippet]>;
         /** The projects the record lists, drawn as the strip at the foot, grouped by category. */
         projects?: Project[];
+        /**
+         * Whether the strip keeps a row carrying `archival` as a group of its own, as the row of
+         * count buttons on the record's page does, so a pillar, a domain and a venue count their
+         * dead-end projects on their card as on their page.
+         */
+        archival?: boolean;
         /** The strip's groups, for a kind that groups its projects itself. */
         groups?: CrossGroup[];
         /**
@@ -151,8 +173,12 @@
         lines,
         text,
         blocks,
+        page = false,
+        left,
+        right,
         details,
         projects,
+        archival = false,
         groups,
         rows,
         oneOpen = false,
@@ -160,10 +186,20 @@
         deleting
     }: Props = $props();
 
-    /** The groups of the strip at the foot, none when the record lists no project. */
-    const linked = $derived(
-        groups ?? (projects === undefined ? [] : groupProjects(projects, configMap(), vocabOf))
-    );
+    /**
+     * The groups of the strip at the foot: none on the record's page, nor for a record that lists
+     * no project.
+     */
+    const linked = $derived.by(() => {
+        if (page) return [];
+        return (
+            groups ??
+            (projects === undefined ? [] : groupProjects(projects, configMap(), vocabOf, archival))
+        );
+    });
+
+    /** Whether the card draws its page's two columns in place of its lines, text and blocks. */
+    const columns = $derived(page && (left !== undefined || right !== undefined));
 
     /** The add form open on the card, and nothing while none is. */
     let adding = $state<DatedKind | null>(null);
@@ -303,16 +339,23 @@
             {/snippet}
 
             {@render facts?.()}
-            {@render lines?.()}
-            {@render text?.()}
-            {#if details !== undefined}
-                {@render details(datedLines)}
+            {#if columns}
+                <RecordDetails {left} {right}>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render datedLines()}
+                </RecordDetails>
             {:else}
-                {@render blocks?.()}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render datedLines()}
+                {@render lines?.()}
+                {@render text?.()}
+                {#if page && details !== undefined}
+                    {@render details(datedLines)}
+                {:else}
+                    {@render blocks?.()}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render datedLines()}
+                {/if}
             {/if}
-            {#if rows !== undefined}
+            {#if rows !== undefined && !page}
                 {#each rows as row (row.key)}
                     <CrossLinks groups={row.groups} label={row.label} {oneOpen} />
                 {/each}

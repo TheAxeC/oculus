@@ -4,10 +4,9 @@
     // folder's files, each a row that opens the file in a source tab as a file browser row does.
     // The person page draws a student's supervision folder with it and the entry page draws the
     // folder an entry's link names. The heading is a snippet the page draws, handed the controls
-    // and the files as two snippets: the page draws them as a group
-    // (ui/controls/heads/GroupHead.svelte), the controls as its `actions` and the files as its
-    // body, folded as the page keeps its other blocks, so the block reads as the other groups of
-    // the page it is on.
+    // and the files as two snippets: the page draws them under a small label
+    // (views/shared/card/record/RecordField.svelte), the controls beside the label and the files
+    // under it, so the block reads as the other blocks of the page it is on.
     //
     // The folder is listed through the file store rather than carried in the snapshot, because the
     // snapshot holds the portfolio's YAML and not what is in a folder, and the store lists it

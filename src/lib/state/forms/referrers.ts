@@ -1,9 +1,11 @@
 // Layer 2, client state. What refers to a record: the projects whose manifest names a pillar, a
 // domain, a venue, a dataset, a funding scheme or a resource; the people and funding schemes that
 // name an organisation; the projects that name a person in their `lead:`, `collaborators:`,
-// `supervisors:` or `waiting-on:`; and the `slurm.resource` setting that lists a resource. A
-// record's page lists them and the question that asks before a delete names them, so both read
-// this one answer.
+// `supervisors:` or `waiting-on:`; and the `slurm.resource` setting that lists a resource. The
+// question that asks before a delete names them all (views/shared/forms/entry/DeleteAsk.svelte),
+// and an entry's page draws the people, the funding schemes and the setting among them on its card
+// (views/shared/forms/entry/card/EntryCard.svelte), its projects being counted in the row under
+// the card.
 //
 // Pure over the snapshot and the merged configuration it is given. Every join goes through the ids
 // of the merged portfolio, each the record's hub and its key, so a reference names the record it
@@ -13,35 +15,11 @@
 // registry its collection's entry names in its hub's `collections:` list.
 
 import { byKey, isMap } from '../../data/helpers/guards.ts';
-import {
-    addressOfId,
-    bareId,
-    holdersOf,
-    hubId,
-    resolvedId,
-    type RegistryWord
-} from '../../data/helpers/hub-names.ts';
-import type { Collection, Project, Snapshot } from '../../data/model/index.ts';
+import { addressOfId, bareId, holdersOf, hubId, resolvedId } from '../../data/helpers/hub-names.ts';
+import type { Project, Snapshot } from '../../data/model/index.ts';
 
 /** The settings of behavior.yml that name a resource. */
 const RESOURCE_SETTINGS: { key: string; field: string }[] = [{ key: 'slurm', field: 'resource' }];
-
-/** The registries whose entries other records refer to, so their pages list the referrers. */
-const REFERRED: readonly RegistryWord[] = [
-    'pillars',
-    'domains',
-    'venues',
-    'datasets',
-    'funding',
-    'people',
-    'organisations',
-    'resources'
-];
-
-/** Whether the pages of a collection's entries list their referrers: its entry names a registry. */
-export function listsReferrers(collection: Pick<Collection, 'registry'> | null): boolean {
-    return collection?.registry !== undefined && REFERRED.includes(collection.registry);
-}
 
 /** One thing that refers to a record, and what opens it. */
 export type Referrer = {

@@ -2,13 +2,21 @@
     // Layer 3, shared view partial, drawn by the Domains view and, with `page`, by the domain's
     // page (views/boards/entry/Entry.svelte). One domain as the record card
     // (views/shared/card/record/RecordCard.svelte): its configured accent, the tag counting its
-    // projects, its registry prose, and the strip of its projects at the foot. Its heading and the
-    // strip's Page open the domain's page; the menu holds Page, the Add run, Edit, Edit in File and
-    // Delete (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is
-    // words and the strip holds Edit.
+    // projects, its registry prose, and the strip of its projects at the foot. Its projects are
+    // every project that names it, dead ends included (state/boards/structure/lines.ts
+    // `domainMembers`), which the tag counts and the strip groups, the dead ends a group of their
+    // own as on the page's row; the dormant look reads the real ones among them. Its heading and
+    // the strip's Page open the domain's page; the menu holds Page, the Add run, Edit, Edit in File
+    // and Delete (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is
+    // words, the strip holds Edit, the blurb is the left of the two columns of a record's page
+    // under its small label (views/shared/card/record/RecordDetails.svelte), and the card draws no
+    // strip of projects, which the row under the page's card counts.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
+    import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
+    import { realProjects } from '$lib/state/sources/registries/venues';
+    import { t } from '$lib/state/shared/words/text';
     import {
         createRegistryCard,
         type RegistryCardProps
@@ -68,23 +76,35 @@
     {/if}
 {/snippet}
 
-<div class="slot" class:dormant={isDormant(projects, configMap(), vocabOf)} data-domain={domain.id}>
+{#snippet left()}
+    {#if domain.blurb}
+        <RecordField label={t('domains.field_blurb')}>
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render text()}
+        </RecordField>
+    {/if}
+{/snippet}
+
+<div
+    class="slot"
+    class:dormant={isDormant(realProjects(projects, configMap(), vocabOf), configMap(), vocabOf)}
+    data-domain={domain.id}
+>
     <RecordCard
+        {...card.face}
         id={domain.id}
         {cursor}
         title={domain.title}
         titleHtml={inlineMarkdown(domain.title, cardMath(domain.title))}
-        ontitle={card.onpage}
         tone={domainTone(domain.id)}
         record={domain}
         actions={card.actions}
-        strip={card.strip}
-        dated={card.dated}
         {onsaid}
         {meta}
         {text}
+        {left}
         {projects}
-        deleting={card.deleting}
+        archival
     />
 </div>
 

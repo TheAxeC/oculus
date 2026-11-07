@@ -49,16 +49,15 @@
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after a
     // tab switch or a reload, a text and a draft of a hub other than the primary kept under that
-    // hub; a draft that reads back holds its change again after a reload. The rail's Settings
-    // choice opens the tab with `reveal: 'rail'`: while that ask stands the rail row is in the rows
-    // the query keeps, and once it is shown the view clears a query that would have hidden it,
-    // waits for the mounted rows' `hidden` attributes, scrolls the row into view and ends the ask.
+    // hub; a draft that reads back holds its change again after a reload. A tab opened to show one
+    // row, from the rail's Settings choice or a resource page's tag of the `slurm.resource`
+    // setting, holds the row's id under `reveal`, and reveal.svelte.ts beside this file shows it.
     //
     // The table of contents is beside the list from 700 px and over. Under that the header offers a
     // toggle that shows it over the list; a press on one of its entries or Escape hides it again
     // (state/system/config/view/contents.ts). The heading at the top of the list is the table's
-    // selected row. A press on an entry, and the rail's reveal, first open the folded group the
-    // entry or the row is in (List's `unfold`); a heading inside a folded group is never the top.
+    // selected row. A press on an entry, and a reveal, first open the folded group the entry or the
+    // row is in (List's `unfold`); a heading inside a folded group is never the top.
     //
     // The partials are in settings/: Header (search, count, the table's toggle), scopes/ (the scope
     // bar, the workspace's own rows, the scopes' changes and saves, the files they read), Contents
@@ -66,7 +65,7 @@
     // control), Gear (the item's menu), other-rows/ (an app's setting, the wallpaper); the controls
     // themselves and the editors of lists, multis and families are in editors/.
 
-    import { tick, untrack } from 'svelte';
+    import { untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
@@ -79,13 +78,7 @@
         slotOf,
         withSavedDraft
     } from '$lib/state/system/config/editors/slots';
-    import {
-        RAIL_ROW,
-        catalogOf,
-        settingsGroups,
-        tocOf,
-        type Group
-    } from '$lib/state/system/config/groups';
+    import { catalogOf, settingsGroups, tocOf } from '$lib/state/system/config/groups';
     import { REPO_OPTION, repoRow } from '$lib/state/system/config/rows';
     import { scopeGroups } from '$lib/state/system/config/scopes/rows';
     import {
@@ -124,6 +117,7 @@
     import { createScopes } from './settings/scopes/scopes.svelte';
     import { reactiveWriter } from './settings/writer.svelte';
     import { reactiveEditors } from './editors/writer.svelte';
+    import { useReveal } from './reveal.svelte';
 
     const {
         appShell,
@@ -262,7 +256,6 @@
     });
 
     const query = $derived(settingsQuery(ui.instanceState(instance.id)));
-    const revealing = $derived(settingsReveal(instanceLayoutState(instance.id)) === 'rail');
 
     /** The catalog of the merged configuration. */
     const catalog = $derived(catalogOf(merged));
@@ -326,27 +319,6 @@
         });
     });
 
-    /** Whether a result holds the rail row. */
-    function holdsRail(result: Group[]): boolean {
-        return result.some((group) =>
-            group.sections.some((section) => section.rows.some((row) => row.id === RAIL_ROW))
-        );
-    }
-
-    /** The groups with the settings the query keeps; the rail row is kept while it is revealed. */
-    const found = $derived(searchGroups(groups, query, revealing ? [RAIL_ROW] : []));
-    const toc = $derived(tocOf(found.groups));
-
-    /** Whether the rail row is kept and so shown, and whether the query alone would hide it. */
-    const railShown = $derived(holdsRail(found.groups));
-    const railHidden = $derived(!holdsRail(searchGroups(groups, query).groups));
-
-    // The rail's reveal shows the rail row, which the Workspace scope draws.
-    $effect(() => {
-        if (revealing && scope.kind !== 'workspace')
-            untrack(() => pickScope({ kind: 'workspace' }));
-    });
-
     let list: HTMLElement | undefined = $state();
     let width = $state(0);
 
@@ -359,6 +331,25 @@
 
     /** The groups and sections, which open the folded group a scroll goes into. */
     let drawn: { unfold: (target: string) => Promise<void> } | undefined = $state();
+
+    /** The ask to show one row, which the query keeps while it stands. */
+    const reveal = useReveal({
+        asked: () => settingsReveal(instanceLayoutState(instance.id)),
+        made: () => made,
+        groups: () => groups,
+        found: () => found.groups,
+        query: () => query,
+        primary: () => hubRoot,
+        pickScope,
+        setQuery,
+        list: () => list,
+        unfold: async (id) => drawn?.unfold(id),
+        end: () => restateInstance(instance.id, withoutReveal(instanceLayoutState(instance.id)))
+    });
+
+    /** The groups with the settings the query keeps, the row a reveal asks for among them. */
+    const found = $derived(searchGroups(groups, query, reveal.keep()));
+    const toc = $derived(tocOf(found.groups));
 
     /** What a selector names in the list in the order drawn, the hidden and the folded left out. */
     function visible(selector: string): HTMLElement[] {
@@ -401,26 +392,6 @@
     function focusFirst(): void {
         visible('[data-setting]').at(0)?.focus();
     }
-
-    /** Clear a query that hides the rail row, wait for the rows, scroll to it, end the ask. */
-    async function showRail(area: HTMLElement, hidden: boolean): Promise<void> {
-        if (hidden) setQuery('');
-        await tick();
-        await drawn?.unfold(RAIL_ROW);
-        area.querySelector<HTMLElement>(`[data-setting="${RAIL_ROW}"]`)?.scrollIntoView({
-            block: 'start'
-        });
-        restateInstance(instance.id, withoutReveal(instanceLayoutState(instance.id)));
-    }
-
-    // The reveal waits for the rail row to be shown: its file may not have been read yet.
-    $effect(() => {
-        if (!revealing || !railShown || list === undefined) return;
-        const area = list;
-        // Untracked whole: `setQuery` reads the instance state it writes, which would run the
-        // effect a second time.
-        untrack(() => void showRail(area, railHidden && query !== ''));
-    });
 </script>
 
 <Pane title={t('views.settings')} tinted>

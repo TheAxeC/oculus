@@ -2,6 +2,7 @@
 text:
     domains:
         empty: No domains.
+        field_blurb: About
     views:
         domains: Domains
         domains_glyph: circle_filled

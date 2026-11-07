@@ -11,12 +11,13 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The Pillars board over registry lines and real-project membership, in one
-    // section per row of `pillar_kinds`, in the list's order, then an Other section for the lines
-    // whose kind no row names (state/boards/structure/lines.ts `lineKinds`). Each section is the
-    // group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed by
-    // the row's label in its colour with the count of its lines, and folds by its control, which
-    // the tab keeps under `folded`; its cards are drawn in the shared card grid
+    // Layer 3, view. The Pillars board over registry lines and their projects, dead ends included
+    // (state/boards/structure/lines.ts `lineMembers`), in one section per row of `pillar_kinds`, in
+    // the list's order, then an Other section for the lines whose kind no row names
+    // (state/boards/structure/lines.ts `lineKinds`). Each section is the group every grouping of a
+    // view is drawn as (ui/controls/heads/GroupHead.svelte), headed by the row's label in its
+    // colour with the count of its lines, and folds by its control, which the tab keeps under
+    // `folded`; its cards are drawn in the shared card grid
     // (views/shared/card/record/CardGrid.svelte). The Orphans card is drawn in the first row's
     // section and the Archival card, while a project is archived, in the section of `offpillar`, or
     // under Other when the list holds no such row; a section with no line and neither card is not
@@ -137,7 +138,7 @@
                             <LineCard
                                 {line}
                                 cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, config, vocabOf)}
+                                projects={lineMembers(line, allProjects)}
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}

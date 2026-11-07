@@ -27,6 +27,7 @@ Every registered view is listed by its words.
 | Person | person |
 | Project | project |
 | Awaiting | awaiting_board |
+| Projects of a record | record_board |
 | Inbox | inbox |
 | Position Leads | leads |
 | LinkedIn | linkedin |

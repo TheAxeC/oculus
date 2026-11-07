@@ -11,9 +11,10 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The application-domain board over populated registry entries and real-project
-    // membership, its cards in the shared card grid (views/shared/card/record/CardGrid.svelte),
-    // with Add and Edit in File, which open the registry file.
+    // Layer 3, view. The application-domain board over populated registry entries and their
+    // projects, dead ends included (state/boards/structure/lines.ts `domainMembers`), its cards in
+    // the shared card grid (views/shared/card/record/CardGrid.svelte), with Add and Edit in File,
+    // which open the registry file.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import DomainCard from '$lib/views/shared/card/record/registry/DomainCard.svelte';
@@ -33,12 +34,11 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
-    import { vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
         entities: { portfolio },
-        selectors: { configMap, projects },
+        selectors: { projects },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -47,7 +47,7 @@
     const cursor = $derived(cardCursor(instance.state));
     const file = registryFile(client, 'domains');
     const domains = $derived(registryLines(portfolio(), 'domains', file.collection?.entries ?? []));
-    const shown = $derived(domainsWithMembers(domains, projects(), configMap(), vocabOf));
+    const shown = $derived(domainsWithMembers(domains, projects()));
     function write(next: Partial<DomainsState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }

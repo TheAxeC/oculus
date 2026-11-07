@@ -17,7 +17,8 @@ import { fields, isMap } from '../../../data/helpers/guards.ts';
 import { arrangedDocs, withDocs } from './arrangement.ts';
 import { readDocs, type DocEntry } from './catalogue.ts';
 import { t } from '../../shared/words/text.ts';
-import { settingsTyped } from '../../system/config/typed.ts';
+import { revealState, settingsTyped } from '../../system/config/typed.ts';
+import { RAIL_ROW } from '../../system/config/groups.ts';
 
 export { arrangementKeys, glyphNames, readRail };
 export type { RailEntry, RailProblem, RailRead };
@@ -61,6 +62,11 @@ export function chordDocs(config: Record<string, unknown> | undefined): DocEntry
 
 /** The view the rail list is edited in, whose instance state holds the list being typed. */
 export const SETTINGS_VIEW = 'settings';
+
+/** The state a Settings tab is opened with to show the rail list, at the row it is edited in. */
+export function railReveal(): Record<string, unknown> {
+    return revealState(RAIL_ROW);
+}
 
 /** The view that manages the workbenches, which the rail's Workbenches menu shows. */
 export const WORKBENCHES_VIEW = 'workbenches';

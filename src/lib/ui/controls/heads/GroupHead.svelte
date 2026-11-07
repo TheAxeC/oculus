@@ -70,16 +70,14 @@
     // (views/system/findings/AuditSection.svelte); the groups of a deck in the Present view's
     // Overview, which do not fold (views/academic/present/arrange/Group.svelte); the Pillars
     // sections; the Catalogue's groups; the Keys sections; the Settings groups
-    // (views/system/workbench/settings/List.svelte); the Person page's blocks; the record page's
-    // blocks (Entry.svelte, EntryFolder.svelte, views/shared/forms/entry/Referrers.svelte); the
-    // project page's blocks (Project.svelte, Latex.svelte); the editor view's form sections; the
-    // Status view's hooks and Gallery, with the Gallery's sections nested in it (Hooks.svelte,
+    // (views/system/workbench/settings/List.svelte); the editor view's form sections; the Status
+    // view's hooks and Gallery, with the Gallery's sections nested in it (Hooks.svelte,
     // views/system/status/Gallery.svelte); the Processes view's app hosts (AppHosts.svelte); the
     // Usage view's Live and History; the HPC view's capacity, disk quota, finished jobs and Login
     // node (Capacity.svelte, Quota.svelte, Recent.svelte, Login.svelte); each provider of Account
     // setup; and the Update tray's Schedules and Tasks (shell/rail/UpdateTray.svelte,
-    // ScheduleList.svelte). A folder's files drawn under a heading of their own
-    // (views/shared/links/FolderFiles.svelte) take it through their `heading` snippet.
+    // ScheduleList.svelte). A record's page draws its blocks under small labels instead
+    // (views/shared/card/record/RecordField.svelte).
 
     import type { Snippet } from 'svelte';
     import type { HTMLAttributes } from 'svelte/elements';

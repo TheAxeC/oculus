@@ -2,18 +2,18 @@
 // pane's saved state and parses no state of its own for them. Most are GroupHead groups
 // (ui/controls/heads/GroupHead.svelte): the Gallery's sections, Account setup's providers, the
 // Views catalogue's groups, Usage's groups, Keys' sections, the Findings view's sections and the
-// Audit's kinds, the project page's blocks and its LaTeX panel, the blocks of every other record's
-// page, the editor view's, Settings' groups, the Status and Processes views' sections and the HPC
-// view's disk quota. The others are group rows of a tree (ui/tree/TreeItem.svelte): the session
-// list's workspace groups and Terminals, and the group rows of a session's Details and Changes
-// sections. It reaches the saved state of the pane it is drawn in through the instance context
-// (state/client/instance-context.ts), so a partial with no instance id of its own folds as its view
-// does, and keeps the folds there under `folded` (state/shared/page/folds.ts `instanceFolded`,
-// `foldedWith`). Every other key of the state is kept by a fold, and the view that owns the state
-// keeps `folded` in each write of its own. A view that keeps `folded` in the state its parser reads
-// (Projects, Lit Watch, the Inbox, LinkedIn, Venues, Pillars) folds through `stateFolds` of
-// state/shared/page/folds.ts instead. Drawn outside any pane, every group is open and a fold writes
-// nothing.
+// Audit's kinds, the stage sections of a project set's page (views/boards/listing/Listing.svelte),
+// the Career page's groups, the editor view's, Settings' groups, the Status and Processes views'
+// sections and the HPC view's disk quota. The others are group rows of a tree
+// (ui/tree/TreeItem.svelte): the session list's workspace groups and Terminals, and the group rows
+// of a session's Details and Changes sections. It reaches the saved state of the pane it is drawn
+// in through the instance context (state/client/instance-context.ts), so a partial with no
+// instance id of its own folds as its view does, and keeps the folds there under `folded`
+// (state/shared/page/folds.ts `instanceFolded`, `foldedWith`). Every other key of the state is
+// kept by a fold, and the view that owns the state keeps `folded` in each write of its own. A view
+// that keeps `folded` in the state its parser reads (Projects, Lit Watch, the Inbox, LinkedIn,
+// Venues, Pillars) folds through `stateFolds` of state/shared/page/folds.ts instead. Drawn outside
+// any pane, every group is open and a fold writes nothing.
 
 import { useState } from '$lib/state/client/use';
 import { useInstance } from '$lib/state/client/instance-context';

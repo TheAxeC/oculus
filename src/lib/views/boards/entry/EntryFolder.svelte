@@ -6,23 +6,20 @@
     // shared Markdown partial draws what comes back, as the project view draws its own. The files
     // are views/shared/links/FolderFiles.svelte, the block the person view draws for a student's
     // folder, and each session is views/shared/sessions/SessionRow.svelte, the row the project view
-    // draws. The chosen document is kept in the view instance's state beside the folds of the
-    // groups, which choosing leaves where they are.
+    // draws. The chosen document is kept in the view instance's state, every other key of it kept.
     //
-    // Documents, Files and Sessions are each the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), the folder's controls as the Files group's `actions`,
-    // and each folds by its block key (`documents`, `files`, `sessions`) under `folded` of the
-    // tab's state (views/shared/card/pane-fold.ts). Over a wallpaper each group's body is read off
-    // a `Surface`, so a document's code blocks paint no surface of their own on it.
+    // Documents, Files and Sessions are each drawn under a small label
+    // (views/shared/card/record/RecordField.svelte), the folder's controls beside the Files label,
+    // and none folds. Over a wallpaper each block is read off a `Surface`, so a document's code
+    // blocks paint no surface of their own on it.
 
     import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
-    import { usePaneFold } from '../../shared/card/pane-fold';
+    import RecordField from '../../shared/card/record/RecordField.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -50,9 +47,6 @@
 
     let { instance, hub, folder, reading }: Props = $props();
 
-    /** Which of the folder's groups are open, kept in the tab's state. */
-    const fold = usePaneFold();
-
     const files = $derived(folder === undefined ? null : listing(hub, folder));
     const names = $derived(
         (files?.entries ?? [])
@@ -73,7 +67,7 @@
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
 
-    /** Choose a document, keeping the rest of the instance's state (the folds of the groups). */
+    /** Choose a document, keeping the rest of the instance's state. */
     function choose(name: string): void {
         setInstanceState(instance, withInstanceKey(instanceState(instance), 'doc', name));
     }
@@ -88,13 +82,8 @@
         <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
     </Surface>
 {:else}
-    <GroupHead
-        data-block="documents"
-        label={t('entry.documents')}
-        open={fold.open('documents')}
-        ontoggle={() => fold.toggle('documents')}
-    >
-        <Surface>
+    <Surface>
+        <RecordField data-block="documents" label={t('entry.documents')}>
             {#if shown === null}
                 <Empty
                     message={files?.loading === true ? t('entry.reading') : t('entry.no_documents')}
@@ -113,32 +102,21 @@
                     failed={t('entry.doc_failed', shown.error)}
                 />
             {/if}
-        </Surface>
-    </GroupHead>
+        </RecordField>
+    </Surface>
 
     <FolderFiles {folder} root={hub}>
         {#snippet heading(controls: Snippet, body: Snippet)}
-            <GroupHead
-                data-block="files"
-                label={t('entry.files', folder)}
-                open={fold.open('files')}
-                ontoggle={() => fold.toggle('files')}
-                actions={controls}
-            >
-                <Surface>
+            <Surface>
+                <RecordField data-block="files" label={t('entry.files', folder)} actions={controls}>
                     {@render body()}
-                </Surface>
-            </GroupHead>
+                </RecordField>
+            </Surface>
         {/snippet}
     </FolderFiles>
 
-    <GroupHead
-        data-block="sessions"
-        label={t('entry.sessions')}
-        open={fold.open('sessions')}
-        ontoggle={() => fold.toggle('sessions')}
-    >
-        <Surface>
+    <Surface>
+        <RecordField data-block="sessions" label={t('entry.sessions')}>
             {#if rows.length === 0}
                 <Empty message={t('entry.no_sessions')} glyph={t('entry.none_glyph')} />
             {:else}
@@ -146,6 +124,6 @@
                     <SessionRow entry={row} {now} />
                 {/each}
             {/if}
-        </Surface>
-    </GroupHead>
+        </RecordField>
+    </Surface>
 {/if}

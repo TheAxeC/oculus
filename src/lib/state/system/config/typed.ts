@@ -13,8 +13,12 @@
 // (view/fold.ts, view/matches.ts): `@modified` (in any case) and `@id:<text>` are its filters, and
 // every other word, an unknown `@word` included, is a plain word. A change of a query's words drops
 // the fold presses made under it (`searchFolds`, view/fold.ts).
+//
+// A tab opened to show one row holds the ask under `reveal`, the row's id, until the view has shown
+// the row (views/system/workbench/reveal.svelte.ts).
 
 import { z } from 'zod';
+import { hubFileOf } from '../../../data/helpers/hub-names.ts';
 import { draftsHeld, inSlot, mapOf, type Slot } from './editors/slots.ts';
 
 /** The prefix of the filter that looks at the key path alone. */
@@ -74,8 +78,8 @@ const typedListShape = z
     )
     .catch([]) satisfies z.ZodType<Typed[]>;
 
-/** The ask the rail's Settings choice leaves: the section to scroll to, or no ask. */
-const revealShape = z.enum(['rail']).optional().catch(undefined);
+/** The ask a tab is opened with: the id of the row to show, or no ask. */
+const revealShape = z.string().min(1).optional().catch(undefined);
 
 /** The unsent texts a state holds. */
 function typedList(state: unknown): Typed[] {
@@ -127,12 +131,26 @@ export function settingsTyped(state: unknown): boolean {
     return typedList(state).length > 0 || draftsHeld(state) > 0;
 }
 
-/** The section a tab was opened to show, or undefined when it was opened for no section. */
-export function settingsReveal(state: unknown): 'rail' | undefined {
+/** The state a Settings tab is opened with to show the row `id`, which `settingsReveal` reads. */
+export function revealState(id: string): Record<string, unknown> {
+    return { reveal: id };
+}
+
+/** The id of the row a tab was opened to show, or undefined when it was opened for no row. */
+export function settingsReveal(state: unknown): string | undefined {
     return revealShape.parse(mapOf(state).reveal);
 }
 
-/** A tab's state with the ask to show a section taken out. */
+/**
+ * The id of the Settings row of a key of the hub list (`<defaults file>:<key>`, as rows.ts names a
+ * row), or undefined for a key the hub list does not bind to a file.
+ */
+export function hubRowId(key: string): string | undefined {
+    const file = hubFileOf(key);
+    return file === undefined ? undefined : `${file}:${key}`;
+}
+
+/** A tab's state with the ask to show a row taken out. */
 export function withoutReveal(state: unknown): Record<string, unknown> {
     const { reveal: _asked, ...rest } = mapOf(state);
     return rest;

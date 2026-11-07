@@ -6,8 +6,8 @@
     // `related:` list's, and for a person one labelled strip per role
     // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`), grouped by the rows of
     // `categories:`. The collection view draws one per entry, its strip narrowed to the projects
-    // the picks of its bar's Projects section keep (`keeps`), and the entry's page draws one open,
-    // with the whole strip, so the card lives here and not under either view. The fields are
+    // the picks of its bar's Projects section keep (`keeps`), and the entry's page and a person's
+    // page draw one open, so the card lives here and not under any of those views. The fields are
     // EntryFields.svelte, which says how each field is drawn.
     //
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
@@ -15,10 +15,14 @@
     //
     // Every entry with a key has a page, and the card's title and the strip's Page open it through
     // `onpage`; a card handed none, an entry with no key among them, draws its title as words and
-    // has no Page. The page holds the entry's referrers and, where its `link` names a folder of the
-    // hub, the folder's documents, files and sessions. On that page the card is handed `page`: its
-    // strip holds Edit in Page's place, and EntryFields.svelte adds the Website group and the words
-    // of a person's rows.
+    // has no Page. The page holds the row of count buttons of the projects that name the entry
+    // and, where its `link` names a folder of the hub, the folder's documents, files and sessions.
+    // On that page the card is handed `page`: its strip holds Edit in Page's place, it draws no
+    // strip of projects at its foot, and under the closed card its fields are the two columns of
+    // every record's page (views/shared/card/record/RecordDetails.svelte), the prose on the left
+    // and the rest on the right, where EntryFields.svelte adds the Website group and the words of a
+    // person's rows, the line of the records other than projects that name the entry follows
+    // (`named`, NamedBy.svelte), then the subtasks, follow-ups and deadline form.
     //
     // The entry's fields are changed in its editor, which Edit opens beside the page
     // (views/boards/editor/Editor.svelte), in the file, which Edit in File opens at the entry, or
@@ -52,6 +56,8 @@
     } from '../entry-actions';
     import { blockedBy, fileNameOf, openEntry } from '../../entry-file';
     import EntryFields from './EntryFields.svelte';
+    import NamedBy from './NamedBy.svelte';
+    import type { Referrer } from '$lib/state/forms/referrers';
     import {
         entryStatus,
         isPinned,
@@ -117,12 +123,13 @@
         /** The projects the strip at the foot draws; a card handed none draws every one. */
         keeps?: Keeps;
         /**
-         * Drawn on the entry's own page: Edit in the strip in Page's place, and the fields a page
-         * adds (EntryFields.svelte).
+         * Drawn on the entry's own page: Edit in the strip in Page's place, the fields in the two
+         * columns of a record's page with what a page adds (EntryFields.svelte), and no strip of
+         * projects at the foot, since the row under the page's card counts them.
          */
         page?: boolean;
-        /** Whether a person's card draws its strips; the person's page lists them as sections. */
-        roles?: boolean;
+        /** On the entry's page, the records other than projects that name it (NamedBy.svelte). */
+        named?: Referrer[];
     };
 
     let {
@@ -142,7 +149,7 @@
         lead = false,
         keeps,
         page = false,
-        roles = true
+        named = []
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -291,7 +298,16 @@
 {/snippet}
 
 {#snippet lines()}
-    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} {page} />
+    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} />
+{/snippet}
+
+{#snippet left()}
+    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} column="left" />
+{/snippet}
+
+{#snippet right()}
+    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} column="right" />
+    <NamedBy {named} />
 {/snippet}
 
 <div class="slot" data-entry={entry.id} data-ident={value} role="listitem">
@@ -309,8 +325,11 @@
         {onsaid}
         {meta}
         {lines}
+        {left}
+        {right}
+        {page}
         {groups}
-        rows={roles ? (rows ?? undefined) : []}
+        rows={rows ?? undefined}
         deleting={deleting
             ? { collection, id: entry.id, onclose: () => (deleting = false) }
             : undefined}

@@ -52,9 +52,10 @@ function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
  * The projects a project is related to, by their short name or title: those its own `related:`
  * names, in the manifest's order, then those whose `related:` names it, read over the snapshot's
  * related pairs, each project once and never the project itself. A key its `related:` names that
- * no project holds is kept as a tag that names no project (`held` false).
+ * no project holds is kept as a tag that names no project (`held` false). A project's page counts
+ * the held ones in its row (state/boards/record-board.ts), so the row and the card agree.
  */
-function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
+export function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
     const projects = snapshot.entities.projects;
     const backwards = snapshot.relations.projectRelated
         .filter((pair) => pair[1] === project.id)

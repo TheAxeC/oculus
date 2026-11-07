@@ -81,16 +81,13 @@ export function parseDomainsState(raw: unknown): DomainsState {
     return parseRevealState(raw);
 }
 
-/** Real projects that name one pillar, preserving project order. */
-export function lineMembers(
-    line: Pillar,
-    projects: Project[],
-    config: Record<string, unknown>,
-    wordsOf?: WordsOf
-): Project[] {
-    return realProjects(projects, config, wordsOf).filter((project) =>
-        project.pillarIds.includes(line.id)
-    );
+/**
+ * The projects that name one pillar, dead ends included, preserving project order: the one list a
+ * line's card counts, its page's row counts and its board holds. What says how active the line is
+ * (its dormant look, its in-flight and tier metrics) reads the real ones among them.
+ */
+export function lineMembers(line: Pillar, projects: Project[]): Project[] {
+    return projects.filter((project) => project.pillarIds.includes(line.id));
 }
 
 /** The projects whose stage carries `live` in `stages`, the work counted as in flight. */
@@ -186,16 +183,13 @@ export function isDormant(
     );
 }
 
-/** Real projects that name one domain, preserving project order. */
-export function domainMembers(
-    domain: Domain,
-    projects: Project[],
-    config: Record<string, unknown>,
-    wordsOf?: WordsOf
-): Project[] {
-    return realProjects(projects, config, wordsOf).filter((project) =>
-        project.domainIds.includes(domain.id)
-    );
+/**
+ * The projects that name one domain, dead ends included, preserving project order: the one list a
+ * domain's card counts, its page's row counts and its board holds. Its dormant look reads the real
+ * ones among them.
+ */
+export function domainMembers(domain: Domain, projects: Project[]): Project[] {
+    return projects.filter((project) => project.domainIds.includes(domain.id));
 }
 
 /**
@@ -235,15 +229,13 @@ export function registryLines(
     return inEntryOrder(Object.values(held), entries);
 }
 
-/** Each domain with its real member projects, a domain that has none left out. */
+/** Each domain with its member projects (`domainMembers`), a domain that has none left out. */
 export function domainsWithMembers(
     domains: Domain[],
-    projects: Project[],
-    config: Record<string, unknown>,
-    wordsOf?: WordsOf
+    projects: Project[]
 ): { domain: Domain; projects: Project[] }[] {
     return domains
-        .map((domain) => ({ domain, projects: domainMembers(domain, projects, config, wordsOf) }))
+        .map((domain) => ({ domain, projects: domainMembers(domain, projects) }))
         .filter((item) => item.projects.length > 0);
 }
 

@@ -37,6 +37,7 @@
     import {
         SETTINGS_VIEW,
         WORKBENCHES_VIEW,
+        railReveal,
         type RailEntry,
         type RailPage
     } from '$lib/state/workbench/navigation/rail';
@@ -161,7 +162,7 @@
         if (holder !== undefined && heldInstance(SETTINGS_VIEW) === null) {
             openRailPage(holder.page, holder.label, holder.node);
         }
-        openView(SETTINGS_VIEW, { reveal: 'rail' }, currentPage().id);
+        openView(SETTINGS_VIEW, railReveal(), currentPage().id);
     }
 
     /**

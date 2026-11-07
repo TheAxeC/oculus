@@ -17,6 +17,8 @@ export {
     firstSentence,
     mapPreset,
     presetFor,
+    RECORD_VIEW,
+    recordPreset,
     setting,
     shortWords,
     venueText

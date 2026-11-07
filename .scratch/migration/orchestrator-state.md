@@ -37,7 +37,7 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O161-refuter.md (a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min); over round 1: a96cb64bab02b38fc, claude-opus-5-5, 246209 tokens, 51 tool uses, 14.5 min
   round: 1 (agents/briefs/O161-round-1.md, sent 2026-11-07; before it, round 0, the cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
-  shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing
+  shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing; `src/lib/views/shared/card/record/RecordCard.svelte`, `src/lib/views/boards/projects/Projects.svelte` and `src/lib/ui/controls/heads/GroupHead.svelte` with O166 (landed 2026-11-07), judged simple to merge at O166's /spec, merged at O161's landing
 - step: O165
   brief_check: .scratch/migration/agents/reviews/O165-brief-check.md (abe81b76d36c73c6b, claude-opus-5-5, 156582 tokens, 43 tool uses, 8.6 min)
   base: 9dfe43d14
@@ -51,21 +51,7 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O165-refuter.md (afbf839ba49f56236, claude-opus-5-5, 279824 tokens, 87 tool uses, 18.4 min); over round 1: af6f8bb10a8b887c8, claude-opus-5-5, 261745 tokens, 78 tool uses, 10.0 min
   round: 1 (agents/briefs/O165-round-1.md, sent 2026-11-07)
   landing: not-started
-- step: O166
-  brief_check: .scratch/migration/agents/reviews/O166-brief-check.md (af52cf6c33a07ae89, claude-opus-5-5, 267934 tokens, 87 tool uses, 13.2 min)
-  base: feb1d1354
-  worktree: .agents/worktrees/migration-O166
-  executor: agent
-  worker: claude:opus
-  session_id: ae67fca9ae879a854 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O166-report.md
-  builder_usage: "round 0 hand-back: 290096 tokens, 56 tool uses, 8.1 min; build under the cases ruling: 264771 tokens, 471 tool uses, 88.5 min; round 1: 315313 tokens, 45 tool uses, 8.6 min"
-  reviewer_report: .scratch/migration/agents/reviews/O166-refuter.md (a3498add57a00290f, claude-opus-5-5, 334161 tokens, 116 tool uses, 19.4 min); over round 1: a8ce87366f2e26d24, claude-opus-5-5, 200549 tokens, 48 tool uses, 8.0 min
-  round: 1 (agents/briefs/O166-round-1.md, sent 2026-11-07)
-  cases_ruling: .scratch/migration/agents/briefs/O166-cases.md
-  landing: not-started
-  shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
+  carries: "at its landing, the `docs/HELP.md` sentences O166 made false (agents/reviews/O166-report.md, HELP sentences of check 6: :271 twice, :272, :305, :359, numbered on O166's base) brought true for the record pages as O166 landed them (the row of count buttons, the Named by line, the two columns, the dead-ends group on every card's strip)"
 - step: O151
   brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a9884b252a619f8e8, claude-opus-5-5, 208952 tokens, 72 tool uses, 13.6 min)
   base: 391708a81
@@ -890,6 +876,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-07 (O166 landed; O151 building). O166, the record pages made one design, landed (booking in `plan.md`, `agents/reviews/O166-landing.md`), with the round-1 review's two findings fixed at landing: every record card's strip keeps the dead-ends group and names a project once, so each card counts what its page's row counts, seen on the scratch server on 8797. O165 carries the `docs/HELP.md` sentences O166 made false (its dispatch entry, `carries:`). O151's builder a242c8c8c4aa11ec0 runs from base 391708a81. In flight (3 of 6): O151, O161, O165. Next: /land O161, then O165's /writing findings and Axel's approval.
 - 2026-11-07 (O159 landed). O159, one folder search per hub, landed (booking in `plan.md`, `agents/reviews/O159-landing.md`): a filter change of the portfolio deck over the research hub reads in 18.4 ms with the warm store against 1157.4 ms with a fresh one. Axel: "The text size for the facts strip is faaar too large"; measured on 8797, the strip's values are 18 px in the 1280 by 720 frame, the size of the slide's paragraphs and above its 13.5 px lists; the fix goes into O151's brief with the brief check's findings. Open items: none. In flight (4 of 6): O151 (brief check back, its findings closed next), O161, O165, O166 (each at landing). Next: O151's brief check closed and its builder launched, then /land O166 and /land O161 one at a time.
 
 - 2026-11-06 (O164 landed). O164, a card's links open their page, landed (booking in `plan.md`, `agents/reviews/O164-landing.md`), every press seen opening its entry's page on the scratch server. Open items: none. In flight (1 of 6): O161 (building on the round-0 cases ruling). Queued: O165 (/spec now), O151 and O159 (/spec again now), O166 (/spec now: O164 has landed).

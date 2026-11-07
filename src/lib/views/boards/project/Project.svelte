@@ -25,7 +25,7 @@
     // repository, of the repository.
     //
     // The card is views/shared/card/project/ProjectCard.svelte, the one the board draws, with
-    // `page` on: this tab's card draws its blocks in two columns under the closed card and has no
+    // `page` on: this tab's card draws its fields in two columns under the closed card and has no
     // Open project page action. The card carries the deposit control on every page that draws it,
     // whatever the project's tier or placement; the deposit mirrors the `code/` folder of the
     // project's own folder. It is drawn with `documents` off, since the documents section below is
@@ -46,40 +46,45 @@
     // Each session working in the folder is views/shared/sessions/SessionRow.svelte, the row the
     // entry page draws for the sessions in its folder too.
     //
-    // The LaTeX panel, the documents and the sessions are each the group every grouping of a view
-    // is drawn as (ui/controls/heads/GroupHead.svelte), folded by its key (`latex`, `documents`,
-    // `sessions`) under `folded` of the tab's state through the pane's folds
-    // (views/shared/card/pane-fold.ts); choosing a document keeps the folds. Over a wallpaper the
-    // card is its own surface, and the status line and each group's body are read off a `Surface`,
-    // so a document's code blocks paint no surface of their own there.
+    // Under the card is the row of count buttons of the projects this one is related to, its
+    // `related:` both ways, by row of `categories:`, then the total
+    // (views/shared/card/record/RecordCounts.svelte); a press opens a board of those projects, and
+    // the card draws no strip of them at its foot. A project related to none draws no row.
+    //
+    // The LaTeX panel, the documents and the sessions are each drawn under a small label
+    // (views/shared/card/record/RecordField.svelte), and none folds. Over a wallpaper the card is
+    // its own surface, and the status line, the row and each block are read off a `Surface`, so a
+    // document's code blocks paint no surface of their own there.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/project/ProjectCard.svelte';
+    import RecordField from '../../shared/card/record/RecordField.svelte';
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames } from '$lib/state/boards/board';
+    import { recordRow } from '$lib/state/boards/record-board';
     import { folderOf } from '$lib/state/client/selectors.svelte';
     import {
         cardCursor,
         instanceChoice,
         withInstanceKey
     } from '$lib/state/workbench/layout/instance';
-    import { usePaneFold } from '../../shared/card/pane-fold';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
         docs: { document: docFor },
-        selectors: { boardItemOf, sessionsForProject, staleLag },
+        entities: { portfolio },
+        selectors: { boardItemOf, configMap, sessionsForProject, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -106,13 +111,23 @@
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
 
-    /** Choose a document, every other key of the tab's state (its folds among them) kept. */
+    /** Choose a document, every other key of the tab's state kept. */
     function choose(name: string): void {
         setInstanceState(instance.id, withInstanceKey(instanceState(instance.id), 'doc', name));
     }
 
-    /** The folds of the blocks, by key (`latex`, `documents`, `sessions`). */
-    const fold = usePaneFold();
+    /** The row of count buttons under the card: the projects this one is related to. */
+    const row = $derived(
+        item === null
+            ? undefined
+            : recordRow(
+                  portfolio(),
+                  { kind: 'project', id: item.id },
+                  item.project.title,
+                  configMap(),
+                  vocabOf
+              )
+    );
 
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
 
@@ -127,7 +142,7 @@
     }
 </script>
 
-<RecordPage title={title()} {instance} said={item === null ? '' : said} data-project={id}>
+<RecordPage title={title()} {instance} said={item === null ? '' : said} {row} data-project={id}>
     {#snippet card()}
         {#if id === ''}
             <Empty message={t('project.none')} glyph={t('project.none_glyph')} />
@@ -151,13 +166,8 @@
     {#if item !== null}
         <Latex {id} />
 
-        <GroupHead
-            data-block="documents"
-            label={t('project.documents')}
-            open={fold.open('documents')}
-            ontoggle={() => fold.toggle('documents')}
-        >
-            <Surface>
+        <Surface>
+            <RecordField data-block="documents" label={t('project.documents')}>
                 {#if absent.length > 0}
                     <div class="absent" data-absent-docs>
                         {#each absent as doc (doc.name)}
@@ -180,16 +190,11 @@
                         failed={t('project.doc_failed', shown.error)}
                     />
                 {/if}
-            </Surface>
-        </GroupHead>
+            </RecordField>
+        </Surface>
 
-        <GroupHead
-            data-block="sessions"
-            label={t('project.sessions')}
-            open={fold.open('sessions')}
-            ontoggle={() => fold.toggle('sessions')}
-        >
-            <Surface>
+        <Surface>
+            <RecordField data-block="sessions" label={t('project.sessions')}>
                 {#if rows.length === 0}
                     <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
                 {:else}
@@ -197,8 +202,8 @@
                         <SessionRow {entry} {now} />
                     {/each}
                 {/if}
-            </Surface>
-        </GroupHead>
+            </RecordField>
+        </Surface>
     {/if}
 </RecordPage>
 

@@ -36,10 +36,11 @@ export type VenuesState = {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /**
- * The real projects, which the venue use and concentration counts, the Orphans card and the pillar
- * and domain members read: every project whose category, the first row of `categories:` holding
- * it, does not carry `archival: true`. A project in no category is real. A project is filed under
- * its own hub's words when `wordsOf` gives them (`categoriesBy`).
+ * The real projects, which what says how active a record is reads (a venue's concentration, a
+ * pillar's or a domain's dormant look, a pillar's in-flight and tier metrics) and the Orphans card
+ * counts: every project whose category, the first row of `categories:` holding it, does not carry
+ * `archival: true`. A project in no category is real. A project is filed under its own hub's words
+ * when `wordsOf` gives them (`categoriesBy`).
  */
 export function realProjects(
     projects: Project[],
@@ -54,8 +55,9 @@ export function realProjects(
 }
 
 /**
- * Projects targeting one venue, with the concentration marker: two or more of them at a stage
- * carrying `live` in `stages` of their own hub's words.
+ * The projects targeting one venue, dead ends included, the one list the venue's card, its page's
+ * row and its board read, with the concentration marker: two or more real ones among them at a
+ * stage carrying `live` in `stages` of their own hub's words.
  */
 export function venueUsers(
     venue: Venue,
@@ -64,7 +66,7 @@ export function venueUsers(
     wordsOf?: WordsOf
 ): VenueUse {
     const users = projects.filter((project) => project.venueId === venue.id);
-    const live = users.filter((project) =>
+    const live = realProjects(users, config, wordsOf).filter((project) =>
         hasWord(recordWords(config, wordsOf, project), 'stages', 'live', project.stage)
     );
     return { projects: users, concentrated: live.length >= 2 };

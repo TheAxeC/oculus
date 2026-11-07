@@ -8,11 +8,12 @@
     // carrying `rail: true`, in the colour `rail_color` of vocab.yml gives, and 0 when none is in
     // such a row.
     //
-    // The Awaiting box's board is the component's own view, registered once like any module's: a
-    // name of the Focus board's Awaiting box opens it for that name, so it is not listed in the
-    // view catalogue and has no count hooks, and the page keeps it registered through every push of
+    // The Awaiting box's board and a record's board are the component's own views, registered once
+    // like any module's: a name of the Focus board's Awaiting box opens the first for that name, a
+    // count button of a record's page the second for that record, so neither is listed in the view
+    // catalogue or has count hooks, and the page keeps both registered through every push of
     // `boards:` (routes/views.ts `registerBoards`).
-    import { AWAITING_VIEW, type BoardView } from '$lib/state/boards/board';
+    import { AWAITING_VIEW, RECORD_VIEW, type BoardView } from '$lib/state/boards/board';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration[] = [
@@ -20,6 +21,14 @@
             id: AWAITING_VIEW,
             label: 'views.awaiting_board',
             glyph: 'views.awaiting_board_glyph',
+            group: '',
+            order: 0,
+            listed: false
+        },
+        {
+            id: RECORD_VIEW,
+            label: 'views.record_board',
+            glyph: 'views.record_board_glyph',
             group: '',
             order: 0,
             listed: false
@@ -51,6 +60,13 @@
     // under that filter, worked out from the live portfolio each time it is drawn (`awaitingTake`,
     // `awaitingPreset`), so a project that stops waiting leaves it. It offers no New project, and a
     // tab opened with no such state says so.
+    //
+    // A record's board is the same component under a view of its own: one tab per record and kind
+    // of board, its state the record, the kind of board and the title (`label`,
+    // state/boards/record-board.ts `RecordTab`), holding exactly the record's projects, or a
+    // person's projects waiting on them, worked out from the live portfolio each time it is drawn
+    // (`recordIds`, `recordPreset`). It offers no New project, and a tab opened with no record, or
+    // for a record that is gone, says the record is gone.
     //
     // The header holds New project, Cards and List (views/shared/forms/bar/ModeButtons.svelte), the
     // one in force pressed, Full titles, pressed while the board draws full titles, and, in list
@@ -116,12 +132,14 @@
         listCells,
         newProjectTier,
         pickCell,
+        recordPreset,
         searchWords,
         type BoardItem,
         type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
     import { awaitingTabOf, awaitingTake } from '$lib/state/boards/focus/filter';
+    import { recordIds, recordTabOf } from '$lib/state/boards/record-board';
     import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
@@ -167,9 +185,19 @@
         const scope = { self: selfPeople(), hubs, wordsOf: vocabOf, lists: hubVocabs() };
         return awaitingTake(snapshot, configMap(), minuteNow(), awaiting, scope);
     });
-    const preset = $derived(
-        transient ? awaitingPreset(awaited, configMap(), vocabOf) : boardPreset(instance.view)
-    );
+    /** Whether this tab is a record's board, and the record it was opened for, if any. */
+    const recordView = $derived(instance.view === RECORD_VIEW);
+    const record = $derived(recordView ? recordTabOf(instance.state) : null);
+    /** The projects the record's tab holds now, null for no record or for one that is gone. */
+    const recorded = $derived.by(() => {
+        const snapshot = portfolio();
+        return record === null || snapshot === null ? null : recordIds(snapshot, record);
+    });
+    const preset = $derived.by(() => {
+        if (transient) return awaitingPreset(awaited, configMap(), vocabOf);
+        if (recordView) return recordPreset(recorded ?? [], configMap(), vocabOf);
+        return boardPreset(instance.view);
+    });
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
     const lag = $derived(staleLag());
@@ -226,6 +254,7 @@
      */
     function title(): string {
         if (awaiting !== null) return awaiting.label;
+        if (record !== null) return record.label;
         const registered = registry.viewFor(instance.view);
         return registered === undefined ? instance.view : registrationLabel(registered);
     }
@@ -245,6 +274,16 @@
     function tabLabel(item: BoardItem): string {
         const short = item.project.short;
         return short === undefined || short === '' ? item.project.title : short;
+    }
+
+    /**
+     * What an empty board says: an Awaiting tab opened for no name, a record's tab for no record or
+     * one that is gone, and every other board that it holds no project.
+     */
+    function emptyWords(): string {
+        if (transient && awaiting === null) return t('board.awaiting_none');
+        if (recordView && recorded === null) return t('board.record_gone');
+        return t('board.empty');
     }
 
     /** A section's words: its category's label, or "other" for the projects in no category. */
@@ -344,7 +383,7 @@
         <SaidBody
             {said}
             empty={shown.length === 0}
-            message={transient && awaiting === null ? t('board.awaiting_none') : t('board.empty')}
+            message={emptyWords()}
             glyph={t('board.empty_glyph')}
         >
             {#if grid}

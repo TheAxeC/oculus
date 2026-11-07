@@ -1,4 +1,4 @@
-# Oculus text owned by the entry editor, the Add and Delete questions, and the referrers list.
+# Oculus text owned by the entry editor, the Add and Delete questions, and the line of the records that name an entry.
 text:
     entry_form:
         add_verb: Add
@@ -16,13 +16,11 @@ text:
         feed_scalar: '{0} holds more than one value, and a feed entry is saved one value at a time; use Edit in File'
         label_empty: a label needs words
         label_taken: 'the label {0} is already in use'
-        no_referrers: Nothing refers to this record.
+        named_by: Named by
         record_add: 'Add to {0}'
         record_name: '{0} name'
         record_remove: Remove
-        referrer_open: 'Open {0}'
         referrer_setting: 'The setting {0}'
-        referrers: Referred to by
         required: required
         row_add: Add row
         row_add_glyph: add

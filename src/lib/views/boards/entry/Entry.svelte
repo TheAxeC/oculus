@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. An entry opens from the title of a card, from a referrer list,
-    // from the palette and from an Add, and is not listed in the view catalogue: opened bare it can
-    // only report that it was opened for no entry.
+    // Layer 3, view registration. An entry opens from the title of a card, from a tag that names
+    // it, from the palette and from an Add, and is not listed in the view catalogue: opened bare it
+    // can only report that it was opened for no entry.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'entry',
@@ -20,19 +20,22 @@
     // entry one tab, and the same key in two collections or two hubs two.
     //
     // The frame is views/shared/card/record/RecordPage.svelte, the frame of every record's page. An
-    // entry of a collection shows its card, opened out, then what refers to the entry when other
-    // records do, and, when its `link` names a folder of the hub, the folder's documents, files and
-    // sessions (EntryFolder.svelte). A lead or a Lit Watch paper shows its card, opened out: the
-    // card its feed's view draws (views/shared/card/feed/), with every control it has there, its
-    // title as words. The page holds no form: the card's Edit opens the editor beside it
-    // (views/boards/editor/Editor.svelte). Delete asks first, naming the records that refer to the
-    // entry, and an entry that is gone says so; it is shown again when Undo brings it back.
+    // entry of a collection shows its card, opened out, then the row of count buttons of the
+    // projects that name it (views/shared/card/record/RecordCounts.svelte; none for an entry no
+    // project names), and, when its `link` names a folder of the hub, the folder's documents,
+    // files and sessions (EntryFolder.svelte). The people, the funding schemes and the setting
+    // that name the entry are a line of tags on its card (state/forms/referrers.ts `referrersOf`,
+    // its projects left to the row). A lead or a Lit Watch paper shows its card, opened out, with
+    // no row: the card its feed's view draws (views/shared/card/feed/), with every control it has
+    // there, its title as words. The page holds no form: the card's Edit opens the editor beside
+    // it (views/boards/editor/Editor.svelte). Delete asks first, naming the records that refer to
+    // the entry, and an entry that is gone says so; it is shown again when Undo brings it back.
     //
     // An entry of a file with no `schema:` list that reads, which the page tells by `page.schema`,
     // draws the same card under a line saying the file has no schema. With nothing to build a form
     // from, that page offers no Status, Delete, Edit or other control that writes; what only reads
-    // stays (Copy BibTeX, the referrers, the folder's blocks). The page hands the card no statuses,
-    // so the Status submenu of such a file stays on the card of its collection view.
+    // stays (Copy BibTeX, the row, the tags, the folder's blocks). The page hands the card no
+    // statuses, so the Status submenu of such a file stays on the card of its collection view.
     //
     // The card of a venue, a dataset, a domain or a pillar line is the one its view draws
     // (views/shared/card/record/registry/RegistryPageCard.svelte). Every other card is
@@ -40,11 +43,6 @@
     // control it has there (Start Agent on a task, Copy BibTeX on a Literature entry) and, since it
     // is handed neither a grip nor a title opener, with the long fields whole and the title as
     // words.
-    //
-    // The referrers and the folder's blocks are each the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), folded by its block key (`referrers`, `documents`,
-    // `files`, `sessions`) under `folded` of the tab's state (views/shared/card/pane-fold.ts); a
-    // save that moves the tab to a new key keeps the folds.
     //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
     // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
@@ -61,7 +59,6 @@
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
     import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
-    import Referrers from '../../shared/forms/entry/Referrers.svelte';
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import RegistryPageCard from '../../shared/card/record/registry/RegistryPageCard.svelte';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
@@ -79,11 +76,11 @@
     import { isExpired, localDate } from '$lib/state/feeds/leads';
     import { isDismissed } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
-    import { listsReferrers, referrersOf } from '$lib/state/forms/referrers';
+    import { referrersOf } from '$lib/state/forms/referrers';
+    import { recordRow } from '$lib/state/boards/record-board';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
     import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
-    import { instanceFolded } from '$lib/state/shared/page/folds';
-    import { instanceText, withInstanceKey } from '$lib/state/workbench/layout/instance';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -163,14 +160,29 @@
     );
 
     const snapshot = $derived(portfolio());
-    /**
-     * Whether the page lists the entry's referrers, by the registry its collection's entry names.
-     */
-    const referred = $derived(listsReferrers(collection ?? held.at(0) ?? null));
-    const referrers = $derived(
-        snapshot === null || !referred
+    /** The records other than projects that name the entry, which its card draws as tags. */
+    const named = $derived(
+        snapshot === null
             ? []
-            : referrersOf(snapshot, configMap(), collectionKey, key, hubVocabs()?.primary ?? null)
+            : referrersOf(
+                  snapshot,
+                  configMap(),
+                  collectionKey,
+                  key,
+                  hubVocabs()?.primary ?? null
+              ).filter((one) => one.kind !== 'project')
+    );
+    /** The row of count buttons under the card of an entry of a collection: its projects. */
+    const row = $derived(
+        entry === null || page === null
+            ? undefined
+            : recordRow(
+                  snapshot,
+                  { kind: 'entry', collection: collectionKey, id: entry.id },
+                  page.title,
+                  configMap(),
+                  vocabOf
+              )
     );
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
@@ -189,13 +201,11 @@
     );
 
     // A save that gave the entry a new key or a new title moves the tab to them, so the page and
-    // the tab's title follow the saved words from the first frame, the folded blocks kept.
+    // the tab's title follow the saved words from the first frame.
     $effect(() => {
         if (page === null) return;
         if (page.key !== key || page.title !== instanceText(instance.state, 'label')) {
-            const moved = entryPageState(collectionKey, page.key, page.title);
-            const folded = instanceFolded(instance.state);
-            restateInstance(instance.id, withInstanceKey(moved, 'folded', folded));
+            restateInstance(instance.id, entryPageState(collectionKey, page.key, page.title));
         }
     });
 
@@ -296,6 +306,7 @@
     {instance}
     toolbar={tools}
     said={page === null ? '' : said}
+    {row}
     data-entry={key}
     data-collection={collectionKey}
 >
@@ -328,6 +339,7 @@
                     onsaid={say}
                     more
                     page
+                    {named}
                     extra={taskCardActions(collection, entry, configMap(), startAgent).concat(
                         literatureCardActions(collection, entry, writeToken, say)
                     )}
@@ -358,14 +370,8 @@
         {/if}
     {/snippet}
 
-    {#if page !== null}
-        {#if referred}
-            <Referrers {referrers} />
-        {/if}
-
-        {#if entry !== null && hub !== null && link !== undefined}
-            <EntryFolder instance={instance.id} {hub} {folder} {reading} />
-        {/if}
+    {#if page !== null && entry !== null && hub !== null && link !== undefined}
+        <EntryFolder instance={instance.id} {hub} {folder} {reading} />
     {/if}
 </RecordPage>
 

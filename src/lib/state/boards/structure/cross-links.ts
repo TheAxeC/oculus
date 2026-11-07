@@ -1,13 +1,15 @@
-// Layer 2, client state. The projects that name one entry of a collection, grouped by the rows of
-// `categories:` as a project board files them into its sections, a row carrying `archival` left out
-// and the projects in no row last as "other": one strip for a funding scheme, an organisation, a
-// resource and an entry's `related:` list, and one labelled strip per role for a person
-// (`roleLinks`); the projects at one stage as one group (the Archival card's); and the live
-// projects no funding scheme covers, which the Funding tab draws as one card. Pure joins of the
-// snapshot, like the Pillars and Domains joins beside it, so they are checked without a browser. A
-// project's category and chips, and a person's roles, are read under the words of their own hub
-// when the caller gives them (`wordsOf`). A strip can be narrowed to the projects a predicate keeps
-// (`keeps`), which a collection's Projects section in More gives (state/boards/collection/bar.ts).
+// Layer 2, client state. The projects that name one entry of a collection (`namedProjects`), and
+// those projects grouped by the rows of `categories:` as a project board files them into its
+// sections, a row carrying `archival` left out unless the caller keeps it and the projects in no
+// row last as "other": one strip for a funding scheme, an organisation, a resource and an entry's
+// `related:` list, and one labelled strip per role for a person (`roleLinks`), both keeping the
+// dead ends as a group of their own so a card counts what its page's row counts; the projects at
+// one stage as one group (the Archival card's); and the live projects no funding scheme covers,
+// which the Funding tab draws as one card. Pure joins of the snapshot, like the Pillars and Domains
+// joins beside it, so they are checked without a browser. A project's category and chips, and a
+// person's roles, are read under the words of their own hub when the caller gives them
+// (`wordsOf`). A strip can be narrowed to the projects a predicate keeps (`keeps`), which a
+// collection's Projects section in More gives (state/boards/collection/bar.ts).
 
 import { anyWord, hasWord, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { holdersOf, resolvedId, rootOf } from '../../../data/helpers/hub-names.ts';
@@ -102,7 +104,8 @@ function affiliatedTo(
 }
 
 /**
- * The projects that name one entry, grouped by stage with a count each.
+ * The projects that name one entry, every one of them, a project in a row carrying `archival`
+ * included.
  *
  * Which projects those are is the collection's own question and has four answers: an entry of the
  * collection whose entry names the `funding` registry is a scheme, named by the manifests'
@@ -110,14 +113,39 @@ function affiliatedTo(
  * projects whose team holds a person affiliated to it (`affiliatedTo`, among `people`, the people
  * of the snapshot); an entry of the `resources` registry is a resource, named by the manifests'
  * `compute:`; and every other collection has no project-side inverse, so it is the entry's own
- * `related:` list of keys. A person's projects are drawn one strip per role (`roleLinks`).
- * `collection` is the collection of the entry's own hub that holds it, none when the snapshot holds
- * no such collection. An entry of a registry has the id of its record, which every reference of a
- * manifest is resolved to. A key of the entry's `related:` names the project its hub resolves it
- * to, the entry's own hub first, then the one other hub that holds it (`resolvedId`), and one no
- * project of the snapshot resolves is left out rather than drawn as a dead link. Each project is
- * grouped under its own hub's words when `wordsOf` gives them (`groupProjects`), and only the
- * projects `keeps` keeps are grouped.
+ * `related:` list of keys. `collection` is the collection of the entry's own hub that holds it,
+ * none when the snapshot holds no such collection. An entry of a registry has the id of its record,
+ * which every reference of a manifest is resolved to. A key of the entry's `related:` names the
+ * project its hub resolves it to, the entry's own hub first, then the one other hub that holds it
+ * (`resolvedId`), and one no project of the snapshot resolves is left out rather than drawn as a
+ * dead link. Two keys that resolve to one project, its key and its hub-qualified id, name it once,
+ * so a card's strip, the page's row and the record's board count it once.
+ */
+export function namedProjects(
+    entry: Entry,
+    collection: Pick<Collection, 'registry'> | undefined,
+    projects: Project[],
+    people: readonly Pick<Person, 'id' | 'affiliations'>[]
+): Project[] {
+    if (collection?.registry === 'funding') {
+        return projects.filter((project) => project.fundingIds.includes(entry.id));
+    }
+    if (collection?.registry === 'organisations') return affiliatedTo(entry.id, projects, people);
+    if (collection?.registry === 'resources') {
+        return projects.filter((project) => project.resourceIds.includes(entry.id));
+    }
+    const held = holdersOf(projects);
+    const ids = listWords(entry.fields.related).map((key) => resolvedId(held, rootOf(entry), key));
+    return [...new Set(ids)]
+        .map((id) => projects.find((project) => project.id === id))
+        .filter((project): project is Project => project !== undefined);
+}
+
+/**
+ * The projects that name one entry (`namedProjects`) grouped as the strip at a card's foot draws
+ * them, each project under its own hub's words when `wordsOf` gives them (`groupProjects`), the
+ * dead ends a group of their own as on the entry's page, and only the projects `keeps` keeps. A
+ * person's projects are drawn one strip per role (`roleLinks`).
  */
 export function crossLinks(
     entry: Entry,
@@ -128,21 +156,8 @@ export function crossLinks(
     wordsOf?: WordsOf,
     keeps: Keeps = KEEPS_ALL
 ): CrossGroup[] {
-    let named: Project[];
-    if (collection?.registry === 'funding') {
-        named = projects.filter((project) => project.fundingIds.includes(entry.id));
-    } else if (collection?.registry === 'organisations') {
-        named = affiliatedTo(entry.id, projects, people);
-    } else if (collection?.registry === 'resources') {
-        named = projects.filter((project) => project.resourceIds.includes(entry.id));
-    } else {
-        const held = holdersOf(projects);
-        named = listWords(entry.fields.related)
-            .map((key) => resolvedId(held, rootOf(entry), key))
-            .map((id) => projects.find((project) => project.id === id))
-            .filter((project): project is Project => project !== undefined);
-    }
-    return groupProjects(named.filter(keeps), config, wordsOf);
+    const named = namedProjects(entry, collection, projects, people);
+    return groupProjects(named.filter(keeps), config, wordsOf, true);
 }
 
 /** The lists of a manifest that hold person ids, each the `field` of a row of `roles:`. */
@@ -162,12 +177,13 @@ export type StripRow = { key: string; label: string; groups: CrossGroup[] };
 /**
  * The strips of a person's card: one per row of `roles:` whose `field` is `lead`, `supervisors`
  * or `collaborators`, in the order of `roles:`, each holding the projects whose list of that name
- * holds the person and `keeps` keeps, grouped as `groupProjects` groups them and headed by the
- * role's `label`. The roles are read under the words of the person's hub when `wordsOf` gives
- * them. A role whose field is none of the three draws no strip, since no other field of a manifest
- * holds person ids, and a role with no project in any group draws none; a person on two lists of
- * one project is in both strips. Null for an entry of a collection whose entry names no `people`
- * registry, whose card draws the one strip of `crossLinks`.
+ * holds the person and `keeps` keeps, grouped as `groupProjects` groups them with the dead ends a
+ * group of their own, and headed by the role's `label`. The roles are read under the words of the
+ * person's hub when `wordsOf` gives them. A role whose field is none of the three draws no strip,
+ * since no other field of a manifest holds person ids, and a role with no project in any group
+ * draws none; a person on two lists of one project is in both strips. Null for an entry of a
+ * collection whose entry names no `people` registry, whose card draws the one strip of
+ * `crossLinks`.
  */
 export function roleLinks(
     entry: Entry,
@@ -185,7 +201,7 @@ export function roleLinks(
         const named = projects.filter(
             (project) => project[field].includes(entry.id) && keeps(project)
         );
-        const groups = groupProjects(named, config, wordsOf);
+        const groups = groupProjects(named, config, wordsOf, true);
         if (groups.length > 0) rows.push({ key: role.key, label: role.label, groups });
     }
     return rows;
@@ -193,8 +209,8 @@ export function roleLinks(
 
 /**
  * The projects an entry's card draws at its foot, each once: those of a person's strips, one per
- * role (`roleLinks`), or those of the one strip of any other entry (`crossLinks`), the projects in
- * a row carrying `archival` left out as the strips leave them out.
+ * role (`roleLinks`), or those of the one strip of any other entry (`crossLinks`), the dead ends
+ * among them.
  */
 export function stripProjects(
     entry: Entry,
@@ -255,23 +271,25 @@ function rowOrder(
  * group, "other", for the projects in no row, as a project board's sections are. A project's row
  * is the first whose `stages:` and `forms:` blocks it meets (data/shapes/boards/categories.ts,
  * `categoryOf`), read under its own hub's words when `wordsOf` gives them and under `config`
- * otherwise; a project in a row carrying `archival: true` is no real work and is left out. The
- * groups stand in the rows' order (`rowOrder`) and carry those rows' labels and colours; a row a
- * project's own hub holds and that order does not stands after the rows it names. The members of
- * a group are sorted by project id, and a group is flagged when one of its projects carries a chip
- * carrying `blocked` in `chips`.
+ * otherwise; a project in a row carrying `archival: true` is no real work and is left out, unless
+ * `archival` is true, which keeps that row as a group of its own (the row of count buttons of a
+ * record's page, views/shared/card/record/RecordCounts.svelte). The groups stand in the rows'
+ * order (`rowOrder`) and carry those rows' labels and colours; a row a project's own hub holds and
+ * that order does not stands after the rows it names. The members of a group are sorted by project
+ * id, and a group is flagged when one of its projects carries a chip carrying `blocked` in `chips`.
  */
 export function groupProjects(
     projects: Project[],
     config: Record<string, unknown>,
-    wordsOf?: WordsOf
+    wordsOf?: WordsOf,
+    archival = false
 ): CrossGroup[] {
     const filed = categoriesBy(config, wordsOf);
     const held = new Map<string, HeldGroup>();
     for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
         const own = filed(project);
         const row = categoryOf(project, own.categories, own.words);
-        if (row?.archival === true) continue;
+        if (row?.archival === true && !archival) continue;
         const key = row?.key ?? '';
         const group = held.get(key) ?? {
             row: row ?? { key, label: t('board.section_other'), color: '' },

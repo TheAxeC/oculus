@@ -16,9 +16,10 @@
     // (state/sources/explorer/view/card-tree.ts), so a card keeps what was typed across a tab
     // switch.
     //
-    // The list of the project's documents is left out where the view drawing the card draws the
-    // documents itself (views/boards/project/Project.svelte), so a reader meets one Documents
-    // heading.
+    // The documents and the files are each a field of the project page's right column, under its
+    // small label (record/RecordField.svelte). The list of the project's documents is left out
+    // where the view drawing the card draws the documents itself
+    // (views/boards/project/Project.svelte), so a reader meets one Documents label.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -38,6 +39,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { below, nameOf, openDocument, subOf, urlOf } from './card';
     import ProgramButton from '../links/ProgramButton.svelte';
+    import RecordField from './record/RecordField.svelte';
     import { useState } from '$lib/state/client/use';
     import { useInstance } from '$lib/state/client/instance-context';
 
@@ -96,8 +98,7 @@
 </script>
 
 {#if documents && item.project.docs.length > 0}
-    <div class="field">
-        <span class="label">{t('project.card.documents')}</span>
+    <RecordField label={t('project.card.documents')}>
         <div class="docs">
             {#each item.project.docs as doc (doc.name)}
                 {#if doc.present}
@@ -113,15 +114,14 @@
                 {/if}
             {/each}
         </div>
-    </div>
+    </RecordField>
 {/if}
 
-<div class="field">
-    <span class="label">
-        {finding && held !== null
-            ? t('project.card.files_hdr', held.rows.length)
-            : t('project.card.files_title')}
-    </span>
+<RecordField
+    label={finding && held !== null
+        ? t('project.card.files_hdr', held.rows.length)
+        : t('project.card.files_title')}
+>
     <Search value={filter} placeholder={t('project.card.files_ph')} oninput={find} />
     {#if held === null}
         <ProjectTree {item} {owner} />
@@ -173,21 +173,9 @@
             {/each}
         </div>
     {/if}
-</div>
+</RecordField>
 
 <style>
-    .field {
-        margin-top: 6px;
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-
     .docs {
         display: flex;
         flex-wrap: wrap;
