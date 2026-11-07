@@ -1,11 +1,11 @@
-In flight (4 of 6 slots in use):
+In flight (3 of 6 slots in use):
 - O167 (the shell's controls hold one behaviour): building, round-0 rulings sent.
 - O169 (connections and their failures said in full): review in, repair round 1 sent.
-- O151 (a deck for every research project): building, in its oculus worktree and its hub worktree.
-- O170 (Literature and Present said and drawn plainly): /spec, brief check in, its findings being closed.
+- O151 (a deck for every research project): building, round-0 rulings sent, in its oculus worktree and its hub worktree.
 
-Queued, in order (1 step):
+Queued, in order (2 steps):
 - O168 (the boards and record lists drawn whole): waits for O169's landing, whose helper file it reuses; its brief check is done, /spec again then.
+- O170 (Literature and Present said and drawn plainly): waits for O167's landing, since O167 writes the Present toolbar, the presenter screen and the Present view that O170 changes; its brief check is done, /spec again then.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
