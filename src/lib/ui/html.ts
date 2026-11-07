@@ -34,9 +34,15 @@
 // src/routes/+layout.ts says with `ssr = false`, so a runtime without a DOM draws no HTML either
 // and the text comes back as it came; that pass-through is safe only while no page is rendered on
 // the server. tests/ui/html.dom.test.ts runs the sanitiser over jsdom's document.
+//
+// The drawings many controls ask for again, an icon's filtering and a field's inline Markdown, are
+// held per page in an `HtmlMemo` the page root makes and provides through Svelte's context, as
+// ui/menu/tip-ids.ts provides its counter, so two pages never share one and a call given none
+// draws afresh.
 
 import DOMPurify from 'dompurify';
 import { Lexer, Marked, marked, type MarkedExtension, type Tokens } from 'marked';
+import { getContext, setContext } from 'svelte';
 import {
     HEADING_PREFIX,
     escapeAttribute,
@@ -199,6 +205,57 @@ function purifierOver(): typeof DOMPurify | null {
 const purifier = purifierOver();
 
 /**
+ * How many results each map of an `HtmlMemo` keeps. Past it the oldest result is let go, so a long
+ * session that draws many distinct texts holds no more than this many of them.
+ */
+const MEMO_HELD = 2000;
+
+/**
+ * One page's results of the drawings many controls ask for again and again: each icon file's
+ * filtered drawing, and each text's inline Markdown, without formulas and, by the modules and
+ * options and the refusal's sentence it was typeset with, with them. A result made with one
+ * drawing of formulas is served only to a call with the same drawing, and never to a call
+ * without formulas, which reads `plain`. The page root makes one and provides it
+ * (`provideHtmlMemo`), so two pages never share a result; a call given none draws afresh.
+ */
+export type HtmlMemo = {
+    icons: Map<string, string>;
+    plain: Map<string, string>;
+    math: WeakMap<MathModules, WeakMap<object, Map<string, string>>>;
+};
+
+/** An empty memo, for one page. */
+export function createHtmlMemo(): HtmlMemo {
+    return { icons: new Map(), plain: new Map(), math: new WeakMap() };
+}
+
+/** The one key a page's memo is provided under. */
+const HTML_MEMO = Symbol('html memo');
+
+/** Provide one page's memo to every control it draws. */
+export function provideHtmlMemo(memo: HtmlMemo): void {
+    setContext(HTML_MEMO, memo);
+}
+
+/** The memo of the page a control is drawn in, read while it initialises, or none. */
+export function useHtmlMemo(): HtmlMemo | undefined {
+    return getContext<HtmlMemo | undefined>(HTML_MEMO);
+}
+
+/**
+ * The result `memo` holds for `key`, else the one `make` gives, which the memo then holds. A
+ * result is a pure function of its key, so the result held is the result `make` would give.
+ */
+function remembered<K>(memo: Map<K, string>, key: K, make: () => string): string {
+    const held = memo.get(key);
+    if (held !== undefined) return held;
+    const made = make();
+    memo.set(key, made);
+    if (memo.size > MEMO_HELD) memo.delete(memo.keys().next().value as K);
+    return made;
+}
+
+/**
  * The formulas a rendered document holds apart from its text (`blockMarkdownParts`): the mark of
  * their slots and KaTeX's markup of each, in the order of the slots.
  */
@@ -298,11 +355,14 @@ export const SVG_PROFILE = drawingProfile(SVG_TAGS, SVG_ATTR);
 /**
  * One icon as the profile above allows it to be drawn. The file is read from the icon package by
  * the server rather than authored here, and it still passes the filter: what reaches the page is a
- * drawing whatever the package ships.
+ * drawing whatever the package ships. Every button of every card draws an icon, and a page draws
+ * the same few icons many times, so with the page's `memo` each distinct file is filtered once and
+ * its result held (`HtmlMemo.icons`, at most `MEMO_HELD`).
  */
-export function sanitiseSvg(svg: string): string {
+export function sanitiseSvg(svg: string, memo?: HtmlMemo): string {
     if (purifier === null) return svg;
-    return purifier.sanitize(svg, SVG_PROFILE);
+    const filter = (): string => purifier.sanitize(svg, SVG_PROFILE);
+    return memo === undefined ? filter() : remembered(memo.icons, svg, filter);
 }
 
 /**
@@ -456,14 +516,46 @@ export function sanitiseGraph(svg: string): string {
 }
 
 /**
+ * The results of `memo` typeset with `math`'s modules and options, keyed by the refusal's sentence
+ * and the text.
+ */
+function mathMemo(memo: HtmlMemo, math: MathDrawing): Map<string, string> {
+    let byOptions = memo.math.get(math.modules);
+    if (byOptions === undefined) {
+        byOptions = new WeakMap();
+        memo.math.set(math.modules, byOptions);
+    }
+    let held = byOptions.get(math.options);
+    if (held === undefined) {
+        held = new Map();
+        byOptions.set(math.options, held);
+    }
+    return held;
+}
+
+/**
  * One field of Markdown as the HTML a card draws it with. A note and a funding statement are one
  * paragraph and a link or two in the hub's files, so this is the inline renderer: a block renderer
  * would only wrap each of them in a `<p>` the card's own markup already gives them. What the file
  * holds is somebody's text, so the result is sanitised before it is returned, which is what covers
  * every card that draws a value this way. Its `$...$` formulas are typeset once `math` is given, as
- * a document's are, and drawn as their source until then.
+ * a document's are, and drawn as their source until then. Many cards draw the same text, and every
+ * card draws its fields again when it is drawn again, so with the page's `memo` the result of each
+ * distinct text and drawing is made once and held (`HtmlMemo`, at most `MEMO_HELD` per map).
  */
-export function inlineMarkdown(text: string, math: MathDrawing | null = null): string {
+export function inlineMarkdown(
+    text: string,
+    math: MathDrawing | null = null,
+    memo?: HtmlMemo
+): string {
+    if (memo === undefined) return inlineDrawing(text, math);
+    if (math === null) return remembered(memo.plain, text, () => inlineDrawing(text, null));
+    const key = JSON.stringify([math.refused, text]);
+    return remembered(mathMemo(memo, math), key, () => inlineDrawing(text, math));
+}
+
+/** One field of Markdown as `inlineMarkdown` draws it, made afresh. */
+function inlineDrawing(text: string, math: MathDrawing | null): string {
     if (math === null) return sanitise(marked.parseInline(text, { async: false }));
     const mark = `slot-${crypto.randomUUID()}`;
     const formulas: string[] = [];

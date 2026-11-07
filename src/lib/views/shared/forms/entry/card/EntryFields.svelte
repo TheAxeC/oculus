@@ -41,7 +41,7 @@
     import Clamp from '../../../card/Clamp.svelte';
     import EntryLink from './EntryLink.svelte';
     import RecordField from '../../../card/record/RecordField.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         drawnFields,
@@ -90,6 +90,7 @@
     let { entry, collection, schema, root, onsaid, more, onmore, column }: Props = $props();
 
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
     /** The moment the deadline's countdown is measured from. */
     const now = Date.now();
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
@@ -156,11 +157,11 @@
 {#snippet text(words: string)}
     {#if onmore === undefined}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words, cardMath(words))}
+        {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
     {:else}
         <Clamp open={more} ontoggle={onmore}>
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            {@html inlineMarkdown(words, cardMath(words))}
+            {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
         </Clamp>
     {/if}
 {/snippet}

@@ -79,6 +79,7 @@
     import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
+        entities: { reads },
         selectors: { configMap }
     } = useState();
 
@@ -188,14 +189,13 @@
 
     /**
      * The groups of the strip at the foot: none on the record's page, nor for a record that lists
-     * no project.
+     * no project, the rows of `categories:` read through the client's memo.
      */
     const linked = $derived.by(() => {
         if (page) return [];
-        return (
-            groups ??
-            (projects === undefined ? [] : groupProjects(projects, configMap(), vocabOf, archival))
-        );
+        if (groups !== undefined) return groups;
+        if (projects === undefined) return [];
+        return groupProjects(projects, configMap(), vocabOf, archival, reads);
     });
 
     /** Whether the card draws its page's two columns in place of its lines, text and blocks. */

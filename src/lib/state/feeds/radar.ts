@@ -4,8 +4,9 @@
 import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
 import { byKey, slugOf } from '../../data/helpers/guards.ts';
-import { holdersOf, resolvedId } from '../../data/helpers/hub-names.ts';
+import { holdersOf, resolvedId, type Holders } from '../../data/helpers/hub-names.ts';
 import { feedRoot } from '../shared/page/idents.ts';
+import type { ReadMemo } from '../shared/stores/shapes.ts';
 import { instanceFolded } from '../shared/page/folds.ts';
 import {
     readAs,
@@ -119,13 +120,27 @@ export function ideaSeed(entry: RadarEntry): { id: string; eli5: string } {
 }
 
 /**
+ * The hubs that hold each key of `projects`. Every paper's card resolves its keys over the same
+ * map, which a new portfolio message replaces with a new one, so with the client's memo (`reads`)
+ * the holders of a map are read once for that map and let go with it.
+ */
+function projectHolders(projects: Record<string, Project>, reads?: ReadMemo): Holders {
+    const read = (): Holders => holdersOf(Object.values(projects));
+    return reads === undefined ? read() : reads.held(projects, 'project holders', read);
+}
+
+/**
  * Existing project records named by project and maps_to, in that order without duplicates. Each
  * names a project by its key, which resolves in the entry's own hub first, then in the others
- * (`resolvedId`).
+ * (`resolvedId`), over the holders of the map (`projectHolders`, through the client's `reads`).
  */
-export function crossLinksOf(entry: RadarEntry, projects: Record<string, Project>): Project[] {
+export function crossLinksOf(
+    entry: RadarEntry,
+    projects: Record<string, Project>,
+    reads?: ReadMemo
+): Project[] {
     const keys = [word(entry, 'project'), word(entry, 'maps_to')].filter(Boolean);
-    const held = holdersOf(Object.values(projects));
+    const held = projectHolders(projects, reads);
     const ids = keys.map((key) => resolvedId(held, feedRoot(entry), key));
     return [...new Set(ids)].flatMap((id) => {
         const found = id === null ? undefined : byKey(projects, id);

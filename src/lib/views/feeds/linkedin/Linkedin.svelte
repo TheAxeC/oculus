@@ -81,7 +81,7 @@
 
     const today = localDate(Date.now());
     const data = $derived(feed('linkedin'));
-    const identOf = $derived(feedIdents('linkedin', data?.entries ?? []));
+    const identOf = $derived(feedIdents('linkedin', data?.entries ?? [], client.entities.reads));
     const held = $derived(parseLinkedinState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const split = $derived(splitPosts(data?.entries ?? []));

@@ -40,9 +40,11 @@
     //
     // A measurement that lands after the component is gone, or after a newer one began, is dropped
     // (card-layout.ts's measureGate). An element that is not drawn is measured from the remembered
-    // widths once they are known, so a narrowed pane updates `over` with no draw; until then it is
-    // measured when it is drawn, since the line's children are watched for their size. A device
-    // with no hover draws every control all the time.
+    // widths once they are known, so a narrowed pane updates `over` with no draw. Until the element
+    // is first drawn no layout is read: only its own box and the line are watched, `over` says
+    // whether the row holds chips, which is all a measure says with no width known, and the
+    // element is measured when its box is first drawn. A device with no hover draws every control
+    // all the time.
 
     import { tick, type Snippet } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -166,34 +168,70 @@
         clipped = Math.max(0, content.width - seen);
     }
 
+    /** Whether the element has been drawn since the card was made, which starts its measuring. */
+    let drawnOnce = false;
+
     $effect(() => {
         const node = strip;
         const line = node?.parentElement;
         // The list of ids is read so a card whose controls change is measured again.
         void actions.map((action) => action.id).join('\n');
-        if (line === null || line === undefined || typeof ResizeObserver === 'undefined') return;
+        if (node === undefined || line === null || line === undefined) return;
+        if (typeof ResizeObserver === 'undefined') return;
         const token = gate.begin();
         const wanted = (): void => {
             if (gate.current(token)) measure();
         };
-        void tick().then(wanted);
         // The line, what it holds and the boxes that clip it are all watched: a chip that appears
         // or a pane that narrows changes the room as surely as a narrower card does.
         const observer = new ResizeObserver(wanted);
-        observer.observe(line);
-        for (const child of line.children) observer.observe(child);
-        // A box that clips the line is watched for its scroll too, since the visible part of the
-        // line moves with it as surely as with a resize.
         const clips: HTMLElement[] = [];
-        for (let up = line.parentElement; up !== null; up = up.parentElement) {
-            if (getComputedStyle(up).overflowX !== 'visible') {
-                observer.observe(up);
-                up.addEventListener('scroll', wanted, { passive: true });
-                clips.push(up);
+        function watch(): void {
+            if (line === null || line === undefined) return;
+            observer.observe(line);
+            for (const child of line.children) observer.observe(child);
+            // A box that clips the line is watched for its scroll too, since the visible part of
+            // the line moves with it as surely as with a resize.
+            for (let up = line.parentElement; up !== null; up = up.parentElement) {
+                if (getComputedStyle(up).overflowX !== 'visible') {
+                    observer.observe(up);
+                    up.addEventListener('scroll', wanted, { passive: true });
+                    clips.push(up);
+                }
             }
+            first.disconnect();
+        }
+        // Until the element is first drawn only its own box and the line are watched, so a card at
+        // rest reads no layout: with no width known, what `measure` answers is whether the row
+        // holds chips, which is read from the row's children. The first draw is measured at once,
+        // and the rest is watched from the next frame, which starts those observations outside
+        // the frame that reported the draw.
+        let frame = 0;
+        const first = new ResizeObserver((entries) => {
+            drawnOnce ||= entries.some(
+                (entry) =>
+                    entry.target === node &&
+                    (entry.contentRect.width > 0 || entry.contentRect.height > 0)
+            );
+            if (!drawnOnce) {
+                over = line.children.length > 1;
+                return;
+            }
+            wanted();
+            if (frame === 0) frame = requestAnimationFrame(watch);
+        });
+        if (drawnOnce) {
+            void tick().then(wanted);
+            watch();
+        } else {
+            over = line.children.length > 1;
+            first.observe(node);
+            first.observe(line);
         }
         return () => {
             gate.close();
+            cancelAnimationFrame(frame);
+            first.disconnect();
             observer.disconnect();
             for (const up of clips) up.removeEventListener('scroll', wanted);
         };

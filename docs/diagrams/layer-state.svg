@@ -80,7 +80,7 @@
 <g id="node16" class="node">
 <title>folder state/client to folder state/shared</title>
 <polygon fill="none" stroke="none" points="400.33,-510.4 385.67,-510.4 385.67,-497.92 400.33,-497.92 400.33,-510.4"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="393" y="-501.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="393" y="-501.76" font-family="Helvetica,Arial,sans-serif" font-size="8.00">11</text>
 </g>
 <!-- folder state/client&#45;&gt;folder state/client to folder state/shared -->
 <g id="edge20" class="edge">

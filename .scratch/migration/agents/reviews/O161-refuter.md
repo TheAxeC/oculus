@@ -252,3 +252,11 @@ None.
 - The ledger copies under the worktree's `.scratch/`: a landing matter.
 
 Reviewer usage: a96cb64bab02b38fc, claude-opus-5-5, 246209 tokens, 51 tool uses, 14.5 min.
+
+## Closed
+
+- The first run's findings: sent in repair round 1 (`agents/briefs/O161-round-1.md`) and closed there, as the run over the round records; its Spec 1 and Spec 2, the unapproved scripts, went to open item 715, which Axel closed with (a): nothing they produced is used.
+- Over round 1, Spec 1: fixed at landing; the report's open-items section says that item 715 was open when the report was written and how Axel closed it.
+- Over round 1, Spec 2: fixed at landing; the report's sentence on the threat paragraph rests on reading the base and final `RadarCard.svelte` (the same `<p class="threat">`, glyph, text and span; only the `{@html}` call's arguments change), and the compiled-template claim is marked as resting on an unapproved program, output not used.
+- Over round 1, Proof 1: fixed at landing; "Where each memo comes from" names the three places that mount outside a route root (`Markdown.svelte:203` with the page's context, `side-panel.ts:106` and `viewer.svelte.ts:527` mounting `PdfControl` with none, whose `Glyph` filters its icon afresh as on the unchanged tree).
+- Declined points: the menu (C5), the tooltip's first-event hand-over and item 1's and item 8's times were settled at the landing's look and profile on 8797 against main's head on 8798 (`agents/reviews/O161-landing.md`); `npm run diagrams` ran in the gate.

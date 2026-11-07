@@ -1,6 +1,6 @@
-// Layer 2, client state. What the socket delivered, by channel, and nothing derived from it: the
-// joins are state/client/selectors.svelte.ts's and read this. One message is held per channel, the
-// latest, which is the same rule the server sends by.
+// Layer 2, client state. What the socket delivered, by channel, with the memo of reads out of it
+// (`reads`, below): the joins are state/client/selectors.svelte.ts's and read this. One message is
+// held per channel, the latest, which is the same rule the server sends by.
 //
 // A message whose version is below the one held is dropped. Versions arrive in order on one
 // connection, but a reconnect subscribes again and the server sends the current message of every
@@ -10,7 +10,9 @@
 // is that server's current message.
 //
 // The messages belong to one client rather than to the module: createEntities() is called once by
-// state/client/context.ts, so two pages, or two test cases, share nothing.
+// state/client/context.ts, so two pages, or two test cases, share nothing. The same holds for
+// `reads`, the answers the cards share over the payload objects held here
+// (state/shared/stores/read-memo.ts): a payload replaced by a new message is let go with them.
 //
 // A store that acts on a change of a channel, rather than drawing what it holds, registers to hear
 // every message this keeps, after it is kept: the notifications posted for a session that starts
@@ -19,6 +21,7 @@
 
 import type { Message } from '../../data/model/index.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
+import { createReadMemo } from '../shared/stores/read-memo.ts';
 import type { EntitiesStore, Payloads } from '../shared/stores/shapes.ts';
 import { payloadShapes } from './shapes/payloads.ts';
 
@@ -73,6 +76,7 @@ export function createEntities(): EntitiesStore {
     }
 
     return {
+        reads: createReadMemo(),
         receive,
         reconnected,
         afterReceive,

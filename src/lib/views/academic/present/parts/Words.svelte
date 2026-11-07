@@ -5,6 +5,7 @@
     // fragment link in a narrative (a `[TOC]` entry among them) is handled by the prose partial's
     // jump.ts, so a slide answers it as every other drawn document does.
 
+    import { useHtmlMemo } from '$lib/ui/html';
     import { jump } from '$lib/views/shared/prose/jump';
     import { body, words } from '../markup';
 
@@ -17,7 +18,10 @@
 
     let { text, block = false }: Props = $props();
 
-    const html = $derived(block ? body(text) : words(text));
+    /** The page's memo of drawings, so a field drawn again on any slide is not parsed again. */
+    const memo = useHtmlMemo();
+
+    const html = $derived(block ? body(text) : words(text, memo));
 </script>
 
 {#if block}

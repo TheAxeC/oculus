@@ -11,16 +11,12 @@
 // (`wordsOf`). A strip can be narrowed to the projects a predicate keeps (`keeps`), which a
 // collection's Projects section in More gives (state/boards/collection/bar.ts).
 
-import { anyWord, hasWord, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
+import { anyWord, hasWord, recordWords, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { holdersOf, resolvedId, rootOf } from '../../../data/helpers/hub-names.ts';
-import {
-    categoriesBy,
-    categoriesOf,
-    categoryOf,
-    type Category
-} from '../../../data/shapes/boards/categories.ts';
+import { categoriesOf, categoryOf, type Category } from '../../../data/shapes/boards/categories.ts';
 import { rolesOf } from '../../../data/shapes/boards/roles.ts';
 import type { Collection, Entry, Id, Person, Project } from '../../../data/model/index.ts';
+import type { ReadMemo } from '../../shared/stores/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { teamOf } from '../board/team.ts';
 import { listWords } from '../collection/index.ts';
@@ -249,6 +245,26 @@ function membersOf(groups: readonly CrossGroup[], projects: readonly Project[]):
 /** The projects of one group as they are drawn, and whether one of them is blocked. */
 type HeldGroup = { row: CrossCategory; members: CrossMember[]; warn: boolean };
 
+/** The rows of `categories:` each set of words holds, read once for one grouping. */
+type RowsRead = Map<Record<string, unknown>, Category[]>;
+
+/**
+ * The rows of `categories:` that `words` holds. Every card's strip is grouped under the same
+ * words, which a new config message replaces with new ones, so with the client's memo (`reads`)
+ * the rows of a set of words are read once for it and let go with it; without one they are read
+ * once for this grouping (`local`).
+ */
+function rowsOf(
+    words: Record<string, unknown>,
+    reads: ReadMemo | undefined,
+    local: RowsRead
+): Category[] {
+    if (reads !== undefined) return reads.held(words, 'category rows', () => categoriesOf(words));
+    const rows = local.get(words) ?? categoriesOf(words);
+    local.set(words, rows);
+    return rows;
+}
+
 /**
  * The rows a strip's groups stand in the order of: the rows of the projects' hub when they are all
  * of one hub, and with projects of several hubs the rows of every hub's words (`wordsOf` with no
@@ -257,13 +273,14 @@ type HeldGroup = { row: CrossCategory; members: CrossMember[]; warn: boolean };
 function rowOrder(
     projects: readonly Project[],
     config: Record<string, unknown>,
-    wordsOf: WordsOf | undefined
+    wordsOf: WordsOf | undefined,
+    read: (words: Record<string, unknown>) => Category[]
 ): Category[] {
     const hubs = new Set(projects.map((project) => rootOf(project)));
     const first = projects.at(0);
-    if (hubs.size > 1) return categoriesOf(wordsOf?.() ?? config);
+    if (hubs.size > 1) return read(wordsOf?.() ?? config);
     if (first === undefined) return [];
-    return categoriesOf(wordsOf?.(rootOf(first)) ?? config);
+    return read(wordsOf?.(rootOf(first)) ?? config);
 }
 
 /**
@@ -277,18 +294,22 @@ function rowOrder(
  * order (`rowOrder`) and carry those rows' labels and colours; a row a project's own hub holds and
  * that order does not stands after the rows it names. The members of a group are sorted by project
  * id, and a group is flagged when one of its projects carries a chip carrying `blocked` in `chips`.
+ * The rows of each set of words are read once (`rowsOf`): for the client while `reads`, its memo,
+ * is given, else for this grouping.
  */
 export function groupProjects(
     projects: Project[],
     config: Record<string, unknown>,
     wordsOf?: WordsOf,
-    archival = false
+    archival = false,
+    reads?: ReadMemo
 ): CrossGroup[] {
-    const filed = categoriesBy(config, wordsOf);
+    const local: RowsRead = new Map();
+    const read = (words: Record<string, unknown>): Category[] => rowsOf(words, reads, local);
     const held = new Map<string, HeldGroup>();
     for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
-        const own = filed(project);
-        const row = categoryOf(project, own.categories, own.words);
+        const words = recordWords(config, wordsOf, project);
+        const row = categoryOf(project, read(words), words);
         if (row?.archival === true && !archival) continue;
         const key = row?.key ?? '';
         const group = held.get(key) ?? {
@@ -302,10 +323,10 @@ export function groupProjects(
             label: short === '' ? project.title : short,
             stage: stageOf(project)
         });
-        group.warn ||= anyWord(own.words, 'chips', 'blocked', project.chips);
+        group.warn ||= anyWord(words, 'chips', 'blocked', project.chips);
         held.set(key, group);
     }
-    const order = rowOrder(projects, config, wordsOf);
+    const order = rowOrder(projects, config, wordsOf, read);
     const listed = (key: string): boolean => order.some((row) => row.key === key);
     const otherGroup = held.get('');
     const groups = [

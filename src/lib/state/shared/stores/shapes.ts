@@ -1,12 +1,12 @@
 // Layer 2, client state, types only. The shapes of the client's shared stores that other stores are
 // handed: the payload of every channel, the minute clock, the socket, the write endpoint, and what
-// a store needs of one view instance's remembered state, and the query helper the fetch-and-hold
-// stores are handed. The client object (state/client/context.ts) builds each store and hands it to
-// the stores that read it; the stores in state/client (the query helper included) and
-// state/workbench/ui.svelte.ts satisfy these shapes, and a store that is handed one names it from
-// here rather than from the module that builds it, so it depends on what it reads and not on how
-// that store is made. Nothing here runs, and nothing here reads any module but the data model's
-// types and the query client's types.
+// a store needs of one view instance's remembered state, the query helper the fetch-and-hold
+// stores are handed, and the memo of reads over the payloads. The client object
+// (state/client/context.ts) builds each store and hands it to the stores that read it; the stores
+// in state/client (the query helper included) and state/workbench/ui.svelte.ts satisfy these
+// shapes, and a store that is handed one names it from here rather than from the module that
+// builds it, so it depends on what it reads and not on how that store is made. Nothing here runs,
+// and nothing here reads any module but the data model's types and the query client's types.
 
 import type { QueryClient, QueryKey } from '@tanstack/query-core';
 import type {
@@ -64,8 +64,23 @@ export type Payloads = {
     'app-tools': AppToolsPayload;
 };
 
+/**
+ * One client's reads out of the objects its channels deliver whole and never change in place (a
+ * feed's entries, the projects, the config), by the object read and the name of the read
+ * (state/shared/stores/read-memo.ts).
+ */
+export type ReadMemo = {
+    /**
+     * What `read` gives for `owner`, read on the first question and kept for that object. Each
+     * name is asked by one function, with one type of answer.
+     */
+    held: <T>(owner: object, name: string, read: () => T) => T;
+};
+
 /** What every channel of the wire reads as, one instance per client. */
 export type EntitiesStore = {
+    /** The reads every card asks over the same payload objects, kept per object. */
+    reads: ReadMemo;
     receive: (message: Message) => void;
     /** A new connection opened: take the next message of every channel whatever its version. */
     reconnected: () => void;

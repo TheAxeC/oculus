@@ -6,13 +6,9 @@ Everything in the brief and in repair round 1 (`O161-round-1.md`) is done. The b
 
 Two kinds of evidence in this report rest on scripts no ruling approved, and their output is not used: the nine profile scripts under the scratchpad's `anal/` and the jsdom harness. Every sentence that rests on either is marked "(unapproved script, output not used)" and names the check that stands for it: the profile taken at landing for a time, the look on the scratch server for a behaviour. Neither script was run again in round 1.
 
-## Open items of the state file (`orchestrator-state.md:216-220`, verbatim)
+## Open items of the state file
 
-## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
-
-An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
-
-None.
+Open item 715, the three scripts no ruling approves, was open in the main state file when this report was written; Axel closed it on 2026-11-07 with (a): nothing they produced is used, and the look and the profile at landing check the claims that rested on them.
 
 ## The cases' first run (unchanged tree)
 
@@ -122,7 +118,7 @@ Two per-client objects hold the seven memos. Neither is module state.
 - **`client.entities.reads`**, a `ReadMemo` (`state/shared/stores/read-memo.ts`). `createEntities()` (`entities.svelte.ts:79`) makes one per client, and `context.ts:180-181` hands it to the pages store: `const paged = { snapshot: entities.portfolio, feeds: entities.feeds, reads: entities.reads }; const pages = createPages(paged, settled);`. It holds the four state memos: the feed index (`idents.ts`), the project holders (`radar.ts`), the collection files (`view-source.ts`) and the category rows (`cross-links.ts`). Each is a WeakMap entry keyed by the payload object it reads.
 - **The page's `HtmlMemo`** (`ui/html.ts`). Each of the four route roots makes one and provides it through Svelte's context, as `provideTipIds` does: `src/routes/+page.svelte:81`, `src/routes/find/+page.svelte:26`, `src/routes/present/print/+page.svelte:49` and `src/routes/present/show/+page.svelte:63` (`git grep -n provideHtmlMemo` lists these four). `useHtmlMemo()` reads it while a component initialises. It holds the icon filter memo and the two markdown memos, each bounded by `MEMO_HELD = 2000`.
 
-`src/routes/+layout.svelte` draws only `{@render children()}`, and no `mount`, `hydrate` or `createRawSnippet` appears in `src` (`git grep -n -E "createRawSnippet|\bmount\b|..."` prints nothing). So every component sits under one of the four route roots.
+`src/routes/+layout.svelte` draws only `{@render children()}`. Three places mount a component outside a route root (`grep -rnE "createRawSnippet|\bmount\(|\bhydrate\(" src`): `Markdown.svelte:203` mounts `ToolButton` with `context: contexts`, so it gets the page's memo; `side-panel.ts:106` and `viewer.svelte.ts:527` mount `PdfControl` with no context, so the `Glyph` of its `ToolButton` gets `undefined` from `useHtmlMemo()` and filters its icon afresh, as on the unchanged tree. Every other component sits under one of the four route roots.
 
 `inlineMarkdown` callers (`git grep -n "inlineMarkdown(" -- src`):
 
@@ -220,7 +216,7 @@ The generated `docs/diagrams/{channels,layer-state,layer-views,layers}.{dot,svg}
 
 There is no intended user-visible change. The DOM at rest differs only in bits-ui's own attributes. Before a card's menu or a control's tooltip is first used, the wrapper carries no `id="bits-*"`, `data-state`, `data-context-menu-trigger`, `data-tooltip-trigger` or `data-delay-duration`. The `style="pointer-events: auto;"` and the text are as today. Once the menu or tooltip is built, the attributes are bits-ui's own.
 
-The markdown and icon memos give the HTML that the same call gives with no memo, since each result is a pure function of its key. RadarCard's threat line keeps its template: the compiled template of the paragraph is `<p class="threat ..."><!> <span></span></p>` for the base and for the final file (read from `svelte/compiler`'s `compile` output of both). Its lint comment is now the `eslint-disable` / `eslint-enable` pair around the span, as `views/shared/prose/Code.svelte:51,59` uses, because prettier breaks the longer `{@html}` call over lines.
+The markdown and icon memos give the HTML that the same call gives with no memo, since each result is a pure function of its key. RadarCard's threat line keeps its markup: read in the base file and the final file, the paragraph is the same `<p class="threat">` with the same glyph, text and span; only the arguments of its `{@html}` call change (the compiled-template comparison rested on an unapproved program, output not used). Its lint comment is now the `eslint-disable` / `eslint-enable` pair around the span, as `views/shared/prose/Code.svelte:51,59` uses, because prettier breaks the longer `{@html}` call over lines.
 
 The rest of this paragraph, the lines below it and the base comparison after them rest on the jsdom harness (unapproved script, output not used). Its files had to sit in the worktree's `tests/ui/menu/` to run, and no ruling approved it. The look on the scratch server, C3 and C5 and the tooltip items in the list after them, is the check that stands for it. A harness mounted `TooltipGroup > ContextMenu > <p>before <Tooltip><button></Tooltip> after</p>` in jsdom against the base copies and against the final menu code. Its source is in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/lazy-scratch/` (base) and `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/lazy-scratch-final/` (final). After the redo of the twelve files, its three final files were placed in `tests/ui/menu/` again with Write, run with `npx vitest run --config tests/ui/menu/scratch.config.ts --silent=false --reporter=verbose`, and removed with `rm` (`git status --short tests` then shows only `page-entry.test.ts`). That run printed `Tests  5 passed (5)` and these lines on the redone code, the same as the run before the redo (`O161-harness-final.txt`):
 

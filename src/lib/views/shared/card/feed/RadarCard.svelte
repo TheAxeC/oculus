@@ -42,7 +42,7 @@
         statusAction,
         type RecordAction
     } from '$lib/views/shared/card/record/record-menu';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         crossLinksOf,
@@ -98,6 +98,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
     let spinning = $state(false);
 
     /** True while the question before a delete is open. */
@@ -126,14 +127,14 @@
     const note = $derived(word('why') || word('idea_spark'));
     const threat = $derived(word('threatens'));
     const found = $derived(word('found'));
-    const links = $derived(crossLinksOf(entry, projects));
+    const links = $derived(crossLinksOf(entry, projects, client.entities.reads));
+    /** The groups of the strip at the foot, which the record card draws. */
+    const linkGroups = $derived(
+        groupProjects(links, configMap(), vocabOf, false, client.entities.reads)
+    );
     /** The ids of the projects the strip at the foot groups, which the menu need not list. */
     const grouped = $derived(
-        new Set(
-            groupProjects(links, configMap(), vocabOf).flatMap((group) =>
-                group.members.map((member) => member.id)
-            )
-        )
+        new Set(linkGroups.flatMap((group) => group.members.map((member) => member.id)))
     );
     const candidate = $derived(word('maps_to') === 'new-idea-candidate');
     const canSpin = $derived(word('bucket') === 'idea' || candidate);
@@ -289,13 +290,19 @@
     {/if}
     {#if note !== ''}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
+        <p class="note">{@html inlineMarkdown(note, cardMath(note), htmlMemo)}</p>
     {/if}
     {#if threat !== ''}
         <p class="threat">
             <Glyph name="warn" />
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-            <span>{@html t('radar.threatens', inlineMarkdown(threat, cardMath(threat)))}</span>
+            <!-- eslint-disable svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
+            <span
+                >{@html t(
+                    'radar.threatens',
+                    inlineMarkdown(threat, cardMath(threat), htmlMemo)
+                )}</span
+            >
+            <!-- eslint-enable svelte/no-at-html-tags -->
         </p>
     {/if}
     {#if posting(word('url')) !== undefined}
@@ -332,7 +339,7 @@
     {id}
     {cursor}
     {title}
-    titleHtml={inlineMarkdown(title, cardMath(title))}
+    titleHtml={inlineMarkdown(title, cardMath(title), htmlMemo)}
     ontitle={onpage}
     tone={relevanceTone(relevance)}
     record={{ root: feedRoot(entry) }}
@@ -343,7 +350,7 @@
     {meta}
     {text}
     {blocks}
-    projects={links}
+    groups={linkGroups}
     {foot}
     deleting={deleting ? { collection: 'radar', id, onclose: () => (deleting = false) } : undefined}
 />

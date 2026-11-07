@@ -20,6 +20,7 @@ import {
 } from '../../../src/lib/state/forms/page-entry.ts';
 import { mergedFeeds } from '../../../src/lib/data/snapshot/hubs/feeds.ts';
 import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
+import { createReadMemo } from '../../../src/lib/state/shared/stores/read-memo.ts';
 
 const SCHEMA: SchemaField[] = [
     { field: 'key', type: 'text', primary_key: true },
@@ -318,6 +319,31 @@ describe('pageOf', () => {
             fixed: ['title']
         });
         expect(page?.schema).toBeUndefined();
+    });
+
+    it('finds the fields and the entries of a feed whose entries are replaced by a new list', () => {
+        const radar = (entries: Record<string, unknown>[]) =>
+            ({
+                ...FEEDS,
+                radar: { ok: true, kind: 'radar', file: 'radar.yml', meta: {}, entries }
+            }) as unknown as FeedsPayload;
+        const paper = { id: 'hub:A paper', root: 'hub', title: 'A paper', why: 'first' };
+        let feeds = radar([paper, { id: 'hub:B paper', root: 'hub', title: 'B paper' }]);
+        const found = createPages(
+            { snapshot: () => snapshot(CAREER), feeds: () => feeds, reads: createReadMemo() },
+            createSettled(() => 0)
+        );
+        expect(found.pageOf('radar', 'hub:A paper')?.values).toEqual(paper);
+        expect(found.pageOf('radar', 'hub:New paper')).toBeNull();
+        const fresh = { id: 'hub:New paper', root: 'hub', title: 'New paper' };
+        const changed = { ...paper, why: 'second' };
+        feeds = radar([fresh, changed, { id: 'hub:B paper', root: 'hub', title: 'B paper' }]);
+        expect(found.pageOf('radar', 'hub:A paper')?.values).toEqual(changed);
+        expect(found.pageOf('radar', 'hub:New paper')).toMatchObject({
+            title: 'New paper',
+            writeId: 'hub:New paper',
+            values: fresh
+        });
     });
 
     it.each([

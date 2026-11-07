@@ -10,7 +10,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import type { Project } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
 
@@ -24,6 +24,7 @@
         listed?: boolean;
     };
     let { id, cursor, projects, ontitle, listed = true }: Props = $props();
+    const htmlMemo = useHtmlMemo();
 
     function title(): string {
         return projects.length > 0 ? t('pillars.orphans') : t('pillars.no_orphans');
@@ -43,7 +44,7 @@
 
 {#snippet text()}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p>{@html inlineMarkdown(blurb())}</p>
+    <p>{@html inlineMarkdown(blurb(), null, htmlMemo)}</p>
 {/snippet}
 
 <div class="slot" data-pillar-orphans>

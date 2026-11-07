@@ -15,7 +15,7 @@
     import { archivedCount, type ArchiveGroup } from '$lib/state/boards/structure/lines';
     import { stageGroup } from '$lib/state/boards/structure/cross-links';
     import { chipGlyphName, chipLabel } from '$lib/state/shared/words/tones';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -29,6 +29,7 @@
     };
     let { id, cursor, groups, ontitle, listed = true }: Props = $props();
     const count = $derived(archivedCount(groups));
+    const htmlMemo = useHtmlMemo();
 
     /** One strip group per stage, headed by the stage's label and glyph. */
     const strip = $derived(
@@ -52,7 +53,7 @@
 
 {#snippet text()}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p>{@html inlineMarkdown(t('pillars.archival_blurb'))}</p>
+    <p>{@html inlineMarkdown(t('pillars.archival_blurb'), null, htmlMemo)}</p>
 {/snippet}
 
 <div class="muted" data-pillar-archival>

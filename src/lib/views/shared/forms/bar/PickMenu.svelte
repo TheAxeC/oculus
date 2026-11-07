@@ -18,19 +18,19 @@
     // It is bits-ui's Popover holding bits-ui's Command, as the toolbar's popover and the palette
     // are: the opening, the closing, the focus going back, the keys and the selection are theirs,
     // and the filtering is done here over the words alone (`shouldFilter` off), so a value's id
-    // never matches what was typed. The button is ui/menu/MenuOpener.svelte, handed the popover's
-    // trigger, and the box is ui/frame/FloatingList.svelte, so the list looks as a menu's list
-    // does, its rows, dots and badges in MenuList.svelte's tokens. The words, the counts and the
-    // hues are the caller's, in the shapes of state/boards/board/filter-menu.ts (`FilterGroup`,
-    // `FilterChoice`). Beside the button it draws the red badge and the amber mark of the counts a
-    // group carries (`badge`, `warning`).
+    // never matches what was typed. The button is ui/menu/trigger/MenuOpener.svelte, handed the
+    // popover's trigger, and the box is ui/frame/FloatingList.svelte, so the list looks as a
+    // menu's list does, its rows, dots and badges in MenuList.svelte's tokens. The words, the
+    // counts and the hues are the caller's, in the shapes of state/boards/board/filter-menu.ts
+    // (`FilterGroup`, `FilterChoice`). Beside the button it draws the red badge and the amber mark
+    // of the counts a group carries (`badge`, `warning`).
 
     import { Command, Popover } from 'bits-ui';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FloatingList from '$lib/ui/frame/FloatingList.svelte';
-    import MenuOpener from '$lib/ui/menu/MenuOpener.svelte';
+    import MenuOpener from '$lib/ui/menu/trigger/MenuOpener.svelte';
     import type { FilterChoice, FilterGroup } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
 

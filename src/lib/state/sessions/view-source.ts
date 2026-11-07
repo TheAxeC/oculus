@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { REGISTRY_WORDS, collectionFiles } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { CollectionEntry, FeedKind } from '../../data/model/index.ts';
+import type { ReadMemo } from '../shared/stores/shapes.ts';
 
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };
@@ -44,35 +45,49 @@ function isListedKind(kind: ViewSourceKind): kind is ListedKind {
 const pathShape = z.string().trim().min(1);
 
 /**
+ * The entries of a `collections:` list. Every card asks for its file over the same merged config,
+ * which a new config message replaces with a new one, so with the client's memo (`reads`) a list
+ * is read once and let go with the config that held it.
+ */
+function listedFiles(value: unknown, reads?: ReadMemo): CollectionEntry[] {
+    const read = (): CollectionEntry[] => collectionFiles(value);
+    if (reads === undefined || typeof value !== 'object' || value === null) return read();
+    return reads.held(value, 'collection files', read);
+}
+
+/**
  * The `file:` of the first entry of the config's `collections:` list the test takes: the one that
  * carries a key, or the one that names a registry.
  */
 function collectionPath(
     config: Record<string, unknown>,
-    test: (entry: CollectionEntry) => boolean
+    test: (entry: CollectionEntry) => boolean,
+    reads?: ReadMemo
 ): string | null {
-    const held = collectionFiles(config.collections).find(test);
+    const held = listedFiles(config.collections, reads).find(test);
     return held === undefined ? null : readAs(pathShape, held.file);
 }
 
 /**
  * The file of the primary hub (`primary` is its folder name) one view draws, and null when the
- * configuration names none for it and when the workspace has no primary.
+ * configuration names none for it and when the workspace has no primary. `reads` is the client's
+ * memo, which reads the `collections:` list once for every card that asks.
  */
 export function viewSourceFile(
     kind: ViewSourceKind,
     config: Record<string, unknown>,
     primary: string | null,
-    collection?: string
+    collection?: string,
+    reads?: ReadMemo
 ): ViewSource | null {
     if (primary === null) return null;
     const file =
         kind === 'collection'
             ? collection === undefined
                 ? null
-                : collectionPath(config, (entry) => entry.key === collection)
+                : collectionPath(config, (entry) => entry.key === collection, reads)
             : isListedKind(kind)
-              ? collectionPath(config, (entry) => entry.registry === kind)
+              ? collectionPath(config, (entry) => entry.registry === kind, reads)
               : readAs(pathShape, config[FILE_KEYS[kind]]);
     return file === null ? null : { root: primary, path: file };
 }

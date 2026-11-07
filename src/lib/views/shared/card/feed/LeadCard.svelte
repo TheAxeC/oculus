@@ -35,7 +35,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         appliedWord,
@@ -111,6 +111,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
     let sure = $state(false);
     /** Whether an application from this lead is being placed, during which a pick does nothing. */
     let applying = $state(false);
@@ -328,7 +329,7 @@
 
 {#snippet text()}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="sub">{@html inlineMarkdown(sub, cardMath(sub))}</p>
+    <p class="sub">{@html inlineMarkdown(sub, cardMath(sub), htmlMemo)}</p>
     {#if country !== '' || type !== ''}
         <div class="chips">
             {#if country !== ''}
@@ -341,7 +342,7 @@
     {/if}
     {#if note !== ''}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
+        <p class="note">{@html inlineMarkdown(note, cardMath(note), htmlMemo)}</p>
     {/if}
     {#if posting(url) !== undefined}
         <p class="posting">
@@ -359,7 +360,7 @@
         id={identity}
         {cursor}
         {title}
-        titleHtml={inlineMarkdown(title, cardMath(title))}
+        titleHtml={inlineMarkdown(title, cardMath(title), htmlMemo)}
         ontitle={opener}
         tone={expired ? 'grey' : tone}
         record={{ root: feedRoot(entry) }}

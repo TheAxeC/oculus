@@ -49,7 +49,7 @@
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         declinedCount,
@@ -88,6 +88,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
 
     const today = localDate(Date.now());
     const data = $derived(feed('leads'));
@@ -95,7 +96,7 @@
     const cursor = $derived(cardCursor(instance.state));
     const vocab = $derived(config()?.config ?? {});
     const entries = $derived(data?.entries ?? []);
-    const identOf = $derived(feedIdents('leads', entries));
+    const identOf = $derived(feedIdents('leads', entries, client.entities.reads));
     const leadOf = $derived(leadIdents(entries));
     const declined = $derived(declinedCount(vocab, entries, vocabOf));
     const split = $derived(
@@ -259,7 +260,7 @@
                         <ul class="runlog">
                             {#each shownLog as line, at (`${at}:${line}`)}
                                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                <li>{@html inlineMarkdown(line, cardMath(line))}</li>
+                                <li>{@html inlineMarkdown(line, cardMath(line), htmlMemo)}</li>
                             {/each}
                         </ul>
                     </Surface>

@@ -16,9 +16,15 @@
     // it again. A pointer that arrives with a button held is a drag passing over it, which opens no
     // words, as no hover opens during a drag in VS Code.
     //
+    // bits-ui's part is built on the first pointer event over the wrapper that its trigger answers,
+    // or when the words are first opened from here (the keyboard's focus, a rest on `over`), and is
+    // kept from then on; the wrapper is the same element before and after, its trigger handed in by
+    // ui/menu/trigger/TriggerProps.svelte. Until then the wrapper holds the control and the hidden
+    // copy of the words, and carries none of bits-ui's attributes.
+    //
     // It draws bits-ui's Root alone: the Provider is ui/menu/TooltipGroup.svelte's, one for the
     // whole page, so a bubble opening closes the one that was open, and bits-ui refuses a tooltip
-    // drawn outside the group.
+    // built outside the group.
     //
     // The focus is this wrapper's own, since the control the reader focuses is inside the trigger
     // and a focus there reaches the trigger only as `focusin`: focus shows the words only when the
@@ -35,6 +41,8 @@
     import { DELAY, describedBy, describedControl } from '$lib/ui/menu/tooltip-rules';
     import { useTipIds } from '$lib/ui/menu/tip-ids';
     import type { Snippet } from 'svelte';
+    import TriggerProps from './trigger/TriggerProps.svelte';
+    import { lazyTrigger } from './trigger/lazy-trigger.svelte';
 
     type Props = {
         /** The words, already translated by the caller. The empty string draws no bubble at all. */
@@ -110,6 +118,42 @@
         return rest;
     }
 
+    /**
+     * bits-ui's tooltip, built on the first pointer event its trigger answers, or when the words
+     * are first opened from here, and kept from then on: a page draws many controls with words
+     * and shows few of them.
+     */
+    const tip = lazyTrigger(wrapperOf);
+
+    /**
+     * A pointer event bits-ui's trigger answers, arriving before the tooltip is built. A pointer
+     * arriving with a button held is a drag, which `dragging` answers alone there, so a drag
+     * builds nothing.
+     */
+    function handed(name: string, event: PointerEvent, element: EventTarget | null): void {
+        if (event.defaultPrevented) return;
+        if (name !== 'onpointerdown' && event.buttons !== 0) {
+            dragging(event);
+            return;
+        }
+        tip.hand(name, event, element);
+    }
+
+    /** The wrapper's handlers before the tooltip is built: a pointer arriving, moving, pressing. */
+    const early = {
+        onpointerenter(this: HTMLElement, event: PointerEvent): void {
+            handed('onpointerenter', event, this);
+        },
+        onpointermove(this: HTMLElement, event: PointerEvent): void {
+            handed('onpointermove', event, this);
+        },
+        onpointerdown(this: HTMLElement, event: PointerEvent): void {
+            handed('onpointerdown', event, this);
+        }
+    };
+
+    const wrapper = $derived(tip.given === null ? early : wrapperOf(tip.given));
+
     function stop(): void {
         if (timer === null) return;
         clearTimeout(timer);
@@ -144,6 +188,7 @@
         if (!(target instanceof Element) || target.closest(`[${QUIET_FOCUS}]`) !== null) return;
         if (target.matches(':focus-visible')) {
             stop();
+            tip.build();
             open = true;
         }
     }
@@ -181,6 +226,7 @@
         stop();
         timer = setTimeout(() => {
             timer = null;
+            tip.build();
             open = true;
         }, DELAY);
     }
@@ -240,61 +286,65 @@
         {@render children()}
     </span>
 {:else}
-    <!-- The trigger and the portal touch: a space between them is a text node drawn after the
-         control, which in a line of words is a space before the word that follows it. -->
-    <Tooltip.Root bind:open>
-        <Tooltip.Trigger
-            onpointerenter={dragging}
-            onpointermove={dragging}
-            onfocus={passed}
-            onblur={passed}
-        >
-            {#snippet child({ props })}
-                <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-                <span
-                    {...wrapperOf(props)}
-                    class="tip"
-                    class:block
-                    role={presentational ? 'presentation' : undefined}
-                    tabindex={focusable ? 0 : undefined}
-                    bind:this={box}
-                    onfocusin={focused}
-                    onfocusout={left}
-                >
-                    {@render children()}
-                    <span {id} class="words" hidden>{text}</span>
-                </span>
-            {/snippet}
-        </Tooltip.Trigger><Tooltip.Portal>
-            <Tooltip.Content
-                {side}
-                align={placement === 'beside' ? 'center' : 'start'}
-                sideOffset={placement === 'beside' ? 0 : GAP}
-                collisionPadding={MARGIN}
-                strategy="fixed"
+    <!-- The wrapper is bits-ui's trigger once the tooltip is built, the same element before and
+         after. It touches the tooltip after it, and the trigger touches the portal: a space
+         between them is a text node drawn after the control, which in a line of words is a space
+         before the word that follows it. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <span
+        {...wrapper}
+        class="tip"
+        class:block
+        role={presentational ? 'presentation' : undefined}
+        tabindex={focusable ? 0 : undefined}
+        bind:this={box}
+        onfocusin={focused}
+        onfocusout={left}
+    >
+        {@render children()}
+        <span {id} class="words" hidden>{text}</span>
+    </span>{#if tip.built}
+        <Tooltip.Root bind:open>
+            <Tooltip.Trigger
+                onpointerenter={dragging}
+                onpointermove={dragging}
+                onfocus={passed}
+                onblur={passed}
             >
-                {#snippet child({ wrapperProps, props })}
-                    <div {...wrapperProps}>
-                        <div
-                            {...props}
-                            class="bubble"
-                            class:beside={placement === 'beside'}
-                            role="tooltip"
-                        >
-                            {text}
-                            {#if placement === 'beside'}
-                                <Tooltip.Arrow>
-                                    {#snippet child({ props: arrow })}
-                                        <span {...arrow} class="arrow"></span>
-                                    {/snippet}
-                                </Tooltip.Arrow>
-                            {/if}
-                        </div>
-                    </div>
+                {#snippet child({ props })}
+                    <TriggerProps {props} take={tip.take} />
                 {/snippet}
-            </Tooltip.Content>
-        </Tooltip.Portal>
-    </Tooltip.Root>
+            </Tooltip.Trigger><Tooltip.Portal>
+                <Tooltip.Content
+                    {side}
+                    align={placement === 'beside' ? 'center' : 'start'}
+                    sideOffset={placement === 'beside' ? 0 : GAP}
+                    collisionPadding={MARGIN}
+                    strategy="fixed"
+                >
+                    {#snippet child({ wrapperProps, props })}
+                        <div {...wrapperProps}>
+                            <div
+                                {...props}
+                                class="bubble"
+                                class:beside={placement === 'beside'}
+                                role="tooltip"
+                            >
+                                {text}
+                                {#if placement === 'beside'}
+                                    <Tooltip.Arrow>
+                                        {#snippet child({ props: arrow })}
+                                            <span {...arrow} class="arrow"></span>
+                                        {/snippet}
+                                    </Tooltip.Arrow>
+                                {/if}
+                            </div>
+                        </div>
+                    {/snippet}
+                </Tooltip.Content>
+            </Tooltip.Portal>
+        </Tooltip.Root>
+    {/if}
 {/if}
 
 <style>

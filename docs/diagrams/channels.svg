@@ -1726,11 +1726,11 @@
 <path fill="none" stroke="currentColor" d="M800.21,-133C1086.65,-133 1373.08,-133 1659.52,-133 1659.52,-286.33 1659.52,-439.67 1659.52,-593 1682.84,-593 1706.17,-593 1729.49,-593"/>
 <polygon fill="currentColor" stroke="currentColor" points="1729.31,-595.1 1735.31,-593 1729.31,-590.9 1729.31,-595.1"/>
 </g>
-<!-- ? src/lib/state/client/entities.svelte.ts:56 -->
+<!-- ? src/lib/state/client/entities.svelte.ts:59 -->
 <g id="node58" class="node">
-<title>? src/lib/state/client/entities.svelte.ts:56</title>
+<title>? src/lib/state/client/entities.svelte.ts:59</title>
 <polygon fill="none" stroke="currentColor" points="19.8,-56 19.8,-78 291.22,-78 291.22,-56 19.8,-56"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="24.8" y="-63" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/entities.svelte.ts:56 channel === channel</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="24.8" y="-63" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/state/client/entities.svelte.ts:59 channel === channel</text>
 </g>
 <!-- state/client/entities -->
 <g id="node64" class="node">
@@ -1738,9 +1738,9 @@
 <polygon fill="none" stroke="currentColor" points="636.64,-232 636.64,-254 729.9,-254 729.9,-232 636.64,-232"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="642.64" y="-239" font-family="Helvetica,Arial,sans-serif" font-size="10.00">state/client/entities</text>
 </g>
-<!-- ? src/lib/state/client/entities.svelte.ts:56&#45;&gt;state/client/entities -->
+<!-- ? src/lib/state/client/entities.svelte.ts:59&#45;&gt;state/client/entities -->
 <g id="edge2" class="edge">
-<title>? src/lib/state/client/entities.svelte.ts:56&#45;&gt;state/client/entities</title>
+<title>? src/lib/state/client/entities.svelte.ts:59&#45;&gt;state/client/entities</title>
 <path fill="none" stroke="currentColor" d="M291.22,-67C360.49,-67 429.75,-67 499.02,-67 499.02,-125.67 499.02,-184.33 499.02,-243 542.41,-243 585.81,-243 629.2,-243"/>
 <polygon fill="currentColor" stroke="currentColor" points="629.12,-245.1 635.12,-243 629.12,-240.9 629.12,-245.1"/>
 </g>

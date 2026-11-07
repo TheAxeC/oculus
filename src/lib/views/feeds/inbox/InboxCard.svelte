@@ -33,7 +33,7 @@
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import { statusAction, type RecordAction } from '$lib/views/shared/card/record/record-menu';
     import type { Project } from '$lib/state/boards/focus';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         archiveConfirm,
@@ -90,6 +90,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
 
     let asking: 'send' | 'archive' | null = $state(null);
     /**
@@ -242,7 +243,7 @@
     {/if}
     {#if note.what}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="what">{@html inlineMarkdown(note.what, cardMath(note.what))}</p>
+        <p class="what">{@html inlineMarkdown(note.what, cardMath(note.what), htmlMemo)}</p>
     {/if}
     {#if thread.snippet !== ''}
         <p class="snippet">{thread.snippet}</p>

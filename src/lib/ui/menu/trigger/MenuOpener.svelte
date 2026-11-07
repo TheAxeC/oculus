@@ -11,8 +11,8 @@
     // handed none of the trigger's handlers, so no press or key opens the list, while it keeps
     // its place in the focus order, as ToolButton.svelte's waiting button does.
 
-    import Glyph from '../display/Glyph.svelte';
-    import Tooltip from './Tooltip.svelte';
+    import Glyph from '../../display/Glyph.svelte';
+    import Tooltip from '../Tooltip.svelte';
 
     type Props = {
         /** The button's own words, and its tooltip. */

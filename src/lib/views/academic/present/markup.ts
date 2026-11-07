@@ -16,7 +16,7 @@ import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { DECK_GAP } from '$lib/state/life/present';
 import { t } from '$lib/state/shared/words/text';
-import { blockMarkdown, inlineMarkdown } from '$lib/ui/html';
+import { blockMarkdown, inlineMarkdown, type HtmlMemo } from '$lib/ui/html';
 
 /**
  * The four delimiter pairs a slide writes a formula in: `$$...$$` and `\[...\]` set a display
@@ -90,9 +90,13 @@ function typeset(text: string, markdown: (source: string) => string): string {
     return html;
 }
 
-/** One field of a slide: inline Markdown, the formulas in it typeset. */
-export function words(text: string): string {
-    return typeset(text, inlineMarkdown);
+/**
+ * One field of a slide: inline Markdown, the formulas in it typeset. `memo` is the page's memo of
+ * drawings, which the component drawing the field hands in, so a field drawn again is not parsed
+ * again.
+ */
+export function words(text: string, memo?: HtmlMemo): string {
+    return typeset(text, (source) => inlineMarkdown(source, null, memo));
 }
 
 /** A slide's narrative body: whole-document Markdown, the formulas in it typeset. */

@@ -39,7 +39,7 @@
         unreadWords,
         type Dataset
     } from '$lib/state/sources/registries/datasets';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -70,6 +70,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
 
     const name = $derived(dataset.name === '' ? dataset.id : dataset.name);
 
@@ -148,7 +149,7 @@
 {#snippet description(words: string)}
     <p class="description">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words, cardMath(words))}
+        {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
     </p>
 {/snippet}
 
@@ -200,7 +201,7 @@
         <div class="note">
             <Glyph name="note_back" />
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <span>{@html inlineMarkdown(notes, cardMath(notes))}</span>
+            <span>{@html inlineMarkdown(notes, cardMath(notes), htmlMemo)}</span>
         </div>
     {/if}
 {/snippet}
@@ -278,7 +279,7 @@
         id={dataset.id}
         {cursor}
         title={name}
-        titleHtml={inlineMarkdown(name, cardMath(name))}
+        titleHtml={inlineMarkdown(name, cardMath(name), htmlMemo)}
         record={dataset}
         {actions}
         {onsaid}

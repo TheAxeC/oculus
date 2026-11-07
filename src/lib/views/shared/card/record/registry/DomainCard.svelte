@@ -22,7 +22,7 @@
         type RegistryCardProps
     } from '$lib/views/shared/forms/registry/registry-card.svelte';
     import { projectCount } from '$lib/views/shared/card/card';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import { isDormant, type Domain } from '$lib/state/boards/structure/lines';
     import { domainTone, vocabOf } from '$lib/state/shared/words/tones';
@@ -49,6 +49,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
 
     /** The key the domain's hub gives the domains registry, which its page and writes name. */
     const collection = $derived(registryKey('domains', rootOf(domain)));
@@ -72,7 +73,7 @@
 {#snippet text()}
     {#if domain.blurb}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p>{@html inlineMarkdown(domain.blurb, cardMath(domain.blurb))}</p>
+        <p>{@html inlineMarkdown(domain.blurb, cardMath(domain.blurb), htmlMemo)}</p>
     {/if}
 {/snippet}
 
@@ -95,7 +96,7 @@
         id={domain.id}
         {cursor}
         title={domain.title}
-        titleHtml={inlineMarkdown(domain.title, cardMath(domain.title))}
+        titleHtml={inlineMarkdown(domain.title, cardMath(domain.title), htmlMemo)}
         tone={domainTone(domain.id)}
         record={domain}
         actions={card.actions}

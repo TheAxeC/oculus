@@ -41,6 +41,7 @@
     import { provideState } from '$lib/state/client/use';
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
+    import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html';
     import {
         collectionRefusals,
         pageBoards,
@@ -77,6 +78,7 @@
     useBrowserWindows(client);
     $effect(() => (client.float === null ? holdBrowserTabId(client.pageId) : undefined));
     provideTipIds(createTipIds());
+    provideHtmlMemo(createHtmlMemo());
     provideSpelling(desktop?.bridge.spelling);
     const {
         apps: { rows: appRows },

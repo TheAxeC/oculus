@@ -293,17 +293,21 @@ export function createSource(
         });
     }
 
+    /**
+     * The file of each open draft with unsaved text, read again only when a tab changes: every
+     * card of a view asks whether its own file has unsaved text, and each asks over the same tabs.
+     */
+    const dirtyFiles = $derived(
+        openDrafts().flatMap((id) => {
+            const place = sourceDirty(id) ? diskFileOf(sourceDraft(id).file) : null;
+            return place === null ? [] : [place];
+        })
+    );
+
     /** Whether a dirty tab's file stands to the file at `root` and `path` as `wanted` says. */
     function dirtyTabAt(root: string, path: string, wanted: 'same' | 'unread'): boolean {
         const roots = deps.roots();
-        return openDrafts().some((id) => {
-            const place = diskFileOf(sourceDraft(id).file);
-            return (
-                place !== null &&
-                diskRelation({ root, path }, place, roots) === wanted &&
-                sourceDirty(id)
-            );
-        });
+        return dirtyFiles.some((place) => diskRelation({ root, path }, place, roots) === wanted);
     }
 
     const unsavedFile = (root: string, path: string): boolean => dirtyTabAt(root, path, 'same');

@@ -38,7 +38,7 @@
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
     import { createRegistryCard } from '$lib/views/shared/forms/registry/registry-card.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         hrefOf,
@@ -103,6 +103,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
 
     /** The key the venue's hub gives the venues registry, which its page and writes name. */
     const collection = $derived(registryKey('venues', rootOf(venue)));
@@ -305,7 +306,7 @@
 
 {#snippet wants(words: string)}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="wants">{@html inlineMarkdown(words, cardMath(words))}</p>
+    <p class="wants">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
 {/snippet}
 
 {#snippet themes()}
@@ -359,7 +360,7 @@
         id={venue.id}
         {cursor}
         title={venue.name}
-        titleHtml={inlineMarkdown(venue.name, cardMath(venue.name))}
+        titleHtml={inlineMarkdown(venue.name, cardMath(venue.name), htmlMemo)}
         ring={concentrated ? 'violet' : undefined}
         record={venue}
         {actions}

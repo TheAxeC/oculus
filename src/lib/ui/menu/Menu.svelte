@@ -18,13 +18,13 @@
     // A choice's action (menu-items.ts, `MenuAction`) is answered the same way as a pick: once the
     // list is gone and the focus is back.
     //
-    // The button that opens the list, in each of its looks, is MenuOpener.svelte beside this.
+    // The button that opens the list, in each of its looks, is trigger/MenuOpener.svelte.
 
     import { untrack } from 'svelte';
     import { DropdownMenu } from 'bits-ui';
     import { menuClosing, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import MenuList from './MenuList.svelte';
-    import MenuOpener from './MenuOpener.svelte';
+    import MenuOpener from './trigger/MenuOpener.svelte';
     import { useMenuWatch } from './menu-watch';
 
     type Props = {

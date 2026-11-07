@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O161
-  brief_check: .scratch/migration/agents/reviews/O161-brief-check.md (ac24ce86435cfa7fd, claude-opus-5-5, 184834 tokens, 49 tool uses, 10.4 min)
-  base: 75bf4dd10
-  worktree: .agents/worktrees/migration-O161
-  executor: agent
-  worker: claude:opus
-  session_id: a336874264e7be26f (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O161-report.md
-  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits redone (agents/briefs/O161-redo.md; 112573 tokens, 104 tool uses, 18.1 min); round 1 (195430 tokens, 47 tool uses, 12.5 min)
-  reviewer_report: .scratch/migration/agents/reviews/O161-refuter.md (a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min); over round 1: a96cb64bab02b38fc, claude-opus-5-5, 246209 tokens, 51 tool uses, 14.5 min
-  round: 1 (agents/briefs/O161-round-1.md, sent 2026-11-07; before it, round 0, the cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
-  landing: not-started
-  shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing; `src/lib/views/shared/card/record/RecordCard.svelte`, `src/lib/views/boards/projects/Projects.svelte` and `src/lib/ui/controls/heads/GroupHead.svelte` with O166 (landed 2026-11-07), judged simple to merge at O166's /spec, merged at O161's landing
 - step: O165
   brief_check: .scratch/migration/agents/reviews/O165-brief-check.md (abe81b76d36c73c6b, claude-opus-5-5, 156582 tokens, 43 tool uses, 8.6 min)
   base: 9dfe43d14
@@ -876,6 +862,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-07 (O161 landed; O151 building). O161, cheaper cards, landed (booking in `plan.md`, `agents/reviews/O161-landing.md`), merged with O166 in the gate: Lit Watch's 678 cards in the page at about 4.2 s against 8.7 s on main's head, its longest main-thread task about 1.3 s against 6.1 s; the Projects board at about 2.0 s against 2.5 s; every card's text, menus, tooltips and keys the same as main's at the look. Open items: none. In flight (2 of 6): O151 (building), O165 (its /writing findings, then Axel's approval). Next: O165's /writing findings applied, the HELP sentences O166 made false, and Axel's approval; O151's report when its builder hands back.
 - 2026-11-07 (O166 landed; O151 building). O166, the record pages made one design, landed (booking in `plan.md`, `agents/reviews/O166-landing.md`), with the round-1 review's two findings fixed at landing: every record card's strip keeps the dead-ends group and names a project once, so each card counts what its page's row counts, seen on the scratch server on 8797. O165 carries the `docs/HELP.md` sentences O166 made false (its dispatch entry, `carries:`). O151's builder a242c8c8c4aa11ec0 runs from base 391708a81. In flight (3 of 6): O151, O161, O165. Next: /land O161, then O165's /writing findings and Axel's approval.
 - 2026-11-07 (O159 landed). O159, one folder search per hub, landed (booking in `plan.md`, `agents/reviews/O159-landing.md`): a filter change of the portfolio deck over the research hub reads in 18.4 ms with the warm store against 1157.4 ms with a fresh one. Axel: "The text size for the facts strip is faaar too large"; measured on 8797, the strip's values are 18 px in the 1280 by 720 frame, the size of the slide's paragraphs and above its 13.5 px lists; the fix goes into O151's brief with the brief check's findings. Open items: none. In flight (4 of 6): O151 (brief check back, its findings closed next), O161, O165, O166 (each at landing). Next: O151's brief check closed and its builder launched, then /land O166 and /land O161 one at a time.
 

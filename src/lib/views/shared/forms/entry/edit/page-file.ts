@@ -7,13 +7,16 @@ import type { ClientState } from '$lib/state/client/context';
 import { entryById, identityFaults, type IdentityFault } from '$lib/state/boards/collection';
 import { feedSchemaOf, isPageFeed, type PageEntry } from '$lib/state/forms/page-entry';
 import { fileUnder, keyOf } from '$lib/state/shared/page/hubs';
-import { feedEntryId } from '$lib/state/shared/page/idents';
+import { feedIdCount } from '$lib/state/shared/page/idents';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
 
 /** The file of the feed `kind` in the hub `root`, the primary hub's named by the configuration. */
 function feedFile(client: ClientState, kind: 'leads' | 'radar', root: string): ViewSource | null {
     const primary = client.fs.primary();
-    if (root === primary) return viewSourceFile(kind, client.selectors.configMap(), primary);
+    if (root === primary) {
+        const config = client.selectors.configMap();
+        return viewSourceFile(kind, config, primary, undefined, client.entities.reads);
+    }
     const hubFiles = client.feeds.feed(kind)?.hubFiles ?? {};
     return Object.hasOwn(hubFiles, root) ? { root, path: hubFiles[root] } : null;
 }
@@ -50,8 +53,10 @@ export function pageFile(client: ClientState, page: PageEntry): ViewSource | nul
     if (page.kind === 'feed') {
         return isPageFeed(page.collection) ? feedFile(client, page.collection, page.root) : null;
     }
-    if (page.root === primary)
-        return viewSourceFile('collection', configMap(), primary, page.collection);
+    if (page.root === primary) {
+        const reads = client.entities.reads;
+        return viewSourceFile('collection', configMap(), primary, page.collection, reads);
+    }
     const held = collectionsOfKey(page.collection).find((one) => entryById(one, page.key) !== null);
     return held === undefined ? null : fileUnder(held.file, client.fs.roots(), primary);
 }
@@ -66,9 +71,12 @@ export function pageFault(client: ClientState, page: PageEntry): IdentityFault |
     if (page.kind === 'feed') {
         const field = page.fixed.at(0);
         if (field === undefined) return { kind: 'unkeyed', field: '', value: '', own: true };
-        const feed = isPageFeed(page.collection) ? client.feeds.feed(page.collection) : null;
-        const same = (feed?.entries ?? []).filter((one) => feedEntryId(one) === page.writeId);
-        return same.length > 1
+        const kind = page.collection;
+        const reads = client.entities.reads;
+        const same = isPageFeed(kind)
+            ? feedIdCount(kind, client.feeds.feed(kind)?.entries ?? [], page.writeId, reads)
+            : 0;
+        return same > 1
             ? { kind: 'shared', field, value: keyOf(page.writeId), own: true }
             : undefined;
     }

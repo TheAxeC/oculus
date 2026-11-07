@@ -177,7 +177,8 @@ export function createClientState(
                     : 'portfolio'
             )?.version ?? 0
     );
-    const pages = createPages({ snapshot: entities.portfolio, feeds: entities.feeds }, settled);
+    const paged = { snapshot: entities.portfolio, feeds: entities.feeds, reads: entities.reads };
+    const pages = createPages(paged, settled);
     // The write path refuses a write over a file a source tab holds unsaved text of (or that the
     // unread roots leave unknown), and names a file a write carries only an id of out of the
     // snapshot and the change log; the source store and the change log are made after it, so both

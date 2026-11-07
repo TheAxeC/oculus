@@ -3,10 +3,13 @@
 // which is the entry's internal id the feeds payload gives it (data/snapshot/hubs/feeds.ts), made
 // unique over the feed. What makes an entry unique is a fact about the feed, and the feed views,
 // the palette and the form drafts all ask it, so it sits with the page addresses every layer of
-// state shares.
+// state shares. Every card of a feed asks it over the same list of entries, so a reader that holds
+// its client's memo of reads (state/shared/stores/read-memo.ts) passes it, and the identities of a
+// list are then built once for that list and shared by every reader of it (`feedIndex`).
 
 import type { FeedKind } from '../../../data/model/index.ts';
 import { filledTextShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
+import type { ReadMemo } from '../stores/shapes.ts';
 
 /** Every string nested in a value, in property order. */
 export function nestedStrings(value: unknown): string[] {
@@ -53,11 +56,12 @@ export function uniqueIdents<T extends object>(
     base: (entry: T) => string,
     fallback: string
 ): (entry: T) => string {
+    const owns = entries.map(base);
     const seen = new Map<string, number>();
-    for (const entry of entries) seen.set(base(entry), (seen.get(base(entry)) ?? 0) + 1);
+    for (const own of owns) seen.set(own, (seen.get(own) ?? 0) + 1);
     const ids = new Map<T, string>();
     entries.forEach((entry, at) => {
-        const own = base(entry);
+        const own = owns[at];
         const shared = (seen.get(own) ?? 0) > 1;
         ids.set(entry, own === '' || own === fallback || shared ? `${own || fallback}#${at}` : own);
     });
@@ -65,10 +69,72 @@ export function uniqueIdents<T extends object>(
 }
 
 /**
- * The stable identity the feed view and the palette use for the same entry, over the whole feed.
+ * What one list of a feed's entries answers about them: the identity of each entry, the entry of
+ * each identity, and how many entries carry each internal id.
  */
-export function feedIdents(kind: FeedKind, entries: readonly object[]): FeedIdent {
-    return uniqueIdents(entries, (entry) => feedIdentity(kind, entry), kind);
+type FeedIndex = {
+    identOf: FeedIdent;
+    entryOf: ReadonlyMap<string, object>;
+    idCount: ReadonlyMap<string, number>;
+};
+
+/**
+ * The index of one list of a feed's entries. Every card of a feed asks for its own page over the
+ * same list, so with the client's memo (`reads`) the index is built on the first question about
+ * the list, by the list and the feed's kind, and not once per card: a feed message brings a new
+ * list, which is indexed afresh, and a list the client no longer holds is let go with its index.
+ * Without a memo it is built for this question alone.
+ */
+function feedIndex(kind: FeedKind, entries: readonly object[], reads?: ReadMemo): FeedIndex {
+    if (reads === undefined) return indexOf(kind, entries);
+    return reads.held(entries, `feed index ${kind}`, () => indexOf(kind, entries));
+}
+
+/** The index of one list of a feed's entries, built afresh. */
+function indexOf(kind: FeedKind, entries: readonly object[]): FeedIndex {
+    const identOf = uniqueIdents(entries, (entry) => feedIdentity(kind, entry), kind);
+    const entryOf = new Map<string, object>();
+    const idCount = new Map<string, number>();
+    for (const entry of entries) {
+        const ident = identOf(entry);
+        if (!entryOf.has(ident)) entryOf.set(ident, entry);
+        const id = feedEntryId(entry);
+        idCount.set(id, (idCount.get(id) ?? 0) + 1);
+    }
+    return { identOf, entryOf, idCount };
+}
+
+/**
+ * The stable identity the feed view and the palette use for the same entry, over the whole feed;
+ * `reads` is the client's memo, which shares the identities of a list among its readers.
+ */
+export function feedIdents(
+    kind: FeedKind,
+    entries: readonly object[],
+    reads?: ReadMemo
+): FeedIdent {
+    return feedIndex(kind, entries, reads).identOf;
+}
+
+/** The entry of `entries` whose identity over the list is `ident`; undefined when none has it. */
+export function feedEntryOf<T extends object>(
+    kind: FeedKind,
+    entries: readonly T[],
+    ident: string,
+    reads?: ReadMemo
+): T | undefined {
+    // The index maps each identity to an entry of this very list, so it is one of `entries`.
+    return feedIndex(kind, entries, reads).entryOf.get(ident) as T | undefined;
+}
+
+/** How many entries of `entries` carry the internal id `id`. */
+export function feedIdCount(
+    kind: FeedKind,
+    entries: readonly object[],
+    id: string,
+    reads?: ReadMemo
+): number {
+    return feedIndex(kind, entries, reads).idCount.get(id) ?? 0;
 }
 
 /**

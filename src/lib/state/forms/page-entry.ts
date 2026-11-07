@@ -46,7 +46,8 @@ import type {
     Venue
 } from '../../data/model/index.ts';
 import { entryIdOf, entryTitleOf, primaryKeyOf } from '../../data/model/index.ts';
-import { feedEntryId, feedIdents, feedRoot } from '../shared/page/idents.ts';
+import { feedEntryId, feedEntryOf, feedIdents, feedRoot } from '../shared/page/idents.ts';
+import type { ReadMemo } from '../shared/stores/shapes.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { fixedFields, formFieldsOf } from './record-fields.ts';
 import { fieldDiffers, hasWords } from './record-values.ts';
@@ -277,7 +278,11 @@ function collectionPage(
  * field that schema flags as the primary key and never writes it, and its title is the entry's
  * display, else its value of that key. A file with no schema has its primary key from its
  * `collections:` entry, which the feed holds for that hub (`hubPrimaryKeys`) in the same way. An
- * entry with no key has no page, the position `ident` carries being no name for a tab to hold.
+ * entry with no key has no page, the position `ident` carries being no name for a tab to hold. The
+ * entry is found through the identities of the feed's list of entries, which the client's memo
+ * (`reads`) builds once for that list and shares among the pages of all its cards
+ * (state/shared/page/idents.ts), and the page's peers are listed when they are first read, so
+ * finding one card's page does not walk the whole feed.
  */
 function feedPage(
     kind: FeedKind,
@@ -286,10 +291,10 @@ function feedPage(
         hubPrimaryKeys?: Record<string, string>;
     },
     ident: string,
-    settled: SettledStore
+    settled: SettledStore,
+    reads?: ReadMemo
 ): PageEntry | null {
-    const identOf = feedIdents(kind, feed.entries);
-    const found = feed.entries.find((one) => identOf(one) === ident);
+    const found = feedEntryOf(kind, feed.entries, ident, reads);
     const entry = found ?? (settled.pending(entryKey(kind, ident)) ? {} : undefined);
     if (entry === undefined || (found !== undefined && feedEntryId(found) === '')) return null;
     const root = found === undefined ? addressOfId(ident).hub : feedRoot(found);
@@ -300,6 +305,7 @@ function feedPage(
     const values = settled.overlay(entryKey(kind, ident), entry);
     const primaryKey = schema === undefined ? (named ?? null) : primaryKeyOf(schema);
     const title = entryTitleOf(values, schema, primaryKey);
+    let peers: Record<string, unknown>[] | undefined;
     return {
         kind: 'feed',
         collection: kind,
@@ -311,7 +317,10 @@ function feedPage(
         schema,
         values,
         fixed: fixedFields(primaryKey),
-        peers: feed.entries.filter((one) => one !== found)
+        get peers() {
+            peers ??= feed.entries.filter((one) => one !== found);
+            return peers;
+        }
     };
 }
 
@@ -343,10 +352,14 @@ export function sampleOf(page: PageEntry, field: string): unknown {
     return page.peers.map((one) => one[field]).find((one) => one !== undefined && one !== null);
 }
 
-/** Where pages are found: the snapshot and the feeds as they stand now. */
+/**
+ * Where pages are found: the snapshot and the feeds as they stand now, and the client's memo of
+ * reads over them, which a feed entry's page is found through when it is given.
+ */
 export type PageSources = {
     snapshot: () => Snapshot | null;
     feeds: () => FeedsPayload | null;
+    reads?: ReadMemo;
 };
 
 /**
@@ -397,7 +410,7 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         const feed = PAGE_FEEDS.find((kind) => kind === collection);
         if (feed !== undefined) {
             const held = sources.feeds()?.[feed];
-            return held === undefined ? null : feedPage(feed, held, key, settled);
+            return held === undefined ? null : feedPage(feed, held, key, settled, sources.reads);
         }
         const snapshot = sources.snapshot();
         if (snapshot === null) return null;
@@ -464,7 +477,8 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
             const entries = sources.feeds()?.[kind].entries ?? [];
             const entry = entries.find((one) => feedEntryId(one) === id);
             if (entry === undefined) return;
-            settled.record(entryKey(kind, feedIdents(kind, entries)(entry)), saved, entry, seq);
+            const ident = feedIdents(kind, entries, sources.reads)(entry);
+            settled.record(entryKey(kind, ident), saved, entry, seq);
         },
         career(saved, seq) {
             const career = sources.snapshot()?.entities.career ?? null;

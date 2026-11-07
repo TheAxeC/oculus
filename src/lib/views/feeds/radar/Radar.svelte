@@ -89,7 +89,7 @@
         (folded) => write({ folded })
     );
     const lastRun = $derived(data?.meta.last_run ?? '');
-    const identOf = $derived(feedIdents('radar', data?.entries ?? []));
+    const identOf = $derived(feedIdents('radar', data?.entries ?? [], client.entities.reads));
     /** The feed file this view is drawn from, offered once the feed says the file is there. */
     const source = $derived(
         data === null || data.missing ? null : viewSourceFile('radar', configMap(), primary())

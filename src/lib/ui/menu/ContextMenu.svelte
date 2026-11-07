@@ -8,6 +8,12 @@
     // pick means are the caller's, and the keys, the placing, the submenus and the closing are
     // bits-ui's.
     //
+    // bits-ui's menu is built on the first event over the wrapper that its trigger answers (a
+    // right-click, the menu key or Shift+F10, the press of a touch or a pen that starts a long
+    // press), which is then handed to it, and is kept from then on; the wrapper is the same element
+    // before and after, its trigger handed in by ui/menu/trigger/TriggerProps.svelte. Until then
+    // the wrapper carries none of bits-ui's attributes.
+    //
     // The wrapper takes no box of its own, so what it wraps is laid out as if it were not there.
     // With no items a right-click opens nothing. The list closes on a pick, on Escape and on a
     // press outside it, and the focus goes back to the control the menu was opened on, without
@@ -32,6 +38,8 @@
     import type { Snippet } from 'svelte';
     import { menuClosing, type MenuGroup, type MenuItem } from '$lib/ui/menu/menu-items';
     import MenuList from './MenuList.svelte';
+    import TriggerProps from './trigger/TriggerProps.svelte';
+    import { lazyTrigger } from './trigger/lazy-trigger.svelte';
 
     type Props = {
         /** The list's accessible name. */
@@ -131,12 +139,17 @@
         }
     }
 
+    /** Whether a key is the menu key or Shift+F10. */
+    function menuKey(event: KeyboardEvent): boolean {
+        return event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10');
+    }
+
     /**
      * The menu key or Shift+F10 on a control inside. A key a menu nested inside this one already
      * answered is left alone, so only the innermost menu around the control opens.
      */
     function keys(event: KeyboardEvent): void {
-        if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+        if (!menuKey(event)) return;
         if (event.defaultPrevented) return;
         event.preventDefault();
         if (read === undefined && (groups === undefined ? items.length === 0 : !offered)) return;
@@ -159,28 +172,63 @@
         const { tabindex: _tabindex, onpointerdown, ...rest } = props;
         return read === undefined ? { ...rest, onpointerdown } : rest;
     }
+
+    /**
+     * bits-ui's menu, built on the first event its trigger answers and kept from then on: a card
+     * list draws many wrappers and opens few menus.
+     */
+    const menu = lazyTrigger(wrapperOf);
+
+    /**
+     * The wrapper before the menu is built: the handlers of a right-click, the menu keys and a long
+     * press, and the pointer's events kept on what it wraps, which bits-ui's trigger sets on it
+     * (`pointer-events: auto`) so the cards stay in reach of the pointer while a menu is open.
+     */
+    const early = {
+        style: 'pointer-events: auto;',
+        oncontextmenu(this: HTMLElement, event: MouseEvent): void {
+            menu.hand('oncontextmenu', event, this);
+        },
+        onkeydown(this: HTMLElement, event: KeyboardEvent): void {
+            if (menuKey(event)) menu.hand('onkeydown', event, this);
+        },
+        onpointerdown(this: HTMLElement, event: PointerEvent): void {
+            if (read === undefined && event.pointerType !== 'mouse') {
+                menu.hand('onpointerdown', event, this);
+            }
+        }
+    };
+
+    const wrapper = $derived(menu.given === null ? early : wrapperOf(menu.given));
 </script>
 
-<ContextMenu.Root bind:open onOpenChange={closing.changed} onOpenChangeComplete={closing.completed}>
-    <!-- The wrapper only hears the right-click and the menu keys of the controls inside it, which
-         are the controls; it is not one itself. -->
-    <ContextMenu.Trigger oncontextmenu={pointed} onkeydown={keys}>
-        {#snippet child({ props })}
-            <div {...wrapperOf(props)} class="context">
-                {@render children()}
-            </div>
-        {/snippet}
-    </ContextMenu.Trigger>
-    <ContextMenu.Portal>
-        <ContextMenu.Content sideOffset={0} {...closing.content}>
-            {#snippet child({ wrapperProps, props })}
-                <div {...wrapperProps}>
-                    <MenuList {label} items={shown} {groups} onpick={pick} list={props} />
-                </div>
+<!-- The wrapper only hears the right-click and the menu keys of the controls inside it, which are
+     the controls; it is not one itself. One space follows it, built or not, and the menu's parts
+     touch, so building the menu adds no text node beside what it wraps. -->
+<div {...wrapper} class="context">
+    {@render children()}
+</div>
+{#if menu.built || open}
+    <ContextMenu.Root
+        bind:open
+        onOpenChange={closing.changed}
+        onOpenChangeComplete={closing.completed}
+    >
+        <ContextMenu.Trigger oncontextmenu={pointed} onkeydown={keys}>
+            {#snippet child({ props })}
+                <TriggerProps {props} take={menu.take} />
             {/snippet}
-        </ContextMenu.Content>
-    </ContextMenu.Portal>
-</ContextMenu.Root>
+        </ContextMenu.Trigger><ContextMenu.Portal>
+            <ContextMenu.Content sideOffset={0} {...closing.content}>
+                {#snippet child({ wrapperProps, props })}
+                    <div {...wrapperProps}>
+                        <MenuList {label} items={shown} {groups} onpick={pick} list={props} />
+                    </div>
+                {/snippet}
+            </ContextMenu.Content>
+        </ContextMenu.Portal>
+    </ContextMenu.Root>
+{/if}
 
 <style>
     .context {

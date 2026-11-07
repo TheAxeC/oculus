@@ -26,7 +26,7 @@
         type RegistryCardProps
     } from '$lib/views/shared/forms/registry/registry-card.svelte';
     import { projectCount } from '$lib/views/shared/card/card';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         inFlight,
@@ -66,6 +66,7 @@
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
+    const htmlMemo = useHtmlMemo();
     const client = useState();
     const {
         selectors: { configMap, registryKey }
@@ -117,20 +118,20 @@
 
 {#snippet goal(words: string)}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="goal">{@html inlineMarkdown(words, cardMath(words))}</p>
+    <p class="goal">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
 {/snippet}
 
 {#snippet fundingLine(words: string)}
     <p class="funding">
         <Glyph name="funding" />
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words, cardMath(words))}
+        {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
     </p>
 {/snippet}
 
 {#snippet blurb(words: string)}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="blurb">{@html inlineMarkdown(words, cardMath(words))}</p>
+    <p class="blurb">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
 {/snippet}
 
 {#snippet text()}
@@ -180,7 +181,7 @@
         id={line.id}
         {cursor}
         title={line.title}
-        titleHtml={inlineMarkdown(line.title, cardMath(line.title))}
+        titleHtml={inlineMarkdown(line.title, cardMath(line.title), htmlMemo)}
         {tone}
         record={line}
         actions={card.actions}
