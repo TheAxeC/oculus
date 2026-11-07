@@ -113,3 +113,124 @@ none
 - Whether the Settings rows of `behavior.yml:slurm.resource` carry that id and the `hub` layer beyond `rows.ts:82`, `:300`, `:412`; the look settles it.
 
 Reviewer usage: a3498add57a00290f, claude-opus-5-5, 334161 tokens, 116 tool uses, 19.4 min
+
+## Repair round 1, refuted
+
+The machine's load average was 5.32 at the start (`uptime`). No test timed out. `npm run test:quick` and every whole-suite command were not run; they run at landing.
+
+```
+$ npx vitest run tests/state/forms/referrers.test.ts --reporter=dot        (check 2)
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+
+$ LC_ALL=C perl -ne '...the gate of spec.md...' $(find src tests config -type f ! -name local.yml); echo "exit $?"   (check 3)
+exit 0
+$ ls -d bin
+ls: bin: No such file or directory
+$ LC_ALL=C grep -n '[^ -~]' <record-board.ts, reveal.svelte.ts, pane-fold.ts, ProjectCards.svelte>; echo "delta exit $?"
+delta exit 1
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O166-report.md; echo "report exit $?"
+report exit 1
+
+$ grep -rn "Referrers.svelte\|<Referrers" src; echo "exit $?"              (check 4, C11 first grep)
+exit 1
+$ grep -rn "GroupHead" src/lib/views/boards/project src/lib/views/boards/person src/lib/views/boards/entry src/lib/views/shared/card/record/RecordPage.svelte src/lib/views/shared/card/record/RecordCounts.svelte src/lib/views/shared/card/record/RecordDetails.svelte; echo "exit $?"
+exit 1
+
+$ git diff feb1d1354 --stat -- tests docs/HELP.md docs/data-map.md docs/decks.md; git status --short <same paths>   (checks 5 and 6)
+(nothing printed)
+
+$ npx vitest run tests/state/boards/board/board-rules.test.ts tests/state/boards/board/board-views.test.ts tests/state/forms/referrers.test.ts tests/state/system/settings/fold.test.ts tests/state/system/settings/hub-scope.test.ts tests/state/shared/hub-words.test.ts --reporter=dot
+ Test Files  6 passed (6)
+      Tests  182 passed (182)
+$ npx vitest run tests/state/boards/board/board-rules.test.ts tests/state/boards/board/board-views.test.ts tests/state/system/settings/fold.test.ts tests/state/system/settings/hub-scope.test.ts --reporter=dot
+ Test Files  4 passed (4)
+      Tests  162 passed (162)
+$ npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts tests/checks/tree/size.test.ts tests/checks/tree/duplication.test.ts tests/checks/tree/boundaries.test.ts --testTimeout=0 --reporter=dot
+ Test Files  5 passed (5)
+      Tests  47 passed (47)
+$ npx prettier --check <the four files of the round's delta>
+All matched files use Prettier code style!
+$ sh utils/unused-exports.sh > <scratchpad>/ue-r1.txt; diff .agents/worktrees/O166-base/unused-exports.txt <scratchpad>/ue-r1.txt
+227c227
+< Unused exported types (107)
+---
+> Unused exported types (106)
+279d278
+< src/lib/state/boards/collection/index.ts: FieldKind
+$ grep -rn --exclude=local.yml "listsReferrers\|REFERRED\b\|entry_form\.referrers\b\|...\|z\.enum(\['rail'\])" src tests config docs README.md; echo "stale exit $?"
+stale exit 1
+$ grep -rn "Referrers\|RAIL_ROW\|settingsReveal\|revealShape\|lineMembers\|domainMembers\|domainsWithMembers\|venueUsers" docs README.md | grep -v "^docs/diagrams"; echo "docs exit $?"
+docs exit 1
+$ grep -n -i -E "\b(previously|used to|no longer|anymore|formerly|was moved|replaced|instead of|old |legacy|revert|earlier|today)\b" <the six new files>; echo "exit $?"
+exit 1
+$ git diff feb1d1354 -U0 -- src config | grep "^+" | grep -c -w "today"
+0
+$ grep -rn "ProjectCards" src/lib
+src/lib/views/shared/card/record/CardGrid.svelte:15:    // sections of a page (sets/ProjectCards.svelte) draw their cards through it.
+src/lib/views/boards/listing/Listing.svelte:30:    import ProjectCards from '../../shared/card/record/sets/ProjectCards.svelte';
+src/lib/views/boards/listing/Listing.svelte:115:                <ProjectCards
+src/lib/views/boards/listing/Listing.svelte:130:            <ProjectCards projects={listed} onsaid={(answer: string) => (said = answer)} />
+$ grep -rln "usePaneFold\|pane-fold" src/lib    (the users the rewritten pane-fold.ts head names: Listing.svelte and Career.svelte among the hits)
+$ sh utils/folder-check.sh; echo "folder exit $?"
+folder exit 0
+$ for d in <the five folders the report names>; do ls -A $d | wc -l; done
+10 each
+$ wc -l record-board.ts reveal.svelte.ts pane-fold.ts ProjectCards.svelte Settings.svelte
+277, 123, 55, 77, 491 (as the report's table gives them; Settings.svelte at the base 520)
+```
+
+The round's delta has four files. Three are listed in files.txt and one has a whole-diff change since the base: `record-board.ts` (`eachOnce`, `joinedProjects`, head and doc comments), `reveal.svelte.ts` (`:82` scope reset, `:98` guard, comments), `pane-fold.ts` (head comment) and `ProjectCards.svelte` (head comment). No other path of files.txt differs from its snapshot copy.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `RecordPage.svelte:73-77` draws the said line, the card, then the row only when `row !== undefined && (row.total > 0 || row.waiting > 0)`, then the blocks. `row` is optional, so `Listing.svelte`, `Career.svelte` and `Post.svelte` draw as at the base.
+- 2: holds for the row on every record page. `recordRow` and `recordButtons` (`record-board.ts:204-257`) keep the archival row, count only projects that have a slice (Ruling 2) and put "other" last. `RecordCounts.svelte:40-42` opens the board with `pressedState`, which sets `mine: false`. On a page, `RecordCard.svelte:187` draws no strip. The views' cards are Finding 1.
+- 3: holds. `RECORD_VIEW` and `idsPreset` are shared with `awaitingPreset` (`presets.ts:566-630`) and skip their own view id. The tab id is `JSON.stringify([board, kind, collection, id])`. The ids are read live through `recordIds`, and they now come once each through `eachOnce`.
+- 4: holds. The repeated ask is closed by `reveal.svelte.ts:82`, and the superseded ask by `:98` (round items 1 and 2).
+- 5: holds. `RecordCounts.svelte` draws `record_waiting` when `row.waiting > 0`.
+- 6: holds. The C11 second grep prints nothing.
+- 7: holds by reading.
+- 8: holds. The two head comments of the first review's S2 are rewritten and true: `pane-fold.ts` names Listing and Career, which are both among the hits of the `pane-fold` grep, and `ProjectCards.svelte` names `Listing.svelte`, its only importer.
+
+Cases of the brief's "Cases", judged against the cases ruling where it rules:
+
+- C1: met, by reading `recordProjects`, `recordIds` and `recordRow` (`record-board.ts:146-180`, `:243-257`).
+- C2: met, by reading `pressedState` (`:265-277`) and `recordButtons` (`:219`).
+- C3: met by reading; the look is at landing.
+- C4: met by reading (row and board read one list, each project once); the look is at landing.
+- C5: met by reading.
+- C6: met by reading. A second rail press from another scope now picks Workspace again (`:82`). The look is at landing.
+- C7: met by reading for the pages and for the fields the views' cards show. The count on the views' cards is Finding 1.
+- C8: met by reading.
+- C9: met by reading.
+- C10: met by reading.
+- C11: met, by the run above.
+- C12: met by reading.
+- C13: partial, Finding 1. Each record page shows the `dead-ends` button and its board holds that project. On the Pillars, Domains and Venues views, the same record's card shows that project in no group of its strip, against Ruling 1's "the card and the row always agree".
+
+Items of the round's brief:
+
+- 1 (B1): holds. `reveal.svelte.ts:82` `if (id === undefined) scoped = undefined;` sits inside an effect that tracks `deps.asked()`. `end` writes the layout store synchronously (`restateInstance`, then `access.change`, then `apply`, then `savePages`, which sets `store.current`; `layout.svelte.ts:580-599`), so the next ask for the same row passes the `id === scoped` test and picks the row's scope. The scope effect still sets a scope only when the scope on screen does not draw the row, so no check was removed.
+- 2 (S4): holds. `show` returns after its awaits when `deps.asked() !== id` (`:98`). The show effect tracks `deps.asked()` and runs again for the newer row. The scope effect sees an id different from `scoped` and picks the newer row's scope. Read for shown twice: a second `show` for the same ask, started when the effect reran (the query cleared, the group unfolded), resumes after the first has called `end()`. It then reads `asked()` undefined and returns, so the row is scrolled once and ended once. Read for left unshown: a newer ask is never ended by an older `show`. A tab closed during the waits reads undefined and returns.
+- 3 (B2): partial, Finding 2. The row and the board read `recordProjects`, which applies `eachOnce`, so they agree. The card's strip on a collection's view still counts the project twice.
+- 4 (S2): holds (see item 8).
+- 5 (S4 and B3, the report): holds. The report's "Edge cases of the record board's tab and the reveal ask" gives the empty, duplicated, colliding and gone cases, and the in-flight, after-close and superseded cases, each with what the code does. "User-visible changes" lists the `dead-ends` button page by page, the project page's Related line included.
+
+### Findings
+
+- Finding 1, Spec (Ruling 1 of the cases ruling). Place: `src/lib/views/shared/card/record/RecordCard.svelte:186-190`, with `LineCard.svelte:97`, `DomainCard.svelte:68` and `VenueCard.svelte` passing `{projects}`: "const linked = $derived.by(() => { if (page) return []; return ( groups ?? (projects === undefined ? [] : groupProjects(projects, configMap(), vocabOf))". What is wrong: under Ruling 1, `lineMembers`, `domainMembers` and `venueUsers` now include dead-end projects. Off the page, the card's strip still groups them with `groupProjects` and its default `archival = false`, which drops the `dead-ends` row (`cross-links.ts:288`). On the Pillars and Domains views the card then disagrees with itself: the tag `projectCount(projects.length)` counts the dead end and the strip does not show it. On the Venues view the strip is the card's only count, and it leaves the dead end out. On the record's page, the row counts it under `dead-ends` and in the total. Ruling 1 reads: "One count per record, the same everywhere ... on the record's page and on the Pillars, Domains and Venues views alike, so the card and the row always agree." Failure scenario: a pillar named by two projects at `submitted` and one at `failed`. On the Pillars view its card reads "3 projects", but its strip has one group, in review, with a count of 2. On its page the row reads "2 in review", "1 dead-ends", "3 projects". The brief's item 2 and C7 keep the views' cards unchanged; the reviewer leaves the clash with Ruling 1 to the orchestrator. Verdict: C13 partial.
+- Finding 2, Behaviour (round item 3). Place: `src/lib/views/shared/forms/entry/card/EntryCard.svelte:207`, `rows === null ? crossLinks(entry, held, projects, people, configMap(), vocabOf, keeps) : []`. That call reaches `cross-links.ts:156`, `const named = namedProjects(entry, collection, projects, people);`, with no deduplication, and `groupProjects` then counts both hits (`cross-links.ts:296`, `:316`). What is wrong: `eachOnce` was put in `recordProjects` (`record-board.ts:146-149`), so only the row and the board count the project once; the card's strip off the page still counts it twice. The round's brief offered `namedProjects` as the place for the fix, which would reach the row, the board and every strip together. Failure scenario: an entry of a plain collection with `related: [p1, hub/p1]`; its card on the collection's view shows a count of 2, its page row "1 project", and the total opens a board with one card. Verdict: round item 3 partial.
+
+### Declined to judge
+
+- The looks C3 to C10, C12 and C13, which are taken at landing, including whether the second rail press reaches a mounted Settings tab through `openView` writing the new ask.
+- `npm run test:quick` and the whole verify list, which run at landing.
+- `docs/palette.md` and `tests/checks/diagrams/palette.test.ts`: regenerated at landing.
+- Which Pillars and Domains cards change their count under Ruling 1 (needs the hub's manifests).
+- Whether every edit of the round was made with Edit and Write (needs the builder's transcript).
+- The HELP sentences of check 6, the orchestrator's at landing.
+
+Reviewer usage: a8ce87366f2e26d24, claude-opus-5-5, 200549 tokens, 48 tool uses, 8.0 min
