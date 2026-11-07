@@ -67,7 +67,8 @@ dispatch:           # steps in flight, up to six (Z632)
   landing: not-started
   shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
 - step: O151
-  brief_check: "running: a9884b252a619f8e8"
+  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a9884b252a619f8e8, claude-opus-5-5, 208952 tokens, 72 tool uses, 13.6 min)
+  worktree: .agents/worktrees/migration-O151
   landing: preparing
 ```
 

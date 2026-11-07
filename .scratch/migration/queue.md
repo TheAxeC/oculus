@@ -1,17 +1,15 @@
-Paused until Axel says go.
-
 In flight (4 of 6 slots in use):
-- O161 (cheaper cards): landing next.
-- O165 (the guides redesigned): writing findings applied next, then Axel's approval.
-- O159 (one folder search per hub): landing next.
+- O151 (a deck for every research project, and the facts strip made smaller): builder starting.
 - O166 (the record pages made one design): landing next.
+- O161 (cheaper cards): landing after O166.
+- O165 (the guides redesigned): writing findings applied next, then Axel's approval.
 
-Queued, in order (1):
-- O151 (a deck for every research project): deleted; runs again from the start.
+Queued, in order: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O159 (one folder search per hub), 2026-11-07, db4244173.
 - O164 (a card's links open their page), 2026-11-06, 2ba2827a3.
 - O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; its hub files committed in the hub as a7b8bb6ca.
 - O158 (the Project facts strip redesigned), 2026-11-06, ca24a1132.
