@@ -130,3 +130,82 @@ Cases:
 - Hub data outside the step: modulation-lmp-bci and highgamma-event-detection carry the same abstract in their PDFs; hccnet-fl's README:47 and manifest still say "present at FLTA (Paris, 29 October 2026)", a past date; the fed-faithful-ecg and covert-applied CLAUDE.md files are stale.
 - Which ruling "the dead-ends ruling" means: read as ruling 685 with the READMEs' dead-ends sections (33 reproduce).
 - Whether `.gitignore` covers `.agents/hub`: needs `git check-ignore`.
+
+# Repair round 1, refuted
+
+Usage: a6df3635a2e3bb58c, claude-opus-5-5, 274604 tokens, 70 tool uses, 10.8 min
+
+## Verification lines (verbatim)
+
+All from the O151 worktree; before each vitest or svelte-check run, `ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep` printed nothing.
+
+- `npm run test:quick`: `test:quick: 8 changed file(s), from git since HEAD` / `test:quick: 10 test file(s)` / `ok prettier (0.7 s): All matched files use Prettier code style!` / `ok ASCII gate (0.8 s)` / `ok svelte-kit sync (2.3 s)` / `ok eslint (3.0 s)` / `ok svelte-check (9.1 s): 1794061813881 COMPLETED 585 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` / `ok vitest checks (39.9 s): Duration 28.82s ...` / `test:quick: 42.4 s; every command passed`
+- G14 over the scratch hub: `Test Files 1 passed (1)` / `Tests 14 passed (14)`
+- The perl ASCII gate over `src tests bin config`: `find: bin: No such file or directory`, nothing else, rc 0.
+- `LC_ALL=C grep -rn -I '[^ -~]' .agents/hub`: 13 lines, each an accented letter in a real name (Stéphanie, Linköping, Östergötland, Düsseldorf).
+- `wc -l`: `364 Project.svelte`, `251 Facts.svelte`, `74 slide.css`, `384 tests/checks/config/integrity.test.ts`.
+- History-word grep over the `+` lines of `git diff 391708a81 -U0 -- src tests`: one hit, "before" used spatially.
+- `find .agents/hub/projects -name present.yml | wc -l`: `95`.
+- `sh utils/unused-exports.sh | diff - ../O151-base/unused-exports.txt`: no output, rc 0.
+- The case-run program: `decks=95 decks_with_equation=56 problems=0`; kinds `project,columns 86`, `project,equation 5`, `project 4`; `cases.ts` equals the report's quoted source.
+- Snapshot against worktree: the three `src` files identical; `diff -rq` of the decks lists 95 `main.md` and `glassbox-decision-pipelines/present/age_dumbbell.png` (945 by 686).
+- A `cmp` loop of every worktree deck file against the scratch hub copy: `differ=0`, so checkpoint 4 measured the decks as they stand.
+- Number tokens lost per deck from the snapshot to now: none, in all 95 decks.
+- The builder's round-1 outputs: `testquick-r1.txt` ends `test:quick: 55.9 s; failed: eslint` (`integrity.test.ts 94:37 ... no-unnecessary-condition`); `testquick-r1b.txt` ends `test:quick: 50.0 s; every command passed`.
+
+## Verdicts
+
+Items: 1 holds; 2 partial (Spec 2, Spec 3); 3 partial (Spec 4); 4 violated (Spec 1); 5 holds; 6 holds; 7 holds.
+
+Cases: C1 to C6 met; C7 partial (Proof 3); C7b met on the sample; C8 met; C9 partial (Spec 5); C10 met; C11 partial (Spec 2); C12 to C16 met.
+
+## Spec
+
+- Spec 1, item 4 violated: cirrhosis-digital-twin slide 1 (85 px), covert-theory slide 1 (2 px), fed-multicellular-immune slide 1 (2 px) are too tall at checkpoint 4 (`O151-look.md`), the decks byte-equal to the measured copies.
+- Spec 2, cirrhosis-digital-twin facts dropped: "Checked 2026-11-03 against the call texts" (README.md:36); the funding.yml key `pioneers-in-healthcare-pihc-innovation-fund` (README.md:38, :50); Guichelaar as main applicant (README.md:16); the "up to" of each grant ceiling (README.md:39, :43); "a working dataspace" (README.md:20); "their effect on liver outcomes" (README.md:7); the voucher type "technological pioneering in healthcare" (README.md:15).
+- Spec 3, "public" dropped: covert-theory's "the synthetic-validation code is public"; fed-multicellular-immune slide 1 line 11 "seven public CELLxGENE atlases". The facts strip draws code status as `deposited` and datasets as keys (`src/lib/data/shapes/project-facts.ts:85,135,153`), neither saying public.
+- Spec 4, ecg-readable-substrate: slide 2's heading "FMs given age too: 5 wins, 1 tie, 6 losses" repeats slide 1's result (item 3).
+- Spec 5, individual-reference-intervals `main.md:8` purpose "may hide early warning signs" traces to no manifest key (C9).
+- Spec 6, unapproved scripts: the number-token comparison (source and command not given, no file), `<scratchpad>/o151/s1lines.py`, `s2lines.py` and `cols58.py`; none changed a file; the three estimators are not named in the report as scripts.
+
+## Proof
+
+- Proof 1: report:103 "Everything in the brief is done, ..." stands over two NOT DONE rows (:188, :200).
+- Proof 2: report:6's estimate (only cirrhosis slide 2 at the limit) is contradicted by checkpoint 4.
+- Proof 3: round-0 evidence left stale: the case-run output (from report:2988, linfoot-estimator `kinds=project,image`, now `columns`), the trace (from report:302; the cirrhosis rows :576-580), the DONE row "Case-run program files gone before the report" (:199, the files exist), and the 25 `diff -u` blocks of round 0.
+- Proof 4: `integrity.test.ts`'s planted case retitled, `expect(drawn).toBe(2)` and `expect(writtenEquations(text)).toBe(2)` changed to `toBe(3)` with a planted equation slide; no before-and-after row and no G14 run of the builder's own before the change.
+- Proof 5: two `test:quick` runs this round (red on eslint, then green); the report gives one.
+
+## Standards
+
+- Standards 1: `tests/checks/config/integrity.test.ts:111-120` `hubRecords` looks a record up as `isMap(held) ? held[id] : undefined`, where the deck route uses `byKey` (`src/lib/server/content/deck/read.ts:97-100`, `src/lib/data/helpers/guards.ts:57-59`); an id such as `__proto__` gives a record the app does not find.
+- Ruling 4 (negation-contrast) and ruling 5 (past dates): no finding.
+
+## Behaviour
+
+- Behaviour 1: cirrhosis-digital-twin slide 2 line 35 "tenure(-track) applicant Amir Haeri, Axel (fixed-term postdoc) holds it" can be read as Axel holding a tenure-track post (README.md:43: Axel cannot apply; the funded position can be his). ecg-readable-substrate slide 2 "ECG-JEPA +0.013 CODE-15 to MIMIC" sets its sign opposite to the bullet above and no longer says ECG-JEPA leads; "1-year all-cause mortality" (README.md:3) became "one-year mortality".
+- Behaviour 2: ten `image` second slides became `columns` slides; figure sizes on screen are for the look.
+
+## Declined to judge
+
+- Shell assembly of the report or a deck this round, and whether the builder opened a deleted-run file: need the transcript.
+- Which main-checkout ledger file the builder read.
+- Pixel fit and readability of the columns-slide figures and of the glassbox figure: for the look.
+- Whether `pdftoppm` or `sips` made `age_dumbbell.png`.
+- Dropped words in the 88 decks not read (their number tokens are all kept).
+
+# Closed
+
+The first review's findings went to the builder in repair round 1 (`agents/briefs/O151-round-1.md`); the run over the round is closed at landing as follows. The deck fixes were made in the step's `.agents/hub/projects/`, laid over the scratch hub by the round's copy command and measured on 8799 (`agents/reviews/O151-look.md`, "Landing").
+
+- Spec 1 (three slides too tall), fixed at landing: covert-theory slide 1, its second Results item written in 66 characters so it takes one line (the Kurdyka-Lojasiewicz convergence at sigma = 0 is on slide 2's list); fed-multicellular-immune slide 1, its second Method item written as "Incomplete panel (vertical FL: shared donors, own loadings back)." (slide 2's heading states the summed donor Gram is exact, the hook that the sites sum donor Grams); cirrhosis-digital-twin rewritten across its two slides with nothing dropped. The Findings view after every slide of the portfolio deck was drawn holds no "slide too tall".
+- Spec 2 (cirrhosis-digital-twin facts), fixed at landing: "Calls checked 2026-11-03", the key `pioneers-in-healthcare-pihc-innovation-fund`, Guichelaar as main applicant, "up to" on each grant ceiling, "a working dataspace", "their effect on liver outcomes" (in the hook) and the voucher type "technological pioneering in healthcare" are each on a slide again; the second spec reads "PIHC again, clinical or data".
+- Spec 3 ("public"), fixed at landing: covert-theory's Next spec "wait for the decision; synthetic code public"; fed-multicellular-immune's Data spec "seven public CELLxGENE atlases".
+- Spec 4 (ecg-readable-substrate repeat), fixed at landing: slide 2's heading is "The comparison as submitted and at equal input".
+- Spec 5 (individual-reference-intervals purpose), fixed at landing: "Event prediction judges lab values against population-wide normal ranges; the bet was that per-patient baselines could sharpen it.", from the manifest's `eli5`.
+- Spec 6 (unapproved scripts), closed under the standing ruling of open items 337 (a) and 715 (a), which Axel gave twice: the number-token comparison and `s1lines.py`, `s2lines.py` and `cols58.py` in the scratchpad `o151` folder are recorded here, none changed a file, and nothing they printed is used; the number-token claim rests on the reviewer's own `comm` loop and the fit on the look's measurements.
+- Proof 1, Proof 2, Proof 3 and Proof 5 (the builder's report): closed by this record. The report's success line, its estimate, its round-0 trace, case-run output, DONE row on the case-run files and `diff -u` blocks are superseded by the two reviews and the look; the report is the builder's record and is kept as written. The round's `test:quick` ran twice, red on eslint at `integrity.test.ts:94:37`, then green.
+- Proof 4 (the planted case), read at landing: the case now plants an equation slide as well, so both counts of the case are 3 where they were 2; the change follows the round's ruling 2, and the case still fails when the two counts differ.
+- Standards 1 (`hubRecords`), fixed at landing: the lookup is `byKey(entities, id)` as `src/lib/server/content/deck/read.ts:98` reads it, `byKey` imported from `guards.ts`.
+- Behaviour 1, fixed at landing: cirrhosis-digital-twin reads "tenured or tenure-track applicants, so Amir Haeri; the position can be Axel's (fixed-term postdoc, cannot apply)"; ecg-readable-substrate reads "ECG-JEPA leads by 0.013 CODE-15 to MIMIC" and "1-year all-cause mortality".
+- Behaviour 2 (figure sizes on the columns slides), fixed at landing as far as the layout allows: on clinical-hccnet, raw-pls, ward-bttr-crosssubject, hccnet-revision and dries-bttr-ecg, items moved into the text-only column and written in fewer words, every fact kept; the figures are drawn 215 x 126, 216 x 152, 116 x 91, 194 x 208 and 250 x 182 design px (`agents/reviews/O151-look.md`, "Landing"), since a Markdown image on a columns slide takes only the room its column's text leaves (`docs/decks.md`).

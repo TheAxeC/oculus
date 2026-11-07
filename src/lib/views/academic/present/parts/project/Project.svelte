@@ -12,8 +12,11 @@
     // room is measured the text takes the room's width and no figure is drawn. The room is as tall
     // as the layout, or as the lowest figure's box where that ends lower (`place.depth`), so a
     // slide whose figures run past its frame is measured too tall. A slide with no figure draws
-    // its text as it is, the lists and the equation in two columns; one that draws its Markdown
-    // alone marks the body as its room (`data-room`), the room a Markdown image is held to.
+    // its text as it is: the callout and the lists in one column and the right-hand column beside
+    // them, which is drawn only while it holds the equation, a diagram or a figure's name, so a
+    // slide with none of them draws its callout and lists across the text's whole width. One that
+    // draws its Markdown alone marks the body as its room (`data-room`), the room a Markdown image
+    // is held to.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -64,7 +67,9 @@
         )
     );
     const pictured = $derived(figures.includes(true));
-    /** Whether the right-hand column holds anything: the equation, a diagram or a figure's name. */
+    /**
+     * Whether the right-hand column is drawn: it holds the equation, a diagram or a figure's name.
+     */
     const right = $derived(slide.equation !== undefined || figures.includes(false));
     /** Whether the slide has text beside or above its figures. */
     const worded = $derived(
@@ -141,7 +146,7 @@
                     </ul>
                 {/if}
             </div>
-            {#if right || !pictured}
+            {#if right}
                 <div class="right">
                     {#if slide.equation !== undefined}
                         <Equation {slide} />
@@ -269,9 +274,11 @@
         min-width: 0;
     }
 
-    /* The method and the results side by side wherever the text's box holds two columns of at
-       least 300 px, as the reading width does; the narrower text beside a column of figures holds
-       one. */
+    /* The callout and lists on the left and the right-hand column side by side wherever the text's
+       box holds two columns of at least 300 px, as the reading width does; the narrower text
+       beside a column of figures holds one. A slide with no right-hand column draws its left
+       column alone, and the tracks `auto-fit` leaves empty collapse, so that column takes the
+       box's whole width. */
     .cols {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));

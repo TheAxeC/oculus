@@ -38,19 +38,6 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 1 (agents/briefs/O165-round-1.md, sent 2026-11-07)
   landing: not-started
   carries: "at its landing, the `docs/HELP.md` sentences O166 made false (agents/reviews/O166-report.md, HELP sentences of check 6: :271 twice, :272, :305, :359, numbered on O166's base) brought true for the record pages as O166 landed them (the row of count buttons, the Named by line, the two columns, the dead-ends group on every card's strip)"
-- step: O151
-  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a9884b252a619f8e8, claude-opus-5-5, 208952 tokens, 72 tool uses, 13.6 min)
-  base: 391708a81
-  worktree: .agents/worktrees/migration-O151
-  executor: agent
-  worker: claude:opus
-  session_id: a242c8c8c4aa11ec0 (claude-opus-5-5)
-  launched: 2026-11-07
-  report: .scratch/migration/agents/reviews/O151-report.md
-  builder_usage: "build: 329549 tokens, 1538 tool uses, 163.9 min"
-  reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a35359bb43448153a, claude-opus-5-5, 94045 tokens, 95 tool uses, 15.3 min)
-  round: 1 (agents/briefs/O151-round-1.md, sent 2026-11-07; snapshot .agents/worktrees/migration-O151-round-1)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -864,6 +851,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-07 (O151 landed). O151, a deck for every research project and the facts strip made smaller, landed (booking in `plan.md`, `agents/reviews/O151-landing.md`): the strip at 12 px values and 10 px labels, G14 reading decks with the hub's records, and 95 decks (186 slides, none too tall on 8799), copied into the research hub's `projects/*/present/`, the hub commit on Axel's word. Open items: none. In flight (1 of 6): O165 (waiting on Axel's approval of the three pages). Next: O165's landing on Axel's approval.
 - 2026-11-07 (O161 landed; O151 building). O161, cheaper cards, landed (booking in `plan.md`, `agents/reviews/O161-landing.md`), merged with O166 in the gate: Lit Watch's 678 cards in the page at about 4.2 s against 8.7 s on main's head, its longest main-thread task about 1.3 s against 6.1 s; the Projects board at about 2.0 s against 2.5 s; every card's text, menus, tooltips and keys the same as main's at the look. Open items: none. In flight (2 of 6): O151 (building), O165 (its /writing findings, then Axel's approval). Next: O165's /writing findings applied, the HELP sentences O166 made false, and Axel's approval; O151's report when its builder hands back.
 - 2026-11-07 (O166 landed; O151 building). O166, the record pages made one design, landed (booking in `plan.md`, `agents/reviews/O166-landing.md`), with the round-1 review's two findings fixed at landing: every record card's strip keeps the dead-ends group and names a project once, so each card counts what its page's row counts, seen on the scratch server on 8797. O165 carries the `docs/HELP.md` sentences O166 made false (its dispatch entry, `carries:`). O151's builder a242c8c8c4aa11ec0 runs from base 391708a81. In flight (3 of 6): O151, O161, O165. Next: /land O161, then O165's /writing findings and Axel's approval.
 - 2026-11-07 (O159 landed). O159, one folder search per hub, landed (booking in `plan.md`, `agents/reviews/O159-landing.md`): a filter change of the portfolio deck over the research hub reads in 18.4 ms with the warm store against 1157.4 ms with a fresh one. Axel: "The text size for the facts strip is faaar too large"; measured on 8797, the strip's values are 18 px in the 1280 by 720 frame, the size of the slide's paragraphs and above its 13.5 px lists; the fix goes into O151's brief with the brief check's findings. Open items: none. In flight (4 of 6): O151 (brief check back, its findings closed next), O161, O165, O166 (each at landing). Next: O151's brief check closed and its builder launched, then /land O166 and /land O161 one at a time.

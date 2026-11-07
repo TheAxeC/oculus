@@ -12,13 +12,17 @@
    title, the headings, the body and the small sizes move together, and so do the app's type steps
    the slide's chips and table are set in. The frame itself and the slide's foot under the content
    (the strip of a project's facts) keep the factor 1. The design sizes are the sizes at the factor
-   1, each times the app's text size (`--text-scale`). */
+   1, each times the app's text size (`--text-scale`). The strip has a design size of its own,
+   12 px, below the small size, and its size (`--slide-fs-fact`) carries no fit factor, since the
+   strip stands outside the content's fit. */
 .slide-frame {
     --slide-design-title: 56px;
     --slide-design-h: 36px;
     --slide-design-sub: 28px;
     --slide-design-body: 24px;
     --slide-design-small: 18px;
+    --slide-design-fact: 12px;
+    --slide-fs-fact: calc(var(--slide-design-fact) * var(--text-scale, 1));
     --slide-ui-xs: var(--fs-xs);
     --slide-ui-sm: var(--fs-sm);
     --slide-ui-md: var(--fs-md);
@@ -57,13 +61,14 @@
 }
 
 /* Under a rice theme the slide sizes are the design sizes times 12/13, rounded to whole pixels (56
-   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17). The rule sits here because the
-   sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not
-   reach. */
+   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17, 12 gives 11). The rule sits here
+   because the sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does
+   not reach. */
 body.rice .slide-frame {
     --slide-design-title: 52px;
     --slide-design-h: 33px;
     --slide-design-sub: 26px;
     --slide-design-body: 22px;
     --slide-design-small: 17px;
+    --slide-design-fact: 11px;
 }

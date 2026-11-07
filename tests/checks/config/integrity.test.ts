@@ -25,7 +25,7 @@ import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { mergeHubs } from '../../../src/lib/data/snapshot/hubs/merge.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { isMap } from '../../../src/lib/data/helpers/guards.ts';
+import { byKey, isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { deckReader } from '../../../src/lib/data/sources/documents/decks.ts';
@@ -67,20 +67,31 @@ function readHub(hub: string): HubRead {
     return { hub, merged, config: portfolioConfigFrom(merged) };
 }
 
+/** The parsed YAML of one piece of a slide file, or undefined for a piece that does not parse. */
+function parsedPiece(piece: string): unknown {
+    try {
+        return parse(piece);
+    } catch {
+        return undefined;
+    }
+}
+
 /**
- * How many equations one slide file writes, counted from its parsed front matter without the
- * reader under test: the file is cut at every line holding only `---` and each piece that parses
- * as a map with an `equation:` that is text and not blank after trimming counts once.
+ * How many equations one slide file writes, counted without the reader under test: the file is
+ * cut at every line holding only `---`. Each piece that parses as a map with an `equation:` that
+ * is text and not blank after trimming counts once, and so does each piece that parses as a map
+ * with `kind: equation` whose next piece, the slide's body, holds a `$$ ... $$` formula that is not
+ * blank after trimming.
  */
 function writtenEquations(text: string): number {
-    return text.split(/^---[ \t]*$/m).filter((piece) => {
-        let front: unknown;
-        try {
-            front = parse(piece);
-        } catch {
-            return false;
-        }
-        return isMap(front) && typeof front.equation === 'string' && front.equation.trim() !== '';
+    const pieces = text.split(/^---[ \t]*$/m);
+    return pieces.filter((piece, at) => {
+        const front = parsedPiece(piece);
+        if (!isMap(front)) return false;
+        if (typeof front.equation === 'string' && front.equation.trim() !== '') return true;
+        if (front.kind !== 'equation') return false;
+        const display = /\$\$([\s\S]*?)\$\$/.exec(pieces[at + 1] ?? '');
+        return display !== null && display[1].trim() !== '';
     }).length;
 }
 
@@ -93,12 +104,29 @@ function noRecords(merged: Record<string, unknown>): FactWords {
 }
 
 /**
- * A deck of the hub, a project's `present/` folder or the portfolio deck, read through the deck
- * module the route and the build read through, over the hub's projects in the merged shape.
+ * The words of a read that names a project's facts by the records of the merged snapshot's
+ * `entities`, each kind of record by its entity map, as the deck route reads them
+ * (server/content/deck/read.ts), in the words of `merged`.
  */
-function readDeck(read: HubRead, projects: Project[], folder: string): Deck {
+function hubRecords(merged: Record<string, unknown>, entities: object): FactWords {
+    return {
+        record: (kind, id) => {
+            const held: unknown = (entities as Record<string, unknown>)[kind];
+            const record = isMap(held) ? byKey(held, id) : undefined;
+            return isMap(record) ? record : undefined;
+        },
+        vocab: merged,
+        catalog: textCatalog(merged)
+    };
+}
+
+/**
+ * A deck of the hub, a project's `present/` folder or the portfolio deck, read through the deck
+ * module the route and the build read through, over the hub's projects in the merged shape and
+ * with the words `words` names their facts by.
+ */
+function readDeck(read: HubRead, projects: Project[], folder: string, words: FactWords): Deck {
     const hub = { key: HUB_KEY, dir: read.hub, config: read.config };
-    const words = noRecords(read.merged);
     return deckReader({ hub, projects, words, globs: folderGlobs() }).read(
         { key: hub.key, dir: hub.dir },
         folder
@@ -178,9 +206,9 @@ function derivedCounts(read: HubRead): Record<string, number> {
 
 /**
  * A hub read and built once, on the first case that asks for it, with its projects as the merge of
- * the one hub makes them.
+ * the one hub makes them and the words its decks name those projects' facts by.
  */
-type Built = { read: HubRead; snapshot: HubSnapshot; projects: Project[] };
+type Built = { read: HubRead; snapshot: HubSnapshot; projects: Project[]; words: FactWords };
 
 /** The read and build of a hub, made on the first call and kept for the cases after it. */
 function builder(readOf: () => HubRead): () => Built {
@@ -191,7 +219,12 @@ function builder(readOf: () => HubRead): () => Built {
         const snapshot = buildOneHub(read.hub, read.config).snapshot;
         const part = { key: HUB_KEY, snapshot, files: read.config.registries };
         const merged = mergeHubs([part], textCatalog(read.merged), 0);
-        built = { read, snapshot, projects: Object.values(merged.entities.projects) };
+        built = {
+            read,
+            snapshot,
+            projects: Object.values(merged.entities.projects),
+            words: hubRecords(read.merged, merged.entities)
+        };
         return built;
     };
 }
@@ -222,11 +255,11 @@ function hubCases(readOf: () => HubRead, floors: Floors): void {
     });
 
     it('reads a deck out of every project that has a present/ folder, with no finding', () => {
-        const { read, projects } = built();
+        const { read, projects, words } = built();
         const withDecks = projects.filter((project) => project.deck !== undefined);
         expect(withDecks.length).toBeGreaterThanOrEqual(floors.decks);
         for (const project of withDecks) {
-            const deck = readDeck(read, projects, `${project.folder}/present`);
+            const deck = readDeck(read, projects, `${project.folder}/present`, words);
             expect(deck.state, project.id).toBe('ok');
             expect(deck.findings, project.id).toEqual([]);
             expect(deck.slides.length, project.id).toBeGreaterThan(0);
@@ -234,15 +267,15 @@ function hubCases(readOf: () => HubRead, floors: Floors): void {
     });
 
     it('reads an equation out of every slide that writes one, as LaTeX that typesets', () => {
-        const { read, projects } = built();
+        const { read, projects, words } = built();
         const withDecks = projects.filter((project) => project.deck !== undefined);
         const equations = withDecks.flatMap((project) =>
-            drawnEquations(readDeck(read, projects, `${project.folder}/present`)).map(
+            drawnEquations(readDeck(read, projects, `${project.folder}/present`, words)).map(
                 (equation) => ({ id: project.id, equation })
             )
         );
-        // The second count: the equations the front matter of each slide file writes, parsed
-        // without the reader under test.
+        // The second count: the equations each slide file writes, in a project slide's front
+        // matter or as an equation slide's display formula, parsed without the reader under test.
         const written = withDecks.flatMap((project) => {
             const folder = join(read.hub, project.folder, 'present');
             return globSync('*.md', { cwd: folder }).map((file) =>
@@ -258,8 +291,8 @@ function hubCases(readOf: () => HubRead, floors: Floors): void {
     });
 
     it('reads the portfolio deck with every named deck found', () => {
-        const { read, projects } = built();
-        const deck = readDeck(read, projects, read.config.portfolioDeck ?? '');
+        const { read, projects, words } = built();
+        const deck = readDeck(read, projects, read.config.portfolioDeck ?? '', words);
         expect(deck.state).toBe('ok');
         expect(deck.findings).toEqual([]);
         expect(deck.groups.length).toBeGreaterThan(0);
@@ -296,10 +329,11 @@ describe.skipIf(!REAL.asked)(realHubName('the real hub', REAL), () => {
 });
 
 // The count above is only as good as its agreement with the reader on the shapes a file can take,
-// which neither hub holds: several slides in one file, a blank `equation:`, and a value that is
-// not text. This runs both on a planted deck in a temporary directory.
+// which neither hub holds: several slides in one file, a blank `equation:`, a value that is not
+// text, and an equation slide's display formula. This runs both on a planted deck in a temporary
+// directory.
 describe('the count of written equations', () => {
-    it('agrees with the reader on several slides, a blank equation and a value that is not text', () => {
+    it('agrees with the reader on several slides, a blank equation, a value that is not text and an equation slide', () => {
         const text = [
             '---',
             'kind: project',
@@ -321,6 +355,14 @@ describe('the count of written equations', () => {
             'kind: project',
             "equation: ''",
             '---',
+            '---',
+            'kind: equation',
+            '---',
+            '# The loss',
+            '',
+            '$$ L = \\sum_i (y_i - \\hat{y}_i)^2 $$',
+            '',
+            'Summed over the samples.',
             ''
         ].join('\n');
         const hub = plantScratch('oculus-integrity-', {
@@ -336,7 +378,7 @@ describe('the count of written equations', () => {
             globs: folderGlobs()
         }).read({ key: root.key, dir: root.dir }, 'projects/active/alpha/present');
         const drawn = drawnEquations(deck).length;
-        expect(drawn).toBe(2);
-        expect(writtenEquations(text)).toBe(2);
+        expect(drawn).toBe(3);
+        expect(writtenEquations(text)).toBe(3);
     });
 });

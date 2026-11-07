@@ -21,10 +21,12 @@
     // A rule runs across the strip above its first line, in a mix of the muted text colour and
     // the hairline colour, so it shows on the slide's frame under every theme. The facts wrap to
     // as many lines as they need, every fact drawn and none broken across two lines. The strip is
-    // set in the slide's small type (`--slide-fs-small`, themes/slide.css) at the frame's factor
-    // 1, so it scales with the text size and the theme, outside the content's factor. With the
-    // pane's Project facts toggle off its words and its rule are hidden and its room is kept, so
-    // the slide is laid out and measured the same either way.
+    // set in a type size of its own (`--slide-fs-fact`, themes/slide.css), its values at 12 px and
+    // its labels at 10 px at the design size, below the slide's small type, so the facts read as
+    // a foot under the content. The size carries no fit factor: it scales with the text size and
+    // the theme, outside the content's factor. With the pane's Project facts toggle off its words
+    // and its rule are hidden and its room is kept, so the slide is laid out and measured the same
+    // either way.
 
     import Dot from '../Dot.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -149,20 +151,20 @@
 </div>
 
 <style>
-    /* The strip is set in the slide's small type, and every measure below is in that type: the
-       rule above it and the room between the rule and the first line of facts, the gap between
-       two facts on a line and between two lines, the gap between a label and its value and the
-       label's size. The dot before a hued value is as wide as half the strip's type, 9 px at the
-       design size. */
+    /* The strip is set in its own type, and every measure below is in that type: the rule above
+       it and the room between the rule and the first line of facts, the gap between two facts on
+       a line and between two lines, the gap between a label and its value and the label's size,
+       10 px of the 12 px design size. The dot before a hued value is as wide as half the strip's
+       type, 6 px at the design size. */
     .facts {
-        --fact-label: 0.72em;
+        --fact-label: calc(10em / 12);
         --fact-gap: 1em;
         --fact-between: 0.4em;
         --dot-size: 0.5em;
 
         padding-top: 0.6em;
         border-top: 1px solid color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
-        font-size: var(--slide-fs-small);
+        font-size: var(--slide-fs-fact);
         line-height: 1.3;
     }
 
