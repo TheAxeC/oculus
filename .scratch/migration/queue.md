@@ -1,11 +1,13 @@
-In flight (5 of 6 slots in use):
-- O161 (cards made cheaper, every card kept in the page): repair round 1 built and reviewed; landing waits on open item 715.
-- O165 (the guides redesigned): repair round 1 built and reviewed; the prose reviews of HELP.md and data-map.md are done, decks.md next; Axel approves the three pages before they land.
-- O151 (a deck for every research project): first report in; 195 of 397 slides measured Too tall and sent to its builder to split or cut.
-- O159 (one folder search per hub): repair round 1 built and reviewed; /land next, with the item 6 fix for a filing folder moved in.
-- O166 (the record pages made one design): repair round 1 built and reviewed; landing next.
+Paused until Axel says go.
 
-Queued, in order (0): none.
+In flight (4 of 6 slots in use):
+- O161 (cheaper cards): landing next.
+- O165 (the guides redesigned): writing findings applied next, then Axel's approval.
+- O159 (one folder search per hub): landing next.
+- O166 (the record pages made one design): landing next.
+
+Queued, in order (1):
+- O151 (a deck for every research project): deleted; runs again from the start.
 
 Owed looks: none.
 

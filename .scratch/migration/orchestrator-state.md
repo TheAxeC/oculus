@@ -66,19 +66,6 @@ dispatch:           # steps in flight, up to six (Z632)
   cases_ruling: .scratch/migration/agents/briefs/O166-cases.md
   landing: not-started
   shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
-- step: O151
-  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (af22dc2fbdb77b4ae, claude-opus-5-5, 211381 tokens, 60 tool uses, 16.4 min)
-  base: 74deadb1f
-  worktree: .agents/worktrees/migration-O151
-  executor: agent
-  worker: claude:opus
-  session_id: a390d232185b7b901 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O151-report.md
-  builder_usage: "build: 120120 tokens, 1419 tool uses, 210.2 min"
-  too_tall: 1 (agents/briefs/O151-too-tall-1.md, 195 of 397 slides, sent 2026-11-07; brief item 5, inside the build)
-  round: 0
-  landing: not-started
 - step: O159
   brief_check: .scratch/migration/agents/reviews/O159-brief-check.md (a1e03b87281fab689, claude-opus-5-5, 250038 tokens, 80 tool uses, 13.5 min)
   base: 2e8c2c4dd
@@ -95,6 +82,7 @@ dispatch:           # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
+- The findings of a /writing run are handled by the orchestrator itself: it applies them to the text it reviewed, and never sends them to a builder or a repair round (Axel, 2026-11-07).
 - Every step is built by a builder agent; no step is built inline by the orchestrator unless Axel asks in his own words for that step to be inline (`plan.md` Rulings, "No inline builds", 2026-11-06).
 - A review finding of a builder's unapproved script is never raised as an open item: it is closed in automode under the ruling "Unapproved builder scripts" (`plan.md` Rulings), the breach recorded, the builder's list of the commands and their files taken in the repair round, and those hunks read by the orchestrator (Axel, 2026-10-25).
 - A decision for Axel is an open item booked in this file, or it is not raised; never loose options in a report or a brief draft (Axel, 2026-10-22).
@@ -204,6 +192,8 @@ dispatch:           # steps in flight, up to six (Z632)
 
 ## The pause
 
+In force from 2026-11-07, Axel: "This is still not permission to continue". Nothing is dispatched, resumed, refuted, landed or prepared, and no /writing finding is applied, until he says go.
+
 Lifted 2026-10-26 by Axel: "Please resume the builders". O86's, O89's and O84's builders are resumed by message with their context. Before it, from 2026-10-26, Axel: "Can you pause the 3 agents?". The three builders were stopped through the stop tool: O86's (a932a66494c50d411) mid repair round 1, O89's (a6462cf6ae75f9bfa) mid repair round 1 (it was at item 7, the palette page), and O84's (a6b9bb9efcca75eff) mid its first build. Each worktree keeps its partial edits; each builder can be resumed by message with its context.
 
 Lifted 2026-10-12 by Axel's go ("Please continue orchestration", with 58 (a), 59 (a), 60 (a)). Before it, from 2026-10-12, Axel: "Can you pause the builder". D68's builder (a3e55090e05050b84) was stopped mid round 1 through the stop tool; its worktree keeps the round's partial edits. Nothing is resumed, dispatched, refuted or landed until he says go; on his go the same builder is resumed with the round-1 message.
@@ -232,9 +222,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 715 (2026-11-07): O161's builder wrote three scripts no ruling approves (`agents/reviews/O161-refuter.md`, Spec 1 and Spec 2, and over round 1 Spec 2). Spec 1: a jsdom test harness placed in the worktree's `tests/ui/menu/`, run there and removed, its source not quoted; it is the only run behind item 3 (the menu built on its first right-click, menu key or Shift+F10). Spec 2: nine profile-reading scripts in the scratchpad's `anal/`, behind item 1's table of where Lit Watch's time goes. The reviewer reran the profile scripts and got the same figures. The review over round 1 (same file, "Repair round 1, refuted", Spec 2) found a third: a program run through `svelte/compiler`'s `compile` on the base and final `RadarCard.svelte`, its source not quoted, behind item 6's claim that the threat paragraph's template is unchanged; under (a) that claim is checked by reading the two files and at the look. Options: (a) nothing any of them produced is used; item 3 is checked at landing by the look on 8797 (first right-click, menu key, Shift+F10, Escape returning the focus), and item 1's table by a profile taken at landing; (b) approve all three and use their output as it stands. Recommendation: (a), since the look and the landing's profile check the same claims on the real app. (b) is the lazy option. Until you rule, nothing from any of them is used, and O161's landing waits. O159's review over round 1 (`agents/reviews/O159-refuter.md`, "Repair round 1, refuted", Standards 1) found a fourth of the same kind: a reader of the session's transcript that printed the earlier case-run program's text, its source not quoted. Nothing it produced is used: the item-6 lines stand on the reviewer's own run of the program's quoted source, so O159's landing does not wait on this item.
+None.
 
 ## Closed items
+
+- Open item 715 (2026-11-07), closed by Axel the same day: (a), nothing the unapproved scripts produced is used, as `plan.md` Rulings "Open item 715" says; (b) was the lazy option. The item as raised: O161's builder wrote three scripts no ruling approves (`agents/reviews/O161-refuter.md`, Spec 1 and Spec 2, and over round 1 Spec 2). Spec 1: a jsdom test harness placed in the worktree's `tests/ui/menu/`, run there and removed, its source not quoted; it is the only run behind item 3 (the menu built on its first right-click, menu key or Shift+F10). Spec 2: nine profile-reading scripts in the scratchpad's `anal/`, behind item 1's table of where Lit Watch's time goes. The reviewer reran the profile scripts and got the same figures. The review over round 1 (same file, "Repair round 1, refuted", Spec 2) found a third: a program run through `svelte/compiler`'s `compile` on the base and final `RadarCard.svelte`, its source not quoted, behind item 6's claim that the threat paragraph's template is unchanged; under (a) that claim is checked by reading the two files and at the look. Options: (a) nothing any of them produced is used; item 3 is checked at landing by the look on 8797 (first right-click, menu key, Shift+F10, Escape returning the focus), and item 1's table by a profile taken at landing; (b) approve all three and use their output as it stands. Recommendation: (a), since the look and the landing's profile check the same claims on the real app. (b) is the lazy option. Until you rule, nothing from any of them is used, and O161's landing waits. O159's review over round 1 (`agents/reviews/O159-refuter.md`, "Repair round 1, refuted", Standards 1) found a fourth of the same kind: a reader of the session's transcript that printed the earlier case-run program's text, its source not quoted. Nothing it produced is used: the item-6 lines stand on the reviewer's own run of the program's quoted source, so O159's landing does not wait on this item.
 
 - Open item 713 (2026-11-06), closed by Axel the same day: (a), cheaper cards, as `plan.md` Rulings "Open item 713" says; `content-visibility: auto` alone was the lazy option. The item as raised: O161: the stand-in design cannot keep Cmd+F as it works today. O161's builder handed back before changing any code (`agents/reviews/O161-report.md`). Its evidence is Chromium's find-in-page source (`text_finder.cc`, `find_in_page.cc`), which the desktop app's find bar also uses (`src/desktop/windows/find-bar.ts:107-111`). When a find lands in a stand-in and the stand-in is replaced by the drawn card, the matched text is gone, and Chromium searches again from where the stand-in was. In one direction that skips every match of the card: Shift+Enter, or Enter, depending on the order of the swap. No order serves both. Cards drawn after the find began also show no yellow highlight until Chromium re-scans. This is read from Chromium's source and not seen in a browser; a real Cmd+F cannot be driven from here, so the look at landing would be the first sight of it. Ruling 712 (a) and your "exactly like it works today" rule this out.
   Axel: Cmd+F stays unchanged, not negotiable; the options are rewritten so each keeps every card's text in the page from the first frame, so Cmd+F finds, counts, orders, steps and highlights exactly as today. Measured on the scratch server on 8797 (main with O158), Lit Watch on the scratch hub, one run each, by `performance.now`, a `longtask` observer and the resource timings in the page: from the click on the Lit Watch tab to the cards painted, 6.24 s; one main-thread task of 5.90 s starts at the click, and no request is made during it; the 678 cards exist at 6.19 s and are painted about 50 ms later; the 678 cards hold 37,147 elements (55 per card), and cloning all of them takes 66 ms; a forced style and layout of the grid takes 16 ms. So nearly all of the time is JavaScript run while the cards are made, about 8.7 ms per card, and almost none is layout or paint. The earlier option of `content-visibility: auto` saves only layout and paint, so it would leave Lit Watch about as slow as today; it is dropped.
