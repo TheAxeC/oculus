@@ -188,3 +188,67 @@ None.
 - `.scratch/migration/agents/briefs/O161.md` (modified) and the three untracked rulings in the worktree: these are the orchestrator's copies. I did not judge them as builder work. Leaving them out of the cherry-pick is a landing matter.
 
 Reviewer usage: a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min.
+
+## Repair round 1, refuted
+
+Verification lines (the reviewer's runs, from the worktree root):
+
+- `npm run test:quick -- --base 75bf4dd10`: `test:quick: 57 changed file(s), from git since 75bf4dd10`, `84 test file(s)`; prettier, ASCII gate, svelte-kit sync, eslint, svelte-check (`585 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`), vitest, vitest checks and vitest slow all `ok`; `test:quick: 100.9 s; every command passed`.
+- Scoped tests (34 files that name a changed or new src file, two more than the builder's list, plus `size.test.ts`): `Test Files  35 passed (35)`, `Tests  563 passed (563)`. `page-entry.test.ts` verbose: C2 "finds the fields and the entries of a feed whose entries are replaced by a new list" passes, `Tests  31 passed (31)`.
+- Perl ASCII gate over the 41 changed and new src files and `page-entry.test.ts`: nothing printed.
+- `wc -l`: `context.ts` 879, `source.svelte.ts` 866, `html.ts` 804, `LeadCard.svelte` 455, `Tooltip.svelte` 444.
+- `utils/unused-exports.sh` against the base list: `diff` prints nothing.
+- History-word grep over the added comment lines and test titles: 12 hits, each "before" in the running sense or "no longer holds" of a running client.
+- `grep -rln "import Glyph from" src | wc -l`: 72, and the 72 paths equal the report's list (`ui/menu/trigger/MenuOpener` included).
+- `idents.ts:90`: `return reads.held(entries, \`feed index ${kind}\`, () => indexOf(kind, entries));`
+- `boundaries.test.ts` verbose: "holds no process-wide state under src" passes, `Tests  11 passed (11)`.
+- `hub-portfolio.test.ts` alone (`--tagsFilter slow --testTimeout 20000`): one case failed by time under load (G32 resolution case), `Tests  1 failed | 15 passed (16)`; the step does not change the file, and it passed inside the reviewer's full run.
+- `tests/checks/source`, `tree`, `imports`: `Tests  107 passed (107)`. `git diff 75bf4dd10 --stat -- tests/checks` and `-- docs/HELP.md docs/data-map.md docs/decks.md` print nothing.
+- The round's delta: only `tests/state/forms/page-entry.test.ts` differs from the snapshot (the `createReadMemo` import and `reads: createReadMemo()` in C2's sources).
+
+Not run: the jsdom harness and the `anal/*.mjs` scripts (open item 715), `npm run diagrams` (it writes into `docs/`), and the quoted `git grep` and `git status --untracked-files=all` forms.
+
+### Verdicts
+
+- Item 1 (profile first): holds by reading for the mapping from each profile entry to its source. The times, and the decisions to leave `Menu.svelte`, `RecordCard.svelte` and `Card.svelte` uncut, rest on the `anal/` output, which is not used; the profile at landing settles them.
+- Item 2 (a card's page found without the whole feed): holds (`idents.ts:90`, `feedPage` through `feedEntryOf(kind, feed.entries, ident, reads)`, `context.ts:180`; C2 runs the memo path).
+- Item 3 (the menu built when first opened): holds by reading (`{#if menu.built || open}`; the first right-click, menu key, Shift+F10 or non-mouse press handed to the trigger after `flushSync`; a prevented event left alone). The look settles behaviour (C5).
+- Item 4 (markdown once per text and per math): holds by reading.
+- Item 5 (the other per-card work): holds by reading.
+- Item 6 (nothing a reader sees or does changes): holds by reading for the DOM text and structure; the rest is the look. The threat paragraph's template claim rests on a program whose source is not quoted (Spec 2).
+- Item 7 (the words): holds.
+- Item 8 (the time to show): holds for the builder's part; the estimate rests on output that is not used, and the measurement is at landing.
+- Clash ruling: holds in code (boundaries case passes, `tests/checks` untouched, no module-level mutable among the added lines). The report's account of where each Glyph's memo comes from is wrong for the controls mounted by `PdfControl` (Proof 1).
+- Redo ruling: holds; round 1 changed none of the twelve files.
+- C1: met. C2: met. C3 to C9: not verifiable here; the look settles each.
+- Round 1 item 1 (C2 reaches the memo): closed. Item 2 (the 72 Glyph importers): listed, with the memo source wrong in one place (Proof 1). Item 3 (nothing claimed from an unapproved script): closed for the harness and `anal/`; a third program, the template compile, is not marked (Spec 2). Item 4 (the full list once): closed as far as the files show.
+
+### 1. Spec
+
+1. `O161-report.md:9-15`, "## Open items of the state file (`orchestrator-state.md:216-220`, verbatim)" ... "None.": copied from the worktree's copy of the state file at the base, while the main state file holds open item 715. Failure scenario: a reader takes the report's list as "no open items" while item 715, which decides whether the marked evidence may be used, is open. Verdict: none.
+2. The report, "User-visible changes and what the look compares", and the DONE row of item 6: "the compiled template of the paragraph is `<p class="threat ..."><!> <span></span></p>` for the base and for the final file (read from `svelte/compiler`'s `compile` output of both)". The program and its command are not quoted and the sentence is not marked as resting on an unapproved script. The reviewer's reading finds the template equal to the base's. Failure scenario: a reader takes item 6's DONE row as resting on a run no reviewer can repeat. Verdict: none.
+
+### 2. Proof
+
+1. The report, "Where each memo comes from": "no `mount`, `hydrate` or `createRawSnippet` appears in `src` ... So every component sits under one of the four route roots." `grep -rnE "createRawSnippet|\bmount\(|\bhydrate\(" src` lists `Markdown.svelte:203` (mounts `ToolButton` with `context: contexts`, so it gets the memo), `side-panel.ts:106` and `viewer.svelte.ts:527` (mount `PdfControl` with no `context`; `PdfControl.svelte:10,58-66` draws `ToolButton` and so `Glyph`, where `useHtmlMemo()` returns undefined and `sanitiseSvg` filters afresh, as on the base). Failure scenario: the look checks icons only in the views the report lists, and a later change that trusts the sentence makes `useHtmlMemo` required, so the PDF viewer's buttons throw or lose their icons. Verdict: none on an item; the fix is the report's text at landing.
+
+### 3. Standards
+
+None.
+
+### 4. Behaviour
+
+None.
+
+### Declined to judge
+
+- The jsdom harness and the `anal/*.mjs` scripts: not run, nothing they produced used (open item 715). Item 1's times, the bits-ui and DOMPurify split, item 8's estimate and the uncut components go to the profile at landing; C5 and the tooltip's first-event hand-over to the look.
+- Whether open item 715 was in the main state file when the report was written: `git log -p -- .scratch/migration/orchestrator-state.md` on main settles it.
+- That round 1 ran the full list once and made its edit with Edit: the builder's transcript settles both.
+- The quoted `git grep` and `git status --untracked-files=all` forms: outside the three git commands.
+- `npm run diagrams`: it writes `docs/diagrams/`; the eight changed files were not checked against a regeneration.
+- The `hub-portfolio.test.ts` failure in the reviewer's run of that file alone: the step does not change the file and it passed inside the full run.
+- `flushSync` reached from inside an effect through `Tooltip.svelte` `focused`: no caller found; a keyboard focus into a never-built ToolButton issued from an effect, at the look, settles it.
+- The ledger copies under the worktree's `.scratch/`: a landing matter.
+
+Reviewer usage: a96cb64bab02b38fc, claude-opus-5-5, 246209 tokens, 51 tool uses, 14.5 min.

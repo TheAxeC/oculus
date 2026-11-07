@@ -33,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a336874264e7be26f (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O161-report.md
-  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits redone (agents/briefs/O161-redo.md; 112573 tokens, 104 tool uses, 18.1 min)
-  reviewer_report: .scratch/migration/agents/reviews/O161-refuter.md (a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min)
+  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min); round 0 build, handed back on the boundaries clash (265181 tokens, 325 tool uses, 106.7 min); the clash ruling built (258775 tokens, 249 tool uses, 48.8 min); the script-made edits redone (agents/briefs/O161-redo.md; 112573 tokens, 104 tool uses, 18.1 min); round 1 (195430 tokens, 47 tool uses, 12.5 min)
+  reviewer_report: .scratch/migration/agents/reviews/O161-refuter.md (a43610d99c434bb8e, claude-opus-5-5, 312868 tokens, 89 tool uses, 18.7 min); over round 1: a96cb64bab02b38fc, claude-opus-5-5, 246209 tokens, 51 tool uses, 14.5 min
   round: 1 (agents/briefs/O161-round-1.md, sent 2026-11-07; before it, round 0, the cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
   shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing
@@ -75,6 +75,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a390d232185b7b901 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O151-report.md
+  builder_usage: "build: 120120 tokens, 1419 tool uses, 210.2 min"
+  too_tall: 1 (agents/briefs/O151-too-tall-1.md, 195 of 397 slides, sent 2026-11-07; brief item 5, inside the build)
   round: 0
   landing: not-started
 - step: O159
@@ -86,8 +88,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a1fc9c46cf69b0c9f (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O159-report.md
-  builder_usage: 301370 tokens, 330 tool uses, 91.5 min
-  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min); .scratch/migration/agents/reviews/O159-refuter.md (a864d9923908a74ce, claude-opus-5-5, 268862 tokens, 59 tool uses, 15.6 min)
+  builder_usage: "build: 301370 tokens, 330 tool uses, 91.5 min; round 1: 229668 tokens, 143 tool uses, 37.2 min"
+  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min); .scratch/migration/agents/reviews/O159-refuter.md (a864d9923908a74ce, claude-opus-5-5, 268862 tokens, 59 tool uses, 15.6 min); over round 1: ab49ab10318c7d20f, claude-opus-5-5, 252595 tokens, 62 tool uses, 16.4 min
   round: 1 (agents/briefs/O159-round-1.md, sent 2026-11-07)
   landing: not-started
 ```
@@ -230,7 +232,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 715 (2026-11-07): O161's builder wrote two kinds of script no ruling approves (`agents/reviews/O161-refuter.md`, Spec 1 and Spec 2). Spec 1: a jsdom test harness placed in the worktree's `tests/ui/menu/`, run there and removed, its source not quoted; it is the only run behind item 3 (the menu built on its first right-click, menu key or Shift+F10). Spec 2: nine profile-reading scripts in the scratchpad's `anal/`, behind item 1's table of where Lit Watch's time goes. The reviewer reran the profile scripts and got the same figures. Options: (a) nothing either produced is used; item 3 is checked at landing by the look on 8797 (first right-click, menu key, Shift+F10, Escape returning the focus), and item 1's table by a profile taken at landing; (b) approve both and use their output as it stands. Recommendation: (a), since the look and the landing's profile check the same claims on the real app. (b) is the lazy option. Until you rule, nothing from either is used, and O161's repair round goes on without them.
+- Open item 715 (2026-11-07): O161's builder wrote three scripts no ruling approves (`agents/reviews/O161-refuter.md`, Spec 1 and Spec 2, and over round 1 Spec 2). Spec 1: a jsdom test harness placed in the worktree's `tests/ui/menu/`, run there and removed, its source not quoted; it is the only run behind item 3 (the menu built on its first right-click, menu key or Shift+F10). Spec 2: nine profile-reading scripts in the scratchpad's `anal/`, behind item 1's table of where Lit Watch's time goes. The reviewer reran the profile scripts and got the same figures. The review over round 1 (same file, "Repair round 1, refuted", Spec 2) found a third: a program run through `svelte/compiler`'s `compile` on the base and final `RadarCard.svelte`, its source not quoted, behind item 6's claim that the threat paragraph's template is unchanged; under (a) that claim is checked by reading the two files and at the look. Options: (a) nothing any of them produced is used; item 3 is checked at landing by the look on 8797 (first right-click, menu key, Shift+F10, Escape returning the focus), and item 1's table by a profile taken at landing; (b) approve all three and use their output as it stands. Recommendation: (a), since the look and the landing's profile check the same claims on the real app. (b) is the lazy option. Until you rule, nothing from any of them is used, and O161's landing waits. O159's review over round 1 (`agents/reviews/O159-refuter.md`, "Repair round 1, refuted", Standards 1) found a fourth of the same kind: a reader of the session's transcript that printed the earlier case-run program's text, its source not quoted. Nothing it produced is used: the item-6 lines stand on the reviewer's own run of the program's quoted source, so O159's landing does not wait on this item.
 
 ## Closed items
 
