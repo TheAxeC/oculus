@@ -36,11 +36,29 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O167
-  brief_check: "running: ae8f0a511f47d2697"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O167-brief-check.md (ae8f0a511f47d2697, claude-opus-5-5, 241334 tokens, 80 tool uses, 11.1 min)
+  base: 2d28fe2ac
+  worktree: .agents/worktrees/migration-O167
+  executor: agent
+  worker: claude:opus
+  session_id: a63b8b74ba892cc66 (claude-opus-5-5)
+  launched: 2026-11-07
+  report: .scratch/migration/agents/reviews/O167-report.md
+  round: 0
+  shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O169 of this plan; O167 writes lines 130-230 (the Save buttons and the "Saved into" line), O169 lines 55-70 (the scope list), disjoint hunks, so the cherry-pick merges them without a conflict
+  landing: not-started
 - step: O169
-  brief_check: "running: a606a2ddc903c57e5"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O169-brief-check.md (a606a2ddc903c57e5, claude-opus-5-5, 219750 tokens, 87 tool uses, 10.5 min)
+  base: 32585f1f1
+  worktree: .agents/worktrees/migration-O169
+  executor: agent
+  worker: claude:opus
+  session_id: a7454e5b279e2a62f (claude-opus-5-5)
+  launched: 2026-11-07
+  report: .scratch/migration/agents/reviews/O169-report.md
+  round: 0
+  shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O167 of this plan; O169 writes lines 55-70, O167 lines 130-230, disjoint hunks, so the cherry-pick merges them without a conflict
+  landing: not-started
 - step: O170
   landing: preparing
 ```
