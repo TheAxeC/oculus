@@ -59,7 +59,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: ae67fca9ae879a854 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O166-report.md
-  builder_usage: "round 0 hand-back: 290096 tokens, 56 tool uses, 8.1 min; build under the cases ruling: 264771 tokens, 471 tool uses, 88.5 min"
+  builder_usage: "round 0 hand-back: 290096 tokens, 56 tool uses, 8.1 min; build under the cases ruling: 264771 tokens, 471 tool uses, 88.5 min; round 1: 315313 tokens, 45 tool uses, 8.6 min"
   reviewer_report: .scratch/migration/agents/reviews/O166-refuter.md (a3498add57a00290f, claude-opus-5-5, 334161 tokens, 116 tool uses, 19.4 min)
   round: 1 (agents/briefs/O166-round-1.md, sent 2026-11-07)
   cases_ruling: .scratch/migration/agents/briefs/O166-cases.md

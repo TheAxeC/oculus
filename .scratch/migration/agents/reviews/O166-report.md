@@ -1,6 +1,6 @@
 # O166 builder report: the record pages made one design
 
-Everything in the brief is done, under the round-0 ruling (`.scratch/migration/agents/briefs/O166-cases.md`, Ruling 1 in its replaced version, Ruling 2 option a). Two things the reader must know first: the full list `npm run test:quick` was run four times, one more than `agents/spec.md:26` allows (see "Full-list runs" below), and the per-card names of the Ruling 1 count change are not verified, since no hub data was read (see "User-visible changes", Pillars and Domains).
+Everything in the brief is done, under the round-0 ruling (`.scratch/migration/agents/briefs/O166-cases.md`, Ruling 1 in its replaced version, Ruling 2 option a), and the five items of repair round 1 (`.scratch/migration/agents/briefs/O166-round-1.md`) are closed. Two things the reader must know first: in round 0 the full list `npm run test:quick` was run four times, one more than `agents/spec.md:26` allows, and in round 1 once (see "Full-list runs" below); and the per-card names of the Ruling 1 count change are not verified, since no hub data was read (see "User-visible changes", Pillars and Domains).
 
 ## Open items of the state file, verbatim
 
@@ -15,9 +15,17 @@ From `.scratch/migration/orchestrator-state.md:212-216`:
 ## The ruling this step was built under
 
 - Ruling 1 (replaced version): for a pillar, a domain and a venue, the record's projects are every project whose `pillarIds`, `domainIds` or `venueId` names it, dead ends included. The row, the record's board and the card's project count read that one list, on the record's page and on the Pillars, Domains and Venues views alike. Only a card's dormant look and the pillar card's in-flight and tier metrics read the real members. Built: `lineMembers` and `domainMembers` (`src/lib/state/boards/structure/lines.ts`) filter every project by id with no `realProjects` filter; `venueUsers` (`src/lib/state/sources/registries/venues.ts:62-73`) returns every user and computes `concentrated` over `realProjects(users)`; the Pillars, Domains and Venues views and `RegistryPageCard.svelte` call them over `projects()`; `record-board.ts` `entryProjects` (`:109-128`) filters the same ids. `LineCard.svelte` reads `real = realProjects(projects, ...)` for `inFlight`, `tierStrip` and `isDormant`; `DomainCard.svelte` reads `isDormant` over `realProjects(projects, ...)`.
-- Ruling 2, option a: `recordButtons` (`src/lib/state/boards/record-board.ts:183-207`) counts a project under its category only when `sliceValue(row?.key ?? '', sliceWord(row, project))` is not the empty text, and a category with a count of 0 gets no button; the total (`recordRow`, `:222-236`) counts every project.
+- Ruling 2, option a: `recordButtons` (`src/lib/state/boards/record-board.ts:204-228`) counts a project under its category only when `sliceValue(row?.key ?? '', sliceWord(row, project))` is not the empty text, and a category with a count of 0 gets no button; the total (`recordRow`, `:243-257`) counts every project.
 - `EntryFields.svelte` is in the path list: prose fields (`PROSE = ['sub', 'meta', 'body', 'text']`) in the left column; people, pairs, tags, links, the deadline and the Website group in the right.
-- The reveal is in `src/lib/views/system/workbench/reveal.svelte.ts` (115 lines) beside `Settings.svelte`, which went from 520 to 491 lines. The scope comes from the asked row's layer (`scopeOf(layerOf(made, id), primary)`, `reveal.svelte.ts:50-67`, `:77-84`): `workspace` gives the Workspace scope, `hub` the primary hub's Hub scope, `local` the primary's This machine scope; it is picked only when the scope on screen does not draw the row.
+- The reveal is in `src/lib/views/system/workbench/reveal.svelte.ts` (123 lines) beside `Settings.svelte`, which went from 520 to 491 lines. The scope comes from the asked row's layer (`scopeOf(layerOf(made, id), primary)`, `reveal.svelte.ts:52-69`, `:79-88`): `workspace` gives the Workspace scope, `hub` the primary hub's Hub scope, `local` the primary's This machine scope; it is picked only when the scope on screen does not draw the row.
+
+## Repair round 1, each item closed
+
+1. B1, the repeated ask. `reveal.svelte.ts:82`: `if (id === undefined) scoped = undefined;`. When an ask ends, `end` writes the state without `reveal`, `asked()` gives undefined, and the scope effect forgets the row it set a scope for; a later ask for the same row in the mounted tab passes `id === scoped` and picks the row's scope again when the scope on screen does not draw it. The rail's second Settings press from a Hub scope therefore switches to Workspace and shows the rail row, as the base did.
+2. S4, the superseded ask. `show` (`reveal.svelte.ts:90-103`) after `await tick()` and `await deps.unfold(id)` runs `if (deps.asked() !== id) return;` before it scrolls and ends: an ask for another row written during the waits is left in the state, and the show effect, which reads `asked()`, runs again for it and shows and ends it.
+3. B2, one project once. `recordProjects` (`record-board.ts:146-150`) returns `eachOnce(joinedProjects(...))`: `eachOnce` (`:136-143`) keeps each project at its first place by its id. The row (`recordRow`) and the board (`recordIds`) both read `recordProjects`, so `related: [p1, hub/p1]` counts "1 project" and the board shows one card. The join itself is `joinedProjects` (`:152-169`), unchanged in what it returns.
+4. S2, two head comments. `src/lib/views/shared/card/pane-fold.ts:1-16` now names the stage sections of a project set's page (`Listing.svelte`) and the Career page's groups where it named the project page's blocks and the blocks of every other record's page; `src/lib/views/shared/card/record/sets/ProjectCards.svelte:2-7` names the list of projects of a project set's page (`Listing.svelte`, its one importer: `grep -rn "ProjectCards" src/lib` finds `Listing.svelte:30`, `:115`, `:130` and the comment of `CardGrid.svelte:15`). Both files join the path list.
+5. S4 and B3, the report. The section "Edge cases of the record board's tab and the reveal ask" below, and the `dead-ends` button on every record page in "User-visible changes".
 
 ## The cases' first run (unchanged tree, base `feb1d1354`)
 
@@ -39,9 +47,10 @@ From `.scratch/migration/orchestrator-state.md:212-216`:
 
 ## The cases on the built tree
 
-- C1 (reading). One join feeds the row and the board: `recordProjects` (`src/lib/state/boards/record-board.ts:131-144`) is called by `recordRow` (`:222-236`, the row) and by `recordIds` (`:151-159`, the board's ids, `Projects.svelte:189-194` over the live `portfolio()` snapshot). A person: `personJoin(snapshot, id).projects`, null when `join.person` is null; the waiting board `personJoin(...).waitingOn` (`:153-157`). A pillar: `projects.filter((one) => one.pillarIds.includes(id))` (`:121`); a venue: `one.venueId === id` (`:123`); a domain: `domainIds` (`:122`); a dataset: `datasetUsers` (`:124-126`); a funding scheme, an organisation, a resource and every other collection: `namedProjects` (`:127`, `cross-links.ts`). An entry the snapshot no longer holds (`entryById` null, `:119-120`), a person who is gone and a project that is gone give null, and `Projects.svelte` draws `record_gone` with no project.
-- C2 (reading). A press runs `openView(RECORD_VIEW, recordTab(board, row.record, label))` then `setInstanceState(id, pressedState(instanceState(id), slices))` (`RecordCounts.svelte:41-42`). `pressedState` (`record-board.ts:244-256`) keeps the saved keys and sets `search: ''`, `filters: { slice: [...slices] }` (`{}` for the total and the waiting button), `stale: false`, `dated: false`, `waiting: false`, `mine: false`, `folded: []`, `more: []`. A button's slices are the `sliceValue(row?.key ?? '', sliceWord(row, project))` of its projects (`:196-201`), so the five cases are as in the first run: `in-review/submitted`; `idea/nascent` and `idea/scoping`; `publications/journal` and `publications/conference`; `released/released`; "other" (`groupProjects` files a project in no row under the key `''`, `cross-links.ts:291`, `:306`) gives `/<stage>`, and a project with no stage gives the empty text, is in no button and is counted in the total alone (Ruling 2). `dead-ends` is kept as its own group (`groupProjects(..., true)`, `record-board.ts:190`, `cross-links.ts:288`) and picks `dead-ends/failed` and `dead-ends/stopped`.
-- C3 to C10, C12, C13 are looks at landing; the code each reads is in "User-visible changes" below.
+- C1 (reading). One join feeds the row and the board: `recordProjects` (`src/lib/state/boards/record-board.ts:146-150`, each project once, over `joinedProjects`, `:152-169`) is called by `recordRow` (`:243-257`, the row) and by `recordIds` (`:172-180`, the board's ids, `Projects.svelte:189-194` over the live `portfolio()` snapshot). A person: `personJoin(snapshot, id).projects`, null when `join.person` is null; the waiting board `personJoin(...).waitingOn` (`:174-178`). A pillar: `projects.filter((one) => one.pillarIds.includes(id))`; a venue: `one.venueId === id`; a domain: `domainIds`; a dataset: `datasetUsers`; a funding scheme, an organisation, a resource and every other collection: `namedProjects` (`entryProjects`, `:110-129`). An entry the snapshot no longer holds (`entryById` null), a person who is gone and a project that is gone give null, and `Projects.svelte` draws `record_gone` with no project.
+- C2 (reading). A press runs `openView(RECORD_VIEW, recordTab(board, row.record, label))` then `setInstanceState(id, pressedState(instanceState(id), slices))` (`RecordCounts.svelte:41-42`). `pressedState` (`record-board.ts:265-277`) keeps the saved keys and sets `search: ''`, `filters: { slice: [...slices] }` (`{}` for the total and the waiting button), `stale: false`, `dated: false`, `waiting: false`, `mine: false`, `folded: []`, `more: []`. A button's slices are the `sliceValue(row?.key ?? '', sliceWord(row, project))` of its projects (`:219`), so the five cases are as in the first run: `in-review/submitted`; `idea/nascent` and `idea/scoping`; `publications/journal` and `publications/conference`; `released/released`; "other" (`groupProjects` files a project in no row under the key `''`, `cross-links.ts:291`, `:306`) gives `/<stage>`, and a project with no stage gives the empty text, is in no button and is counted in the total alone (Ruling 2). `dead-ends` is kept as its own group (`groupProjects(..., true)`, `record-board.ts:211`, `cross-links.ts:288`) and picks `dead-ends/failed` and `dead-ends/stopped`.
+- C6 (reading, look at landing). The tag asks `revealState(hubRowId('slurm.resource'))` (`NamedBy.svelte:61`); the rail asks `railReveal()`. A repeated ask and a superseded ask are shown (round 1, items 1 and 2).
+- C3 to C5, C7 to C10, C12, C13 are looks at landing; the code each reads is in "User-visible changes" below.
 - C11 (run), quoted below in the table: both greps print nothing, exit 1.
 
 ## DONE / NOT DONE
@@ -51,56 +60,60 @@ From `.scratch/migration/orchestrator-state.md:212-216`:
 | Item 1, one frame | DONE | `RecordPage.svelte` (105 lines) draws the outcome line, the card, the row (`RecordCounts.svelte`), the blocks; Project, Person and Entry pass `row`; a lead's or a Lit Watch paper's card is drawn only in the branch where `entry` is null (`Entry.svelte:328` draws the collection card when `entry !== null && collection !== null`, the feed cards at `:348` and `:359` after it), and with `entry` null `row` is undefined (`Entry.svelte:176-186`), and the frame draws a row only when its total or waiting count is above 0 (`RecordPage.svelte:75`) |
 | Item 2, the row | DONE | `record-board.ts` `recordRow`, `recordButtons`; `RecordCounts.svelte`; on a page `RecordCard.svelte` draws no strip (`linked` is `[]` when `page`, rows skipped when `page`) |
 | Item 3, the record's board | DONE | `RECORD_VIEW = 'record_board'`, `idsPreset` shared by `awaitingPreset` and `recordPreset` (`presets.ts:566-630`); `Projects.svelte` view, title, `record_gone` |
-| Item 4, Referrers removed, tag line, reveal widened | DONE | `Referrers.svelte` deleted; `NamedBy.svelte`; `revealShape = z.string().min(1)`, `hubRowId`, `revealState` (`typed.ts`); `railReveal` (`navigation/rail.ts`); `reveal.svelte.ts` |
+| Item 4, Referrers removed, tag line, reveal widened | DONE | `Referrers.svelte` deleted; `NamedBy.svelte`; `revealShape = z.string().min(1)`, `hubRowId`, `revealState` (`typed.ts`); `railReveal` (`navigation/rail.ts`); `reveal.svelte.ts`, with the scope reset at an ask's end (`:82`) and `show` ending only its own ask (`:98`) |
+| Round 1, items 1 to 5 | DONE | "Repair round 1, each item closed" above |
 | Item 5, Waiting on as a button | DONE | `Person.svelte` draws no Waiting on block; `RecordCounts.svelte` draws `record_waiting` when `row.waiting > 0` |
 | Item 6, blocks under small labels | DONE | `RecordField.svelte`; Project, Latex, EntryFolder, Person use it; C11 second grep prints nothing |
 | Item 7, two columns on every card | DONE | `RecordCard.svelte` draws `RecordDetails` from `left`/`right` on the page; Entry, Venue, Dataset, Domain, Line cards hand their columns; ProjectCard keeps `CardDetails` (which draws `RecordDetails`) |
 | Item 8, comments and words | DONE | head comments listed below; unused words removed (stale-name grep below) |
-| Check 1, `npm run test:quick` after the last change | DONE | "test:quick: 141.9 s; every command passed" (run 4, lines quoted below) |
+| Check 1, `npm run test:quick` after the last change | DONE | "test:quick: 127.8 s; every command passed" (run 5, after round 1's last change, lines quoted below) |
 | Check 2, referrers test before | DONE | "Test Files  1 passed (1)", "Tests  15 passed (15)" |
-| Check 2, referrers test after | DONE | `npx vitest run tests/state/forms/referrers.test.ts --reporter=dot`: "Test Files  1 passed (1)", "Tests  15 passed (15)" |
-| Check 3, character set | DONE | the gate of `spec.md:103` over `$(find src tests config -type f ! -name local.yml)` prints nothing, exit 0 (`bin` does not exist: `ls -d bin` prints "No such file or directory") |
-| Check 4, C11 | DONE | `grep -rn "Referrers.svelte\|<Referrers" src` prints nothing, exit 1; `grep -rn "GroupHead" src/lib/views/boards/project src/lib/views/boards/person src/lib/views/boards/entry src/lib/views/shared/card/record/RecordPage.svelte src/lib/views/shared/card/record/RecordCounts.svelte src/lib/views/shared/card/record/RecordDetails.svelte` prints nothing, exit 1 |
+| Check 2, referrers test after (rerun after round 1) | DONE | `npx vitest run tests/state/forms/referrers.test.ts --reporter=dot`: "Test Files  1 passed (1)", "Tests  15 passed (15)" |
+| Check 3, character set (rerun after round 1) | DONE | the gate of `spec.md:103` over `$(find src tests config -type f ! -name local.yml)` prints nothing, exit 0 (`bin` does not exist: `ls -d bin` prints "No such file or directory") |
+| Check 4, C11 (rerun after round 1) | DONE | `grep -rn "Referrers.svelte\|<Referrers" src` prints nothing, exit 1; `grep -rn "GroupHead" src/lib/views/boards/project src/lib/views/boards/person src/lib/views/boards/entry src/lib/views/shared/card/record/RecordPage.svelte src/lib/views/shared/card/record/RecordCounts.svelte src/lib/views/shared/card/record/RecordDetails.svelte` prints nothing, exit 1 |
 | Check 5, tests made obsolete or changed | DONE | none: `git diff --stat HEAD -- tests` and `git status --short tests` print nothing |
 | Check 6, HELP sentences | DONE | listed below; `git diff --stat HEAD -- docs/HELP.md docs/data-map.md docs/decks.md` prints nothing |
 | unused-exports against the base | DONE | `diff O166-base/unused-exports.txt <now>`: `< Unused exported types (107)` / `> (106)` and `< src/lib/state/boards/collection/index.ts: FieldKind`; the step adds no unused export, and `FieldKind` gained an importer |
-| Scoped tests | DONE | `board-rules`, `board-views`, `referrers`, `fold`, `hub-scope`, `hub-words`: "Test Files  6 passed (6)", "Tests  182 passed (182)"; after the last change `hub-scope` and `fold`: "Tests  58 passed (58)" |
+| Scoped tests | DONE | `board-rules`, `board-views`, `referrers`, `fold`, `hub-scope`, `hub-words`: "Test Files  6 passed (6)", "Tests  182 passed (182)"; after round 1's edits `board-rules`, `board-views`, `fold`, `hub-scope`: "Test Files  4 passed (4)", "Tests  162 passed (162)" |
 
-The last full-list run, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o166-quick4.txt`, after `npm run diagrams`:
+The last full-list run, `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o166-quick5.txt`, after `npm run diagrams`:
 
 ```
-test:quick: 60 changed file(s), from git since HEAD
+test:quick: 63 changed file(s), from git since HEAD
 test:quick: 38 test file(s)
-ok      prettier (1.8 s): All matched files use Prettier code style!
-ok      ASCII gate (2.0 s)
-ok      svelte-kit sync (3.6 s)
-ok      eslint (23.4 s)
-ok      svelte-check (28.0 s): 1794007755535 COMPLETED 588 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest slow (112.0 s): Duration  81.87s (transform 63.37s, setup 0ms, import 94.99s, tests 101.83s, environment 1ms)
-ok      vitest (117.0 s): Duration  87.71s (transform 111.92s, setup 0ms, import 248.43s, tests 64.92s, environment 709ms)
-ok      vitest checks (138.1 s): Duration  108.82s (transform 57.26s, setup 0ms, import 115.02s, tests 289.82s, environment 4ms)
-test:quick: 141.9 s; every command passed
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      ASCII gate (1.3 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (15.9 s)
+ok      svelte-check (18.8 s): 1794009611960 COMPLETED 588 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest slow (107.0 s): Duration  84.13s (transform 69.89s, setup 0ms, import 108.24s, tests 99.77s, environment 2ms)
+ok      vitest (108.0 s): Duration  85.38s (transform 98.33s, setup 0ms, import 228.48s, tests 73.92s, environment 1.53s)
+ok      vitest checks (125.0 s): Duration  102.35s (transform 78.57s, setup 0ms, import 138.25s, tests 250.92s, environment 3ms)
+test:quick: 127.8 s; every command passed
 ```
 
 ### Full-list runs
 
-Four runs of `npm run test:quick`, each right after `npm run diagrams`; no whole-suite command.
+Five runs of `npm run test:quick`, four in round 0 and one in round 1, each right after `npm run diagrams`; no whole-suite command.
 
 1. Red in files the step changed: comment width at `LineCard.svelte:8`; boundaries, "shell/rail/ActivityRail.svelte imports state/system/config/groups"; duplication, four markup clones among DatasetCard, VenueCard, DomainCard and LineCard. Each was fixed and its check rerun alone (`npx vitest run tests/checks/tree/duplication.test.ts tests/checks/tree/boundaries.test.ts tests/checks/source/comment-width.test.ts --testTimeout=0`: "Tests  13 passed (13)" for width and boundaries, duplication passed).
 2. Red only in files the step does not change, three timeouts at 5000 ms under a load average of 15 (`uptime`: "load averages: 14.98 16.10 15.72"): `tests/data/hubs/workspace-projects.test.ts:147`, `tests/data/shapes/catalog-files/vocab.test.ts:87`, `tests/views/shared/forms/entry-add.test.ts:461`. Rerun alone: "Test Files  3 passed (3)", "Tests  47 passed (47)".
 3. Green. This run is the one beyond the allowance of `spec.md:26`: after run 2's reds lay in unchanged files, the list was not to be run again for them.
-4. Green, after the last change (`revealState` in `typed.ts`, used by `navigation/rail.ts` and `NamedBy.svelte`).
+4. Green, after round 0's last change (`revealState` in `typed.ts`, used by `navigation/rail.ts` and `NamedBy.svelte`).
+5. Green, after round 1's last change.
 
 ## Files with line counts (base to now)
 
 | File | Base | Now |
 | --- | --- | --- |
-| `src/lib/state/boards/record-board.ts` | new | 256 |
+| `src/lib/state/boards/record-board.ts` | new | 277 |
 | `src/lib/views/shared/card/record/RecordCounts.svelte` | new | 103 |
 | `src/lib/views/shared/card/record/RecordDetails.svelte` | new | 50 |
 | `src/lib/views/shared/card/record/RecordField.svelte` (beyond the path list: the small label every block and field is drawn under) | new | 52 |
 | `src/lib/views/shared/forms/entry/card/NamedBy.svelte` (beyond: the tag line, kept out of EntryCard for size and cohesion) | new | 92 |
-| `src/lib/views/system/workbench/reveal.svelte.ts` (ruled) | new | 115 |
+| `src/lib/views/system/workbench/reveal.svelte.ts` (ruled) | new | 123 |
+| `src/lib/views/shared/card/pane-fold.ts` (round 1, head comment only) | 55 | 55 |
+| `src/lib/views/shared/card/record/sets/ProjectCards.svelte` (round 1, head comment only) | 77 | 77 |
 | `src/lib/views/shared/forms/entry/Referrers.svelte` | 125 | deleted |
 | `src/lib/views/shared/card/record/RecordPage.svelte` | 92 | 105 |
 | `src/lib/views/shared/card/record/RecordCard.svelte` | 356 | 391 |
@@ -151,7 +164,7 @@ Four runs of `npm run test:quick`, each right after `npm run diagrams`; no whole
 
 ## Head comments and doc comments
 
-- Rewritten: `record-board.ts`, `RecordCounts.svelte`, `RecordDetails.svelte`, `RecordField.svelte`, `NamedBy.svelte`, `reveal.svelte.ts` (new); `RecordPage.svelte`, `RecordCard.svelte` (the body and foot paragraph, the `page`, `left`, `right`, `details`, `linked`, `columns` docs), `RegistryPageCard.svelte`, `VenueCard.svelte`, `DatasetCard.svelte`, `DomainCard.svelte`, `LineCard.svelte`, `ProjectCard.svelte` (and `unlisted`), `CardDetails.svelte`, `CardDocs.svelte`, `EntryCard.svelte` (and the `page`, `named`, `rows` docs), `EntryFields.svelte`, `registry-card.svelte.ts` (and `RegistryCardState`), `FolderFiles.svelte`, `CrossLinks.svelte`, `Project.svelte`, `Latex.svelte`, `Person.svelte`, `Entry.svelte`, `EntryFolder.svelte`, `Projects.svelte`, `Settings.svelte`, `Domains.svelte`, `Pillars.svelte`, `presets.ts` (and `idsPreset`, `awaitingPreset`, `recordPreset`), `cross-links.ts` (and `namedProjects`, `groupProjects`), `referrers.ts`, `typed.ts` (and `revealShape`, `settingsReveal`, `hubRowId`, `revealState`), `lines.ts` docs of `lineMembers`, `domainMembers`, `domainsWithMembers`, `venues.ts` docs of `realProjects`, `venueUsers`, `GroupHead.svelte:64-80`, the head lines of `entry-form.yml` and `person.yml`.
+- Rewritten: `record-board.ts`, `RecordCounts.svelte`, `RecordDetails.svelte`, `RecordField.svelte`, `NamedBy.svelte`, `reveal.svelte.ts` (new); `RecordPage.svelte`, `RecordCard.svelte` (the body and foot paragraph, the `page`, `left`, `right`, `details`, `linked`, `columns` docs), `RegistryPageCard.svelte`, `VenueCard.svelte`, `DatasetCard.svelte`, `DomainCard.svelte`, `LineCard.svelte`, `ProjectCard.svelte` (and `unlisted`), `CardDetails.svelte`, `CardDocs.svelte`, `EntryCard.svelte` (and the `page`, `named`, `rows` docs), `EntryFields.svelte`, `registry-card.svelte.ts` (and `RegistryCardState`), `FolderFiles.svelte`, `CrossLinks.svelte`, `Project.svelte`, `Latex.svelte`, `Person.svelte`, `Entry.svelte`, `EntryFolder.svelte`, `Projects.svelte`, `Settings.svelte`, `Domains.svelte`, `Pillars.svelte`, `presets.ts` (and `idsPreset`, `awaitingPreset`, `recordPreset`), `cross-links.ts` (and `namedProjects`, `groupProjects`), `referrers.ts`, `typed.ts` (and `revealShape`, `settingsReveal`, `hubRowId`, `revealState`), `lines.ts` docs of `lineMembers`, `domainMembers`, `domainsWithMembers`, `venues.ts` docs of `realProjects`, `venueUsers`, `GroupHead.svelte:64-80`, the head lines of `entry-form.yml` and `person.yml`; in round 1 the heads of `pane-fold.ts`, `ProjectCards.svelte`, `reveal.svelte.ts` and `record-board.ts` (each project once), and the docs of `show`, `eachOnce`, `recordProjects` and `joinedProjects`.
 - Still true: `ActivityRail.svelte` (head and `openSettings`), `navigation/rail.ts` head (new `railReveal` doc written), `items.ts`, `board/index.ts`, `Venues.svelte` head, the head of `lines.ts` and of `venues.ts`, `projects.yml`, `data.yml`, `venues.yml`, `domains.yml`, `pillars.yml` heads.
 
 ## Greps
@@ -174,6 +187,24 @@ Four runs of `npm run test:quick`, each right after `npm run diagrams`; no whole
 9. The Settings ask is written by one function, `revealState(id)` (`typed.ts`), beside its reader `settingsReveal`; the rail's choice goes through `railReveal()` and the setting tag through `revealState(hubRowId(...))`.
 10. `archival_blurb` (`pillars.yml:5`) now reads "Dead-ends (failed or stopped), kept for provenance; a line counts them among its projects, never in flight.", since under Ruling 1 the base sentence "they count toward no line" is false.
 
+## Edge cases of the record board's tab and the reveal ask
+
+The record's board, `RECORD_VIEW = 'record_board'` (`presets.ts:566`), and its tab id `JSON.stringify([board, record.kind, collection, record.id])` (`recordTab`, `record-board.ts:79-89`):
+
+- Empty: a tab opened with no state (the palette) or with a state that does not parse (`recordTabShape`: `record` must be a non-empty text, `board` and `kind` one of their words) gives `recordTabOf` null (`:95-98`) and draws `record_gone` with no project. An entry tab with an empty `collection` looks up `hubId(hub, '')`, finds no collection and gives null, so the same. An empty `label` parses and titles the tab "Projects of " followed by nothing; the label is the name the page is titled by (`page.title`, a person's name, a project's title), so not verified that it is never empty.
+- Duplicated: a second press on any button of the same record and board gives the same id, so `openView` reuses that tab and `pressedState` sets the new pick, with no search; a project the join names twice is counted once (round 1, item 3).
+- Colliding: the id holds the board, the kind, the collection and the hub-qualified record id, and `JSON.stringify` quotes each, so a person's two boards, one key in two hubs, one key of two kinds, one key in two collections, and a key holding a separator character each give separate ids.
+- Gone: a record the snapshot no longer holds, an entry whose key changed since the tab was saved, and a waiting board of a record that is no person give `recordIds` null (`:172-180`) and `record_gone`; a project that stops naming the record leaves the board at the next draw.
+
+The widened `reveal` ask (`revealShape = z.string().min(1).optional().catch(undefined)`, `typed.ts`; written by `revealState`, read by `settingsReveal`; shown by `reveal.svelte.ts`):
+
+- Empty: an empty text, a non-text or no `reveal` key reads as no ask; nothing is kept, scrolled or ended.
+- Unknown row: an id no row of Settings carries finds no layer (`layerOf` undefined, `scopeOf` null), so no scope is set, and the show effect never runs since `found` does not hold it; the ask stays in the tab's state, unshown and harmless (`keep` adds an id no row has), until the next ask replaces it. The two writers ask only rows that exist: `RAIL_ROW`, and `hubRowId(key)`, which gives undefined (and the tag is drawn as words) for a key the hub list binds to no file.
+- Duplicated: an ask for the row already asked leaves `asked()` unchanged; the one show ends it once. An ask for the same row after the first ended is a new ask: the scope is picked again (round 1, item 1) and the row shown.
+- In flight: `show` clears a hiding query, waits a tick and the unfold, then scrolls and ends only if the state still asks for that row (`reveal.svelte.ts:98`).
+- After close: a tab closed during `show`'s waits has no state (`instanceLayoutState` gives undefined, `instances.ts:124-126`), so `asked()` is undefined and `show` returns without a scroll or an end; `restateInstance` of a missing id changes nothing in any case.
+- Superseded: an ask for another row written during the waits makes `show` return without scrolling or ending; the show effect runs again for the new row and shows and ends it (round 1, item 2), and the scope effect, whose `scoped` holds the old row, picks the new row's scope.
+
 ## User-visible changes, page by page
 
 - **Project page.** Before: the card with `CardDetails`' two columns and the strip of related projects at its foot, then the bars LaTeX, documents and sessions, each folding. After: the card with the same two columns and no foot strip; under it the row of count buttons over the related projects the portfolio holds (a button per category, then "<n> projects"), each opening "Projects of <title>"; then LaTeX, the documents (a document still opens in the viewer) and the sessions under small labels, with no bars and no folds. The Related line on the card lists the related tags the portfolio does not hold.
@@ -184,6 +215,12 @@ Four runs of `npm run test:quick`, each right after `npm run diagrams`; no whole
 - **Domains view (Ruling 1).** A domain card's tag rises by the dead-end projects naming it; the dormant fade is unchanged; a domain whose only projects are dead ends is now drawn (`domainsWithMembers` keeps a domain with any member). Which cards change: not verified, for the same reason.
 - **Venues view (Ruling 1).** A venue card draws no project count, its strip drops the archival row as before, and concentration reads the real users: no visible change.
 - **Data view.** No change: `datasetUsers` had no category filter.
+- **The `dead-ends` button on every record page.** The row keeps the archival row as a group of its own (`groupProjects(..., true)`, `record-board.ts:211`) and every join it reads keeps a dead-end project, so every record page with a dead-end project (a stage of the `dead-ends` row, `failed` or `stopped`) draws a `dead-ends` button, and the total counts it:
+  - Funding scheme, organisation, resource and every other collection entry: before, the card's foot strip left a dead-end project out (`cross-links.ts:288`, archival row dropped); after, it is under the `dead-ends` button.
+  - Pillar, domain and venue: before, in no list of the card and named only by "Referred to by"; after, under the `dead-ends` button (Ruling 1).
+  - Dataset: before, left out of the foot strip; after, under the `dead-ends` button.
+  - Person: before, among the closed cards of the Projects block; after, under the `dead-ends` button.
+  - Project page: before, a related project the portfolio holds at a dead-end stage was left out of the strip and drawn on the card's Related line (`unlisted`, the tags the strip does not list); after, it is under the `dead-ends` button of the row and no longer on the Related line, which on the page lists only the related tags the portfolio does not hold (`ProjectCard.svelte`, `unlisted`, `!tag.held`).
 - **The record's board.** New tab "Projects of <name>" or "Waiting on <name>", with the full board bar, Cards and List, no New project; a press sets the pick, clears the search, the other facets and the folds and turns Mine only off; a tab whose record is gone says "The record this tab was opened for is gone. Press a count under a record's card to open its projects."
 - **Settings.** The rail's Settings choice still opens Settings at the rail row; a resource's setting tag opens it at the `slurm.resource` row.
 - **Unchanged.** A lead's page, a Lit Watch paper's page (its strip of named projects kept, no row), the Archival, Orphans and No funding sets, Career and a LinkedIn post.
