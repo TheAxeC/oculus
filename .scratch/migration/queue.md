@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O167 (the shell's controls hold one behaviour): review in (`agents/reviews/O167-refuter.md`), repair round 1 reported (`agents/reviews/O167-report.md`, section "Round 1"), its review over round 1 running.
-- O151 (a deck for every research project): building, round-0 rulings sent, in its oculus worktree and its hub worktree; its brief corrected to ruling 719 (a), its scratchpad files to be listed in its report.
+- O151 (a deck for every research project): reported (`agents/reviews/O151-report.md`), its scratchpad files listed there; its review running. The hub commit waits on Axel's word.
 - O168 (the boards and record lists drawn whole): first run handed back two cases (`agents/reviews/O168-first-run.md`), both ruled (`agents/briefs/O168-cases.md`, Axel ruled open item 719 (a)); resumed, every case run again inside its worktree. Base abebbb552.
 
 Queued, in order (1 step):

@@ -47,7 +47,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a69da2be8a76365d5 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O151-report.md
-  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min
+  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min; build under the round-0 rulings: 353934 tokens, 1300 tool uses, 161.4 min
+  reviewer_report: running (a6f5f05ec3e63f0f2, claude-opus-5-5)
   round: 0 (rulings .scratch/migration/agents/briefs/O151-cases.md)
   landing: not-started
 - step: O168
@@ -885,6 +886,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+
+- 2026-11-08 (O151 reported, under review; O167 round 1 under review). O151's builder reported (`agents/reviews/O151-report.md`, usage under builder_usage): verify item 1 red only in `tests/checks/tree/size.test.ts`, whose non-git copy under `TMPDIR` sat inside the oculus checkout; `agents/spec.md:34` now sets `TMPDIR` and `GIT_CEILING_DIRECTORIES` together (the test run inside the O151 worktree: 1 failed with `TMPDIR` alone, 10 passed with both), and O151's brief and `agents/briefs/O168-cases.md` say the same; O168's builder told by message. O151's reviewer a6f5f05ec3e63f0f2 (claude-opus-5-5) runs; O167's reviewer over round 1 a992c66873d23d525 (claude-opus-5-5) runs. Open items: none. In flight (3 of 6): O167 (review over round 1), O151 (review), O168 (round 0). Next: the two reviews, then the landings with their looks; O151's hub commit waits on Axel.
 
 - 2026-11-08 (open item 719 ruled (a), O168 resumed). Axel ruled 719 (a): `agents/spec.md:34` and `:66` now put a builder's backups, logs, case-run programs and temporary folders in `.agents/scratch/` inside its worktree, removed before its report; nothing is written outside the worktree, the session scratchpad included; `plan.md` Rulings "Open item 719". vitest (`tests/**` only, `vite.config.ts`), eslint (`.agents/**` ignored, `eslint.config.js:27`), prettier (reads `.gitignore`, `.agents/*`) and svelte-check (`src`, `test`, `tests` only) read no `.agents/scratch/`. O151's brief (lines 13, 15, 64) had allowed the session scratchpad and its builder wrote files there: brief corrected, builder told by message to move to its worktree's `.agents/scratch/`, rerun its checks there and list its scratchpad files in its report; nothing those files printed is used. O168's cases ruled in `agents/briefs/O168-cases.md` (C1 (a), C5 (a), G130's clause in `agents/guarded.md:204`), every case run again inside the worktree; builder a677fb3bffc90a54b resumed. Open items: none. In flight (3 of 6): O167 (round 1), O151 (building), O168 (round 0). Next: O167's review over round 1.
 
