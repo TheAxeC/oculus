@@ -1,8 +1,9 @@
 In flight (1 of 6 slots in use):
-- O151 (a deck for every research project): repair round 1 refuted, its fixes at landing made in the hub worktree; the measured fit finds 99 of 145 slides too tall, so the landing waits on open item 730.
+- O151 (a deck for every research project): repair round 2 after O170, its builder fitting every deck on its own scratch server.
 
-Queued, in order (1 step):
-- O170 (Literature and Present said and drawn plainly): /spec next.
+Queued, in order (2 steps):
+- O171 (the slide frame a 16:9 shape with no pixel size): /spec next.
+- O170 (Literature and Present said and drawn plainly): after O171.
 
 Landed, newest first:
 - O167 (the shell's controls hold one behaviour), 2026-11-08, d7afaf946.
