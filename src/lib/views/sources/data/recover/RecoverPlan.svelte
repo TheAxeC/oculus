@@ -9,7 +9,7 @@
     import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import {
         sizeWords,
         stateLook,
@@ -87,8 +87,8 @@
             <span class="reveal">
                 <ToolButton
                     small
-                    label={t('recover.fetch_one')}
-                    title={why === '' ? t('recover.fetch_one_title', name) : why}
+                    label={t('recover.fetch_file')}
+                    title={why === '' ? t('recover.fetch_file_title', name) : why}
                     disabled={why !== ''}
                     onclick={() => onfetch(name)}
                 />
@@ -102,21 +102,18 @@
 <section class="plan" aria-label={t('recover.plan')}>
     <p class="totals">
         {sizesUnknown
-            ? totals.files === 1
-                ? t('recover.totals_unsized_one')
-                : t('recover.totals_unsized', totals.files)
-            : totals.files === 1
-              ? t('recover.totals_one', sizeWords(totals.bytes))
-              : t('recover.totals', totals.files, sizeWords(totals.bytes))}
+            ? plural('recover.totals_unsized', totals.files, totals.files)
+            : plural('recover.totals', totals.files, totals.files, sizeWords(totals.bytes))}
         {totals.unsized === 0
             ? t('recover.missing', sizeWords(totals.missing))
             : totals.missing === 0
-              ? totals.unsized === 1
-                  ? t('recover.unsized_only_one')
-                  : t('recover.unsized_only', totals.unsized)
-              : totals.unsized === 1
-                ? t('recover.missing_unsized_one', sizeWords(totals.missing))
-                : t('recover.missing_unsized', sizeWords(totals.missing), totals.unsized)}
+              ? plural('recover.unsized_only', totals.unsized, totals.unsized)
+              : plural(
+                    'recover.missing_unsized',
+                    totals.unsized,
+                    sizeWords(totals.missing),
+                    totals.unsized
+                )}
         {totals.free === null
             ? t('recover.free_unknown')
             : totals.missing > totals.free

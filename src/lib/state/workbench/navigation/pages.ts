@@ -37,7 +37,7 @@ import {
 import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
 import { engineHubPath } from './catalogue.ts';
 import { registrationLabel, type Registration } from './registry.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 import type { BusyTerminal } from '../ui.svelte.ts';
 import type { TabFile } from './status.ts';
@@ -130,7 +130,7 @@ export type CloseAsk = { message: string; detail: string; dirty: string[] };
 
 /** The question over the unsaved text of `count` tabs. */
 function dirtyWords(count: number): string {
-    return count === 1 ? t('ui.tab_close_dirty') : t('ui.tabs_close_dirty', count);
+    return plural('ui.tabs_close_dirty', count, count);
 }
 
 /** A close's question and the line under it as the one sentence a dialog with one field shows. */

@@ -30,19 +30,25 @@ text:
         accept_incoming: Accept Incoming
         accept_none: Ignore
         accept_none_title: Take neither side and keep the common ancestor's lines
-        ago_day: 1 day ago
-        ago_days: '{0} days ago'
-        ago_hour: 1 hour ago
-        ago_hours: '{0} hours ago'
-        ago_minute: 1 minute ago
-        ago_minutes: '{0} minutes ago'
-        ago_month: 1 month ago
-        ago_months: '{0} months ago'
+        ago_days:
+            one: '{0} day ago'
+            other: '{0} days ago'
+        ago_hours:
+            one: '{0} hour ago'
+            other: '{0} hours ago'
+        ago_minutes:
+            one: '{0} minute ago'
+            other: '{0} minutes ago'
+        ago_months:
+            one: '{0} month ago'
+            other: '{0} months ago'
         ago_now: just now
-        ago_week: 1 week ago
-        ago_weeks: '{0} weeks ago'
-        ago_year: 1 year ago
-        ago_years: '{0} years ago'
+        ago_weeks:
+            one: '{0} week ago'
+            other: '{0} weeks ago'
+        ago_years:
+            one: '{0} year ago'
+            other: '{0} years ago'
         blame_gutter: '{0}, {1}'
         blame_status: '{0} ({1})'
         blame_title: '{0} {1} ({2}). Open this commit in the graph.'
@@ -92,8 +98,9 @@ text:
         file_unfold: Unfold this file
         folder_bar: Repositories folder
         folder_gone: '{0} is not a root this workspace serves, so it lists no repository.'
-        folder_discard_confirm: Throw away the changes to {0} paths in {1}?
-        folder_discard_confirm_one: Throw away the change to 1 path in {0}?
+        folder_discard_confirm:
+            one: Throw away the change to {0} path in {1}?
+            other: Throw away the changes to {0} paths in {1}?
         folder_discard_title: Throw away every change under this folder
         folder_stage_title: Stage every change under this folder
         folder_unstage_title: Unstage every change under this folder
@@ -111,17 +118,22 @@ text:
         hunk_unstage: Unstage Block
         in_folder: In {0}/{1}
         incoming: Incoming Changes
-        lines_revert: Revert {0} Selected Lines
-        lines_revert_confirm: Revert {0} chosen lines of {1}?
-        lines_revert_confirm_one: Revert 1 chosen line of {0}?
-        lines_revert_one: Revert 1 Selected Line
-        lines_stage: Stage {0} Selected Lines
-        lines_stage_one: Stage 1 Selected Line
-        lines_unstage: Unstage {0} Selected Lines
-        lines_unstage_one: Unstage 1 Selected Line
+        lines_revert:
+            one: Revert {0} Selected Line
+            other: Revert {0} Selected Lines
+        lines_revert_confirm:
+            one: Revert {0} chosen line of {1}?
+            other: Revert {0} chosen lines of {1}?
+        lines_stage:
+            one: Stage {0} Selected Line
+            other: Stage {0} Selected Lines
+        lines_unstage:
+            one: Unstage {0} Selected Line
+            other: Unstage {0} Selected Lines
         list: Repositories
-        list_changes: '{0} changes'
-        list_changes_one: 1 change
+        list_changes:
+            one: '{0} change'
+            other: '{0} changes'
         row_running: '{0}, {1}'
         mark_added: Lines added from line {0}. Open the change.
         mark_deleted: Lines deleted before line {0}. Open the change.
@@ -132,8 +144,9 @@ text:
         menu_tags: Tags
         merge_changes: Merge Changes
         merge_complete: Complete Merge
-        merge_complete_confirm: '{0} conflicts are still open. Complete the merge anyway?'
-        merge_complete_confirm_one: 1 conflict is still open. Complete the merge anyway?
+        merge_complete_confirm:
+            one: '{0} conflict is still open. Complete the merge anyway?'
+            other: '{0} conflicts are still open. Complete the merge anyway?'
         merge_complete_detail: The Result is written over the file and staged, and an open conflict keeps the common ancestor's lines.
         merge_current: Current
         merge_delete: Accept Deletion
@@ -148,8 +161,9 @@ text:
         merge_empty: No conflicted file is open here.
         merge_failed: The three versions of this file could not be read.
         merge_incoming: Incoming
-        merge_left: '{0} conflicts left'
-        merge_left_one: 1 conflict left
+        merge_left:
+            one: '{0} conflict left'
+            other: '{0} conflicts left'
         merge_mark: Mark Resolved
         merge_mark_title: Take the file as it stands, staged, or its deletion where the worktree no longer holds it, which tells git its conflict is resolved
         merge_open: Open in Merge Editor
@@ -162,8 +176,9 @@ text:
         merge_took_edited: edited by hand
         merge_took_incoming: took incoming
         merge_took_none: ignored
-        merging: A merge is in progress. {0} files are in conflict.
-        merging_one: A merge is in progress. 1 file is in conflict.
+        merging:
+            one: A merge is in progress. {0} file is in conflict.
+            other: A merge is in progress. {0} files are in conflict.
         open_file: Open File
         open_file_title: Open this file in a source tab
         open_unserved: No served folder holds {0}, so it cannot open in a tab.
@@ -178,8 +193,9 @@ text:
         pull_confirm: Pull {1} into {0}?
         pull_detail: git fetches the upstream and merges it into the branch. A conflict stops the merge and is shown under Merge Changes.
         range_diff_label: '{0} ({1})'
-        rebasing: A rebase is in progress. {0} files are in conflict.
-        rebasing_one: A rebase is in progress. 1 file is in conflict.
+        rebasing:
+            one: A rebase is in progress. {0} file is in conflict.
+            other: A rebase is in progress. {0} files are in conflict.
         renamed_from: '{0}, renamed from {1}'
         stash_apply: Apply Stash
         stash_do: Stash
@@ -198,8 +214,9 @@ text:
         sync: Sync
         sync_changes: Sync Changes
         sync_confirm: Sync {0} with {1}?
-        sync_detail: git pulls {0} commits and then pushes {1}. Nothing is forced.
-        sync_detail_one: git pulls 1 commit and then pushes {0}. Nothing is forced.
+        sync_detail:
+            one: git pulls {0} commit and then pushes {1}. Nothing is forced.
+            other: git pulls {0} commits and then pushes {1}. Nothing is forced.
         tag_create: Create Tag
         tag_create_detail: A tag with a message is annotated; without one it is a plain tag. It is made on HEAD.
         tag_delete: Delete Tag
@@ -282,8 +299,9 @@ text:
         branch_name: Branch name
         cherry_pick_confirm: Cherry-pick {0} onto {1}?
         cherry_pick_detail: The commit's changes are applied to the checked-out branch as a new commit. A conflict stops the pick and is shown under Merge Changes; an empty pick is dropped.
-        cherry_picking: Cherry-picking. {0} files are in conflict.
-        cherry_picking_one: Cherry-picking. 1 file is in conflict.
+        cherry_picking:
+            one: Cherry-picking. {0} file is in conflict.
+            other: Cherry-picking. {0} files are in conflict.
         detach_confirm: Check out {0} with a detached HEAD?
         detach_detail: HEAD leaves its branch and points at that commit. The working tree must be clean; a dirty tree is refused.
         compare_label: '{0} compared with {1}'

@@ -27,6 +27,8 @@ text:
         list_inline: '{0} lists its entries inline; add the entry in the file'
         list_not_a_list: '{1} in {0} is not a list; add the entry in the file'
         open_person: Open this person as their own tab
+        open_record: Open this record as its own tab
+        no_record: 'No record has the id {0}'
         open_workbench: Open Workbench
         open_workbench_tip: open a workbench for {0}
         open_path_workbench: 'Open Workbench: {0}'
@@ -45,13 +47,12 @@ text:
         start_agent_tip: Open the composer in this task's folder, seeded with the task
         status_facet: Status
         stub_unparsed: '{0} would not parse with the new entry in it; add the entry in the file'
-        tick_no: 'No'
-        tick_yes: 'Yes'
         toolbar: Collection controls
         unpin: Unpin
         open_venue: Open this venue as its own tab
-        count: '{0} entries'
-        count_one: 1 entry
+        count:
+            one: '{0} entry'
+            other: '{0} entries'
         count_shown: '{0} of {1} shown'
         slices: Collection slices
         title_column: Title

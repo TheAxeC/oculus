@@ -15,7 +15,7 @@
 
     import type { Snippet } from 'svelte';
     import FoldLine from '$lib/ui/tree/row/FoldLine.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural } from '$lib/state/shared/words/text';
     import { foldKey, isFolded, withFold, type FoldPart } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
 
@@ -46,12 +46,8 @@
 
     const counted = $derived(
         part === 'fields'
-            ? count === 1
-                ? t('settings.fold_field')
-                : t('settings.fold_fields', count)
-            : count === 1
-              ? t('settings.fold_entry')
-              : t('settings.fold_entries', count)
+            ? plural('settings.fold_fields', count, count)
+            : plural('settings.fold_entries', count, count)
     );
 
     function press(): void {

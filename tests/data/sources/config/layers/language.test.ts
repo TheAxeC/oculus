@@ -7,6 +7,7 @@
 
 import { describe, expect } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import { LOCALE_ENTRY, pluralText } from '../../../../../src/lib/data/helpers/finding-text.ts';
 import type { AppsHeld } from '../../../../../src/lib/server/machine/apps/read/held.ts';
 import {
     languageSource,
@@ -62,6 +63,28 @@ function heldApp(manifestText = manifest()): AppsHeld {
     );
 }
 
+/** The apps held after an approved app `polish` contributing Polish with the words `words`. */
+function polishApp(words: string): AppsHeld {
+    const polish = [
+        'name: polish',
+        'title: Polish words',
+        'bridge: 1',
+        'contributes:',
+        '  localizations:',
+        '    - { languageId: pl, languageName: Polish, translations: [ { id: oculus, path: i18n/pl } ] }',
+        ''
+    ].join('\n');
+    return approvedHeld(
+        plant({
+            machine: {
+                'polish/app.yml': polish,
+                'polish/index.html': PAGE,
+                'polish/i18n/pl/words.yml': words
+            }
+        })
+    );
+}
+
 /** The merge of oculus's files and a workspace `settings:` block, the languages of `held` known. */
 function withLanguages(settings: string, held: AppsHeld): ReturnType<typeof loadConfig> {
     return withSettings(settings, { language: languageSource(() => held) });
@@ -88,7 +111,7 @@ describe('the display language', () => {
         expect(catalog['ui.confirm_cancel']).toBe('Annuleren');
         expect(catalog['views.settings']).toBe('Instellingen');
         expect(catalog['ui.close_tab']).toBe(ENGLISH['ui.close_tab']);
-        expect(Object.keys(catalog).sort()).toEqual(Object.keys(ENGLISH).sort());
+        expect(Object.keys(catalog).sort()).toEqual([...Object.keys(ENGLISH), LOCALE_ENTRY].sort());
         expect(said(read)).toEqual([
             "text.nosuch.key | text.nosuch.key is not a key of oculus's text catalog; the display language nl of the app Dutch words does not use it"
         ]);
@@ -167,6 +190,46 @@ describe('the display language', () => {
             apps: held.apps.map((one) => ({ ...one, row: { ...one.row, disabled: true } }))
         };
         expect(textCatalog(cache.read().config)['views.settings']).toBe('Settings');
+    });
+
+    it.each([
+        [
+            'lays a plural form oculus lacks of a plural key over the catalogue, and 3 draws it',
+            '    cites:\n      few: "{0} cytowania"\n',
+            []
+        ],
+        [
+            'words a form outside the six plural forms',
+            '    cites:\n      several: "{0} cytowan"\n',
+            [
+                "text.literature.cites.several | text.literature.cites.several is not a key of oculus's text catalog; the display language pl of the app Polish words does not use it"
+            ]
+        ]
+    ])('%s', (_title, words, findings) => {
+        const read = withLanguages('  locale: pl\n', polishApp(`text:\n  literature:\n${words}`));
+        expect(said(read)).toEqual(findings);
+        if (findings.length === 0) {
+            const catalog = textCatalog(read.config);
+            expect(pluralText(catalog, 'literature.cites', 3, 3)).toBe('3 cytowania');
+            expect(pluralText(catalog, 'literature.cites', 2, 2)).toBe('2 cytowania');
+            expect(pluralText(catalog, 'literature.cites', 5, 5)).toBe('5 citations');
+        }
+    });
+
+    it('words a plural form of a key oculus holds as a plain text', () => {
+        const read = withLanguages(
+            '  locale: pl\n',
+            polishApp('text:\n  views:\n    settings:\n      few: Ustawienia\n')
+        );
+        expect(said(read)).toEqual([
+            "text.views.settings.few | text.views.settings.few is not a key of oculus's text catalog; the display language pl of the app Polish words does not use it"
+        ]);
+    });
+
+    it("lays the workspace's own plural form over the catalogue", () => {
+        const read = withLanguages("  text: { 'literature.cites.few': '{0} cites' }\n", heldApp());
+        expect(said(read)).toEqual([]);
+        expect(textCatalog(read.config)['literature.cites.few']).toBe('{0} cites');
     });
 
     it('reads no language from a translation that is not for oculus', () => {

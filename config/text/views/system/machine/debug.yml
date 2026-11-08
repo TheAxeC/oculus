@@ -41,7 +41,7 @@ text:
         delete_verb: Delete
         disable_all: Disable All Breakpoints
         edit_configuration: Edit Configuration
-        edit_detail: 'A list holds its parts and a map its key=value entries, each split by {0}. A field left empty is taken out of the configuration.'
+        edit_detail: 'A list holds its parts and a map its key=value entries, each split by commas. A field left empty is taken out of the configuration.'
         edit_not_number: '{0} is not a number; nothing was written.'
         edit_save: Save
         edit_title: 'Edit the configuration {0}'

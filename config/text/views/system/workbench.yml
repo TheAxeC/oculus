@@ -50,12 +50,15 @@ text:
         editor_stuck: 'The control cannot show these values, so they are kept as the file has them:'
         editor_unread: 'These fields hold text that is not valid YAML, so Save will refuse until they are mended:'
         editor_up: 'Move entry {0} up'
-        fold_entries: '{0} entries'
-        fold_entry: 1 entry
-        fold_field: 1 field
-        fold_fields: '{0} fields'
-        fold_more: '{0} more entries match this search'
-        fold_more_one: 1 more entry matches this search
+        fold_entries:
+            one: '{0} entry'
+            other: '{0} entries'
+        fold_fields:
+            one: '{0} field'
+            other: '{0} fields'
+        fold_more:
+            one: '{0} more entry matches this search'
+            other: '{0} more entries match this search'
         list_failed: 'The list could not be read: {0}'
         list_loading: The list is still being read.
         block_words: 'one of these words'
@@ -99,8 +102,9 @@ text:
         scope_file_new: '{0}, not there yet; the first change saved makes it'
         scope_unsaved: This workspace is not saved to a file; its first change asks for a name
         scope_clean: No unsaved change
-        scope_unsaved_one: 1 unsaved change
-        scope_unsaved_many: '{0} unsaved changes'
+        scope_unsaved_changes:
+            one: '{0} unsaved change'
+            other: '{0} unsaved changes'
         scope_save: Save
         scope_held: '{0} holds {1} unsaved changes of another scope.'
         scope_gone_held: '{0} is no longer in this workspace, so its {1} unsaved changes are kept and nothing is written to it.'
@@ -194,8 +198,9 @@ text:
         settings_cut: '{0} is longer than the file window reads, so the line of a setting in it is not shown.'
         settings_default: 'Default: {0}'
         settings_default_empty: 'Default: empty'
-        settings_default_item_one: 'Default: 1 item'
-        settings_default_items: 'Default: {0} items'
+        settings_default_items:
+            one: 'Default: {0} item'
+            other: 'Default: {0} items'
         settings_duplicate_key: 'Two entries are named {0}. Each needs its own name.'
         settings_empty: 'The field is empty, so nothing was written.'
         settings_empty_item: 'Item {0} is empty. Fill it in or remove it.'
@@ -211,9 +216,10 @@ text:
         settings_fields: 'Each entry has:'
         settings_filter: Filter settings
         settings_filter_modified: 'Modified'
-        settings_found: '{0} Settings Found'
+        settings_found:
+            one: '{0} Setting Found'
+            other: '{0} Settings Found'
         settings_found_none: No Settings Found
-        settings_found_one: 1 Setting Found
         settings_gear: More actions
         settings_heading_appearance: Appearance
         settings_heading_boards: Boards and audit

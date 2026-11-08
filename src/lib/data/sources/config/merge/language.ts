@@ -15,9 +15,14 @@
 // English catalog stands. A key of a language file that oculus's catalog lacks is a finding naming
 // the file, the key, the language and the app, and the key is not used; a file that does not parse
 // or holds no `text:` map is a finding naming the file, and its words are not used.
+//
+// A plural key of oculus's catalog (a map of CLDR forms, `other` always among them) may take any of
+// the six forms in a language file, `few` and `many` included where oculus's English gives only
+// `one` and `other` (finding-text.ts, `isPluralForm`). A laid language writes its locale into the
+// catalog's `LOCALE_ENTRY`, so every reader picks a plural form by that language's rules.
 
 import { parse } from 'yaml';
-import { findingText } from '../../../helpers/finding-text.ts';
+import { findingText, isPluralForm, LOCALE_ENTRY } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { flattenText, TEXT_KEY, type PendingFinding } from './text.ts';
 
@@ -88,6 +93,8 @@ export function layLanguage(
         return;
     }
     const catalog = isMap(config[TEXT_KEY]) ? config[TEXT_KEY] : {};
+    const english = new Set(Object.keys(catalog));
+    const oculusHolds = (key: string): boolean => english.has(key);
     for (const one of language.files) {
         const file = one.file;
         const words = 'why' in one ? one.why : fileWords(one.text);
@@ -115,7 +122,7 @@ export function layLanguage(
         }
         for (const [key, word] of Object.entries(words)) {
             const dotted = `${TEXT_KEY}.${key}`;
-            if (!Object.hasOwn(catalog, key)) {
+            if (!Object.hasOwn(catalog, key) && !isPluralForm(key, oculusHolds)) {
                 pending.push({
                     file,
                     key: dotted,
@@ -134,4 +141,5 @@ export function layLanguage(
             }
         }
     }
+    catalog[LOCALE_ENTRY] = locale;
 }

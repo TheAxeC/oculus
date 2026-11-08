@@ -178,6 +178,8 @@ text:
             agents_repeated: '{0}: {1} is listed twice in one picker; the later one is left out'
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
+            plural_no_other: '{0} is a map of plural forms with no other form, which every such map holds'
+            plural_form_unknown: '{0} is not a plural form: the forms are zero, one, two, few, many and other'
             glyph_no_icon: glyph {0} has no icon
             shape_unknown: 'key {0} is not a key this file takes'
             shape_type: '{0} must be {1}'
@@ -315,8 +317,9 @@ text:
             colour: a colour of the palette that is a hue
             path: an absolute path or one that starts with ~/
             hub_path: a path inside the hub, written relative to it
-            slots: 'a list of exactly {0} items'
-            slots_one: a list of exactly 1 item
+            slots:
+                one: 'a list of exactly {0} item'
+                other: 'a list of exactly {0} items'
         shape:
             is_null: 'null'
             is_list: a list

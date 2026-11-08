@@ -53,7 +53,7 @@
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { fetchFailureWords } from '$lib/state/workbench/navigation/status';
     import { branchOf } from './branch-words';
     import { useState } from '$lib/state/client/use';
@@ -155,15 +155,11 @@
     /** The line that says which operation is in progress, with how many files are in conflict. */
     function sequenceWords(held: GitState): string {
         const count = held.conflicted.length;
-        if (held.sequence === 'merging') {
-            return count === 1 ? t('repositories.merging_one') : t('repositories.merging', count);
-        }
+        if (held.sequence === 'merging') return plural('repositories.merging', count, count);
         if (held.sequence === 'cherry-picking') {
-            return count === 1
-                ? t('repositories.cherry_picking_one')
-                : t('repositories.cherry_picking', count);
+            return plural('repositories.cherry_picking', count, count);
         }
-        return count === 1 ? t('repositories.rebasing_one') : t('repositories.rebasing', count);
+        return plural('repositories.rebasing', count, count);
     }
 
     /** Delete a tag named on a graph commit, through the Tags section's question. */

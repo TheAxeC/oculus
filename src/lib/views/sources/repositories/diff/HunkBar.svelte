@@ -27,7 +27,7 @@
         type Hunk
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
 
     type Props = {
         /** The hunk, whose head the bar says as git writes it, `@@ -a,b +c,d @@`. */
@@ -97,11 +97,9 @@
                     {
                         mode: 'unstage',
                         label:
-                            count === 1
-                                ? t('repositories.lines_unstage_one')
-                                : count > 1
-                                  ? t('repositories.lines_unstage', count)
-                                  : t('repositories.hunk_unstage'),
+                            count > 0
+                                ? plural('repositories.lines_unstage', count, count)
+                                : t('repositories.hunk_unstage'),
                         glyph: 'unstage'
                     }
                 ]
@@ -109,21 +107,17 @@
                     {
                         mode: 'stage',
                         label:
-                            count === 1
-                                ? t('repositories.lines_stage_one')
-                                : count > 1
-                                  ? t('repositories.lines_stage', count)
-                                  : t('repositories.hunk_stage'),
+                            count > 0
+                                ? plural('repositories.lines_stage', count, count)
+                                : t('repositories.hunk_stage'),
                         glyph: 'stage'
                     },
                     {
                         mode: 'revert',
                         label:
-                            count === 1
-                                ? t('repositories.lines_revert_one')
-                                : count > 1
-                                  ? t('repositories.lines_revert', count)
-                                  : t('repositories.hunk_revert'),
+                            count > 0
+                                ? plural('repositories.lines_revert', count, count)
+                                : t('repositories.hunk_revert'),
                         glyph: 'note_back'
                     }
                 ]

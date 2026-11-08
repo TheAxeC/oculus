@@ -109,7 +109,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(everything(stage)).toEqual([]);
             expect(row(stage.config, 'categories', 'idea')).toEqual({
                 key: 'idea',
-                label: 'idea',
+                label: { one: 'idea', other: 'ideas' },
                 stages: { words: ['scoping'] },
                 color: '#7c5cff'
             });
@@ -132,14 +132,14 @@ describe("the vocabulary a hub lays over oculus's", () => {
             expect(boards.projects.tier).toEqual([]);
             expect(boards.software.tier).toBe('software');
             const own = withHub(
-                'stages: { nascent: null }\ncategories: [ { key: idea, label: idea, color: "#7c5cff", stages: { words: [nascent] } } ]\n'
+                'stages: { nascent: null }\ncategories: [ { key: idea, label: { other: idea }, color: "#7c5cff", stages: { words: [nascent] } } ]\n'
             );
             expect(everything(own)).toEqual([
                 `${FILE} | categories[0].stages.words | categories[0].stages.words names nascent, which the hub's words no longer hold; it is not read`
             ]);
             expect(row(own.config, 'categories', 'idea')).toEqual({
                 key: 'idea',
-                label: 'idea',
+                label: { other: 'idea' },
                 color: '#7c5cff',
                 stages: { words: [] }
             });
@@ -188,7 +188,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
             >[];
             expect(shipped.find((one) => one.key === 'idea')).toEqual({
                 key: 'idea',
-                label: 'idea',
+                label: { one: 'idea', other: 'ideas' },
                 stages: { words: ['scoping'] },
                 color: '#7c5cff'
             });
@@ -373,8 +373,8 @@ describe("the vocabulary a hub lays over oculus's", () => {
         const read = withHub(
             [
                 'categories:',
-                '  - { key: idea, label: ideas, stages: { words: [nascent] } }',
-                '  - { key: grants, label: grants, stages: { words: [submitted] }, forms: { words: [journal] } }',
+                '  - { key: idea, label: { other: ideas }, stages: { words: [nascent] } }',
+                '  - { key: grants, label: { other: grants }, stages: { words: [submitted] }, forms: { words: [journal] } }',
                 '  - { key: dead-ends, removed: true }',
                 ''
             ].join('\n')
@@ -388,7 +388,11 @@ describe("the vocabulary a hub lays over oculus's", () => {
         const idea = (read.config.categories as { key: string }[]).find(
             (row) => row.key === 'idea'
         );
-        expect(idea).toEqual({ key: 'idea', label: 'ideas', stages: { words: ['nascent'] } });
+        expect(idea).toEqual({
+            key: 'idea',
+            label: { other: 'ideas' },
+            stages: { words: ['nascent'] }
+        });
     });
 
     it("words a removal of a category oculus lacks and a category named twice, and keeps oculus's rows", () => {

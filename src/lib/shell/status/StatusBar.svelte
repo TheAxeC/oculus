@@ -68,7 +68,7 @@
         type StatusGit,
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -257,13 +257,9 @@
             {#if shown('findings')}
                 <span data-status="findings">
                     <ToolButton
-                        label={status.findings === 1
-                            ? t('statusbar.findings_name_one')
-                            : t('statusbar.findings_name', status.findings)}
+                        label={plural('statusbar.findings_name', status.findings, status.findings)}
                         glyph="warn"
-                        title={status.findings === 1
-                            ? t('statusbar.findings_tip_one')
-                            : t('statusbar.findings_tip', status.findings)}
+                        title={plural('statusbar.findings_tip', status.findings, status.findings)}
                         status
                         onclick={() => openView('findings')}
                     >
@@ -328,15 +324,11 @@
             {#if shown('unsaved')}
                 <span data-status="unsaved">
                     <ToolButton
-                        label={dirty === 1
-                            ? t('statusbar.unsaved_name_one')
-                            : t('statusbar.unsaved_name', dirty)}
+                        label={plural('statusbar.unsaved_name', dirty, dirty)}
                         glyph="save"
                         title={dirty === 0
                             ? t('statusbar.unsaved_none')
-                            : dirty === 1
-                              ? t('statusbar.unsaved_tip_one')
-                              : t('statusbar.unsaved_tip', dirty)}
+                            : plural('statusbar.unsaved_tip', dirty, dirty)}
                         status
                         disabled={dirty === 0}
                         onclick={openUnsaved}
@@ -348,13 +340,9 @@
             {#if shown('sessions')}
                 <span data-status="sessions">
                     <ToolButton
-                        label={status.live === 1
-                            ? t('statusbar.sessions_name_one')
-                            : t('statusbar.sessions_name', status.live)}
+                        label={plural('statusbar.sessions_name', status.live, status.live)}
                         glyph="agents"
-                        title={status.live === 1
-                            ? t('statusbar.sessions_tip_one')
-                            : t('statusbar.sessions_tip', status.live)}
+                        title={plural('statusbar.sessions_tip', status.live, status.live)}
                         status
                         onclick={() => openView('session-list')}
                     >

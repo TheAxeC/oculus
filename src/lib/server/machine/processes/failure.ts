@@ -3,7 +3,7 @@
 // into the sentence the view shows, so no sentence of oculus's own and no message of the system or
 // of a library reaches the reader.
 
-import { words } from '../../core/words.ts';
+import { pluralWords, words } from '../../core/words.ts';
 
 /** The causes a read fails for. */
 type FailureReason = 'timeout' | 'start' | 'status' | 'output' | 'empty' | 'cancelled';
@@ -35,9 +35,12 @@ export function failureLine(error: unknown, text: Record<string, string>): strin
     if (!(error instanceof ReadFailure)) return words(text, 'processes.failed_other');
     switch (error.reason) {
         case 'timeout':
-            return String(error.detail) === '1'
-                ? words(text, 'processes.failed_timeout_one')
-                : words(text, 'processes.failed_timeout', error.detail);
+            return pluralWords(
+                text,
+                'processes.failed_timeout',
+                Number(error.detail),
+                error.detail
+            );
         case 'start':
             return words(text, 'processes.failed_start');
         case 'status':

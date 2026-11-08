@@ -10,8 +10,12 @@
     // It is laid out as a project board's list is (views/boards/projects/BoardList.svelte): every
     // row is one line high, a cell's text cut at the cell's edge with its whole text in its tip,
     // and the columns that do not fit in the list's width, read from its box as it resizes, dropped
-    // from the right until the rest fit, the title kept always. The palette's reveal scrolls the
-    // entry's row into view and marks its title as a revealed card is marked
+    // until the rest fit: a column empty in every row drawn first, then from the right, the title
+    // kept always, and no narrower than its minimum in a list that wide. A column empty in every
+    // row also goes while the title's column is narrower than its longest title, measured in the
+    // table's font, so a title is not cut beside a column that says nothing. A column of a field
+    // with no `label:` is headed by its name as words ("Funder" for `funder`). The palette's reveal
+    // scrolls the entry's row into view and marks its title as a revealed card is marked
     // (views/shared/card/Reveal.svelte).
 
     import RowButton from '$lib/ui/controls/RowButton.svelte';
@@ -57,19 +61,59 @@
     const MIN_TITLE = 160;
     const MIN_OTHER = 90;
 
+    /** A cell's padding left and right together, as `ui/display/table/Table.svelte` sets it. */
+    const CELL_PAD = 16;
+
     /** The list's width, 0 until it is laid out. */
     let width = $state(0);
+
+    /** The list's box, whose table's font the titles are measured in. */
+    let box: HTMLDivElement | undefined = $state();
+
+    /** What measures text, made on the first measure. */
+    let pen: CanvasRenderingContext2D | null = null;
 
     function least(key: string): number {
         return key === TITLE_COLUMN ? MIN_TITLE : MIN_OTHER;
     }
 
-    /** The columns drawn: those the menu draws that fit, the title always (`fittedColumns`). */
-    const columns: Column[] = $derived(fittedColumns(cells, width, least, TITLE_COLUMN));
-
     const holders = $derived(holdersOf(Object.values(portfolio()?.entities.people ?? {})));
     const byId = $derived(new Map(rows.map((one) => [one.entry.id, one.entry])));
     const table = $derived(rows.map(row));
+
+    /** The columns with no words in any row drawn, which give their width up first. */
+    const empty = $derived(
+        new Set(
+            cells
+                .filter((one) => table.every((words) => cellText(words[one.key]) === ''))
+                .map((one) => one.key)
+        )
+    );
+
+    /**
+     * The columns drawn: those the menu draws that fit, an empty one dropped before one that holds
+     * words, the title always (`fittedColumns`).
+     */
+    const columns: Column[] = $derived(
+        fittedColumns(cells, width, least, TITLE_COLUMN, empty, titleWidth(width))
+    );
+
+    /**
+     * The width the longest title drawn needs in the table's font, with the cell's padding, once
+     * the list is laid out (`width` above 0) and the browser can measure; nothing before.
+     */
+    function titleWidth(laid: number): number | undefined {
+        const font = box?.querySelector('table');
+        if (laid === 0 || font === null || font === undefined) return undefined;
+        pen ??= document.createElement('canvas').getContext('2d');
+        if (pen === null) return undefined;
+        pen.font = getComputedStyle(font).font;
+        let most = 0;
+        for (const words of table) {
+            most = Math.max(most, pen.measureText(cellText(words[TITLE_COLUMN])).width);
+        }
+        return Math.ceil(most) + CELL_PAD;
+    }
 
     /** Whether a field's `foreign_key` names the people registry of the entry's hub. */
     function picksPeople(field: SchemaField, root: string): boolean {
@@ -128,14 +172,17 @@
     {/if}
 {/snippet}
 
-<div class="list" bind:clientWidth={width}>
+<div class="list" bind:clientWidth={width} bind:this={box}>
     <Table {columns} rows={table} rowKey="id" sortable {cell} />
 </div>
 
 <style>
-    /* The table's box: as wide as the view, and clipping, so the table never scrolls sideways and
-       its header row scrolls with it. */
+    /* The table's box: as wide as the view, and clipping, so the table never scrolls sideways.
+       The clipping box is the one the header row sticks in, and it never scrolls up or down, so
+       the header row is told no strip stands above it (`--group-strip`): offset by a heading strip
+       it would sit over the first row, and at no offset it scrolls with its rows. */
     .list {
+        --group-strip: 0px;
         min-width: 0;
         overflow: hidden;
     }

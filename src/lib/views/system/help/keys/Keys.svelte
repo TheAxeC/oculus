@@ -152,7 +152,10 @@
 </Pane>
 
 <style>
+    /* The view is the scroller its group strips stick in, so the strips take its own top padding
+       off their `top` (ui/frame/Pane.svelte, `--pane-pad-top`) and stand at its top edge whole. */
     .view {
+        --pane-pad-top: 8px;
         display: flex;
         flex-direction: column;
         gap: 12px;

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { isMap, text } from '../../../../data/helpers/guards.ts';
 import { isOwnTerminal, type ProcessRow, type Terminal } from '../../../../data/model/index.ts';
 import { readOr } from '../../../../data/shapes/shapes.ts';
-import { t } from '../../../shared/words/text.ts';
+import { plural, t } from '../../../shared/words/text.ts';
 
 export type { ProcessRow } from '../../../../data/model/index.ts';
 
@@ -110,12 +110,12 @@ export function arrange(
     return { groups, matched };
 }
 
-/** The head line: the projects in flight and the agents running, each in its singular form. */
+/** The head line: the projects in flight and the agents running, each in the form of its count. */
 export function headLine(projects: number, agents: number): string {
     return t(
         'processes.head',
-        projects === 1 ? t('processes.head_project_one') : t('processes.head_projects', projects),
-        agents === 1 ? t('processes.head_agent_one') : t('processes.head_agents', agents)
+        plural('processes.head_projects', projects, projects),
+        plural('processes.head_agents', agents, agents)
     );
 }
 

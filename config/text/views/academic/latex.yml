@@ -61,8 +61,9 @@ text:
         commands: Commands
         count: count words
         count_tip: count the words of this file and the files it includes
-        error_one: 1 error
-        errors_many: '{0} errors'
+        errors:
+            one: '{0} error'
+            other: '{0} errors'
         failed_exit: 'the build ended with exit code {0}'
         failed_notice: 'The LaTeX build of {0} failed.'
         float_algorithm: Algorithm
@@ -114,10 +115,10 @@ text:
         pick_root_placeholder: Pick the main file the view is about
         pick_root_tip: Pick the main file this view is about
         pinned_glyph: pin
-        problem: problem
         problem_counts: '{0}, {1}'
-        problem_pill: '{0} {1}'
-        problems: problems
+        problem_pill:
+            one: '{0} problem'
+            other: '{0} problems'
         problems_open_tip: Show the problems of this root in the Problems view
         read_failed: 'the folder was not read: {0}'
         refused_badness_missing: badness was not found. Install it, or name it in latex.badness_path.
@@ -212,12 +213,15 @@ text:
         tree_view_window: Open in a window
         tree_wrap_environment: Wrap in an environment
         view_title: LaTeX
-        warning_one: 1 warning
-        warnings_many: '{0} warnings'
-        words: '{0} words'
-        words_one: 1 word
-        words_of: '{0}: {1} words'
-        words_of_one: '{0}: 1 word'
+        warnings:
+            one: '{0} warning'
+            other: '{0} warnings'
+        words:
+            one: '{0} word'
+            other: '{0} words'
+        words_of:
+            one: '{0}: {1} word'
+            other: '{0}: {1} words'
     views:
         latex: LaTeX
         latex_glyph: journals

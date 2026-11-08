@@ -17,7 +17,7 @@
         type HpcPartition,
         type HpcViewState
     } from '$lib/state/system/machine/hpc/hpc';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     let {
         rows,
         stale,
@@ -49,7 +49,7 @@
 
     /** The sinfo table's summary: one row, or that many rows. */
     function summary(count: number): string {
-        return count === 1 ? t('hpc.capacity_summary_one') : t('hpc.capacity_summary', count);
+        return plural('hpc.capacity_summary', count, count);
     }
 
     /**

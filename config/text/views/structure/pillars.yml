@@ -15,8 +15,9 @@ text:
         on_no_line: '{0} on no line'
         orphans: Orphans
         orphans_blurb: Projects whose <code>pillars:</code> names no line of the pillars file. Personal projects and dead-ends are never orphans.
-        project: project
-        projects: projects
+        projects:
+            one: project
+            other: projects
         total: total
     views:
         pillars: Pillars

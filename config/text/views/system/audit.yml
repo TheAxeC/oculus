@@ -25,13 +25,15 @@ text:
         failed_network: The mute did not reach the server.
         failed_other: The mute was not saved.
         open_place_tip: Open {0}
-        msg_markers: '{0} open markers, the first "{1}"'
-        msg_markers_one: 'one open marker, "{1}"'
+        msg_markers:
+            one: 'one open marker, "{1}"'
+            other: '{0} open markers, the first "{1}"'
         msg_entry_marker: 'open marker: "{0}"'
         msg_no_venue: at the stage {0}, which carries a venue, but no venue
         msg_missing_field: 'missing `{0}`'
-        msg_provisional: '{0} provisional results: the numbers are not final'
-        msg_provisional_one: 'one provisional result: the number is not final'
+        msg_provisional:
+            one: 'one provisional result: the number is not final'
+            other: '{0} provisional results: the numbers are not final'
         msg_required_section: 'has a value at `{0}` but {1} has no heading `{2}`'
         msg_docs_ahead: 'docs changed {0}, {1}d after the manifest; refresh project.yml'
         msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1}: the reproduced code may not be what was deposited; deposit it again and bump `code_availability.date`'

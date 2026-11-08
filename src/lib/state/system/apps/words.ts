@@ -6,7 +6,7 @@
 // is found by the key check.
 
 import type { AppContributes, AppRow } from '../../../data/model/index.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 
 /** The sentence for a channel an app reads, by channel; a channel with no sentence has no entry. */
 const READ: Record<string, (() => string) | undefined> = {
@@ -89,47 +89,24 @@ function viewCount(views: AppContributes['views']): number {
  */
 export function addsWords(contributes: AppContributes): string {
     const menus = Object.values(contributes.menus).reduce((sum, list) => sum + list.length, 0);
-    const parts: [number, () => string, () => string][] = [
-        [
-            contributes.commands.length,
-            () => t('apps.adds.commands_one'),
-            () => t('apps.adds.commands_other', contributes.commands.length)
-        ],
-        [
-            contributes.keybindings.length,
-            () => t('apps.adds.keys_one'),
-            () => t('apps.adds.keys_other', contributes.keybindings.length)
-        ],
-        [menus, () => t('apps.adds.menus_one'), () => t('apps.adds.menus_other', menus)],
-        [
-            viewCount(contributes.views),
-            () => t('apps.adds.views_one'),
-            () => t('apps.adds.views_other', viewCount(contributes.views))
-        ],
-        [
-            contributes.customEditors.length,
-            () => t('apps.adds.editors_one'),
-            () => t('apps.adds.editors_other', contributes.customEditors.length)
-        ],
-        [
-            contributes.configuration?.properties.length ?? 0,
-            () => t('apps.adds.settings_one'),
-            () => t('apps.adds.settings_other', contributes.configuration?.properties.length ?? 0)
-        ],
-        [
-            contributes.themes.length,
-            () => t('apps.adds.themes_one'),
-            () => t('apps.adds.themes_other', contributes.themes.length)
-        ],
-        [
-            contributes.iconThemes.length,
-            () => t('apps.adds.icons_one'),
-            () => t('apps.adds.icons_other', contributes.iconThemes.length)
-        ]
+    const commands = contributes.commands.length;
+    const keys = contributes.keybindings.length;
+    const views = viewCount(contributes.views);
+    const editors = contributes.customEditors.length;
+    const settings = contributes.configuration?.properties.length ?? 0;
+    const themes = contributes.themes.length;
+    const icons = contributes.iconThemes.length;
+    const parts: [number, string][] = [
+        [commands, plural('apps.adds.commands', commands, commands)],
+        [keys, plural('apps.adds.keys', keys, keys)],
+        [menus, plural('apps.adds.menus', menus, menus)],
+        [views, plural('apps.adds.views', views, views)],
+        [editors, plural('apps.adds.editors', editors, editors)],
+        [settings, plural('apps.adds.settings', settings, settings)],
+        [themes, plural('apps.adds.themes', themes, themes)],
+        [icons, plural('apps.adds.icons', icons, icons)]
     ];
-    const named = parts.flatMap(([count, one, other]) =>
-        count === 0 ? [] : [count === 1 ? one() : other()]
-    );
+    const named = parts.flatMap(([count, said]) => (count === 0 ? [] : [said]));
     return named.length === 0 ? '' : t('apps.adds_line', named.join(', '));
 }
 

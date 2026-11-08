@@ -39,7 +39,7 @@ import {
     type Entry,
     type SchemaField
 } from '../../../data/model/index.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 import { namedTone, statusTone, toneOf } from '../../shared/words/tones.ts';
 import {
     facetToneIn,
@@ -559,5 +559,5 @@ export function collectionBar(input: BarInput): CollectionBar {
  */
 export function entryCountWords(shown: number, total: number): string {
     if (shown < total) return t('collection.count_shown', shown, total);
-    return total === 1 ? t('collection.count_one') : t('collection.count', total);
+    return plural('collection.count', total, total);
 }

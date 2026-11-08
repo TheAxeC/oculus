@@ -12,7 +12,6 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { PromptField, PromptRequest } from '$lib/ui/forms/prompt';
     import {
-        PARTS,
         launchChanges,
         launchForm,
         wrongNumber,
@@ -76,7 +75,7 @@
         const form = launchForm(configuration, one);
         asking = {
             message: t('debug.edit_title', configuration.name),
-            detail: note === '' ? t('debug.edit_detail', PARTS) : note,
+            detail: note === '' ? t('debug.edit_detail') : note,
             fields: form.fields.map(promptField),
             verb: t('debug.edit_save'),
             act: (answers) => {

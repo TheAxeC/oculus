@@ -23,7 +23,7 @@
 
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
-import { findingText } from '../../../helpers/finding-text.ts';
+import { findingText, isPluralForm } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { hubKeys } from '../../../helpers/hub-names.ts';
 import { catalogOf, flaggedItems, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
@@ -114,8 +114,10 @@ function catalogValue(
 
 /**
  * The workspace's words laid over the text catalog: each key of oculus's catalog the map names
- * takes its text. A key the catalog lacks and a value that is not a text are findings naming
- * `settings.text.<key>`, and the catalog's word stands. `own` names the keys the workspace set.
+ * takes its text, and so does any of the six CLDR forms of a plural key the catalog holds
+ * (`literature.cites.few`, `isPluralForm`). A key the catalog lacks and a value that is not a text
+ * are findings naming `settings.text.<key>`, and the catalog's word stands. `own` names the keys
+ * the workspace set.
  */
 function textValue(
     oculus: unknown,
@@ -130,9 +132,10 @@ function textValue(
     const catalog = isMap(oculus) ? oculus : {};
     const merged: Record<string, unknown> = { ...catalog };
     const own: string[] = [];
+    const held = (one: string): boolean => Object.hasOwn(catalog, one);
     for (const [name, word] of Object.entries(value)) {
         const key = `${at.key}.${name}`;
-        if (!Object.hasOwn(catalog, name)) {
+        if (!held(name) && !isPluralForm(name, held)) {
             pending.push({
                 file: at.file,
                 key,

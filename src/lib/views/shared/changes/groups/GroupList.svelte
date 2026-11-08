@@ -63,7 +63,7 @@
     } from '$lib/state/sources/repositories/change-tree';
     import { cutGroups } from '$lib/state/sources/repositories/repositories';
     import type { GitEntry, GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import {
         GROUP_DISCARD_ALL,
@@ -203,8 +203,7 @@
 
     function discardAll(): void {
         const count = git.unstaged.length;
-        const question =
-            count === 1 ? t('git.discard_all_confirm_one') : t('git.discard_all_confirm', count);
+        const question = plural('git.discard_all_confirm', count, count);
         ask(question, t('git.discard_all_detail'), () => {
             void repositories.discardAll(root);
         });

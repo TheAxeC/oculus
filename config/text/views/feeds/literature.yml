@@ -12,14 +12,16 @@ text:
         add_why: Why (optional)
         author: Author
         bibtex: Copy BibTeX
-        cites: '{0} citations'
-        cites_one: 1 citation
+        cites:
+            one: '{0} citation'
+            other: '{0} citations'
         copied_citation_js: BibTeX copied, built by citation-js because no source served one
         copied_doi: BibTeX copied, from the DOI link
         copied_from: BibTeX copied, from {0}
         copy_failed: Could not copy the BibTeX entry
-        count: '{0} papers'
-        count_one: 1 paper
+        count:
+            one: '{0} paper'
+            other: '{0} papers'
         filters: Filters
         from: From year
         idle: Type a query and press Search.
@@ -97,8 +99,9 @@ text:
         saved: 'Saved to Literature as {0}'
         in_literature: In Literature
         in_literature_tip: The Literature collection holds this paper
-        bibtex_copied_one: '1 BibTeX entry copied'
-        bibtex_copied: '{0} BibTeX entries copied'
+        bibtex_copied:
+            one: '{0} BibTeX entry copied'
+            other: '{0} BibTeX entries copied'
         bibtex_not_copied: '{0}; not copied: {1}'
         bibtex_entry_tip: 'Copy this entry as BibTeX, under its own key'
         bibtex_shown: Copy BibTeX

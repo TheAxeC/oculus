@@ -159,7 +159,7 @@ describe("the schema of a reader row's constant value, a scalar", () => {
 
 /** A hub's `categories:` list of one row whose `sort`, on line 5, is `sort`. */
 function categoryWith(sort: string): string {
-    return `categories:\n  - key: drafts\n    label: Drafts\n    color: '#888888'\n    sort: ${sort}\n`;
+    return `categories:\n  - key: drafts\n    label: { other: Drafts }\n    color: '#888888'\n    sort: ${sort}\n`;
 }
 
 /** A `boards:` map of one board, `mine`, whose `tier`, on line 4, is `tier`. */

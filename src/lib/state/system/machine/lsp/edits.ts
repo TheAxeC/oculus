@@ -301,7 +301,6 @@ function confirms(edit: unknown): boolean {
 function refusedWrite(outcome: Extract<Outcome, { ok: false }>, first: string): LspEditOutcome {
     const name = outcome.failed ?? first;
     const done = outcome.done?.length ?? 0;
-    if (done === 1) return refuse('lsp_edit_partial_one', name);
     if (done > 0) return refuse('lsp_edit_partial', name, String(done));
     if (outcome.error === 'outside') return refuse('lsp_edit_outside', name);
     if (outcome.error === 'changed') return refuse('lsp_edit_changed', name);
@@ -468,9 +467,7 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
             // Text typed into a tab while the post was out is kept: the files are written already.
             const after = moved();
             if (after !== undefined) {
-                return posts.length === 1
-                    ? refuse('lsp_edit_typed_one', after.name)
-                    : refuse('lsp_edit_typed', after.name, String(posts.length));
+                return refuse('lsp_edit_typed', after.name, String(posts.length));
             }
         } else {
             const before = moved();

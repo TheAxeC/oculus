@@ -30,7 +30,7 @@ export type LaunchField = {
 export type LaunchForm = { fields: LaunchField[] };
 
 /** The separator of a list's parts and of a map's entries. */
-export const PARTS = ',';
+const PARTS = ',';
 
 /** Whether a word reads back from a part of a line: no separator, no space at either end. */
 function asPart(one: unknown): one is string {

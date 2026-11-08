@@ -276,7 +276,8 @@ describe('the collection a flag or a registry names', () => {
         data_themes: [],
         collections,
         list: { file: '', value: collections },
-        words: {}
+        words: {},
+        new_project_dir: {}
     });
 
     const HUBS: HubVocabs = {

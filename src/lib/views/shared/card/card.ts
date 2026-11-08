@@ -15,7 +15,7 @@ import {
 } from '$lib/state/workbench/layout';
 import { addressOfId, placeOf, type RegistryWord } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
-import { hasGlyph, t } from '$lib/state/shared/words/text';
+import { hasGlyph, plural, t } from '$lib/state/shared/words/text';
 import { resourceGlyph } from '$lib/state/forms/schema';
 import { entryPage, pageLookup, venuePage, type EntryPage } from '$lib/state/forms/page-entry';
 import { openPage } from '../explorer/opening';
@@ -238,9 +238,11 @@ export function dueBadge(
     return { label: date };
 }
 
-/** How many projects a registry card holds, as its tag reads: a count, singular or plural. */
+/**
+ * How many projects a registry card holds, as its tag reads: the count and the noun in its form.
+ */
 export function projectCount(count: number): string {
-    return `${count} ${count === 1 ? t('pillars.project') : t('pillars.projects')}`;
+    return `${count} ${plural('pillars.projects', count)}`;
 }
 
 /** The control that opens a registry card's entry in its file, titled with the file's name. */

@@ -12,7 +12,7 @@
 // the first tab of the pane that is not pinned, as Delete does.
 
 import type { ClientState } from '$lib/state/client/context';
-import { t } from '$lib/state/shared/words/text';
+import { plural } from '$lib/state/shared/words/text';
 import type { Instance } from '$lib/state/workbench/layout';
 import { closeAsk, closeOnce, closeWords } from '$lib/state/workbench/navigation/pages';
 import { afterDelete } from '$lib/ui/tabs/tab-strip';
@@ -79,7 +79,7 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
      * tab is closed or the question is put.
      */
     function closeTab(id: string): Promise<void> {
-        return askAndClose(`tab:${id}`, [id], t('ui.tab_close_dirty'), () =>
+        return askAndClose(`tab:${id}`, [id], plural('ui.tabs_close_dirty', 1, 1), () =>
             closeInstance(id, deps.page())
         );
     }

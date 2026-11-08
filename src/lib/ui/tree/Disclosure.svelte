@@ -4,34 +4,47 @@
     // A control handed a hue (`tone`) draws its count, its label and its marker in that hue's text
     // colour, as a group's heading is drawn in its category's colour
     // (ui/controls/heads/GroupHead.svelte); one handed none draws them in the muted text colour.
+    //
+    // Two uses draw it. A group that opens and closes hands it `expanded`, and it draws the marker
+    // and says the open state to assistive technology (`aria-expanded`), as a record card's project
+    // strip does (views/shared/links/CrossLinks.svelte). A count that opens something else hands it
+    // no `expanded`, and it is a plain press in the same pill with no marker and no open state, as
+    // the row of count buttons of a record's page is
+    // (views/shared/card/record/RecordCounts.svelte).
 
     import Glyph from '../display/Glyph.svelte';
 
     type Props = {
         count: number;
         label: string;
-        expanded: boolean;
+        /** Whether the group is open; nothing for a count that discloses nothing. */
+        expanded?: boolean;
         onclick: (event: MouseEvent) => void;
         /** A hue name the control's words are drawn in, or nothing for the muted colour. */
         tone?: string;
+        /** The hover words, or nothing for none. */
+        title?: string;
     };
 
-    let { count, label, expanded, onclick, tone }: Props = $props();
+    let { count, label, expanded, onclick, tone, title }: Props = $props();
 </script>
 
 <button
     type="button"
     class="disclosure"
-    class:open={expanded}
+    class:open={expanded === true}
     aria-expanded={expanded}
+    {title}
     style={tone === undefined ? undefined : `--disclosure-tone: var(--c-${tone}-txt)`}
     {onclick}
 >
     <strong class="count">{count}</strong>
     <span class="label">{label}</span>
-    <span class="marker">
-        <Glyph name="disclosure" />
-    </span>
+    {#if expanded !== undefined}
+        <span class="marker">
+            <Glyph name="disclosure" />
+        </span>
+    {/if}
 </button>
 
 <style>

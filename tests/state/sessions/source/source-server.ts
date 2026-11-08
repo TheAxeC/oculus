@@ -3,11 +3,15 @@
 // holds is refused `changed`), and the file's channel told what another program did to it. The
 // source store is made over it with no client around it, so a case sees exactly what the store
 // sent and what each tab holds. `settled` waits on the requests: every read and save the store
-// made, until the store has taken the whole answer in.
+// made, until the store has taken the whole answer in. For that to hold of a read, its SHA-256
+// digest resolves in the turn it is asked in: `crypto.subtle.digest` runs off the JavaScript
+// thread and can take longer than the one timer turn `settled` waits, so for the test that makes
+// a fake server it is replaced by `node:crypto`'s digest of the same bytes, and the real one is
+// put back when that test ends.
 
 import { createHash } from 'node:crypto';
 import { SvelteMap } from 'svelte/reactivity';
-import { vi } from 'vitest';
+import { onTestFinished, vi } from 'vitest';
 import type { Message } from '../../../../src/lib/data/model/index.ts';
 import {
     createSource,
@@ -22,10 +26,35 @@ import type {
 export const hashOf = (content: string): string =>
     createHash('sha256').update(content).digest('hex');
 
+/** The bytes a digest is asked of, whether given as a view or as a buffer. */
+function bytesOf(data: BufferSource): Uint8Array {
+    return ArrayBuffer.isView(data)
+        ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+        : new Uint8Array(data);
+}
+
+/**
+ * Give `crypto.subtle.digest` a SHA-256 that resolves in the turn it is asked in, until the test
+ * that calls this ends; any other algorithm goes to the real digest.
+ */
+function digestInTurn(): void {
+    const real = crypto.subtle.digest.bind(crypto.subtle);
+    const digest = vi
+        .spyOn(crypto.subtle, 'digest')
+        .mockImplementation((algorithm: AlgorithmIdentifier, data: BufferSource) => {
+            const name = typeof algorithm === 'string' ? algorithm : algorithm.name;
+            if (name.toUpperCase() !== 'SHA-256') return real(algorithm, data);
+            const hash = createHash('sha256').update(bytesOf(data)).digest();
+            return Promise.resolve(Uint8Array.from(hash).buffer);
+        });
+    onTestFinished(() => digest.mockRestore());
+}
+
 /** What a fake server holds and what the page sent it. */
 export function server(
     options: Partial<Pick<SourceDeps, 'rules' | 'kept' | 'roots' | 'served' | 'rootsFailed'>> = {}
 ) {
+    digestInTurn();
     const files = new Map<string, string>();
     /** Files held as bytes, for a file that is not UTF-8 text; a key held here is read here. */
     const raw = new Map<string, Uint8Array>();

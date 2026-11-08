@@ -15,7 +15,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { ScopeFile } from '$lib/state/system/config/scopes/rows';
     import {
         SCOPE_KINDS,
@@ -136,9 +136,7 @@
     <span class="count" role="status">
         {count === 0
             ? t('settings.scope_clean')
-            : count === 1
-              ? t('settings.scope_unsaved_one')
-              : t('settings.scope_unsaved_many', count)}
+            : plural('settings.scope_unsaved_changes', count, count)}
     </span>
     <ToolButton
         label={t('settings.scope_save')}

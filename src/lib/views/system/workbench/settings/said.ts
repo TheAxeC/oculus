@@ -2,7 +2,7 @@
 // rows module worded from the catalog and the default line of a row. Nothing here is drawn; the
 // partials call these so each sentence is worded in one place.
 
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 import type { Message } from '$lib/state/system/config/messages';
 import { listShape, textShape, type ConfigRow } from '$lib/state/system/config/rows';
 
@@ -24,9 +24,8 @@ export function defaultWords(row: Pick<ConfigRow, 'control' | 'default'>): strin
     const items = listShape.safeParse(value);
     if (items.success) {
         if (items.data.length === 0) return t('workbench.settings_default_empty');
-        return items.data.length === 1
-            ? t('workbench.settings_default_item_one')
-            : t('workbench.settings_default_items', items.data.length);
+        const count = items.data.length;
+        return plural('workbench.settings_default_items', count, count);
     }
     if (value === '' || value === null || value === undefined) {
         return t('workbench.settings_default_empty');

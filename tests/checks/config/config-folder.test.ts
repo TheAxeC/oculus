@@ -377,6 +377,24 @@ describe("oculus's own config directory", () => {
         ['catalogs/vocab.yml', 'stages: [exploring]\n', 'stages', 'stages must be a map'],
         ['catalogs/vocab.yml', 'tiers: 3\n', 'tiers', 'tiers must be a map'],
         [
+            'catalogs/vocab.yml',
+            'categories:\n    - { key: idea, label: idea, color: "#7c5cff" }\n',
+            'categories.0.label',
+            'categories.0.label must be a map'
+        ],
+        [
+            'text/views/system/status.yml',
+            "text:\n    status:\n        count: { one: '1 hook' }\n",
+            'text.status.count',
+            'text.status.count is a map of plural forms with no other form, which every such map holds'
+        ],
+        [
+            'text/views/system/status.yml',
+            "text:\n    status:\n        count: { one: '1 hook', several: 'hooks', other: '{0} hooks' }\n",
+            'text.status.count.several',
+            'text.status.count.several is not a plural form: the forms are zero, one, two, few, many and other'
+        ],
+        [
             'text/views/system/status.yml',
             'text: {}\nstray: x\n',
             'stray',

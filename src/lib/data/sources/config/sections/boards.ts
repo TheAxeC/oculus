@@ -7,12 +7,13 @@
 // not hold, a word or a flag a block's vocabulary does not hold, a list of columns that is no list
 // of records, a column with no cell), and a `label:` or `glyph:` that is absent or names no word of
 // the text catalog. For `categories`: a row with no key or a key an earlier row holds, a row naming
-// no `color`, and a block's word or flag its vocabulary does not hold, read by the same entries of
-// the catalog as a board's blocks. The page reads both itself (data/shapes/boards/) and passes over
+// no `color`, a `label` with no `other` form or a form outside the six CLDR plural forms, and a
+// block's word or flag its vocabulary does not hold, read by the same entries of the catalog as a
+// board's blocks. The page reads both itself (data/shapes/boards/) and passes over
 // what it cannot read, so each finding says what is not read. They are worded from the merged
 // catalog.
 
-import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
+import { findingText, pluralIssues, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import type { Finding } from '../../../model/index.ts';
 import {
@@ -217,10 +218,30 @@ function wordFindings(
 }
 
 /**
+ * The findings of a category's `label`, a map of plural forms: one for a label with no `other`
+ * form (the row is drawn by its key), and one for each key that is none of the six forms (it is not
+ * read). A label that is no map is the whole-file shape's finding.
+ */
+function labelFindings(
+    at: string,
+    label: Record<string, unknown>,
+    note: Note,
+    catalog: TextCatalog
+): void {
+    const { noOther, outside } = pluralIssues(label);
+    if (noOther) note(at, findingText(catalog, 'findings.config.plural_no_other', at));
+    for (const form of outside) {
+        const key = `${at}.${form}`;
+        note(key, findingText(catalog, 'findings.config.plural_form_unknown', key));
+    }
+}
+
+/**
  * The findings of `categories`: a list that is no list, a row that is no map, a row with no key or
  * one whose key an earlier row holds (the row is not read), a row naming no `color` (it is drawn in
- * no colour), and inside its `stages` and `forms` blocks each list and word the board entry's
- * fields of the same name refuse.
+ * no colour), a `label` with no `other` form or with a key outside the six plural forms
+ * (`labelFindings`), and inside its `stages` and `forms` blocks each list and word the board
+ * entry's fields of the same name refuse.
  */
 export function categoriesFindings(
     config: Record<string, unknown>,
@@ -252,6 +273,7 @@ export function categoriesFindings(
         if (!Object.hasOwn(fields, 'color')) {
             note(at, findingText(catalog, 'findings.config.categories_colour', at));
         }
+        if (isMap(fields.label)) labelFindings(`${at}.label`, fields.label, note, catalog);
         for (const name of CATEGORY_BLOCKS) {
             const spec = specs[name];
             if (spec === undefined || !Object.hasOwn(fields, name)) continue;

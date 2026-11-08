@@ -149,14 +149,16 @@ text:
         lsp_edit_local: "{0} would hold a key the machine does not read ({1}), so the language server's edit was not made."
         lsp_edit_not_text: "{0} is not UTF-8 text throughout, so the language server's edit was not made."
         lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder other than a hub's .oculus folder, or in the secrets folder of a hub or ~/.oculus, so the language server's edit was not made."
-        lsp_edit_partial: "The language server's edit stopped at {0} after {1} files were written. History undoes them."
-        lsp_edit_partial_one: "The language server's edit stopped at {0} after 1 file was written. History undoes it."
+        lsp_edit_partial:
+            one: "The language server's edit stopped at {0} after {1} file was written. History undoes it."
+            other: "The language server's edit stopped at {0} after {1} files were written. History undoes them."
         lsp_edit_readonly: "{0} is read-only, so the language server's edit was not made."
         lsp_edit_refused: '{0}'
         lsp_edit_structure: "The language server's edit creates, renames or deletes {0}, which oculus does not do, so nothing was changed."
         lsp_edit_too_large: "{0} is larger than {1} MB, so the language server's edit was not made."
-        lsp_edit_typed: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} files were written, and History undoes them."
-        lsp_edit_typed_one: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. 1 file was written, and History undoes it."
+        lsp_edit_typed:
+            one: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} file was written, and History undoes it."
+            other: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} files were written, and History undoes them."
         lsp_rename_refused_empty: The language server refused this rename and gave no reason.
         md_links_no_answer: 'Links in Markdown files under {0} were not checked: the Markdown server did not answer.'
         md_links_no_place: 'Links in Markdown files under {0} were not checked: the move names no place under a served folder.'
@@ -201,8 +203,9 @@ text:
         submit_confirm_anyway: Submit Anyway
         submit_copy_failed: 'The copy failed: {0}'
         submit_detail_copy: 'Copies {0} to {1} with rsync {2}'
-        submit_detail_file_one: 'Sends 1 file ({0}).'
-        submit_detail_files: 'Sends {0} files ({1} in all).'
+        submit_detail_files:
+            one: 'Sends {0} file ({1}).'
+            other: 'Sends {0} files ({1} in all).'
         submit_detail_remote: 'Then runs on {0}: {1}'
         submit_detail_view: The job then shows in Live HPC.
         submit_done: 'Submitted batch job {0}'

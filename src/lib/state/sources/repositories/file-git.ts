@@ -15,7 +15,7 @@
 import type { GitBlameLine, GitLineMark, GitState } from '../../../data/model/index.ts';
 import { ago as countAgo, type AgoUnit } from '../../../data/helpers/dates.ts';
 import { deepestHolding, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 
 /**
  * A root the file routes serve: its key and the folder it is, and `real`, that folder with every
@@ -122,24 +122,14 @@ export function ago(iso: string, now: number = Date.now()): string {
     return counted(told.unit, told.count);
 }
 
-/** A count of one unit ago, in the unit's singular for one and its plural otherwise. */
+/** A count of one unit ago, in the plural form of the count. */
 function counted(unit: Exclude<AgoUnit, 'now'>, count: number): string {
-    if (unit === 'minute') {
-        return count === 1 ? t('repositories.ago_minute') : t('repositories.ago_minutes', count);
-    }
-    if (unit === 'hour') {
-        return count === 1 ? t('repositories.ago_hour') : t('repositories.ago_hours', count);
-    }
-    if (unit === 'day') {
-        return count === 1 ? t('repositories.ago_day') : t('repositories.ago_days', count);
-    }
-    if (unit === 'week') {
-        return count === 1 ? t('repositories.ago_week') : t('repositories.ago_weeks', count);
-    }
-    if (unit === 'month') {
-        return count === 1 ? t('repositories.ago_month') : t('repositories.ago_months', count);
-    }
-    return count === 1 ? t('repositories.ago_year') : t('repositories.ago_years', count);
+    if (unit === 'minute') return plural('repositories.ago_minutes', count, count);
+    if (unit === 'hour') return plural('repositories.ago_hours', count, count);
+    if (unit === 'day') return plural('repositories.ago_days', count, count);
+    if (unit === 'week') return plural('repositories.ago_weeks', count, count);
+    if (unit === 'month') return plural('repositories.ago_months', count, count);
+    return plural('repositories.ago_years', count, count);
 }
 
 /** What one blamed line carries: its gutter words and its hover words. */

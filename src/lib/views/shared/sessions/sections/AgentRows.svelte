@@ -22,7 +22,7 @@
     import type { GroupedSession, SessionAgent } from '$lib/state/client/selectors.svelte';
     import { useState } from '$lib/state/client/use';
     import { agentTokens, anyRunning } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { rowKey } from './session-sections';
 
     const {
@@ -86,18 +86,12 @@
         if (took !== null) parts.push(span(took));
         if (agent.resultChars > 0) {
             parts.push(
-                agent.resultChars === 1
-                    ? t('sessions.ag_chars_one')
-                    : t('sessions.ag_chars', compactCount(agent.resultChars))
+                plural('sessions.ag_chars', agent.resultChars, compactCount(agent.resultChars))
             );
         }
         const spent = agentTokens(agent);
         if (spent !== null) {
-            parts.push(
-                spent === 1
-                    ? t('sessions.ag_tokens_one')
-                    : t('sessions.ag_tokens', compactCount(spent))
-            );
+            parts.push(plural('sessions.ag_tokens', spent, compactCount(spent)));
         }
         return parts.join(` ${t('sessions.meta_sep')} `);
     }

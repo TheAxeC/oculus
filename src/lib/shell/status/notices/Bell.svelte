@@ -15,7 +15,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { Portal } from 'bits-ui';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -66,13 +66,11 @@
         <ToolButton
             label={t('statusbar.item_bell')}
             glyph={quiet ? QUIET_GLYPH : count > 0 ? UNREAD_GLYPH : BELL_GLYPH}
-            title={count === 1
-                ? t('statusbar.bell_unread_one')
-                : count > 0
-                  ? t('statusbar.bell_unread', count)
-                  : quiet
-                    ? t('statusbar.bell_quiet')
-                    : t('statusbar.bell_tip')}
+            title={count > 0
+                ? plural('statusbar.bell_unread', count, count)
+                : quiet
+                  ? t('statusbar.bell_quiet')
+                  : t('statusbar.bell_tip')}
             status
             expanded={open}
             onclick={toggle}

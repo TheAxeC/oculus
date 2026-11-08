@@ -16,7 +16,7 @@
 
 import type { GitEntry, GitState } from '../../../../data/model/index.ts';
 import { joinPath, pathUnder, trimSlash } from '../../../../data/helpers/files/paths.ts';
-import { t } from '../../../shared/words/text.ts';
+import { plural, t } from '../../../shared/words/text.ts';
 
 /** The letter a changed file shows: modified, untracked, added, deleted, renamed or conflicted. */
 export type Mark = 'M' | 'U' | 'A' | 'D' | 'R' | '!';
@@ -176,7 +176,6 @@ export function problemMarkOf(
 export function problemWords(mark: ProblemMark): { count: string; title: string } {
     return {
         count: mark.count > 9 ? t('files.problems_many') : String(mark.count),
-        title:
-            mark.count === 1 ? t('files.problems_one_title') : t('files.problems_title', mark.count)
+        title: plural('files.problems_title', mark.count, mark.count)
     };
 }

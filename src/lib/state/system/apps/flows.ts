@@ -10,7 +10,7 @@
 // naming the files, the session, the tasks and the terminals, since the editors close, the
 // session ends and the tasks and terminals are stopped when the app stops acting.
 
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 import type { AppRow } from '../../../data/model/index.ts';
 import { pickedOf } from '../../sources/explorer/acts/folders.ts';
 import type { Posted } from '../../shared/stores/shapes.ts';
@@ -129,9 +129,12 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
                 ? t('apps.remove_secrets_unknown', seen.folder)
                 : seen.secrets === 0
                   ? t('apps.remove_secrets_none', seen.folder)
-                  : seen.secrets === 1
-                    ? t('apps.remove_secrets_one', seen.folder)
-                    : t('apps.remove_secrets', seen.folder, seen.secrets.toString());
+                  : plural(
+                        'apps.remove_secrets',
+                        seen.secrets,
+                        seen.folder,
+                        seen.secrets.toString()
+                    );
         const others =
             seen.dependents.length === 0
                 ? ''

@@ -27,7 +27,7 @@
 
 import { SvelteMap } from 'svelte/reactivity';
 import { relativePath } from '../../../data/helpers/files/paths.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 import { sourceTabState } from '../source/draft.ts';
 import type { Jump, JumpMessage, Message } from '../../../data/model/index.ts';
 import type { LatexBuildAsk } from '../terminals.svelte.ts';
@@ -321,11 +321,7 @@ export function createLatexActions(deps: LatexActionDeps): LatexActions {
             say(counted.error, true);
             return;
         }
-        say(
-            counted.words === 1
-                ? t('latex.words_of_one', found.main)
-                : t('latex.words_of', found.main, counted.words)
-        );
+        say(plural('latex.words_of', counted.words, found.main, counted.words));
     }
 
     async function checkcites(root: string, file: string): Promise<void> {

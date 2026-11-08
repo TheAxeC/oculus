@@ -203,7 +203,8 @@ export type SelectorsStore = {
     staleLag: () => number;
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: (hub: string) => Choice[];
-    newProjectFolder: (tier: string) => string;
+    /** The folder a new project of the tier starts with in the hub `hub` (new-project.ts). */
+    newProjectFolder: (tier: string, hub?: string) => string;
     /**
      * The user and the field a new project names them in, read from the role keys given (a
      * board's `role:`), or from every row of `roles:` when the keys are null (a board naming no
@@ -815,7 +816,12 @@ export function createSelectors(
         staleLag,
         disseminatedFor,
         domainChoices,
-        newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
+        newProjectFolder: (tier, hub) =>
+            folderOfNewProjects(configMap(), tier, {
+                hub,
+                primary: workspace().primary,
+                vocabs: hubVocabs()
+            }),
         newProjectPerson: (keys, hub) => {
             const primary = workspace().primary;
             const where =

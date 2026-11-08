@@ -47,7 +47,7 @@
         interpreterInForce,
         interpreterLabel
     } from '$lib/state/system/machine/lsp/lsp.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -103,9 +103,14 @@
             case 'starting':
                 return t('statusbar.ls_tip_starting', name, where);
             case 'indexing':
-                return server.total === 1
-                    ? t('statusbar.ls_tip_indexing_one', name, where, server.done)
-                    : t('statusbar.ls_tip_indexing', name, where, server.done, server.total);
+                return plural(
+                    'statusbar.ls_tip_indexing',
+                    server.total,
+                    name,
+                    where,
+                    server.done,
+                    server.total
+                );
             case 'ready':
                 return t('statusbar.ls_tip_ready', name, where);
             case 'not_found':

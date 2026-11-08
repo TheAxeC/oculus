@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
 import { z } from 'zod';
-import { findingText } from '../../../data/helpers/finding-text.ts';
+import { findingText, pluralFindingText } from '../../../data/helpers/finding-text.ts';
 import { byKey, focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
 import { filledText } from '../../../data/shapes/shapes.ts';
 import { skippedTiers, wordsWith } from '../../../data/shapes/vocab-keys.ts';
@@ -225,12 +225,23 @@ export type AuditInput = {
     catalog: Record<string, string>;
 };
 
-/** The catalog sentence a finding is worded by: its key and the arguments that fill it. */
-type Sentence = { key: string; args: readonly (string | number)[] };
+/**
+ * The catalog sentence a finding is worded by: its key and the arguments that fill it, and for a
+ * plural key the count its form is picked by.
+ */
+type Sentence = { key: string; args: readonly (string | number)[]; count?: number };
 
 /** A rule names its sentence by key, so the key and the arguments are what the signature reads. */
 export function sentence(key: string, ...args: (string | number)[]): Sentence {
     return { key, args };
+}
+
+/**
+ * The sentence of a plural key, worded in the form `count` takes (finding-text.ts,
+ * `pluralFindingText`); the key and the arguments are what the signature reads, as for `sentence`.
+ */
+export function pluralSentence(key: string, count: number, ...args: (string | number)[]): Sentence {
+    return { key, args, count };
 }
 
 /**
@@ -259,13 +270,16 @@ export function collector(
     const found: AuditFinding[] = [];
     return {
         found,
-        add({ key, args, signed, ...finding }) {
+        add({ key, args, count, signed, ...finding }) {
             const scope = primary ? finding.scope : `${root}:${finding.scope}`;
             found.push({
                 ...finding,
                 hub: root,
                 root: finding.root ?? root,
-                message: findingText(catalog, key, ...args),
+                message:
+                    count === undefined
+                        ? findingText(catalog, key, ...args)
+                        : pluralFindingText(catalog, key, count, ...args),
                 signature: signatureOf(scope, finding.where, finding.kind, key, signed ?? args)
             });
         }

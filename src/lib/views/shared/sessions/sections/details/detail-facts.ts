@@ -16,7 +16,7 @@ import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
 import type { KeyRow } from '$lib/ui/tree/tree-keys';
 import type { GroupedSession } from '$lib/state/client/selectors.svelte';
 import { clock, compactCount, modelShort, stamp } from '$lib/state/shared/words/format';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 /** The section's groups, in the order they are drawn. */
 export const DETAIL_GROUPS = ['session', 'model', 'usage'] as const;
@@ -174,9 +174,7 @@ function usageFacts(session: GroupedSession, window: number): Fact[] {
                     ? t('sessions.cache_ttl_none')
                     : t('sessions.cache_ttl', cache.ttl),
                 t('sessions.cache_share', cacheShare(session)),
-                cache.busts === 1
-                    ? t('sessions.cache_busts_one')
-                    : t('sessions.cache_busts', cache.busts)
+                plural('sessions.cache_busts', cache.busts, cache.busts)
             ])
         )
     ];

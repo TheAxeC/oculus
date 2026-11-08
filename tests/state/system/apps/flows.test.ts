@@ -9,7 +9,7 @@
 import { describe, expect, vi } from 'vitest';
 import type { AppRow } from '../../../../src/lib/data/model/index.ts';
 import type { Posted } from '../../../../src/lib/state/shared/stores/shapes.ts';
-import { t } from '../../../../src/lib/state/shared/words/text.ts';
+import { plural, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { createFlows, type AppEnding } from '../../../../src/lib/state/system/apps/flows.ts';
 import { createManage } from '../../../../src/lib/state/system/apps/manage.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
@@ -169,7 +169,7 @@ describe('offers the choices an app allows and asks before a disable or a remova
         await store.pick('app:notes', 'remove', (question) => asked.push(question));
         expect([asked[0].message, asked[0].detail, asked[0].confirm]).toEqual([
             t('apps.remove_question', 'Notes'),
-            t('apps.remove_secrets', '/apps/notes', '2'),
+            plural('apps.remove_secrets', 2, '/apps/notes', '2'),
             t('apps.remove_confirm')
         ]);
     });

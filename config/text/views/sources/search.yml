@@ -60,10 +60,13 @@ text:
         copy: Copy
         copy_all: Copy All
         copy_path: Copy Path
-        count: '{0} results in {1} files'
-        count_one: 1 result in 1 file
-        count_one_file: '{0} results in 1 file'
-        count_one_result: '1 result in {0} files'
+        count: '{0} in {1}'
+        locations:
+            one: '{0} result'
+            other: '{0} results'
+        files:
+            one: '{0} file'
+            other: '{0} files'
         direction_incoming: Incoming calls
         direction_outgoing: Outgoing calls
         direction_subtypes: Subtypes
@@ -91,14 +94,17 @@ text:
         clear_notes_title: Search every folder of every root again
         clear_scope: Search the whole root
         clear_scope_title: Search every folder of the root again
-        count: '{0} hits in {1} files, {2} ms'
-        count_1_1: '{0} hit in {1} file, {2} ms'
-        count_1_n: '{0} hit in {1} files, {2} ms'
-        count_n_1: '{0} hits in {1} file, {2} ms'
-        count_replacing: '{0} hits would be replaced in {1} files, {2} ms'
-        count_replacing_1_1: '{0} hit would be replaced in {1} file, {2} ms'
-        count_replacing_1_n: '{0} hit would be replaced in {1} files, {2} ms'
-        count_replacing_n_1: '{0} hits would be replaced in {1} file, {2} ms'
+        count: '{0} in {1}, {2} ms'
+        count_replacing: '{0} would be replaced in {1}, {2} ms'
+        hits:
+            one: '{0} hit'
+            other: '{0} hits'
+        files:
+            one: '{0} file'
+            other: '{0} files'
+        occurrences:
+            one: '{0} occurrence'
+            other: '{0} occurrences'
         dismiss: Dismiss
         dismiss_file_title: Take {0} out of these results without changing it
         dismiss_glyph: dismiss
@@ -132,24 +138,12 @@ text:
         replace_all: Replace All
         replace_all_glyph: replace_all
         replace_all_title: Replace every hit listed here
-        replace_ask_1_1: Replace {0} occurrence across {1} file with '{2}'?
-        replace_ask_1_1_empty: Replace {0} occurrence across {1} file?
-        replace_ask_1_n: Replace {0} occurrence across {1} files with '{2}'?
-        replace_ask_1_n_empty: Replace {0} occurrence across {1} files?
+        replace_ask: Replace {0} across {1} with '{2}'?
+        replace_ask_empty: Replace {0} across {1}?
         replace_ask_capped: The search stopped at {0} hits, so only the hits listed are replaced.
-        replace_ask_n_1: Replace {0} occurrences across {1} file with '{2}'?
-        replace_ask_n_1_empty: Replace {0} occurrences across {1} file?
-        replace_ask_n_n: Replace {0} occurrences across {1} files with '{2}'?
-        replace_ask_n_n_empty: Replace {0} occurrences across {1} files?
         replace_box: Replace
-        replace_done_1_1: Replaced {0} occurrence across {1} file with '{2}'.
-        replace_done_1_1_empty: Replaced {0} occurrence across {1} file.
-        replace_done_1_n: Replaced {0} occurrence across {1} files with '{2}'.
-        replace_done_1_n_empty: Replaced {0} occurrence across {1} files.
-        replace_done_n_1: Replaced {0} occurrences across {1} file with '{2}'.
-        replace_done_n_1_empty: Replaced {0} occurrences across {1} file.
-        replace_done_n_n: Replaced {0} occurrences across {1} files with '{2}'.
-        replace_done_n_n_empty: Replaced {0} occurrences across {1} files.
+        replace_done: Replaced {0} across {1} with '{2}'.
+        replace_done_empty: Replaced {0} across {1}.
         replace_file_title: Replace All in this file
         replace_glyph: replace
         replace_hit: Replace

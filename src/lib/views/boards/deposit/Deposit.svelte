@@ -53,7 +53,7 @@
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MirrorState, Plan } from '$lib/state/system/deposit.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { stateRecord } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -182,9 +182,7 @@
         const count = plan?.changes.length ?? 0;
         const branch = plan?.branch ?? '';
         ask(
-            count === 1
-                ? t('deposit.commit_confirm_one', branch)
-                : t('deposit.commit_confirm', count, branch),
+            plural('deposit.commit_confirm', count, count, branch),
             t('deposit.commit_detail'),
             async () => {
                 const answer = await act('commit', { message }, true);

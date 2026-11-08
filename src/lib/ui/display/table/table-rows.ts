@@ -56,21 +56,31 @@ export function order(
 export type { ListedColumn };
 
 /**
- * The columns a list draws in its width: every listed column that is shown, less the rightmost
- * ones whose minimum widths (`least`) do not fit, but the column `kept`, which is drawn always.
- * The columns drawn share the width in proportion to their minimums. A width of 0, a render with
- * no layout, draws them all.
+ * The columns a list draws in its width: every listed column that is shown, less the ones whose
+ * minimum widths (`least`) do not fit, but the column `kept`, which is drawn always. A column
+ * `empty` names, one with no value in any row drawn, goes before any column that holds one, and
+ * among either the rightmost goes first, so the width goes to the columns that say something. The
+ * columns drawn share the width in proportion to their minimums, so each, `kept` among them, is at
+ * least its minimum wide whenever the width holds `kept`'s. A width of 0, a render with no layout,
+ * draws them all, and so does a width they all fit in. Given `wanted`, the width `kept`'s longest
+ * text needs, an empty column also goes, rightmost first, while `kept`'s share is narrower than
+ * that, so its text is not cut beside a column that says nothing.
  */
 export function fittedColumns(
     listed: readonly ListedColumn[],
     width: number,
     least: (key: string) => number,
-    kept: string
+    kept: string,
+    empty: ReadonlySet<string> = new Set(),
+    wanted?: number
 ): Column[] {
     const drawn = listed.filter((one) => one.shown);
     let total = drawn.reduce((sum, one) => sum + least(one.key), 0);
-    while (width > 0 && total > width) {
-        const at = drawn.findLastIndex((one) => one.key !== kept);
+    while (width > 0) {
+        const blank = drawn.findLastIndex((one) => one.key !== kept && empty.has(one.key));
+        const cut = wanted !== undefined && (least(kept) / total) * width < wanted;
+        if (total <= width && !(cut && blank >= 0)) break;
+        const at = blank >= 0 ? blank : drawn.findLastIndex((one) => one.key !== kept);
         if (at < 0) break;
         total -= least(drawn[at].key);
         drawn.splice(at, 1);

@@ -9,7 +9,14 @@
 // generation, state/shared/words/generation.svelte.ts: that is what a template's own effect depends
 // on, and what makes a string drawn before a push redraw with the string the push installed.
 
-import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
+import {
+    catalogLocale,
+    fillPlaceholders,
+    pluralPick,
+    pluralText,
+    type PluralForm,
+    type TextCatalog
+} from '../../../data/helpers/finding-text.ts';
 import { configGeneration } from './generation.svelte.ts';
 import { glyphMode } from './glyphmode.svelte.ts';
 
@@ -71,6 +78,34 @@ export function hasText(key: string): boolean {
  */
 export function t(key: string, ...args: (string | number)[]): string {
     return fillPlaceholders(catalogEntry(key), args);
+}
+
+/**
+ * The words of the plural key `key` for `count`, with {0} and {1} replaced by the arguments: the
+ * form the count takes in the catalog's language, else the key's `other` form (finding-text.ts,
+ * `pluralText`). The count is not put in a placeholder of its own accord, so a caller that shows it
+ * passes it as an argument too. A key whose `other` form the catalog lacks throws, as t() does.
+ */
+export function plural(key: string, count: number, ...args: (string | number)[]): string {
+    configGeneration();
+    const said = pluralText(catalog as TextCatalog, key, count, ...args);
+    if (said === undefined) {
+        throw new Error(`plural text key not in the text catalog (config/text/): ${key}`);
+    }
+    return said;
+}
+
+/**
+ * The words a map of plural forms gives for `count` in the catalog's language, as `plural` picks a
+ * key's form: for a map that hub data writes rather than config/text/, a category's `labels`.
+ * Nothing when the map gives neither the count's form nor `other`.
+ */
+export function pluralOf(
+    forms: Partial<Record<PluralForm, string>>,
+    count: number
+): string | undefined {
+    configGeneration();
+    return pluralPick((form) => forms[form], catalogLocale(catalog), count);
 }
 
 /**

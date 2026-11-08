@@ -26,6 +26,7 @@
 
 import { z } from 'zod';
 import type { Id, Project, Snapshot } from '../../data/model/index.ts';
+import type { PluralForm } from '../../data/helpers/finding-text.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { addressOfId, hubId } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
@@ -180,14 +181,15 @@ export function recordIds(snapshot: Snapshot, tab: RecordTab): Id[] | null {
 }
 
 /**
- * One count button of a record's row: the row of `categories:` it counts (its key, its label and
- * its colour, the empty key and the words "other" for the projects in no row), how many of the
- * record's projects in that row carry a slice, and the slices those projects are in, which a press
- * picks on the board's second line.
+ * One count button of a record's row: the row of `categories:` it counts (its key, its label, the
+ * label's plural forms and its colour, the empty key, the words "other" and no forms for the
+ * projects in no row), how many of the record's projects in that row carry a slice, and the slices
+ * those projects are in, which a press picks on the board's second line.
  */
 export type RecordButton = {
     key: string;
     label: string;
+    labels: Partial<Record<PluralForm, string>>;
     color: string;
     count: number;
     slices: string[];

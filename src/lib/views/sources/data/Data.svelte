@@ -36,7 +36,7 @@
     } from '$lib/state/sources/registries/datasets';
     import { applyThemeFacets, themeFacets, themeLabeller } from '$lib/state/shared/words/themes';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -85,9 +85,12 @@
             onchange={(off: string[]) => write({ off })}
         />
         <span class="count">
-            {allDatasets.length === 1
-                ? t('data.count_one', accessSummary(allDatasets))
-                : t('data.count', allDatasets.length, accessSummary(allDatasets))}
+            {plural(
+                'data.count',
+                allDatasets.length,
+                allDatasets.length,
+                accessSummary(allDatasets)
+            )}
         </span>
     </Toolbar>
 {/snippet}

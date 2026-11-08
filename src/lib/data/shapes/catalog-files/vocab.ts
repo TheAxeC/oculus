@@ -320,7 +320,12 @@ const categoryRow = z.strictObject({
     key: text.describe(
         "The word the category is named by, which a board's slice filter and its folded sections store."
     ),
-    label: text.optional().describe('The words the category is drawn with.'),
+    label: z
+        .record(z.string(), text)
+        .optional()
+        .describe(
+            'The words the category is drawn with, a map of plural forms: `other` names the category alone, and a count drawn with it takes the form of the count (`one`, and `zero`, `two`, `few` or `many` where a language has them).'
+        ),
     color: colour
         .optional()
         .describe(

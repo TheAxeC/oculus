@@ -7,7 +7,7 @@
 import type { ChosenRows, LineChange } from '$lib/state/sources/repositories/diff/diff-hunks';
 import { sidesPatch, type PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
 import type { DiffSides } from '$lib/state/sources/repositories/repositories';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 /** What the pane hands its hunk actions: the files drawn, the diff's repository and path. */
 export type ActsSource = {
@@ -54,9 +54,7 @@ export class HunkActs {
             message:
                 count === 0
                     ? t('repositories.hunk_revert_confirm', path)
-                    : count === 1
-                      ? t('repositories.lines_revert_confirm_one', path)
-                      : t('repositories.lines_revert_confirm', count, path),
+                    : plural('repositories.lines_revert_confirm', count, count, path),
             act: () => void this.#apply(index, cut, mode)
         };
     }

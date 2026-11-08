@@ -244,7 +244,10 @@
 {/if}
 
 <style>
+    /* The tray is the scroller its group strips stick in, so the strips take its own top padding
+       off their `top` (ui/frame/Pane.svelte, `--pane-pad-top`) and stand at its top edge whole. */
     .tray {
+        --pane-pad-top: 12px;
         position: relative;
         display: grid;
         gap: 10px;

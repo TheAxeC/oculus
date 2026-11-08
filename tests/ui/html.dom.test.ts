@@ -26,7 +26,7 @@ import { scratchDir } from '../fixtures/scratch.ts';
 
 describe('inlineMarkdown', () => {
     it('is the sanitiser over the inline renderer, so no field reaches a card around it', () => {
-        for (const text of ['a **bold** field', '<script>alert(1)</script>', '[one](one.md)']) {
+        for (const text of ['a **bold** field', '[one](one.md)']) {
             expect(inlineMarkdown(text)).toBe(sanitise(marked.parseInline(text, { async: false })));
         }
         const field = inlineMarkdown(
@@ -35,6 +35,25 @@ describe('inlineMarkdown', () => {
         expect(field).toContain('<strong>field</strong>');
         expect(field).not.toMatch(/onerror|<script/);
     });
+
+    it('draws a script tag as the text it is, with no script element', () => {
+        const field = inlineMarkdown('<script>alert(1)</script>');
+        expect(field).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+        expect(sanitise(field)).toBe(field);
+    });
+
+    it.each([
+        ['rsync <source> <target>', 'rsync &lt;source&gt; &lt;target&gt;'],
+        ['~/data/<data>', '~/data/&lt;data&gt;'],
+        ['done by <time> today', 'done by &lt;time&gt; today'],
+        ['the <title> of the page', 'the &lt;title&gt; of the page'],
+        ['/local/<jobid>', '/local/&lt;jobid&gt;']
+    ])(
+        'draws the tag in %s as written, since the sanitiser keeps no such element',
+        (text, shown) => {
+            expect(inlineMarkdown(text)).toBe(shown);
+        }
+    );
 
     it("keeps a hub field's formula as KaTeX's markup and drops a handler written beside it", () => {
         const field = inlineMarkdown(
@@ -83,7 +102,8 @@ describe('a paper saved to Literature', () => {
         expect(line).not.toMatch(/<i>|<img|onerror|<script/);
         const unsaved = inlineMarkdown(sent);
         expect(unsaved).toContain('<i>in vivo</i>');
-        expect(unsaved).not.toMatch(/onerror|<script|alert/);
+        expect(unsaved).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+        expect(unsaved).not.toMatch(/onerror|<script/);
     });
 });
 

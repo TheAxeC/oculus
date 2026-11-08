@@ -483,7 +483,11 @@
         box-shadow: var(--shadow);
     }
 
+    /* The list is the scroller its group strips stick in, and it has no top padding, so the strips
+       take nothing off their `top` (ui/frame/Pane.svelte, `--pane-pad-top`) and stand at its top
+       edge whole. */
     .list {
+        --pane-pad-top: 0px;
         flex: 1 1 auto;
         min-width: 0;
         overflow: auto;

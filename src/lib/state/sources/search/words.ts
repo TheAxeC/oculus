@@ -1,87 +1,55 @@
 // Layer 2, client state. The sentences a replace says: the question before Replace All, what a
 // replace came to, and why one stopped. The question and the result are VS Code's own sentences,
-// in their singular and plural forms and with or without the replace text; a refusal is said in
-// the catalog's words for the refusal word the server answered.
+// with or without the replace text; a refusal is said in the catalog's words for the refusal word
+// the server answered.
+//
+// A sentence about two counts (the hits and the files) is one sentence with a slot for each, and
+// each slot is filled with the words of its own plural key in the form of its own count (`plural`),
+// so "1 hit in 3 files" and "4 hits in 1 file" are both said by the one sentence.
 
 import type { OpsRefusal } from '../../../data/file-ops.ts';
 import { refusalSentence } from '../../shared/answers/answers.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 
 /** How many occurrences, how many files and the replace text a sentence is about. */
 type ReplaceCount = { hits: number; files: number; text: string };
 
+/** The words of a count of files, as each two-count sentence of the Search view says it. */
+function filesWords(files: number): string {
+    return plural('search.files', files, files);
+}
+
+/** The words of a count of occurrences, as the replace question and its result say it. */
+function occurrenceWords(hits: number): string {
+    return plural('search.occurrences', hits, hits);
+}
+
 /**
  * The count line over a search's results: how many hits in how many files and how long the search
- * took, as hits that would be replaced while a replace text is typed. Each count is said in its
- * singular for one, as the replace question is.
+ * took, as hits that would be replaced while a replace text is typed. Each count is said in the
+ * form of its own number.
  */
 export function countLine(hits: number, files: number, ms: number, replacing: boolean): string {
-    const said = [String(hits), String(files), String(ms)];
-    const one = hits === 1;
-    const alone = files === 1;
-    if (replacing) {
-        if (one && alone) return t('search.count_replacing_1_1', ...said);
-        if (one) return t('search.count_replacing_1_n', ...said);
-        return alone
-            ? t('search.count_replacing_n_1', ...said)
-            : t('search.count_replacing', ...said);
-    }
-    if (one && alone) return t('search.count_1_1', ...said);
-    if (one) return t('search.count_1_n', ...said);
-    return alone ? t('search.count_n_1', ...said) : t('search.count', ...said);
+    const said = [plural('search.hits', hits, hits), filesWords(files), String(ms)];
+    return replacing ? t('search.count_replacing', ...said) : t('search.count', ...said);
 }
 
 /** The question asked before Replace All. */
 export function replaceQuestion(count: ReplaceCount, capped: number | null): string {
-    const [hits, files] = [String(count.hits), String(count.files)];
-    const one = count.hits === 1;
-    const alone = count.files === 1;
-    const empty = count.text === '';
-    let said: string;
-    if (one && alone) {
-        said = empty
-            ? t('search.replace_ask_1_1_empty', hits, files)
-            : t('search.replace_ask_1_1', hits, files, count.text);
-    } else if (one) {
-        said = empty
-            ? t('search.replace_ask_1_n_empty', hits, files)
-            : t('search.replace_ask_1_n', hits, files, count.text);
-    } else if (alone) {
-        said = empty
-            ? t('search.replace_ask_n_1_empty', hits, files)
-            : t('search.replace_ask_n_1', hits, files, count.text);
-    } else {
-        said = empty
-            ? t('search.replace_ask_n_n_empty', hits, files)
-            : t('search.replace_ask_n_n', hits, files, count.text);
-    }
+    const [hits, files] = [occurrenceWords(count.hits), filesWords(count.files)];
+    const said =
+        count.text === ''
+            ? t('search.replace_ask_empty', hits, files)
+            : t('search.replace_ask', hits, files, count.text);
     return capped === null ? said : `${said} ${t('search.replace_ask_capped', String(capped))}`;
 }
 
 /** What a replace that landed says it did. */
 export function replaceDone(count: ReplaceCount): string {
-    const [hits, files] = [String(count.hits), String(count.files)];
-    const one = count.hits === 1;
-    const alone = count.files === 1;
-    const empty = count.text === '';
-    if (one && alone) {
-        return empty
-            ? t('search.replace_done_1_1_empty', hits, files)
-            : t('search.replace_done_1_1', hits, files, count.text);
-    }
-    if (one) {
-        return empty
-            ? t('search.replace_done_1_n_empty', hits, files)
-            : t('search.replace_done_1_n', hits, files, count.text);
-    }
-    if (alone) {
-        return empty
-            ? t('search.replace_done_n_1_empty', hits, files)
-            : t('search.replace_done_n_1', hits, files, count.text);
-    }
-    return empty
-        ? t('search.replace_done_n_n_empty', hits, files)
-        : t('search.replace_done_n_n', hits, files, count.text);
+    const [hits, files] = [occurrenceWords(count.hits), filesWords(count.files)];
+    return count.text === ''
+        ? t('search.replace_done_empty', hits, files)
+        : t('search.replace_done', hits, files, count.text);
 }
 
 /**

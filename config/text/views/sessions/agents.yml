@@ -1,8 +1,9 @@
 # Oculus text owned by the Agents section of the Session view (session-detail).
 text:
     sessions:
-        ag_chars: '{0} chars'
-        ag_chars_one: 1 char
+        ag_chars:
+            one: '{0} char'
+            other: '{0} chars'
         ag_done: done
         ag_empty: This session dispatched no agents.
         ag_error: error
@@ -11,7 +12,8 @@ text:
         ag_running: running
         ag_secs: '{0} s'
         ag_stopped: stopped
-        ag_tokens: '{0} tokens'
-        ag_tokens_one: 1 token
+        ag_tokens:
+            one: '{0} token'
+            other: '{0} tokens'
         ag_type: agent
         section_agents: Agents

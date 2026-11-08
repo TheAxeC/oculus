@@ -18,7 +18,7 @@
     import { timelineTurns } from '$lib/state/sessions/folds';
     import type { GroupedSession, SessionEvent } from '$lib/state/client/selectors.svelte';
     import { asText } from '$lib/state/forms/schema';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useShown } from '$lib/state/client/use';
 
     type Props = {
@@ -110,9 +110,7 @@
         }
         if (event.kind === 'bust') {
             const tokens = Number(held) || 0;
-            return tokens === 1
-                ? t('sessions.ev_bust_one')
-                : t('sessions.ev_bust', compactCount(tokens));
+            return plural('sessions.ev_bust', tokens, compactCount(tokens));
         }
         if (event.kind === 'tool' || event.kind === 'edit') return nameOf(held);
         return held;

@@ -48,7 +48,7 @@ describe('what a close asks once a busy terminal is known', () => {
             many: MANY,
             busy: [build]
         });
-        expect([ask?.message, ask?.dirty]).toEqual([t('ui.tab_close_dirty'), ['text']]);
+        expect([ask?.message, ask?.dirty]).toEqual([t('ui.tabs_close_dirty.one'), ['text']]);
         const detail = ask?.detail ?? '';
         expect(detail).toContain('notes.md');
         expect(detail).toContain('build');
@@ -94,7 +94,7 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
             many: 'many',
             busy: []
         });
-        expect(asked && closeWords(asked)).toBe(t('ui.tab_close_dirty'));
+        expect(asked && closeWords(asked)).toBe(t('ui.tabs_close_dirty.one'));
     });
 
     it('asks to save the tabs left unsaved when several tabs close, naming them, and how many go once none is', async () => {
@@ -107,7 +107,7 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
             busy: []
         });
         expect(await ui.saveBeforeClose(['text', 'other'])).toEqual([]);
-        expect([asked?.message, asked?.dirty]).toEqual([t('ui.tab_close_dirty'), ['text']]);
+        expect([asked?.message, asked?.dirty]).toEqual([t('ui.tabs_close_dirty.one'), ['text']]);
         expect(asked?.detail).toContain('text');
         const after = closeAsk({
             ids: ['text', 'other'],
@@ -171,7 +171,7 @@ describe('the close of a page holding unsaved text', () => {
     it.each(ROWS)('$row', async (row) => {
         const { asked, closed, left } = await closing(row.takes);
         expect(asked.dirty).toEqual(['text']);
-        expect(asked.message.startsWith(t('ui.tab_close_dirty'))).toBe(true);
+        expect(asked.message.startsWith(t('ui.tabs_close_dirty.one'))).toBe(true);
         expect([closed, left]).toEqual([row.closed, row.left]);
     });
 });

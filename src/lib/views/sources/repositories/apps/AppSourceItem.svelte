@@ -13,7 +13,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { scmKey } from '$lib/state/system/apps/tools/scm.svelte';
     import type { AppScmState } from '$lib/state/system/apps/tools/scm.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     type Props = {
@@ -58,9 +58,7 @@
             {current}
             count={control.count !== null && control.count > 0 ? control.count : undefined}
             badge
-            countTitle={control.count === 1
-                ? t('repositories.list_changes_one')
-                : t('repositories.list_changes', control.count ?? 0)}
+            countTitle={plural('repositories.list_changes', control.count ?? 0, control.count ?? 0)}
             nameStyle="font-weight: 400"
             onclick={onpick}
         >

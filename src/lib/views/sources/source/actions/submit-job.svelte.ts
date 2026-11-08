@@ -21,7 +21,7 @@
 // runs.
 
 import { humanSize } from '$lib/state/boards/board/stats';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 import type { HpcStore } from '$lib/state/system/machine/hpc/hpc.svelte';
 import {
     refusalSentence,
@@ -102,9 +102,7 @@ function planWords(plan: SubmitPlan, cluster: string): Omit<SubmitBox, 'clusters
     const size = humanSize(plan.bytes);
     const detail = [
         t('source.submit_detail_copy', plan.source, plan.target, plan.rsync.join(' ')),
-        plan.files === 1
-            ? t('source.submit_detail_file_one', size)
-            : t('source.submit_detail_files', plan.files, size),
+        plural('source.submit_detail_files', plan.files, plan.files, size),
         t('source.submit_detail_remote', plan.host, plan.remote),
         t('source.submit_detail_view')
     ].join('\n');

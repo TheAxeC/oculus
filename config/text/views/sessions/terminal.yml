@@ -109,8 +109,9 @@ text:
         terminal_show_live_tip: Show the terminal this session runs in
         terminal_show_live_none: This session has no terminal to show
         terminal_show_transcript_tip: Read the turns of this session
-        paste_confirm: Paste {0} lines into the terminal?
-        paste_confirm_one: Paste 1 line into the terminal?
+        paste_confirm:
+            one: Paste {0} line into the terminal?
+            other: Paste {0} lines into the terminal?
         paste_ok: Paste
         terminals: Terminals
         view_terminal: Terminal

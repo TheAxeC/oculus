@@ -18,6 +18,7 @@ import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { vocabFindings } from '../../../../src/lib/data/sources/config/sections/vocab.ts';
 import { oneWordWith } from '../../../../src/lib/data/shapes/vocab-keys.ts';
+import { categoriesOf } from '../../../../src/lib/data/shapes/boards/categories.ts';
 import { clusters } from '../../../../src/lib/state/boards/focus.ts';
 import {
     HUB,
@@ -64,6 +65,32 @@ describe("the vocabulary's words past its shape", () => {
     it('reads oculus alone with no finding of the vocabulary', () => {
         const findings = vocabFindings(OCULUS, () => 'vocab.yml', textCatalog(OCULUS));
         expect(findings).toEqual([]);
+    });
+
+    it.each([
+        [
+            'words a category whose label holds no other form, and draws it by its key',
+            '{ one: idea }',
+            [
+                `${FILE} | categories[2].label | categories[2].label is a map of plural forms with no other form, which every such map holds`
+            ],
+            'idea'
+        ],
+        [
+            'words a form of a category label outside the six plural forms, and reads the others',
+            '{ one: idea, several: ideas, other: ideas }',
+            [
+                `${FILE} | categories[2].label.several | categories[2].label.several is not a plural form: the forms are zero, one, two, few, many and other`
+            ],
+            'ideas'
+        ],
+        ['reads a category with no label by its key, with no finding', '', [], 'idea']
+    ])('%s', (_title, label, findings, drawn) => {
+        const field = label === '' ? '' : `label: ${label}, `;
+        const text = `categories:\n  - { key: idea, ${field}stages: { words: [scoping] }, color: "#7c5cff" }\n`;
+        expect(said(text).filter((line) => line.includes('categories'))).toEqual(findings);
+        const row = categoriesOf(withHub(text).config).find((one) => one.key === 'idea');
+        expect(row?.label).toBe(drawn);
     });
 
     it('case 5: words a lane naming a cluster no row has and one naming none, and reads a fourth cluster', () => {
@@ -336,7 +363,7 @@ const OTHER_HUB_ROWS: OtherHubRow[] = [
     ['no key of the vocabulary', 'scan: []\n', []],
     [
         'a category row naming no color beside two tiers carrying default',
-        `categories:\n  - { key: x, label: X, stages: { words: [building] } }\n${TIERS}`,
+        `categories:\n  - { key: x, label: { other: X }, stages: { words: [building] } }\n${TIERS}`,
         [['categories[7]', 'categories[7] names no color, so it is drawn in no colour'], TIERS_SAID]
     ],
     [

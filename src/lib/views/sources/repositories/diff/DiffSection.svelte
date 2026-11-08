@@ -73,12 +73,12 @@
         type LineChange
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
+    import type { DiffSides } from '$lib/state/sources/repositories/repositories';
     import {
         fileDeleted,
         typeChangeWords,
-        type DiffMode,
-        type DiffSides
-    } from '$lib/state/sources/repositories/repositories';
+        type DiffMode
+    } from '$lib/state/sources/repositories/diff/diff-view';
     import {
         COMMENT_BAR,
         browserCopy,

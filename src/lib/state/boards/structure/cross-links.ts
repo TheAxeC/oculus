@@ -25,11 +25,11 @@ import { listWords } from '../collection/index.ts';
 type CrossMember = { id: string; label: string; stage: string };
 
 /**
- * The row of `categories:` a group of type `category` holds: its key, its label and its colour,
- * the empty text for a row that names none; the projects in no row have the empty key and the
- * words "other".
+ * The row of `categories:` a group of type `category` holds: its key, its label and the label's
+ * plural forms, and its colour, the empty text for a row that names none; the projects in no row
+ * have the empty key, the words "other" and no forms.
  */
-type CrossCategory = Pick<Category, 'key' | 'label' | 'color'>;
+type CrossCategory = Pick<Category, 'key' | 'label' | 'labels' | 'color'>;
 
 /**
  * One cross-link group: the projects of one row of `categories:` (`category`), or the projects at
@@ -313,7 +313,7 @@ export function groupProjects(
         if (row?.archival === true && !archival) continue;
         const key = row?.key ?? '';
         const group = held.get(key) ?? {
-            row: row ?? { key, label: t('board.section_other'), color: '' },
+            row: row ?? { key, label: t('board.section_other'), labels: {}, color: '' },
             members: [],
             warn: false
         };
@@ -341,7 +341,7 @@ export function groupProjects(
             count: group.members.length,
             members: group.members,
             warn: group.warn,
-            category: { key: row.key, label: row.label, color: row.color }
+            category: { key: row.key, label: row.label, labels: row.labels, color: row.color }
         };
     });
 }

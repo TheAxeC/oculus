@@ -41,7 +41,7 @@
 // draws afresh.
 
 import DOMPurify from 'dompurify';
-import { Lexer, Marked, marked, type MarkedExtension, type Tokens } from 'marked';
+import { Lexer, Marked, type MarkedExtension, type Tokens } from 'marked';
 import { getContext, setContext } from 'svelte';
 import {
     HEADING_PREFIX,
@@ -554,12 +554,36 @@ export function inlineMarkdown(
     return remembered(mathMemo(memo, math), key, () => inlineDrawing(text, math));
 }
 
+/** The name of the element an inline HTML token opens or closes, or nothing for a comment. */
+const TAG_NAME = /^<\/?([A-Za-z][A-Za-z0-9-]*)/;
+
+/**
+ * The extension that draws as written, escaped, an inline HTML token naming an element the profile
+ * does not keep, whatever the name: `rsync <source> <target>`, `~/data/<data>` and
+ * `/local/<jobid>` in a field would otherwise lose each tag to the sanitiser, and so would a
+ * `<script>`, which is then shown as the text it is and never reaches the page as an element. A
+ * token naming an element the profile keeps, such as `<b>`, and a comment pass to the sanitiser.
+ */
+const UNKEPT_TAGS_AS_TEXT: MarkedExtension = {
+    renderer: {
+        html({ text }: Tokens.HTML | Tokens.Tag): string {
+            const name = TAG_NAME.exec(text)?.at(1)?.toLowerCase();
+            const kept = name === undefined || (ALLOWED_TAGS as readonly string[]).includes(name);
+            return kept ? text : escapeAttribute(text);
+        }
+    }
+};
+
+/** The inline reader of a field with no formulas, built once. */
+const inlineReader = new Marked(UNKEPT_TAGS_AS_TEXT);
+
 /** One field of Markdown as `inlineMarkdown` draws it, made afresh. */
 function inlineDrawing(text: string, math: MathDrawing | null): string {
-    if (math === null) return sanitise(marked.parseInline(text, { async: false }));
+    if (math === null) return sanitise(inlineReader.parseInline(text, { async: false }));
     const mark = `slot-${crypto.randomUUID()}`;
     const formulas: string[] = [];
     const parser = new Marked(
+        UNKEPT_TAGS_AS_TEXT,
         mathExtension(math, (html) => {
             formulas.push(html);
             return `<span class="${MATH_SLOT}">${mark}-m${formulas.length - 1}</span>`;

@@ -221,8 +221,9 @@ text:
         preview_tab: 'Preview {0}'
         problem_join: ', '
         problems_many: 9+
-        problems_one_title: 1 problem in this file
-        problems_title: '{0} problems in this file'
+        problems_title:
+            one: '{0} problem in this file'
+            other: '{0} problems in this file'
         read_again: Read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again
@@ -318,18 +319,22 @@ text:
         upload_done: 'Files uploaded: {0}.'
         upload_refused: '{0} was not uploaded: {1}'
         workspace_untitled: Untitled (Workspace)
-        writing_fix_button: Fix {0} Files
-        writing_fix_button_one: Fix 1 File
+        writing_fix_button:
+            one: Fix {0} File
+            other: Fix {0} Files
         writing_fix_changed: The file changed after the writing rules read it.
-        writing_fix_count: '{0} fixes'
-        writing_fix_count_one: 1 fix
-        writing_fix_done: 'Fixed writing problems in {0} files.'
-        writing_fix_done_one: 'Fixed writing problems in 1 file.'
+        writing_fix_count:
+            one: '{0} fix'
+            other: '{0} fixes'
+        writing_fix_done:
+            one: 'Fixed writing problems in {0} file.'
+            other: 'Fixed writing problems in {0} files.'
         writing_fix_failed: The writing rules could not read the folder.
         writing_fix_files: Files the writing rules would change
         writing_fix_none: The writing rules have nothing to fix in this folder.
-        writing_fix_partial: 'The writing fixes stopped at {0} after {1} files were written. History undoes them.'
-        writing_fix_partial_one: 'The writing fixes stopped at {0} after 1 file was written. History undoes it.'
+        writing_fix_partial:
+            one: 'The writing fixes stopped at {0} after {1} file was written. History undoes it.'
+            other: 'The writing fixes stopped at {0} after {1} files were written. History undoes them.'
         writing_fix_planning: Reading the files...
         writing_fix_title: Fix writing problems in {0}
         writing_fix_total: 'Fixes: {0}. Files: {1}.'

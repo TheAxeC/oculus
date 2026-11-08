@@ -6,9 +6,13 @@
 // written once and the boards name no categories of their own. A project is filed under the
 // categories and the words of its own hub (`categoriesBy`). A row's `sort:` is read here into the
 // words its section's cards are ordered by (state/boards/board/facets.ts `cardSections`) and the
-// words a deck orders the decks of its category by (order.ts beside this file).
+// words a deck orders the decks of its category by (order.ts beside this file). A row's `label` is
+// a map of CLDR plural forms (`{ one: publication, other: publications }`): its `other` form names
+// the row where no count goes with it, and a count drawn with the row takes the count's form.
 
 import { z } from 'zod';
+import { PLURAL_FORMS, type PluralForm } from '../../helpers/finding-text.ts';
+import { isMap } from '../../helpers/guards.ts';
 import type { Rooted } from '../../model/index.ts';
 import { HEX_COLOUR } from '../catalog-files/common.ts';
 import { categorySort } from '../catalog-files/vocab.ts';
@@ -22,8 +26,16 @@ export type CardSort = Extract<z.infer<typeof categorySort>, string>;
 /** One row of `categories:` as the code reads it. */
 export type Category = {
     key: string;
-    /** The words the row is drawn with: its `label`, or its key when it names none. */
+    /**
+     * The words the row is drawn with where no count goes with them (a section's heading, a
+     * slice's name): its label's `other` form, or its key when the label gives none.
+     */
     label: string;
+    /**
+     * The row's label by its CLDR forms, each of the six the label gives; a reader that draws a
+     * count with the row picks the count's form from it (state/shared/words/text.ts `pluralOf`).
+     */
+    labels: Partial<Record<PluralForm, string>>;
     /** The row's `color`, the empty text when it names none. */
     color: string;
     stages: WordBlock | null;
@@ -54,6 +66,21 @@ function colourOf(own: unknown): string {
 }
 
 /**
+ * The forms of a row's `label`, each of the six CLDR forms it gives as a text; nothing for a label
+ * that is no map, which the whole-file shape reports, and a key outside the six, which the config
+ * check reports (data/sources/config/sections/vocab.ts).
+ */
+function labelsOf(own: unknown): Partial<Record<PluralForm, string>> {
+    if (!isMap(own)) return {};
+    const labels: Partial<Record<PluralForm, string>> = {};
+    for (const form of PLURAL_FORMS) {
+        const word = own[form];
+        if (typeof word === 'string' && word !== '') labels[form] = word;
+    }
+    return labels;
+}
+
+/**
  * The words of a row's `sort`, each once and in their order: one word written as a text is the
  * list of that word, and a value the row's shape refuses (null, a number, a word outside the three)
  * is no `sort`, which the whole-file shape reports (data/shapes/shape-issues.ts).
@@ -75,10 +102,11 @@ export function categoriesOf(config: Record<string, unknown>): Category[] {
         if (seen.has(row.key)) continue;
         seen.add(row.key);
         const stages = blockOf(row.stages);
-        const label = typeof row.label === 'string' && row.label !== '' ? row.label : row.key;
+        const labels = labelsOf(row.label);
         categories.push({
             key: row.key,
-            label,
+            label: labels.other ?? row.key,
+            labels,
             color: colourOf(row.color),
             stages,
             forms: blockOf(row.forms),

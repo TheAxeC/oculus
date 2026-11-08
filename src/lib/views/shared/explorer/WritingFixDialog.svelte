@@ -10,7 +10,7 @@
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { tickedRows, type FixView } from './tree/control/fixing.svelte';
 
     type Props = {
@@ -26,9 +26,7 @@
     const ticked = $derived(tickedRows(view));
     const fixes = $derived(ticked.reduce((sum, one) => sum + one.file.count, 0));
     const button = $derived(
-        ticked.length === 1
-            ? t('files.writing_fix_button_one')
-            : t('files.writing_fix_button', String(ticked.length))
+        plural('files.writing_fix_button', ticked.length, String(ticked.length))
     );
 </script>
 
@@ -56,9 +54,11 @@
                                 <span class="note">{row.note}</span>
                             {:else}
                                 <span class="note">
-                                    {row.file.count === 1
-                                        ? t('files.writing_fix_count_one')
-                                        : t('files.writing_fix_count', String(row.file.count))}
+                                    {plural(
+                                        'files.writing_fix_count',
+                                        row.file.count,
+                                        String(row.file.count)
+                                    )}
                                 </span>
                             {/if}
                         </li>

@@ -21,7 +21,7 @@ import {
 import { inFolder, type GroupedSession, type Workspace } from '$lib/state/client/selectors.svelte';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
 import { modelShort } from '$lib/state/shared/words/format';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 /** The fold headed Sessions: its row of the tree and the key it folds under. */
 export const LIST_FOLD = 'list';
@@ -81,10 +81,8 @@ export function sessionRowWords(row: GroupedSession, state: ListStateKey): strin
     const facts = [
         row.tool === 'codex' ? t('sessions.kind_codex') : t('sessions.kind_claude'),
         ...(row.model === null ? [] : [modelShort(row.model)]),
-        row.files.length === 1
-            ? t('sessions.files_one')
-            : t('sessions.files_n', String(row.files.length)),
-        row.prompts === 1 ? t('sessions.prompts_one') : t('sessions.prompts_n', String(row.prompts))
+        plural('sessions.files', row.files.length, String(row.files.length)),
+        plural('sessions.prompts', row.prompts, String(row.prompts))
     ].join(` ${t('sessions.meta_sep')} `);
     if (state !== 'input') return facts;
     return `${row.hook?.message ?? t('sessions.state_input')}\n${facts}`;

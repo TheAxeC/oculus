@@ -229,17 +229,24 @@
         display: none;
     }
 
-    /* The one thing that scrolls: min-height zero is what lets it, inside a column flex box. */
+    /* The one thing that scrolls: min-height zero is what lets it, inside a column flex box. A
+       sticky element sticks inside the body's padding, so its top padding is published as
+       `--pane-pad-top`, which a group's heading strip (ui/controls/heads/GroupHead.svelte) and a
+       table's header row (ui/display/table/Table.svelte) take off their `top`, so they stick at
+       the body's top edge and nothing scrolls through a band above them. A scroller of its own
+       inside the body that holds them sets `--pane-pad-top` to its own top padding. */
     .body {
+        --pane-pad-top: 10px;
         flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
         overflow: auto;
-        padding: 10px 12px;
+        padding: var(--pane-pad-top) 12px;
         box-sizing: border-box;
     }
 
     .body.flush {
+        --pane-pad-top: 0px;
         padding: 0;
     }
 

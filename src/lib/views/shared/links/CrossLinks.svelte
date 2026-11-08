@@ -2,8 +2,8 @@
     // Layer 3, shared view partial. One project strip at the foot of a record card
     // (views/shared/card/record/RecordCard.svelte, which hands it the groups): project cross-links
     // grouped by the rows of `categories:` (state/boards/structure/cross-links.ts,
-    // `groupProjects`), each group headed by its row's label in its row's colour, as a project
-    // board's section is, and nesting its members under their own project stage; or grouped by one
+    // `groupProjects`), each group headed by its row's label in the form of the group's count, in
+    // its row's colour, and nesting its members under their own project stage; or grouped by one
     // stage each (the Archival card's), headed by the stage's words and glyph with its members
     // directly under it. A category's group carries no glyph, since a row names none. Each group is
     // a disclosure with its count, a group holding a blocked project carries the warning glyph, and
@@ -23,6 +23,7 @@
         type CrossGroup
     } from '$lib/state/boards/structure/cross-links';
     import { toneOf } from '$lib/state/shared/words/tones';
+    import { pluralOf } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
 
@@ -55,9 +56,12 @@
         opened = next;
     }
 
-    /** The group's label: its stage's words, else its row's. */
+    /** The group's label: its stage's words, else its row's in the form of the group's count. */
     function label(group: CrossGroup): string {
-        return group.stage?.label ?? group.category?.label ?? '';
+        if (group.stage !== undefined) return group.stage.label;
+        const category = group.category;
+        if (category === undefined) return '';
+        return pluralOf(category.labels, group.count) ?? category.label;
     }
 
     /**

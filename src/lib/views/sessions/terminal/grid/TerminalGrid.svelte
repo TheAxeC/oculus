@@ -78,7 +78,7 @@
     } from '../terminal-list';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { terminalAppMenus } from '../app-menus';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { buildGrid, followTerminalOptions, reflowLook } from './grid-look';
     import { GridFind } from './grid-find.svelte';
     import {
@@ -482,9 +482,7 @@
 
 {#if pasting !== null}
     <Confirm
-        message={pasting.lines === 1
-            ? t('sessions.paste_confirm_one')
-            : t('sessions.paste_confirm', pasting.lines)}
+        message={plural('sessions.paste_confirm', pasting.lines, pasting.lines)}
         confirm={t('sessions.paste_ok')}
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => answerPaste(true)}

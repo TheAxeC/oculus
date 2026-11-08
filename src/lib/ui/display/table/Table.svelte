@@ -104,10 +104,15 @@
     /* The header stays put while the body scrolls: the scroller is the view's, and this is what
        keeps the headings on screen inside it. Inside a group of a view it stands under the heading
        strips of the groups around it, which stay at the top of the same scroller and say their
-       height (ui/controls/heads/GroupHead.svelte, `--group-strip`). */
+       height (ui/controls/heads/GroupHead.svelte, `--group-strip`). It sticks inside the
+       scroller's padding, so it takes the pane body's top padding (ui/frame/Pane.svelte,
+       `--pane-pad-top`, or the top padding a scroller of its own sets there) off its `top`, as the
+       strips do, and stands right under them. In a box that never scrolls up or down, with
+       `--group-strip` set to nothing there, that `top` lies above the row's place, so the row
+       stays where it is drawn and scrolls with the table. */
     th {
         position: sticky;
-        top: var(--group-strip, 0);
+        top: calc(var(--group-strip, 0px) - var(--pane-pad-top, 0px));
         z-index: 1;
         background: var(--panel);
         border-bottom: 1px solid var(--line);

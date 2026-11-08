@@ -41,7 +41,7 @@ import {
 } from '../../../../data/sources/config/catalog/value-rule.ts';
 import { glyphNames } from '../../../../data/sources/config/rail.ts';
 import { below, realPath } from '../../../core/paths.ts';
-import { words } from '../../../core/words.ts';
+import { pluralWords, words } from '../../../core/words.ts';
 import type { Sources } from './config-sources.ts';
 
 type Plain = Record<string, unknown>;
@@ -155,14 +155,13 @@ function sentenceOf(
         case 'hub_path':
             return words(text, 'server.config_key.not_hub_path');
         case 'slots':
-            return problem.slots.length === 1
-                ? words(text, 'server.config_key.wrong_slots_one', problem.slots.join(', '))
-                : words(
-                      text,
-                      'server.config_key.wrong_slots',
-                      problem.slots.length,
-                      problem.slots.join(', ')
-                  );
+            return pluralWords(
+                text,
+                'server.config_key.wrong_slots',
+                problem.slots.length,
+                problem.slots.length,
+                problem.slots.join(', ')
+            );
     }
 }
 

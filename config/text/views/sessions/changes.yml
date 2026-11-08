@@ -29,8 +29,9 @@ text:
         cancel_title: Stop the git command running for this repository
         commit: Commit
         commit_amend: Commit (Amend)
-        commit_confirm: Commit {0} staged paths on {1}?
-        commit_confirm_one: Commit 1 staged path on {0}?
+        commit_confirm:
+            one: Commit {0} staged path on {1}?
+            other: Commit {0} staged paths on {1}?
         commit_detail: The message is committed as it stands in the box.
         commit_empty: Write a commit message first.
         commit_label: Commit message
@@ -39,19 +40,23 @@ text:
         commit_placeholder: Message (Ctrl+Enter to commit on "{0}")
         commit_placeholder_bare: Message (Ctrl+Enter to commit)
         commit_push: Commit and Push
-        commit_push_confirm: Commit {0} staged paths on {1} and push to {2}?
-        commit_push_confirm_one: Commit 1 staged path on {0} and push to {1}?
+        commit_push_confirm:
+            one: Commit {0} staged path on {1} and push to {2}?
+            other: Commit {0} staged paths on {1} and push to {2}?
         commit_sync: Commit and Sync
-        commit_sync_confirm: Commit {0} staged paths on {1} and sync with {2}?
-        commit_sync_confirm_one: Commit 1 staged path on {0} and sync with {1}?
+        commit_sync_confirm:
+            one: Commit {0} staged path on {1} and sync with {2}?
+            other: Commit {0} staged paths on {1} and sync with {2}?
         commit_title: Commit what is staged (Ctrl+Enter)
-        commit_unmerged: '{0} files are still in conflict; resolve them before committing.'
-        commit_unmerged_one: '1 file is still in conflict; resolve it before committing.'
+        commit_unmerged:
+            one: '{0} file is still in conflict; resolve it before committing.'
+            other: '{0} files are still in conflict; resolve them before committing.'
         discard: Discard
         cut_warning: Too many changes were detected. Only the first 200 changes will be shown below.
         discard_all: Discard All Changes
-        discard_all_confirm: Throw away the changes to {0} paths?
-        discard_all_confirm_one: Throw away the change to 1 path?
+        discard_all_confirm:
+            one: Throw away the change to {0} path?
+            other: Throw away the changes to {0} paths?
         discard_all_untracked: Discard All Untracked Changes
         discard_all_detail: Every tracked path goes back to what is staged, or to what is committed when nothing is. Untracked files are kept. There is no undo.
         discard_confirm: Throw away the change to {0}?
@@ -61,8 +66,9 @@ text:
         message_prompt: "Write the commit message for the staged diff on stdin. One line of subject: capitalised, imperative, no trailing full stop. Then a blank line. Then one bullet per change, each starting with '- ' and an imperative verb. Plain ASCII, no markdown headings, no code fences, no quotes around the message, nothing but the message itself. Name no tool, no model and no assistant anywhere in it, and add no trailer of any kind."
         push: Push
         push_confirm: Push {0} to {1}?
-        push_detail: '{0} commits go to the upstream. Nothing is forced.'
-        push_detail_one: 1 commit goes to the upstream. Nothing is forced.
+        push_detail:
+            one: '{0} commit goes to the upstream. Nothing is forced.'
+            other: '{0} commits go to the upstream. Nothing is forced.'
         push_none: This branch has no upstream, so there is nowhere to push it.
         stage: Stage
         stage_all: Stage All Changes

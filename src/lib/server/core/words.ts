@@ -1,8 +1,9 @@
-// Layer 2, server. The server's one reader of its text catalog: a key's sentence with its
-// placeholders filled. It sits in server/core, the bottom of the server's folder order, so every
-// server module that words a line (the chat launcher, the transcript export) reads it from here.
+// Layer 2, server. The server's readers of its text catalog: a key's sentence with its placeholders
+// filled (`words`), and a plural key's form for a count (`pluralWords`). They sit in server/core,
+// the bottom of the server's folder order, so every server module that words a line (the chat
+// launcher, the transcript export) reads them from here.
 
-import { fillPlaceholders } from '../../data/helpers/finding-text.ts';
+import { fillPlaceholders, pluralText } from '../../data/helpers/finding-text.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 
 /**
@@ -23,4 +24,21 @@ export function words(
     const template = byKey(catalog, key);
     if (template === undefined) throw new Error(`text key not in config: ${key}`);
     return fillPlaceholders(template, args);
+}
+
+/**
+ * The words of the server's plural key `key` for `count`, with its placeholders filled by `args`:
+ * the form the count takes in the catalog's language, else the key's `other` form, as the page's
+ * `plural` picks it (finding-text.ts, `pluralText`). A key whose `other` form the catalog lacks
+ * throws, as `words` does; keys.test.ts reads every `pluralWords` call beside the `words` calls.
+ */
+export function pluralWords(
+    catalog: Record<string, string>,
+    key: string,
+    count: number,
+    ...args: (string | number)[]
+): string {
+    const said = pluralText(catalog, key, count, ...args);
+    if (said === undefined) throw new Error(`plural text key not in config: ${key}`);
+    return said;
 }

@@ -51,7 +51,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
-    import { hasText, t } from '$lib/state/shared/words/text';
+    import { hasText, plural, t } from '$lib/state/shared/words/text';
     import { instanceText } from '$lib/state/workbench/layout';
     import {
         FILE_RECORD,
@@ -304,9 +304,7 @@
                                     {:else}
                                         <Disclosure
                                             count={pair.held.size}
-                                            label={pair.held.size === 1
-                                                ? t('history.items_one')
-                                                : t('history.items')}
+                                            label={plural('history.items', pair.held.size)}
                                             expanded={opened.has(key)}
                                             onclick={() => toggle(key)}
                                         />

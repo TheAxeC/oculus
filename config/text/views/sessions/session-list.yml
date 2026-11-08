@@ -8,8 +8,9 @@ text:
         archive: Archive
         archive_failed: could not save the archive mark of that session
         card_live: '{0} live'
-        card_n: '{0} sessions'
-        card_one: 1 session
+        card:
+            one: '{0} session'
+            other: '{0} sessions'
         clear_scope: Show every session
         clear_scope_title: List every session again, not only those of the folder
         detail_empty: No session is picked. Pick one with the session control on this view's bar, or in the Sessions list.
@@ -18,8 +19,9 @@ text:
         export: Export
         export_failed: could not start the download
         export_tip: save the conversation as a Markdown file
-        files_n: '{0} files'
-        files_one: 1 file
+        files:
+            one: '{0} file'
+            other: '{0} files'
         filter: Filter
         filter_agent: Agent
         filter_empty: No session is kept by the filter and the search.
@@ -47,8 +49,9 @@ text:
         pick_session_tip: the session this view shows
         pin_pane: Lock to this session
         pin_top: Pin to the top
-        prompts_n: '{0} prompts'
-        prompts_one: 1 prompt
+        prompts:
+            one: '{0} prompt'
+            other: '{0} prompts'
         rail_glyph: list
         rail_title: Sessions
         rename: Rename

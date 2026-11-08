@@ -22,9 +22,11 @@
 // its controls are disabled, so the menus offer no write either.
 //
 // The items are pure functions of the group, so which items a row offers is asserted without a DOM,
-// and the words come in as `t` so every label is a catalog key.
+// and the words come in as `t` so every label is a catalog key. A question that counts paths is
+// worded by the catalog's `plural`, which picks the form of the count.
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
+import { plural } from '$lib/state/shared/words/text';
 
 type Words = (key: string, ...args: (string | number)[]) => string;
 
@@ -152,9 +154,7 @@ export function askDiscardFolder(
 ): void {
     const { root, folder, paths } = target;
     deps.ask(
-        paths.length === 1
-            ? t('repositories.folder_discard_confirm_one', folder)
-            : t('repositories.folder_discard_confirm', paths.length, folder),
+        plural('repositories.folder_discard_confirm', paths.length, paths.length, folder),
         t('git.discard_all_detail'),
         () => {
             deps.discardPaths(root, paths);
@@ -269,10 +269,7 @@ export function askDiscardPaths(
         );
         return;
     }
-    const question =
-        paths.length === 1
-            ? t('git.discard_all_confirm_one')
-            : t('git.discard_all_confirm', paths.length);
+    const question = plural('git.discard_all_confirm', paths.length, paths.length);
     deps.ask(question, t('git.discard_detail'), () => {
         deps.discardPaths(root, paths);
     });

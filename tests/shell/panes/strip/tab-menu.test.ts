@@ -143,7 +143,7 @@ describe('the closes of the tab menu, through its state', () => {
             held: {},
             item: 'close-others',
             on: 'a',
-            asks: `${catalog('ui.tab_close_dirty')} ${catalog('ui.terminal_close_unsaved', 'tab b')}`,
+            asks: `${catalog('ui.tabs_close_dirty.one')} ${catalog('ui.terminal_close_unsaved', 'tab b')}`,
             answer: 'cancel',
             saved: [],
             open: ['a', 'b', 'c'],
@@ -154,7 +154,7 @@ describe('the closes of the tab menu, through its state', () => {
             held: { saves: { b: true } },
             item: 'close',
             on: 'b',
-            asks: catalog('ui.tab_close_dirty'),
+            asks: catalog('ui.tabs_close_dirty.one'),
             answer: 'save',
             saved: ['b'],
             open: ['a', 'c'],
@@ -165,7 +165,7 @@ describe('the closes of the tab menu, through its state', () => {
             held: { saves: { b: true } },
             item: 'close',
             on: 'b',
-            asks: catalog('ui.tab_close_dirty'),
+            asks: catalog('ui.tabs_close_dirty.one'),
             answer: 'dont-save',
             saved: [],
             open: ['a', 'c'],
@@ -176,7 +176,7 @@ describe('the closes of the tab menu, through its state', () => {
             held: { dirty: ['a', 'b', 'c'], saves: { a: true, b: false } },
             item: 'close-all',
             on: 'a',
-            asks: `${catalog('ui.tabs_close_dirty', 3)} ${catalog('ui.terminal_close_unsaved', 'tab a, tab b, tab c')}`,
+            asks: `${catalog('ui.tabs_close_dirty.other', 3)} ${catalog('ui.terminal_close_unsaved', 'tab a, tab b, tab c')}`,
             answer: 'save',
             saved: ['a', 'b'],
             open: ['b', 'c'],
@@ -221,7 +221,7 @@ describe('the closes of the tab menu, through its state', () => {
         const { question, pick, open, handed } = menuOver(false, { takes: false });
         await pick('close', 'b');
         expect(handed).toEqual([['b']]);
-        expect(question.message()).toBe(catalog('ui.tab_close_dirty'));
+        expect(question.message()).toBe(catalog('ui.tabs_close_dirty.one'));
         question.cancel();
         expect(open()).toEqual(['a', 'b', 'c']);
     });

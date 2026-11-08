@@ -10,18 +10,21 @@
 // field the entry carries that the schema does not name is drawn after them. What differs per field
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // hub files agree on the names (`status`, `tags`, `meta`, `note`) and share one list of types. A
-// `records` field whose rows name a person is decided by its schema: it draws the people.
+// `records` field whose rows name a person is decided by its schema: it draws the people. A field
+// whose `foreign_key:` names records, the projects or a collection, draws the keys it holds as
+// those records (`records`), which the view opens by their names. The entry's key is no field of
+// its own: the heading names the entry, and neither a card nor a page draws the key again.
 //
-// The rows of the Website section feed the website, so a card leaves them out and the entry's page
-// draws them as one group after its fields (`websiteGroup`). Search, the list's columns and the
-// bar's filters read the entry itself, and this rule does not narrow them.
+// The rows of the Website section feed the website and are changed in the entry's editor, so
+// neither a card nor the entry's page draws them. Search, the list's columns and the bar's filters
+// read the entry itself, and this rule does not narrow them.
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../../data/places/hub-address.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { bareId, rootOf } from '../../../data/helpers/hub-names.ts';
+import { VOCAB_PREFIX, bareId, rootOf } from '../../../data/helpers/hub-names.ts';
 import {
     anyValueShape,
     fieldItemsShape,
@@ -48,6 +51,7 @@ import { normalisePath } from '../../sources/fs.ts';
 import { dirOf } from '../../sources/repositories/change-tree.ts';
 import { entryPageState } from '../../forms/page-entry.ts';
 import { t } from '../../shared/words/text.ts';
+import { wordOf } from '../../shared/words/key-titles.ts';
 import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { freshPicks } from '../board/state.ts';
 
@@ -85,30 +89,43 @@ export const STATUS_FIELD = 'status';
  * `people` a second one on the entry's page.
  */
 export type FieldKind =
-    'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'person' | 'people' | 'pairs' | 'text';
+    | 'sub'
+    | 'status'
+    | 'chips'
+    | 'meta'
+    | 'body'
+    | 'link'
+    | 'person'
+    | 'people'
+    | 'records'
+    | 'pairs'
+    | 'text';
+
+/** One label-value pair of a `meta` field: its label, empty for a pair that has none, and words. */
+type MetaPair = { label: string; words: string };
 
 /**
  * One field of one entry, ready to draw: the kind decides the markup, `values` carries the words. A
- * `sub`, `status`, `body`, `link` or `person` field has exactly one value, and so has a `text`
- * field but for a list of records in a page's group, which has one per item; `chips` has one per
- * tag, `meta` one per label-value pair and `pairs` one per key of a map, each already joined, since
- * a Chip takes a label and nothing else, and `people` has one person's key per row.
+ * `sub`, `status`, `body`, `link`, `person` and `text` field has exactly one value; `chips` has one
+ * per tag, `meta` one per label-value pair and `pairs` one per key of a map, each already joined,
+ * since a Chip takes a label and nothing else, `people` has one person's key per row, and
+ * `records` one record's key per item.
  */
 export type Drawn = {
     field: string;
-    /** The file's own words for the field: its schema `label` when it has one, else its name. */
+    /**
+     * The file's own words for the field: its schema `label` when it has one, else its name as
+     * `wordOf` words a key.
+     */
     label: string;
     kind: FieldKind;
     values: string[];
     /** On a `people` field, in step with `values`: the words of each row, which a page draws. */
     details?: string[];
-};
-
-/** The fields a page draws under one heading after the entry's own. */
-type DrawnGroup = {
-    /** The rows' own `section` word. */
-    heading: string;
-    fields: Drawn[];
+    /** On a `meta` field, in step with `values`: each pair's label and words apart. */
+    pairs?: MetaPair[];
+    /** On a `records` field: the `foreign_key:` targets its keys name records of. */
+    targets?: string[];
 };
 
 /** How the view draws its entries: as cards, or as one table. */
@@ -180,7 +197,8 @@ const PEOPLE_COLUMNS = ['lead', 'supervisors', 'collaborators'];
  * the types `COLUMN_TYPES`, the primary key, the display field and a field named `TITLE_COLUMN`
  * left out. A column is drawn when the saved choice (`saved`) names it or, with none, when it is
  * the status field, a people field (`lead`, `supervisors`, `collaborators`) or a field marked
- * `filter: true`.
+ * `filter: true`. A column is headed by its field's `label:`, else by its field's name as `wordOf`
+ * words a key, so `funder` heads its column "Funder" as "Title" heads the title's.
  */
 export function entryColumns(
     schemas: readonly (SchemaField[] | undefined)[],
@@ -207,7 +225,7 @@ export function entryColumns(
         { key: TITLE_COLUMN, label: t('collection.title_column'), shown: true },
         ...[...fields.values()].map((one) => ({
             key: one.field,
-            label: one.label ?? one.field,
+            label: one.label ?? wordOf(one.field),
             shown: drawn === null ? byDefault(one) : drawn.has(one.field)
         }))
     ];
@@ -255,12 +273,15 @@ const JOIN = ' | ';
  * A field whose `foreign_key:` is the one collection that carries the people registry (`person`)
  * holds a person's key, so the card draws it as the control that opens that person rather than as
  * the key itself. The rule is the schema's own `foreign_key:` and not the field's name, so a second
- * field of people follows it with no change, whatever the people's collection is keyed.
+ * field of people follows it with no change, whatever the people's collection is keyed. A field
+ * whose `foreign_key:` names other records (`records`, `recordTargets`) holds their keys, which
+ * the card draws as those records by their names.
  */
-export function kindOf(field: string, type: string, person = false): FieldKind {
+function kindOf(field: string, type: string, person = false, records = false): FieldKind {
     if (field === 'sub') return 'sub';
     if (field === STATUS_FIELD) return 'status';
     if (person) return 'person';
+    if (records) return 'records';
     if (CHIP_FIELDS.includes(field) || type === 'tags') return 'chips';
     if (field === 'meta' || type === 'metalist') return 'meta';
     if (BODY_FIELDS.includes(field) || type === 'textarea') return 'body';
@@ -321,28 +342,38 @@ const pairShape = z.object({ label: anyValueShape, value: anyValueShape });
  * One chip per `{ label, value }` pair of a metalist, the two joined; a pair with neither is none.
  */
 function pairsOf(value: unknown): string[] {
+    return metaPairs(value).map((one) =>
+        one.label === '' ? one.words : `${one.label}${PAIR}${one.words}`
+    );
+}
+
+/**
+ * The `{ label, value }` pairs of a metalist with their label and words apart: a pair with only a
+ * label is its words, an item that is no pair is words with no label, and a pair with neither is
+ * none.
+ */
+function metaPairs(value: unknown): MetaPair[] {
     const list = readAs(itemsShape, value);
-    if (list === null) return listWords(value);
-    const chips: string[] = [];
+    if (list === null) return listWords(value).map((words) => ({ label: '', words }));
+    const pairs: MetaPair[] = [];
     for (const item of list) {
         const pair = readAs(pairShape, item);
         if (pair === null) {
             const word = textOf(item);
-            if (word !== undefined) chips.push(word);
+            if (word !== undefined) pairs.push({ label: '', words: word });
             continue;
         }
         const label = textOf(pair.label);
         const words = textOf(pair.value);
-        if (label !== undefined && words !== undefined) chips.push(`${label}${PAIR}${words}`);
-        else if (words !== undefined) chips.push(words);
-        else if (label !== undefined) chips.push(label);
+        if (words !== undefined) pairs.push({ label: label ?? '', words });
+        else if (label !== undefined) pairs.push({ label: '', words: label });
     }
-    return chips;
+    return pairs;
 }
 
 /** The values one field draws as, by its kind. A field with none is not drawn at all. */
 function valuesOf(kind: FieldKind, value: unknown): string[] {
-    if (kind === 'chips') return listWords(value);
+    if (kind === 'chips' || kind === 'records') return listWords(value);
     if (kind === 'meta') return pairsOf(value);
     const word = textOf(value);
     return word === undefined || word === '' ? [] : [word];
@@ -365,6 +396,17 @@ function headingField(
 function namesOnePerson(field: SchemaField, person: (target: string) => boolean): boolean {
     const keys = field.foreign_key;
     return Array.isArray(keys) && keys.length === 1 && person(keys[0]);
+}
+
+/**
+ * The `foreign_key:` targets of a field whose values are the keys of records, the projects or a
+ * collection's entries, and none for a field of people or of a vocabulary list's words, whose
+ * values are drawn otherwise.
+ */
+function recordTargets(field: SchemaField, person: (target: string) => boolean): string[] {
+    const keys = Array.isArray(field.foreign_key) ? field.foreign_key : [];
+    if (keys.length === 0 || namesOnePerson(field, person)) return [];
+    return keys.some((one) => one.startsWith(VOCAB_PREFIX)) ? [] : keys;
 }
 
 /**
@@ -419,23 +461,31 @@ function peopleRows(
 /**
  * One schema row of an entry as it draws, or null when it holds nothing to draw. A list of records
  * that names a person draws the people and nothing else, so a value that gives no person draws
- * nothing. `person` answers whether a `foreign_key:` target names the collection that carries the
- * people registry.
+ * nothing. A `meta` field carries its pairs with their labels apart, and a `records` field the
+ * targets its keys name. `person` answers whether a `foreign_key:` target names the collection
+ * that carries the people registry.
  */
 function drawnRow(
     field: SchemaField,
     held: unknown,
     person: (target: string) => boolean
 ): Drawn | null {
-    const label = field.label ?? field.field;
+    const label = field.label ?? wordOf(field.field);
     const who = personSubField(field, person);
     if (who !== undefined) {
         const rows = peopleRows(held, who, field);
         if (rows.values.length === 0) return null;
         return { field: field.field, label, kind: 'people', ...rows };
     }
-    const kind = kindOf(field.field, field.type, namesOnePerson(field, person));
+    const targets = recordTargets(field, person);
+    const kind = kindOf(field.field, field.type, namesOnePerson(field, person), targets.length > 0);
     const values = valuesOf(kind, held);
+    if (values.length > 0 && kind === 'meta') {
+        return { field: field.field, label, kind, values, pairs: metaPairs(held) };
+    }
+    if (values.length > 0 && kind === 'records') {
+        return { field: field.field, label, kind, values, targets };
+    }
     if (values.length > 0) return { field: field.field, label, kind, values };
     // A map has no line of its own, so it draws its keys and their values rather than nothing.
     const pairs = mapPairs(held);
@@ -443,20 +493,19 @@ function drawnRow(
     return { field: field.field, label, kind: 'pairs', values: pairs };
 }
 
-/**
- * The section whose rows feed the website. It selects the rows; the group a page draws them in is
- * headed by the rows' own word.
- */
+/** The section whose rows feed the website, which the entry's editor changes and no card draws. */
 const WEBSITE_SECTION = 'Website';
 
 /**
- * The fields of one entry in the order a card draws them: the schema's own order first, with a
- * field the entry does not carry left out, and then every field the entry carries that the schema
- * does not name, in the entry's own order, as text. The field the card's heading shows is neither
- * (`headingField`), and neither is a row of the Website section (`websiteGroup`). A collection
- * whose file has no schema draws every field of the entry as text, which is what the last half does
- * on its own. `person` answers whether a `foreign_key:` target names the collection that carries
- * the people registry.
+ * The fields of one entry in the order a card and its page draw them: the schema's own order
+ * first, with a field the entry does not carry left out, and then every field the entry carries
+ * that the schema does not name, in the entry's own order, as text under its name as `wordOf`
+ * words a key. The field the card's heading shows is neither (`headingField`), nor is the primary
+ * key the schema flags, nor a field the schema does not name whose value is the entry's key, so
+ * the key is never drawn as a field; a row of the Website section is not drawn either. A
+ * collection whose file has no schema draws every field of the entry as text, which is what the
+ * last half does on its own. `person` answers whether a `foreign_key:` target names the
+ * collection that carries the people registry.
  */
 export function drawnFields(
     entry: Entry,
@@ -465,81 +514,29 @@ export function drawnFields(
 ): Drawn[] {
     const drawn: Drawn[] = [];
     const heading = headingField(entry.fields, schema);
-    const named = new Set<string>(heading === null ? [] : [heading]);
+    const key = schema === undefined ? null : primaryKeyOf(schema);
+    const named = new Set<string>([heading, key].filter((one) => one !== null));
     for (const field of schema ?? []) {
+        if (named.has(field.field)) continue;
         named.add(field.field);
-        if (field.field === heading || field.section === WEBSITE_SECTION) continue;
+        if (field.section === WEBSITE_SECTION) continue;
         const row = drawnRow(field, entry.fields[field.field], person);
         if (row !== null) drawn.push(row);
     }
+    const own = bareId(entry);
     for (const [field, value] of Object.entries(entry.fields)) {
         if (named.has(field)) continue;
         const values = valuesOf('text', value);
+        if (values.length > 0 && values[0] === own) continue;
         if (values.length > 0) {
-            drawn.push({ field, label: field, kind: 'text', values });
+            drawn.push({ field, label: wordOf(field), kind: 'text', values });
             continue;
         }
         const pairs = mapPairs(value);
         if (pairs.length === 0) continue;
-        drawn.push({ field, label: field, kind: 'pairs', values: pairs });
+        drawn.push({ field, label: wordOf(field), kind: 'pairs', values: pairs });
     }
     return drawn;
-}
-
-/** The kinds that keep their markup in a page's group, each with a place for the label. */
-const LABELLED: readonly FieldKind[] = ['body', 'people', 'person', 'pairs', 'text'];
-
-/**
- * One Website row of an entry as its page draws it: its label, then its value, so a kind whose
- * markup carries no label reads as one line of text. A checkbox the entry holds reads as its word
- * in both states. A list of records that gives no people reads as one line per item, its filled
- * sub-fields joined.
- */
-function groupRow(
-    field: SchemaField,
-    held: unknown,
-    person: (target: string) => boolean
-): Drawn | null {
-    if (field.type === 'checkbox' && typeof held === 'boolean') {
-        const word = held ? t('collection.tick_yes') : t('collection.tick_no');
-        return {
-            field: field.field,
-            label: field.label ?? field.field,
-            kind: 'text',
-            values: [word]
-        };
-    }
-    const row = drawnRow(field, held, person);
-    if (field.type === 'records' && personSubField(field, person) === undefined) {
-        const items = recordRows(field, held).map((one) => rowWords(one, field.fields ?? []));
-        const values = items.filter((words) => words !== '');
-        if (values.length > 0) {
-            return { field: field.field, label: field.label ?? field.field, kind: 'text', values };
-        }
-    }
-    if (row === null || LABELLED.includes(row.kind)) return row;
-    return { ...row, kind: 'text', values: [row.values.join(JOIN)] };
-}
-
-/**
- * The group an entry's page draws after its fields: each filled field of the Website section in
- * schema order, under the rows' own word, and null for an entry that fills none of them.
- */
-export function websiteGroup(
-    entry: Entry,
-    schema: SchemaField[] | undefined,
-    person: (target: string) => boolean
-): DrawnGroup | null {
-    const fields: Drawn[] = [];
-    let heading = '';
-    for (const field of schema ?? []) {
-        if (field.section !== WEBSITE_SECTION) continue;
-        const row = groupRow(field, entry.fields[field.field], person);
-        if (row === null) continue;
-        heading = field.section;
-        fields.push(row);
-    }
-    return fields.length === 0 ? null : { heading, fields };
 }
 
 /** The scheme put in front of a web address written without one. */

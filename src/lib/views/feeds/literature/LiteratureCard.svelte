@@ -31,7 +31,7 @@
     import RecordCard from '../../shared/card/record/RecordCard.svelte';
     import type { RecordAction } from '../../shared/card/record/record-menu';
     import { hitPaper } from '$lib/state/feeds/literature/saved';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -77,11 +77,7 @@
             hit.venue ?? '',
             hit.year === undefined ? '' : String(hit.year),
             typeWords(hit.type),
-            hit.cites === undefined
-                ? ''
-                : hit.cites === 1
-                  ? t('literature.cites_one')
-                  : t('literature.cites', hit.cites)
+            hit.cites === undefined ? '' : plural('literature.cites', hit.cites, hit.cites)
         ]
             .filter(Boolean)
             .join(t('literature.sep'))

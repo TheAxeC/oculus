@@ -338,7 +338,9 @@ export type CollectionEntry = CollectionFile & CollectionTraits & CollectionPlac
  * from, by which the page names the place of an entry whose key a view of oculus's holds. `words`
  * is the merged value of each key of config/catalogs/vocab.yml a hub sets and of
  * `manifest_fields`, under this hub's own settings: oculus's value with the hub's
- * `.oculus/config.yml` laid over it.
+ * `.oculus/config.yml` laid over it. `new_project_dir` is the folder a new project of each tier is
+ * made in for this hub, as the server's write reads it from the hub's settings, an entry that
+ * reads as none left out.
  */
 export type HubVocab = {
     domains: Record<string, { color?: string; label: string }>;
@@ -347,6 +349,7 @@ export type HubVocab = {
     collections: ListedCollection[];
     list: { file: string; value: unknown };
     words: Record<string, unknown>;
+    new_project_dir: Partial<Record<string, string>>;
 };
 
 /**

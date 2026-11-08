@@ -2,7 +2,7 @@
 // is back, and the sentence for each refusal of the endpoint. The History view and the Files view
 // (Cmd+Z) say an undo the same way, so the words live once.
 
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 /** What one undo answered, as much of it as this fold reads. */
 export type UndoAnswer = {
@@ -31,8 +31,9 @@ export function undoSaid(
     if (answer.ok && answer.changed.length > 0) {
         if (removed) return { undone: true, said: t('history.undone_removed', name) };
         const left = answer.refused?.length ?? 0;
-        if (left === 1) return { undone: true, said: t('history.undone_partly_one', name) };
-        if (left > 1) return { undone: true, said: t('history.undone_partly', name, left) };
+        if (left > 0) {
+            return { undone: true, said: plural('history.undone_partly', left, name, left) };
+        }
         return { undone: true, said: t('history.undone', name) };
     }
     const word = answer.ok ? 'refused' : (answer.error ?? '');

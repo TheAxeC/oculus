@@ -14,7 +14,7 @@
     import { stamp } from '$lib/state/shared/words/format';
     import type { LatexMain } from '$lib/state/sessions/latex/latex-state';
     import type { LatexTarget } from '$lib/state/sessions/terminal/latex-target';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { openSourceFile } from '../links/source-file';
     import { stateGlyph, stateWords } from './state-words';
@@ -47,13 +47,9 @@
     const build = $derived(buildOf(target, row.main));
     const building = $derived(row.building || build.status === 'building');
     const total = $derived(row.errors.length + row.warnings.length);
-    const errorsSaid = $derived(
-        row.errors.length === 1 ? t('latex.error_one') : t('latex.errors_many', row.errors.length)
-    );
+    const errorsSaid = $derived(plural('latex.errors', row.errors.length, row.errors.length));
     const warningsSaid = $derived(
-        row.warnings.length === 1
-            ? t('latex.warning_one')
-            : t('latex.warnings_many', row.warnings.length)
+        plural('latex.warnings', row.warnings.length, row.warnings.length)
     );
     const pdfLabel = $derived(
         row.pdf === null
@@ -123,11 +119,7 @@
         {#if total > 0}
             <ToolButton
                 small
-                label={t(
-                    'latex.problem_pill',
-                    total,
-                    total === 1 ? t('latex.problem') : t('latex.problems')
-                )}
+                label={plural('latex.problem_pill', total, total)}
                 title={t('latex.problems_open_tip')}
                 onclick={() => problems.show(root)}
             />
@@ -136,9 +128,7 @@
             <span class="note">{t('latex.no_errors')}</span>
         {/if}
         {#if row.words !== null}
-            <span class="note"
-                >{row.words === 1 ? t('latex.words_one') : t('latex.words', row.words)}</span
-            >
+            <span class="note">{plural('latex.words', row.words, row.words)}</span>
         {/if}
     </div>
 </div>

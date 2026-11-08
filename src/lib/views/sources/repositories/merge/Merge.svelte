@@ -63,7 +63,7 @@
     } from '$lib/state/sources/repositories/diff/merge-regions';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { languageOf } from '$lib/state/sources/fs';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -159,7 +159,7 @@
 
 {#snippet bar()}
     <span class="left" data-conflicts-left={left}>
-        {left === 1 ? t('repositories.merge_left_one') : t('repositories.merge_left', left)}
+        {plural('repositories.merge_left', left, left)}
     </span>
 {/snippet}
 
@@ -246,9 +246,7 @@
 
 {#if asking}
     <Confirm
-        message={left === 1
-            ? t('repositories.merge_complete_confirm_one')
-            : t('repositories.merge_complete_confirm', left)}
+        message={plural('repositories.merge_complete_confirm', left, left)}
         detail={t('repositories.merge_complete_detail')}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}

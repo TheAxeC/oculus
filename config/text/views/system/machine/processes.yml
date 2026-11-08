@@ -21,8 +21,9 @@ text:
         failed_start: ps could not be started
         failed_status: ps ended with status {0}
         failed_status_said: 'ps ended with status {0}: {1}'
-        failed_timeout: the process table did not answer within {0} seconds
-        failed_timeout_one: the process table did not answer within 1 second
+        failed_timeout:
+            one: the process table did not answer within {0} second
+            other: the process table did not answer within {0} seconds
         head: '{0}, {1}'
         hosts_title: App programs
         host_app: '{0}'
@@ -44,10 +45,12 @@ text:
         host_output_hide: Hide output
         host_output_empty: The program has written nothing.
         host_stop_question: 'Stop the program of {0}? It is asked to finish, then ended.'
-        head_agent_one: 1 agent running
-        head_agents: '{0} agents running'
-        head_project_one: 1 project in flight
-        head_projects: '{0} projects in flight'
+        head_agents:
+            one: '{0} agent running'
+            other: '{0} agents running'
+        head_projects:
+            one: '{0} project in flight'
+            other: '{0} projects in flight'
         read_at: Read at {0}
         reading: Reading the processes...
         stop: Stop

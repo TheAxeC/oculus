@@ -22,7 +22,7 @@
 import { byKey } from '../../../data/helpers/guards.ts';
 import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { mapOfShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
-import { t } from '../../shared/words/text.ts';
+import { plural, t } from '../../shared/words/text.ts';
 import { codeLabel, namedTone } from '../../shared/words/tones.ts';
 import { facetLabel, facets, sliceGroups, type SliceGroup } from './facets.ts';
 import {
@@ -340,9 +340,7 @@ export function blockedBadge(stats: BoardStats): string {
 export function venueWarning(stats: BoardStats): string {
     return stats.venues
         .map((venue) =>
-            venue.count === 1
-                ? t('board.venue_warn_one', venue.short, stats.warnAt)
-                : t('board.venue_warn', venue.short, venue.count, stats.warnAt)
+            plural('board.venue_warn', venue.count, venue.short, venue.count, stats.warnAt)
         )
         .join(t('board.venue_warn_join'));
 }
@@ -353,7 +351,7 @@ export function venueWarning(stats: BoardStats): string {
  */
 export function shownWords(shown: number, total: number): string {
     if (shown < total) return t('board.count_shown', shown, total);
-    return total === 1 ? t('board.count_one') : t('board.count', total);
+    return plural('board.count', total, total);
 }
 
 /**

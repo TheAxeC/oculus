@@ -232,9 +232,12 @@ function reachedRemote(action: string): boolean {
 }
 
 /**
- * Keep a fetch's outcome for the root's state: a failed fetch set with the line it is said by, and
- * a fetch, a pull or a sync that succeeded cleared. A catalog with no rule for the failures key
- * tells nothing apart.
+ * Keep a fetch's outcome for the root's state, and give the line the write is answered with: a
+ * failed fetch is set with the line `fetchFailureOf` says it by, ssh's cause before git's when no
+ * row of `connections.failures` matches, and is answered with that same line, so the toast and the
+ * status line say what Changes says; a fetch, a pull or a sync that succeeded is cleared. Every
+ * other outcome is answered with `said`. A catalog with no rule for the failures key tells nothing
+ * apart.
  */
 function keepFetchOutcome(
     options: GitOptions,
@@ -242,21 +245,22 @@ function keepFetchOutcome(
     root: string,
     outcome: Outcome,
     said: string
-): void {
+): string {
     const failures = options.fetchFailures;
-    if (failures === undefined) return;
     if (outcome.ok) {
-        if (reachedRemote(action)) failures.clear(root);
-        return;
+        if (reachedRemote(action)) failures?.clear(root);
+        return said;
     }
-    if (action !== 'fetch') return;
+    if (action !== 'fetch') return said;
     let rows: FailureRow[];
     try {
         rows = failureRows(options.config);
     } catch {
         rows = [];
     }
-    failures.set(root, fetchFailureOf(outcome.stderr ?? '', said, rows, new Date()));
+    const failure = fetchFailureOf(outcome.stderr ?? '', said, rows, new Date());
+    failures?.set(root, failure);
+    return failure.line;
 }
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -509,9 +513,8 @@ export async function handleGit(
     } finally {
         running.end(root, signal);
     }
-    const error =
-        outcome.failure === undefined ? outcome.error : failureLine(outcome.failure, text);
-    keepFetchOutcome(options, action, root, outcome, error);
+    const said = outcome.failure === undefined ? outcome.error : failureLine(outcome.failure, text);
+    const error = keepFetchOutcome(options, action, root, outcome, said);
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here, and answering once the read has landed, is what
     // makes the panel answer the click with the state the write left. A write git refused may still

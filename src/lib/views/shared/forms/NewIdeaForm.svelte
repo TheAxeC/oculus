@@ -16,16 +16,17 @@
     // draws the form only when its rule takes the project this write makes in some hub, so the new
     // project is on the board it was made on. With nobody marked, and in a hub where the user's key
     // names another person or nobody, no person is named (state/boards/board/new-project.ts). The
-    // Folder starts with the tier's `new_project_dir` entry of the primary while the primary is
-    // chosen, and empty for another hub, whose `new_project_dir` the page does not hold,
-    // being a setting and not a list; an empty Folder sends no folder, so the server takes the
-    // `new_project_dir` of the tier in the settings of the hub written to, and a hub that names
-    // none for it refuses, said here. A change of hub starts the Folder again from that hub's value
-    // and clears a Domain the hub's registry does not hold: the Domain choices are the chosen hub's
-    // own, so the key written resolves in that hub. Optional seed values let a radar spark pre-fill
-    // the same form without duplicating its write. Escape closes it only while it is on screen: a
-    // pane keeps the view of a tab it hides mounted, and a key pressed in another tab is not one
-    // this form was asked to answer.
+    // Folder starts with the tier's `new_project_dir` entry of the hub chosen, the primary's while
+    // none is chosen: the page holds each hub's entries in its vocabulary, as the server's write in
+    // that hub reads them, and starts the Folder empty where the hub names none for the tier. An
+    // empty Folder sends no folder, so the server takes the `new_project_dir` of the tier in the
+    // settings of the hub written to, and a hub that names none for it refuses, said here. A
+    // change of hub starts the Folder again from that hub's value and clears a Domain the hub's
+    // registry does not hold: the Domain choices are the chosen hub's own, so the key written
+    // resolves in that hub. Optional seed values let a radar spark pre-fill the same form without
+    // duplicating its write. Escape closes it only while it is on screen: a pane keeps the view of
+    // a tab it hides mounted, and a key pressed in another tab is not one this form was asked to
+    // answer.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -82,13 +83,13 @@
     const tier = $derived(tierOf?.(hub));
 
     /**
-     * The folder the form starts with for the hub `at`: the tier's `new_project_dir` entry of the
-     * primary while the primary is chosen (or no hub is read yet), and empty for another hub.
+     * The folder the form starts with for the hub `at`: the tier's `new_project_dir` entry of that
+     * hub, of the primary while no hub is chosen, and empty where the hub names none for the tier.
      */
     function startFolder(at: string): string {
         const named = tierOf?.(at);
         if (named === undefined) return '';
-        return at === '' || at === primary() ? newProjectFolder(named) : '';
+        return newProjectFolder(named, at === '' ? undefined : at);
     }
 
     let folder = $state(untrack(() => startFolder(hub)));

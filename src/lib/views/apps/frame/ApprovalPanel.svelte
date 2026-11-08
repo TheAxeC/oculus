@@ -24,7 +24,7 @@
     import type { AppRow } from '$lib/state/system/apps/apps.svelte';
     import type { AppChoice } from '$lib/state/system/apps/flows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { addsWords, readWords, writeWords } from '$lib/state/system/apps/words';
 
     type Props = {
@@ -69,9 +69,7 @@
     <p class="meta">{t('apps.name_line', row.name)}</p>
     <p class="meta">{t('apps.folder_line', row.folder)}</p>
     <p class="meta">
-        {row.files === 1
-            ? t('apps.size_line_one', size(row.bytes))
-            : t('apps.size_line', row.files.toString(), size(row.bytes))}
+        {plural('apps.size_line', row.files, row.files.toString(), size(row.bytes))}
     </p>
     <p class="question">{t('apps.approve_question')}</p>
     <ul>

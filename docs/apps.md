@@ -307,6 +307,20 @@ contributes:
         - { id: oculus, path: lang/nl }
 ```
 
+- A word that changes with a count is a plural key of oculus's catalog: a map of the CLDR plural forms `zero`, `one`, `two`, `few`, `many` and `other`, each a word under the dotted key `<key>.<form>` (`literature.cites.one`, `literature.cites.other`). A language gives the forms its own rules use, any of the six, and the form a count takes is picked by those rules. Where the language does not give that form, the count is drawn in oculus's English words for the form where they give it, else in the language's `other`, else in English `other`, so a language that gives only `other` draws oculus's English `one` for a count of 1. A form outside the six is a finding, and so is a form of a key that oculus holds as a single word. The workspace's `text` may give a form by its dotted key in the same way:
+
+```yaml
+# lang/ga/sessions.yml, Irish, whose rules use five of the forms
+text:
+  sessions:
+    files:
+      one: '{0} chomhad'
+      two: '{0} chomhad'
+      few: '{0} chomhad'
+      many: '{0} gcomhad'
+      other: '{0} comhad'
+```
+
 - The workspace chooses a language with `locale` in its file's `settings:`; the first approved, enabled app in the Views list's order that contributes that `languageId` gives the words. A word the language lacks is drawn in English, and the workspace's `text` is laid over the language.
 - A `languageId` declared twice, or a `path` that is not a folder holding files of the app, refuses the app. A key oculus's catalog lacks is a finding naming the file, the language and the app, and the key is not used; a file that does not parse or holds no `text:` map is a finding, and its words are not used. A `locale` no approved, enabled app contributes is a finding, and English is drawn.
 - When the app stops acting, its languages are gone: the page is drawn in English, and a `locale` that names one of them is a finding.

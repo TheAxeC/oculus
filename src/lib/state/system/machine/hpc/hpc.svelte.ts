@@ -12,7 +12,7 @@
 import { fields, text as textOf } from '../../../../data/helpers/guards.ts';
 import type { ClusterSetup, HpcPayload, SubmitPlan } from '../../../../data/model/index.ts';
 import { setupOf, stepOf, type StepAnswer } from './setup.ts';
-import { t } from '../../../shared/words/text.ts';
+import { plural, t } from '../../../shared/words/text.ts';
 import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.ts';
 import { createWaiting } from '../../../shared/stores/waiting.svelte.ts';
 import { clustersOf, summedCounts } from './hpc.ts';
@@ -74,7 +74,7 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
     function pillText(): string {
         const sum = summedCounts(clusters());
         return sum.total > 0
-            ? (sum.running === 1 ? t('hpc.pill_running_one') : t('hpc.pill_running', sum.running)) +
+            ? plural('hpc.pill_running', sum.running, sum.running) +
                   (sum.pending ? t('hpc.pill_pending', sum.pending) : '')
             : '';
     }

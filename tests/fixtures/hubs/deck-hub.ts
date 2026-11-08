@@ -358,7 +358,7 @@ export function factsWorkspace(): FactsWorkspace {
  */
 const ORDER_SETTINGS = [
     'categories:',
-    '  - { key: publications, label: publications, stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777", sort: [title] }',
+    '  - { key: publications, label: { one: publication, other: publications }, stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777", sort: [title] }',
     'deck_order: [idea, publications, in-flight]',
     '',
     ''

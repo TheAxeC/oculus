@@ -26,7 +26,7 @@
     import { stamp } from '$lib/state/shared/words/format';
     import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const { latex, latexActions, layout } = useState();
@@ -116,11 +116,7 @@
             parts.push(t('statusbar.latex_tip_at', stamp(new Date(build.at).toISOString())));
         }
         if (main !== null && main.words !== null) {
-            parts.push(
-                main.words === 1
-                    ? t('statusbar.latex_tip_words_one')
-                    : t('statusbar.latex_tip_words', main.words)
-            );
+            parts.push(plural('statusbar.latex_tip_words', main.words, main.words));
         }
         return parts.join('. ');
     });

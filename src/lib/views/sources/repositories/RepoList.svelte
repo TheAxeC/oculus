@@ -67,7 +67,7 @@
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { scmKey } from '$lib/state/system/apps/tools/scm.svelte';
     import type { AppScmState } from '$lib/state/system/apps/tools/scm.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { branchState } from '$lib/views/shared/changes/branch-state';
     import { branchOf, branchTitle } from './repo/branch-words';
@@ -222,9 +222,7 @@
                                 current={root === shown}
                                 count={count > 0 ? count : undefined}
                                 badge
-                                countTitle={count === 1
-                                    ? t('repositories.list_changes_one')
-                                    : t('repositories.list_changes', count)}
+                                countTitle={plural('repositories.list_changes', count, count)}
                                 nameStyle="font-weight: 400"
                                 showActions={readable}
                                 yielding={readable}

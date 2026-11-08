@@ -23,7 +23,7 @@ import type { TokenSource } from '../../../../shared/stores/token-post.ts';
 import type { FsRoot } from '../../../../sources/explorer/view/place.ts';
 
 /** What separates the parts of a `tags` field. */
-export const PARTS = ',';
+const PARTS = ',';
 
 /** One field of the form: its key, how it is asked, its schema words and what it holds now. */
 export type CppField = {

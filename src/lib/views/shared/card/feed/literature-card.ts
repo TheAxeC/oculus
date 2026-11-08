@@ -9,15 +9,12 @@ import { routeBody } from '$lib/state/feeds/literature/answers';
 import { savedEntriesFor, type Copied } from '$lib/state/feeds/literature/bibtex';
 import { savedPaperOf } from '$lib/state/feeds/literature/saved';
 import type { Collection, Entry } from '$lib/state/boards/collection';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 import type { CardAction } from '../card';
 
 /** What a copy says: how many entries it copied, and the keys of those it could not make. */
 function copiedWords(copied: Copied): string {
-    const count =
-        copied.copied.length === 1
-            ? t('literature.bibtex_copied_one')
-            : t('literature.bibtex_copied', copied.copied.length);
+    const count = plural('literature.bibtex_copied', copied.copied.length, copied.copied.length);
     if (copied.failed.length === 0) return count;
     return t('literature.bibtex_not_copied', count, copied.failed.join(', '));
 }

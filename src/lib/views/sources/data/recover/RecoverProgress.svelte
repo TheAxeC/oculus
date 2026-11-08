@@ -5,7 +5,7 @@
     // has done of its count, and the checksum results so far: how many files are verified and how
     // many differ.
     import Meter from '$lib/ui/display/meters/Meter.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import {
         secondsLeft,
         sizeWords,
@@ -67,9 +67,7 @@
         </p>
     {/if}
     <p class="line">
-        {rows.length === 1
-            ? t('recover.checked_one', verified, different)
-            : t('recover.checked', verified, different, rows.length)}
+        {plural('recover.checked', rows.length, verified, different, rows.length)}
     </p>
 </section>
 

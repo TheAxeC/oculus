@@ -37,7 +37,7 @@
     // ends a row's picks wherever it stands.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import {
         applyEdit,
         draftOf,
@@ -228,9 +228,7 @@
             />
             {#if search !== null && search.more > 0}
                 <p class="more" data-search-more>
-                    {search.more === 1
-                        ? t('settings.fold_more_one')
-                        : t('settings.fold_more', search.more)}
+                    {plural('settings.fold_more', search.more, search.more)}
                 </p>
             {/if}
         </Fold>

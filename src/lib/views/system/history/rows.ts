@@ -6,7 +6,7 @@
 // case states a row and asserts a line without a fetch.
 
 import { stampPaths } from '$lib/state/sources/explorer/acts/undo';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 export { sentenceFor, undoSaid, type UndoAnswer } from '$lib/views/shared/writes/undo-said';
 
@@ -59,7 +59,7 @@ export const STORE_RECORD = 'app-store';
 /** The size of a store a store record names, as the number of bytes. */
 export function shownBytes(size: unknown): Shown {
     if (typeof size !== 'number') return { text: '', size: 0, empty: true };
-    const text = size === 1 ? t('history.bytes_one') : t('history.bytes', String(size));
+    const text = plural('history.bytes', size, String(size));
     return { text, size: 0, empty: false };
 }
 
@@ -83,21 +83,15 @@ export function fileOperation(field: string, after: unknown): string {
     if (field === 'delete') return t('history.file_delete');
     if (field === 'replace') {
         const files = stampPaths(after).length;
-        return files === 1
-            ? t('history.file_replace_one')
-            : t('history.file_replace', String(files));
+        return plural('history.file_replace', files, String(files));
     }
     if (field === 'lsp-edit') {
         const files = stampPaths(after).length;
-        return files === 1
-            ? t('history.file_lsp_edit_one')
-            : t('history.file_lsp_edit', String(files));
+        return plural('history.file_lsp_edit', files, String(files));
     }
     if (field === 'writing-fix') {
         const files = stampPaths(after).length;
-        return files === 1
-            ? t('history.file_writing_fix_one')
-            : t('history.file_writing_fix', String(files));
+        return plural('history.file_writing_fix', files, String(files));
     }
     return field;
 }

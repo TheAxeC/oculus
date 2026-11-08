@@ -51,7 +51,7 @@
     import AddAccount from '../../shared/forms/accounts/AddAccount.svelte';
     import ConnectorHead from '../../shared/forms/accounts/ConnectorHead.svelte';
     import NoAccounts from '../../shared/forms/accounts/NoAccounts.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { HeadWords } from '$lib/state/life/accounts';
     import {
         calendarOptions,
@@ -118,7 +118,7 @@
 
     /** A number of days as the footer says it: one day, or that many days. */
     function dayCount(count: number): string {
-        return count === 1 ? t('calendar.days_one') : t('calendar.days_n', count);
+        return plural('calendar.days', count, count);
     }
 
     /** The four views, in the order the toolbar offers them. */

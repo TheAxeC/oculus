@@ -22,7 +22,7 @@ import { needsInput, sessionRows } from '../../sessions/folds.ts';
 import { fileFindingsCount, pageFindings } from '../navigation/status.ts';
 import type { RegistryStore } from '../navigation/registry.ts';
 import type { PresentStore } from '../../life/present.svelte.ts';
-import { t } from '../../shared/words/text.ts';
+import { pluralOf, t } from '../../shared/words/text.ts';
 import { statusTone, toneOf } from '../../shared/words/tones.ts';
 import { countRow, countText, leadsDue, linkedinOverdue, matchedEntries } from './rail-badges.ts';
 import { railCount } from '../../../data/shapes/boards/categories.ts';
@@ -323,16 +323,16 @@ export function createRailBadges(
 
     /**
      * The cells of a board's tab: the count of each row of `categories` that holds at least one of
-     * its cards, in the list's order, in the row's tone.
+     * its cards, in the list's order, in the row's tone, named by the row's label in the form of
+     * the count.
      */
     function boardCells(view: string): BadgeCell[] {
         const preset = selectors.boardPreset(view);
         const items = selectors.board(preset);
         return preset.categories.flatMap((category) => {
             const count = items.filter((item) => item.category === category.key).length;
-            return count === 0
-                ? []
-                : [{ count, label: category.label, color: toneOf(category.color) }];
+            const label = pluralOf(category.labels, count) ?? category.label;
+            return count === 0 ? [] : [{ count, label, color: toneOf(category.color) }];
         });
     }
 

@@ -9,8 +9,9 @@ text:
         callback_ok: The account is connected. This tab can be closed.
         error: error
         every: every {0}m
-        days_n: '{0} days'
-        days_one: 1 day
+        days:
+            one: '{0} day'
+            other: '{0} days'
         footer: Read-only over {0} back and {1} ahead. A Google account reads the calendars ticked in Google's own calendar list, and no others.
         ics_failed: 'The published calendar {0} could not be read. Check that its link still opens in a browser.'
         ics_no_link: 'No link is kept for this published calendar. Remove it and add it again with its link.'

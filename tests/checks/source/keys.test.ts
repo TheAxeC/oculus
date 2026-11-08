@@ -34,7 +34,7 @@ import { vocabKeys } from '../../../src/lib/data/shapes/vocab-keys.ts';
 import { boardsSource } from '../../../src/lib/state/boards/board/presets.ts';
 import { REFUSALS } from '../../../src/lib/server/core/files/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
-import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
+import { LSP_COUNTED_NOTICES, LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
 import {
     nameRefusalMessage,
     type NameRefusal
@@ -52,8 +52,16 @@ import { fixtureApp } from '../../fixtures/entities-fixture.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { withoutComments } from './code.ts';
-import { treeFiles } from '../walk.ts';
+import {
+    afterFirstArgument,
+    codeOf,
+    formsOf,
+    namesKey,
+    orphansOf,
+    sentenceBase,
+    sources,
+    type Call
+} from './catalog-reads.ts';
 
 let client: ClientState;
 let views: ClientState['registry']['views'];
@@ -88,51 +96,26 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '
 
 /**
  * Readers whose first argument is a catalog key: the client's three and the audit's `sentence`,
- * spread or not.
+ * spread or not, and the two that read a plural key by a count, the page's `plural` and the audit's
+ * `pluralSentence` (catalog-reads.ts PLURAL_READERS).
  */
-const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
+const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence|plural|pluralSentence)\(/g;
 
 /**
  * Server interpolation takes the catalog before its key: `words` of server/core/words.ts, which
  * names the chat terminals and the LaTeX terminals and writes the chat instruction and the
- * transcript export. Every `words(` call in a file under WORDS_DIR is read, whatever its first
- * argument is spelled, and its declaration is left out by the `function` rule CALL uses. Outside
- * that folder a `words` is another module's own helper (the data layer's `words(catalog)` in
+ * transcript export, and `pluralWords` beside it, which reads a plural key by a count. Every
+ * `words(` and `pluralWords(` call in a file under WORDS_DIR is read, whatever its first argument
+ * is spelled, and its declaration is left out by the `function` rule CALL uses. Outside that folder
+ * a `words` is another module's own helper (the data layer's `words(catalog)` in
  * sources/config/merge/text.ts, the state and present modules' `words` of a value) and is not a
  * catalog read. A call whose key is not a literal is held to COMPUTED_PREFIXES like every other
  * reader, and none of those is a `words` call.
  */
-const WORDS = /(?<![\w$.])words\(/g;
+const WORDS = /(?<![\w$.])(words|pluralWords)\(/g;
 
 /** The folder, relative to the scanned root, whose `words` calls are the server's catalog reads. */
 const WORDS_DIR = 'lib/server/';
-
-/**
- * The text after the first argument of a call whose argument list starts at `at`, or null when the
- * list closes before a comma at its own depth. Quotes and nested brackets are skipped, so a first
- * argument such as `textCatalog(config)` is passed over whole.
- */
-function afterFirstArgument(source: string, at: number): string | null {
-    let depth = 0;
-    let quote = '';
-    for (let index = at; index < source.length; index += 1) {
-        const char = source[index];
-        if (quote !== '') {
-            if (char === '\\') index += 1;
-            else if (char === quote) quote = '';
-        } else if (char === "'" || char === '"' || char === '`') {
-            quote = char;
-        } else if ('([{'.includes(char)) {
-            depth += 1;
-        } else if (')]}'.includes(char)) {
-            if (depth === 0) return null;
-            depth -= 1;
-        } else if (char === ',' && depth === 0) {
-            return source.slice(index + 1, index + 201);
-        }
-    }
-    return null;
-}
 
 /**
  * A `findings.` key written as a string literal in any quote, with at least one dot after the
@@ -491,6 +474,15 @@ const COMPUTED_PREFIXES = [
         keys: () => LSP_EDIT_NOTICES.map((notice) => `source.${notice}`)
     },
     {
+        // A notice that counts the files written is a plural key, its forms read by the count.
+        file: 'lib/state/system/machine/refactor/notice-words.ts',
+        start: 'plural(`source.${key}`',
+        keys: () =>
+            Object.keys(LSP_COUNTED_NOTICES).flatMap((notice) =>
+                formsOf(`source.${notice}`, Object.keys(catalog))
+            )
+    },
+    {
         // A linter is named by its id, so a linter added to data/model without a name fails here.
         file: 'lib/state/system/machine/lint/lint-words.ts',
         start: 't(`lint.name_${id',
@@ -562,28 +554,6 @@ const REGISTRATION_LOOKUPS = [
     { file: 'lib/state/workbench/navigation/registry.ts', start: 'lookup(means)' }
 ] as const;
 
-/** Every module and component under a folder, as full paths, in name order. */
-function sources(dir: string): string[] {
-    return treeFiles(dir)
-        .filter((rel) => /\.(ts|svelte)$/.test(rel))
-        .map((rel) => join(dir, rel));
-}
-
-/** Each file's text with its comments turned to spaces, by its full path, read and parsed once. */
-const uncommented = new Map<string, string>();
-
-/** A file's text with its comments turned to spaces (code.ts's withoutComments), read once. */
-function codeOf(file: string): string {
-    let source = uncommented.get(file);
-    if (source === undefined) {
-        source = withoutComments(file, readFileSync(file, 'utf8'));
-        uncommented.set(file, source);
-    }
-    return source;
-}
-
-type Call = { file: string; reader: string; key: string | null; text: string };
-
 /** Every catalog read under `root`, with its key when the argument is a literal. */
 function calls(root: string): Call[] {
     const found: Call[] = [];
@@ -608,7 +578,7 @@ function calls(root: string): Call[] {
             const literal = key === null ? null : LITERAL.exec(key);
             found.push({
                 file: relativePath,
-                reader: 'words',
+                reader: match[1],
                 key: literal ? (literal.at(1) ?? literal.at(2) ?? null) : null,
                 text: source.slice(match.index, at + 80).split('\n')[0]
             });
@@ -690,7 +660,7 @@ describe('text keys', () => {
 
     it('names a catalog key in every literal read', () => {
         const missing = found
-            .filter((call) => call.key !== null && !(call.key in catalog))
+            .filter((call) => !namesKey(call, catalog))
             .map((call) => `${call.file}: ${call.key}`);
         expect(missing).toEqual([]);
     });
@@ -703,7 +673,8 @@ describe('text keys', () => {
     });
 
     it('has a reader for every catalog key', () => {
-        const allowed = new Set(found.flatMap((call) => (call.key === null ? [] : [call.key])));
+        const keys = Object.keys(catalog);
+        const allowed = new Set<string>();
         for (const registration of views()) {
             allowed.add(registration.label);
             allowed.add(registration.glyph);
@@ -712,20 +683,36 @@ describe('text keys', () => {
         for (const entry of COMPUTED_PREFIXES) {
             for (const key of entry.keys()) allowed.add(key);
         }
-        for (const literal of findingKeys) allowed.add(literal.key);
-        const orphaned = Object.keys(catalog).filter((key) => !allowed.has(key));
-        expect(orphaned).toEqual([]);
+        for (const literal of findingKeys) {
+            allowed.add(literal.key);
+            for (const form of formsOf(literal.key, keys)) allowed.add(form);
+        }
+        expect(orphansOf(found, keys, allowed)).toEqual([]);
+    });
+
+    it('reaches every form of a plural key read only by a count, and reports a plural key read by nothing', () => {
+        const keys = ['app.cites.one', 'app.cites.other', 'app.lone.one', 'app.lone.other'];
+        const counted = "plural('app.cites', n, n);";
+        const reads: Call[] = [
+            { file: 'Counted.ts', reader: 'plural', key: 'app.cites', text: counted }
+        ];
+        expect(orphansOf(reads, keys, new Set())).toEqual(['app.lone.one', 'app.lone.other']);
+        const text = "t('app.cites');";
+        const plain: Call = { file: 'Plain.ts', reader: 't', key: 'app.cites', text };
+        const held = Object.fromEntries(keys.map((key) => [key, key]));
+        expect([namesKey(reads[0], held), namesKey(plain, held)]).toEqual([true, false]);
     });
 
     it('holds every findings. literal of the source to config/text/findings.yml, both ways', () => {
         expect(findingKeys.length).toBeGreaterThan(0);
+        const bases = SENTENCE_KEYS.map((key) => sentenceBase(key, SENTENCE_KEYS));
         expect(
             findingKeys
-                .filter((literal) => !SENTENCE_KEYS.includes(literal.key))
+                .filter((literal) => !bases.includes(literal.key))
                 .map((literal) => `${literal.file}: ${literal.key}`)
         ).toEqual([]);
         const named = new Set(findingKeys.map((literal) => literal.key));
-        expect(SENTENCE_KEYS.filter((key) => !named.has(key))).toEqual([]);
+        expect(bases.filter((key) => !named.has(key))).toEqual([]);
         expect(SENTENCE_KEYS.filter((key) => !key.startsWith('findings.'))).toEqual([]);
     });
 
@@ -778,6 +765,7 @@ describe('text keys', () => {
             'const key = "app.title";\nconst c = t(key);\nconst d = lookup(key);\n'
         );
         write('Prose.ts', '// a comment about t(whatever) is not a call\nconst d = 1;\n');
+        write('Counted.ts', "const p = plural('app.cites', 2, 2);\n");
         write('Define.ts', 'export function t(key: string): string {\n    return key;\n}\n');
         // The server reads the flat catalog by subscript or through the guarded record reader, and
         // the gate counts both as one read of the key each names.
@@ -792,6 +780,7 @@ describe('text keys', () => {
         write(
             'lib/server/pty/Words.ts',
             "const g = words(catalog, 'server.chat.chat_name', 1);\n" +
+                "const n = pluralWords(catalog, 'server.git.timed_out', 2, 'git', 2);\n" +
                 "const h = words(textCatalog(config), 'server.chat.' + name);\n" +
                 "const i = words(texts, 'server.latex.name', step);\n" +
                 'const k = words(catalog);\n' +
@@ -805,6 +794,12 @@ describe('text keys', () => {
         expect(calls(dir)).toEqual([
             { file: 'Computed.ts', reader: 't', key: null, text: 't(key);' },
             { file: 'Computed.ts', reader: 'lookup', key: null, text: 'lookup(key);' },
+            {
+                file: 'Counted.ts',
+                reader: 'plural',
+                key: 'app.cites',
+                text: "plural('app.cites', 2, 2);"
+            },
             { file: 'Good.svelte', reader: 't', key: 'app.title', text: "t('app.title');" },
             {
                 file: 'Good.svelte',
@@ -835,6 +830,12 @@ describe('text keys', () => {
                 reader: 'words',
                 key: 'server.chat.chat_name',
                 text: "words(catalog, 'server.chat.chat_name', 1);"
+            },
+            {
+                file: 'lib/server/pty/Words.ts',
+                reader: 'pluralWords',
+                key: 'server.git.timed_out',
+                text: "pluralWords(catalog, 'server.git.timed_out', 2, 'git', 2);"
             },
             {
                 file: 'lib/server/pty/Words.ts',

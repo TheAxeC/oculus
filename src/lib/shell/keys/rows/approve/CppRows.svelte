@@ -16,7 +16,6 @@
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import {
-        PARTS,
         cppChanges,
         cppFields,
         cppName,
@@ -83,7 +82,7 @@
             label: field.help === '' ? field.label : `${field.label} (${field.help})`,
             value: field.value,
             ...(field.required ? { required: true } : {}),
-            ...(field.kind === 'tags' ? { placeholder: t('app.palette.cpp_tags', PARTS) } : {})
+            ...(field.kind === 'tags' ? { placeholder: t('app.palette.cpp_tags') } : {})
         };
     }
 
@@ -119,7 +118,7 @@
                 at === null
                     ? t('app.palette.cpp_add_title')
                     : t('app.palette.cpp_edit_title', nameOf(entry, at)),
-            detail: t('app.palette.cpp_detail', PARTS),
+            detail: t('app.palette.cpp_detail'),
             fields: form.map(promptField),
             verb: t('app.palette.cpp_save'),
             act: (answers) => {

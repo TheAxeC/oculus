@@ -48,7 +48,7 @@
         type RepoWhy,
         type StatusGit
     } from '$lib/state/workbench/navigation/status';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -138,9 +138,7 @@
     /** The sync item's hover words while nothing runs: what a press pushes or syncs. */
     function syncTip(): string {
         if (!pushes) return t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream);
-        return repo.ahead === 1
-            ? t('statusbar.sync_tip_push_one', upstream)
-            : t('statusbar.sync_tip_push', repo.ahead, upstream);
+        return plural('statusbar.sync_tip_push', repo.ahead, repo.ahead, upstream);
     }
 
     /** Hover words with the repository's failed fetch said first, when its last fetch failed. */
@@ -166,19 +164,13 @@
         asking = pushes
             ? {
                   message: t('git.push_confirm', repo.branch, upstream),
-                  detail:
-                      repo.ahead === 1
-                          ? t('git.push_detail_one')
-                          : t('git.push_detail', repo.ahead),
+                  detail: plural('git.push_detail', repo.ahead, repo.ahead),
                   verb: t('git.push'),
                   act: () => void git.push(root)
               }
             : {
                   message: t('repositories.sync_confirm', repo.branch, upstream),
-                  detail:
-                      repo.behind === 1
-                          ? t('repositories.sync_detail_one', repo.ahead)
-                          : t('repositories.sync_detail', repo.behind, repo.ahead),
+                  detail: plural('repositories.sync_detail', repo.behind, repo.behind, repo.ahead),
                   verb: t('repositories.sync'),
                   act: () => void git.sync(root)
               };

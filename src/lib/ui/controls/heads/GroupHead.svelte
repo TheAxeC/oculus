@@ -24,7 +24,12 @@
     // a group nested in the body stands its strip under this one, and a table's sticky header row
     // stands under them all (ui/display/table/Table.svelte). A custom property cannot read itself
     // on one element, so the section carries the height from above in a second one
-    // (`--group-above`), which the strip's `top` and the body's sum read.
+    // (`--group-above`), which the strip's `top` and the body's sum read. A sticky element sticks
+    // inside its scroller's padding, so the strip takes the pane body's top padding, which
+    // ui/frame/Pane.svelte publishes as `--pane-pad-top`, off its `top`: it then sticks at the
+    // body's top edge, and nothing scrolling under it shows in a band above it. A scroller of its
+    // own that holds the strips, inside the pane body or under no pane, sets `--pane-pad-top` to
+    // its own top padding, so the strips stick at its top edge instead.
     //
     // A group given no `ontoggle` does not fold: its strip draws no fold control and its body is
     // always open, for a view whose groups are places in a list it arranges rather than sections
@@ -218,7 +223,7 @@
        parts is the section's `--group-gap`, which the body adds to the indent at each level. */
     .strip {
         position: sticky;
-        top: var(--group-above);
+        top: calc(var(--group-above) - var(--pane-pad-top, 0px));
         z-index: 2;
         display: flex;
         align-items: center;

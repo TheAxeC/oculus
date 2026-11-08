@@ -9,7 +9,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { hasModifiedFilter, withModifiedFilter } from '$lib/state/system/config/search';
 
     type Props = {
@@ -34,9 +34,7 @@
     const found = $derived(
         count === 0
             ? t('workbench.settings_found_none')
-            : count === 1
-              ? t('workbench.settings_found_one')
-              : t('workbench.settings_found', count)
+            : plural('workbench.settings_found', count, count)
     );
 
     function down(event: KeyboardEvent): void {

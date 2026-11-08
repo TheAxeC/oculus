@@ -277,8 +277,8 @@ describe('the edit a language server asks for', () => {
         });
         expect(await createLspEdits(posting.parts).apply(rename(a, b), held)).toEqual({
             applied: false,
-            notice: 'lsp_edit_typed_one',
-            words: ['hub/a.py']
+            notice: 'lsp_edit_typed',
+            words: ['hub/a.py', '1']
         });
         expect(posting.edited).toEqual([]);
         expect(posting.written).toHaveLength(1);

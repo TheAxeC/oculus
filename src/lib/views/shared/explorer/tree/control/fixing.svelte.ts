@@ -14,7 +14,7 @@ import type { ClientState } from '$lib/state/client/context';
 import type { LintFolderFile } from '$lib/state/system/machine/lint/lint-model';
 import { refusalSentence, unreachableAnswer } from '$lib/state/shared/answers/answers';
 import { nameOf, type TreeRow } from '$lib/state/sources/fs';
-import { t } from '$lib/state/shared/words/text';
+import { plural, t } from '$lib/state/shared/words/text';
 
 /** The files a write of the ticked rows posts. */
 type WrittenFiles = Parameters<ClientState['explorer']['writingFix']>[0];
@@ -141,11 +141,7 @@ export function createFixing(client: ClientState): Fixing {
         if (now === null) return;
         if (outcome.ok) {
             const count = outcome.paths.length;
-            client.notices.post(
-                count === 1
-                    ? t('files.writing_fix_done_one')
-                    : t('files.writing_fix_done', String(count))
-            );
+            client.notices.post(plural('files.writing_fix_done', count, String(count)));
             held = null;
             return;
         }
@@ -153,9 +149,7 @@ export function createFixing(client: ClientState): Fixing {
         if (done.length > 0) {
             const stopped = outcome.failed ?? '';
             client.notices.post(
-                done.length === 1
-                    ? t('files.writing_fix_partial_one', stopped)
-                    : t('files.writing_fix_partial', stopped, String(done.length)),
+                plural('files.writing_fix_partial', done.length, stopped, String(done.length)),
                 { tone: 'error' }
             );
             held = null;

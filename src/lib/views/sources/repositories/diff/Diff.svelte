@@ -79,18 +79,16 @@
         type LineChange
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
+    import { groupFrom, groupWaits } from '$lib/state/sources/repositories/repositories';
+    import type { DiffAttributes, DiffSides } from '$lib/state/sources/repositories/repositories';
     import {
         diffViewOf,
         fileKeys,
-        groupFrom,
-        groupWaits,
         sameFiles,
         toggleFolded,
         unfolded,
-        viewKeeper,
-        type DiffAttributes,
-        type DiffSides
-    } from '$lib/state/sources/repositories/repositories';
+        viewKeeper
+    } from '$lib/state/sources/repositories/diff/diff-view';
     import { diffActs, heldDiff } from '$lib/state/sources/repositories/diff/subject';
     import type { DiffState } from '$lib/state/sources/repositories/diff/subject';
     import { DEFAULT_INDENT } from '$lib/state/workbench/navigation/editor-text';

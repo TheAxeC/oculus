@@ -20,8 +20,9 @@ text:
         columns: Columns
         columns_always: '{0} is always shown'
         compute_none: unset
-        count: '{0} projects'
-        count_one: 1 project
+        count:
+            one: '{0} project'
+            other: '{0} projects'
         count_shown: '{0} of {1} shown'
         empty: No entries match.
         empty_glyph: circle_empty
@@ -69,13 +70,12 @@ text:
         quick_stale_tip: only the projects whose manifest is behind their documents
         quick_waiting: waiting {0}
         quick_waiting_tip: only the projects waiting on someone or something
-        record_count: '{0} {1}'
         record_count_tip: 'Open the projects of {0} that are {1}'
         record_gone: "The record this tab was opened for is gone. Press a count under a record's card to open its projects."
         record_row: 'The projects of {0}'
         record_title: 'Projects of {0}'
         record_total_tip: 'Open every project of {0}'
-        record_waiting: '{0} waiting on {1}'
+        record_waiting: 'waiting on {0}'
         record_waiting_tip: 'Open the projects waiting on {0}'
         record_waiting_title: 'Waiting on {0}'
         repro_no: not reproduced
@@ -91,9 +91,10 @@ text:
         slices_more_picked: '+{0}, {1} picked'
         stale_glyph: stale
         toolbar: Board controls
-        venue_warn: '{0}: {1} live projects, the warning is {2}'
+        venue_warn:
+            one: '{0}: {1} live project, the warning is {2}'
+            other: '{0}: {1} live projects, the warning is {2}'
         venue_warn_join: '; '
-        venue_warn_one: '{0}: 1 live project, the warning is {1}'
         view_cards: Cards
         view_list: List
         warn_glyph: warn

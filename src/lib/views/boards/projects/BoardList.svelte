@@ -11,8 +11,9 @@
     // minimum width (`MIN_WIDTH`), and the columns that do not fit in the list's width, read from
     // its box as it resizes, are dropped from the right until the rest fit, Project kept always;
     // the columns drawn share the width in proportion to their minimums. The table's header row
-    // scrolls with its rows: its box clips the table, so the header, which the table draws sticky,
-    // has nothing to stick to, and the section's heading is the one that stays at the pane's top.
+    // is drawn once, above the first row, and scrolls with its rows: its box clips the table and
+    // tells the header, which the table draws sticky, that no strip stands above it, so it sticks
+    // nowhere, and the section's heading is the one that stays at the pane's top.
     //
     // A web address written in a cell, the next line's among them, is a link
     // (ui/display/text/LinkedText.svelte).
@@ -98,9 +99,12 @@
 </div>
 
 <style>
-    /* The table's box: as wide as the section, and clipping, so the table never scrolls sideways
-       and its header row scrolls with it. */
+    /* The table's box: as wide as the section, and clipping, so the table never scrolls sideways.
+       The clipping box is the one the header row sticks in, and it never scrolls up or down, so
+       the header row is told no strip stands above it (`--group-strip`): offset by the section's
+       heading strip it would sit over the first row, and at no offset it scrolls with its rows. */
     .list {
+        --group-strip: 0px;
         min-width: 0;
         overflow: hidden;
     }

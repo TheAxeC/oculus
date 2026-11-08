@@ -2,8 +2,9 @@
 text:
     sessions:
         cache: prompt cache
-        cache_busts: '{0} busts'
-        cache_busts_one: 1 bust
+        cache_busts:
+            one: '{0} bust'
+            other: '{0} busts'
         cache_share: '{0}% cached'
         cache_ttl: '{0} ttl'
         cache_ttl_none: no ttl

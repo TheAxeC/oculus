@@ -709,7 +709,8 @@ function hubWords(merged: Readonly<Record<string, unknown>>): Record<string, unk
  * the `.oculus/data/` folder, else the entries whose file it holds. An entry that names no label
  * word carries its file's `title:`. Its `list` is the merged `collections:` as written, with the
  * file its findings are on (`listFileOf`). Its `words` are those of the hub's merged config
- * (`hubWords`).
+ * (`hubWords`). Its `new_project_dir` is the config's `newProjectDir`, the folders the server's
+ * write of a new project in this hub reads (`newProjectDirs`).
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
     const unnamed = heldUnnamed(hub, config.unnamed);
@@ -722,7 +723,8 @@ export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
         data_themes: themeRows(hubMap(hub, config.registries.datasets, config.text)),
         collections: held.map((file) => listedCollection(hub, file, config.text)),
         list: { file: listFileOf(hub, config), value: config.merged.collections },
-        words: hubWords(config.merged)
+        words: hubWords(config.merged),
+        new_project_dir: config.newProjectDir
     };
 }
 

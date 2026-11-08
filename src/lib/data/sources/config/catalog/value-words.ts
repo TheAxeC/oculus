@@ -3,7 +3,7 @@
 // name with no slash or white space". They are lines of config/text/findings.yml, so the sentence
 // of a finding is reworded in that file alone.
 
-import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
+import { findingText, pluralFindingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import type { CatalogEntry, Form } from './options.ts';
 import type { ValueProblem } from './value-rule.ts';
 
@@ -128,8 +128,11 @@ export function mustBe(
         case 'hub_path':
             return findingText(catalog, 'findings.words.hub_path');
         case 'slots':
-            return problem.slots.length === 1
-                ? findingText(catalog, 'findings.words.slots_one')
-                : findingText(catalog, 'findings.words.slots', problem.slots.length);
+            return pluralFindingText(
+                catalog,
+                'findings.words.slots',
+                problem.slots.length,
+                problem.slots.length
+            );
     }
 }

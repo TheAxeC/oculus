@@ -15,7 +15,7 @@
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import FoldHead from '$lib/ui/controls/heads/FoldHead.svelte';
 
@@ -92,9 +92,9 @@
             (week?.unplaced ?? null) !== null
     );
 
-    /** The singular or plural manifest noun for the behind-project line. */
+    /** The manifest noun for the behind-project line, in the form of its count. */
     function manifestWord(count: number): string {
-        return count === 1 ? t('focus.command.manifest') : t('focus.command.manifests');
+        return plural('focus.command.manifests', count);
     }
 </script>
 
@@ -162,15 +162,7 @@
                 ><Glyph name={t('focus.command.unplaced_glyph')} />
                 <b>{week.unplaced.count}</b></span
             >
-            <span>
-                {#if week.unplaced.count === 1}
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                    {@html t('focus.command.unplaced_one')}
-                {:else}
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                    {@html t('focus.command.unplaced_many')}
-                {/if}
-            </span>
+            <span>{plural('focus.command.unplaced', week.unplaced.count)}</span>
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render links(week.unplaced.projects, week.unplaced.more)}
         </div>

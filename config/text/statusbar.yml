@@ -46,15 +46,17 @@ text:
         branch_detached_tip: No branch is checked out in {1}; HEAD is at {0}. Switch branch.
         branch_menu: Branches of {0}
         sync_name: '{0} to pull, {1} to push'
-        sync_tip_push: '{0} commits to push to {1}. Push.'
-        sync_tip_push_one: '1 commit to push to {0}. Push.'
+        sync_tip_push:
+            one: '{0} commit to push to {1}. Push.'
+            other: '{0} commits to push to {1}. Push.'
         sync_tip_sync: '{0} to pull and {1} to push against {2}. Sync.'
         publish_tip: Publish {0} to {1}.
         publish_tip_many: Publish {0} to one of the remotes.
         blame_tip: The commit that last changed this line. Open it in the graph.
         sync_upstream: the upstream
-        findings_name: '{0} findings'
-        findings_name_one: 1 finding
+        findings_name:
+            one: '{0} finding'
+            other: '{0} findings'
         packed_many: 10K+
         packed_thousands: '{0}K'
         problems_join: ', '
@@ -64,8 +66,9 @@ text:
         problems_part_warnings: 'Warnings: {0}'
         debug_name: 'Debug: {0}'
         debug_tip: 'Debug with {0}, or pick another configuration to start.'
-        findings_tip: "{0} findings: the errors in the hub's files and the configuration, and what the audit has open. Open Findings."
-        findings_tip_one: "1 finding: an error in the hub's files or the configuration, or one the audit has open. Open Findings."
+        findings_tip:
+            one: "{0} finding: an error in the hub's files or the configuration, or one the audit has open. Open Findings."
+            other: "{0} findings: the errors in the hub's files and the configuration, and what the audit has open. Open Findings."
         hpc_cluster: '{0}: {1}'
         hpc_polling: polling
         hpc_live: '{0} running, {1} pending'
@@ -87,16 +90,21 @@ text:
         latex_tip_recipe: 'Recipe {0}'
         latex_tip_at: 'Last build at {0}'
         latex_unapproved_tip: 'An automatic build or clean of {0} waits for your approval of the code it would run. Press to see it.'
-        latex_tip_words: '{0} words'
-        latex_tip_words_one: 1 word
-        sessions_name: '{0} live sessions'
-        sessions_name_one: 1 live session
-        sessions_tip: '{0} live sessions. Open the session list.'
-        sessions_tip_one: 1 live session. Open the session list.
-        unsaved_name: '{0} unsaved tabs'
-        unsaved_name_one: 1 unsaved tab
-        unsaved_tip: '{0} tabs have unsaved changes. Show the first.'
-        unsaved_tip_one: 1 tab has unsaved changes. Show it.
+        latex_tip_words:
+            one: '{0} word'
+            other: '{0} words'
+        sessions_name:
+            one: '{0} live session'
+            other: '{0} live sessions'
+        sessions_tip:
+            one: '{0} live session. Open the session list.'
+            other: '{0} live sessions. Open the session list.'
+        unsaved_name:
+            one: '{0} unsaved tab'
+            other: '{0} unsaved tabs'
+        unsaved_tip:
+            one: '{0} tab has unsaved changes. Show it.'
+            other: '{0} tabs have unsaved changes. Show the first.'
         unsaved_none: No tab has unsaved changes.
         caret: Ln {0}, Col {1}
         caret_selected: '{0} ({1} selected)'
@@ -137,8 +145,9 @@ text:
         ls_failed: '{0}: failed'
         ls_root_gone: '{0}: root not served'
         ls_tip_starting: '{0} is starting for {1}.'
-        ls_tip_indexing: '{0} is indexing {1}: {2} of {3} files.'
-        ls_tip_indexing_one: '{0} is indexing {1}: {2} of 1 file.'
+        ls_tip_indexing:
+            one: '{0} is indexing {1}: {2} of {3} file.'
+            other: '{0} is indexing {1}: {2} of {3} files.'
         ls_tip_ready: '{0} serves {1}.'
         ls_tip_waiting: '{0} serves {1} once this file is open.'
         ls_tip_not_found: '{0} was not found for {1}. Install it, then restart the language server.'
@@ -214,8 +223,9 @@ text:
         language_xml: XML
         language_yaml: YAML
         bell_tip: No new notifications
-        bell_unread_one: 1 new notification
-        bell_unread: '{0} new notifications'
+        bell_unread:
+            one: '{0} new notification'
+            other: '{0} new notifications'
         bell_quiet: Do Not Disturb is on
         centre: Notifications
         centre_empty: No new notifications

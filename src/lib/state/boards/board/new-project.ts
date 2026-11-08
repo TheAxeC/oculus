@@ -1,17 +1,19 @@
 // Layer 2, client state. What the new-project form starts with and sends beyond its fields: the
-// folder, the `new_project_dir` entry of the board's tier when it is a folder inside a scan folder
-// (an entry that is not, which the hub reports as a finding, is not used, and the form starts with
-// an empty folder), and the person the new manifest names, the user in the field of the first of
-// the board's roles that has one, or of the first row of `roles:` that has one on a board naming no
-// `role:`, and the tier it is written in: the board's one tier, else the default tier of `tiers`
-// when the board names none or names it among several. A board offers New project only when it has
-// that tier and the project that write makes is one the board's rule takes
-// (data/shapes/boards/takes.ts), so a new project is on the board it was made on. The tiers, the
-// stages and the roles read are those of the hub the project is written to. The user is named only
-// where their key, written into that hub's manifest, resolves there to them: a hub that holds a
-// person of the user's key of its own names that person by it, so it is offered no New project.
+// folder, in the primary hub the `new_project_dir` entry of the board's tier when it is a folder
+// inside a scan folder (an entry that is not, which the hub reports as a finding, is not used, and
+// the form starts with an empty folder) and in another hub the folder its vocabulary carries for
+// the tier, the one the server's write there reads, and the person the new manifest names, the
+// user in the field of the first of the board's roles that has one, or of the first row of `roles:`
+// that has one on a board naming no `role:`, and the tier it is written in: the board's one tier,
+// else the default tier of `tiers` when the board names none or names it among several. A board
+// offers New project only when it has that tier and the project that write makes is one the
+// board's rule takes (data/shapes/boards/takes.ts), so a new project is on the board it was made
+// on. The tiers, the stages and the roles read are those of the hub the project is written to. The
+// user is named only where their key, written into that hub's manifest, resolves there to them: a
+// hub that holds a person of the user's key of its own names that person by it, so it is offered
+// no New project.
 
-import type { Id, Project } from '../../../data/model/index.ts';
+import type { HubVocabs, Id, Project } from '../../../data/model/index.ts';
 import { byKey, fields, text as str } from '../../../data/helpers/guards.ts';
 import {
     folderOf,
@@ -38,10 +40,26 @@ const scanDirShape = z.object({ dir: wordShape });
 const scanDirsShape = rowsShape(scanDirShape);
 
 /**
- * The folder the form of one tier starts with, or the empty text when the tier has no usable
- * `new_project_dir` entry.
+ * The hub a new project is written to, the primary hub's key (null in a workspace with none), and
+ * the vocabulary of every hub.
  */
-export function newProjectFolder(config: Record<string, unknown>, tier: string): string {
+type NewProjectWhere = { hub?: string; primary: string | null; vocabs: HubVocabs | null };
+
+/**
+ * The folder the form of one tier starts with in the hub `where.hub`, the primary when absent, or
+ * the empty text where none is named for the tier. The primary's is the tier's `new_project_dir`
+ * entry of its merged config `config` when that is a folder inside a scan folder. Another hub's is
+ * the folder that hub's vocabulary carries for the tier (`HubVocab.new_project_dir`), the one the
+ * server's write there reads.
+ */
+export function newProjectFolder(
+    config: Record<string, unknown>,
+    tier: string,
+    where: NewProjectWhere
+): string {
+    if (where.hub !== undefined && where.hub !== where.primary) {
+        return byKey(where.vocabs?.lists ?? {}, where.hub)?.new_project_dir[tier] ?? '';
+    }
     const folder = folderOf(str(byKey(fields(config.new_project_dir), tier)));
     if (folder === '') return '';
     const dirs = (readAs(scanDirsShape, config.scan) ?? []).map((row) => row.dir);

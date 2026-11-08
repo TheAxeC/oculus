@@ -322,7 +322,15 @@ options:
         key: key
         fields:
             key: the word the category is named by, which a board filter stores
-            label: the words the category is drawn with
+            label:
+                help: 'the words the category is drawn with, a map of plural forms: other names the category alone, one goes with a count of 1, and zero, two, few or many go with the counts a display language gives them'
+                control: records
+                fields:
+                    key:
+                        help: the plural form the words are for
+                        control: choice
+                        options: [zero, one, two, few, many, other]
+                    value: the words of the category in that form, such as idea for one and ideas for other
             color:
                 help: the colour the category is drawn in; a row without one is a finding and is drawn in no colour
                 control: colour

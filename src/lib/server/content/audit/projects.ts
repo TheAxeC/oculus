@@ -27,6 +27,7 @@ import { projectRole } from '../../../data/shapes/boards/takes.ts';
 import { blockHolds, wordList, type WordBlock } from '../../../data/shapes/boards/words.ts';
 import {
     type AuditInput,
+    pluralSentence,
     sentence,
     type Raised,
     scopeOf,
@@ -136,9 +137,7 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
                 where: name,
                 kind: 'todo',
                 ...fileIn(input.hub, project, path),
-                ...(count === 1
-                    ? sentence('audit.msg_markers_one', count, firstMarker(text))
-                    : sentence('audit.msg_markers', count, firstMarker(text)))
+                ...pluralSentence('audit.msg_markers', count, count, firstMarker(text))
             });
         }
     }
@@ -211,9 +210,11 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     where: 'project.yml',
                     kind: 'data',
                     ...fileIn(input.hub, project, project.file),
-                    ...(provisional.length === 1
-                        ? sentence('audit.msg_provisional_one', provisional.length)
-                        : sentence('audit.msg_provisional', provisional.length))
+                    ...pluralSentence(
+                        'audit.msg_provisional',
+                        provisional.length,
+                        provisional.length
+                    )
                 });
             }
             const lag = project.staleDays ?? 0;

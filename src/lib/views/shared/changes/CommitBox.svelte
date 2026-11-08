@@ -47,7 +47,7 @@
         upstreamOf
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { followPrepared } from './prepared-message';
     import { useState } from '$lib/state/client/use';
 
@@ -86,8 +86,7 @@
     /** Why a commit made this way cannot be made now, or the empty string when it can. */
     function blocked(how: CommitHow): string {
         if (busy) return repositories.busyWords(root);
-        if (unmerged === 1) return t('git.commit_unmerged_one');
-        if (unmerged > 1) return t('git.commit_unmerged', unmerged);
+        if (unmerged > 0) return plural('git.commit_unmerged', unmerged, unmerged);
         if ((how === 'push' || how === 'sync') && !tracked) return t('git.push_none');
         if (how === 'amend') return git.log.length === 0 ? t('git.amend_none') : '';
         if (git.staged.length === 0) return t('git.commit_none');
@@ -115,23 +114,15 @@
     function commit(how: CommitHow): void {
         if (blocked(how) !== '') return;
         const count = git.staged.length;
-        // One path is named in the singular, as the conflict count is.
-        const one = count === 1;
-        let question = one
-            ? t('git.commit_confirm_one', git.branch)
-            : t('git.commit_confirm', count, git.branch);
+        let question = plural('git.commit_confirm', count, count, git.branch);
         let detail = t('git.commit_detail');
         if (how === 'amend') {
             question = t('git.amend_confirm', git.branch);
             detail = message.trim() === '' ? t('git.amend_keep') : t('git.amend_detail');
         } else if (how === 'push') {
-            question = one
-                ? t('git.commit_push_confirm_one', git.branch, upstream)
-                : t('git.commit_push_confirm', count, git.branch, upstream);
+            question = plural('git.commit_push_confirm', count, count, git.branch, upstream);
         } else if (how === 'sync') {
-            question = one
-                ? t('git.commit_sync_confirm_one', git.branch, upstream)
-                : t('git.commit_sync_confirm', count, git.branch, upstream);
+            question = plural('git.commit_sync_confirm', count, count, git.branch, upstream);
         }
         asking = {
             message: question,

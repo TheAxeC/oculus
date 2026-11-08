@@ -1,8 +1,9 @@
 # Oculus text owned by the data view and the Recover view.
 text:
     data:
-        count: '{0} datasets ({1})'
-        count_one: '1 dataset ({0})'
+        count:
+            one: '{0} dataset ({1})'
+            other: '{0} datasets ({1})'
         empty: No datasets yet; add some to the hub's data file.
         fetch: Fetch
         field_description: Description
@@ -30,8 +31,9 @@ text:
         access_unreachable: '{0}: the service did not answer the login request'
         at_rate: '{0}, {1}/s'
         bytes: '{0} B'
-        checked: 'Checked: {0} verified, {1} different, of {2} files'
-        checked_one: 'Checked: {0} verified, {1} different, of 1 file'
+        checked:
+            one: 'Checked: {0} verified, {1} different, of {2} file'
+            other: 'Checked: {0} verified, {1} different, of {2} files'
         checksum_none: no checksum
         col_actions: Actions
         col_checksum: Checksum
@@ -40,8 +42,8 @@ text:
         col_size: Size
         col_state: State
         fetch: Fetch
-        fetch_one: Fetch
-        fetch_one_title: Fetch {0} alone
+        fetch_file: Fetch
+        fetch_file_title: Fetch {0} alone
         fetch_title: Fetch every file that is missing, partial or different; a partial file resumes where it stopped
         free: '{0} free'
         free_short: '{0} free, less than a Fetch needs'
@@ -62,8 +64,9 @@ text:
         mb: '{0} MB'
         minutes: '{0} min {1} s'
         missing: '{0} to fetch.'
-        missing_unsized: '{0} to fetch, and {1} files whose size the source does not state.'
-        missing_unsized_one: '{0} to fetch, and 1 file whose size the source does not state.'
+        missing_unsized:
+            one: '{0} to fetch, and {1} file whose size the source does not state.'
+            other: '{0} to fetch, and {1} files whose size the source does not state.'
         none: No dataset chosen. Open Recover from a dataset card.
         of: '{0} of {1}'
         plan: Files
@@ -115,12 +118,15 @@ text:
         target_mac: This Mac
         tb: '{0} TB'
         title: Recover {0}
-        totals: '{0} files, {1}.'
-        totals_one: '1 file, {0}.'
-        totals_unsized: '{0} files.'
-        totals_unsized_one: '1 file.'
-        unsized_only: '{0} files to fetch, whose size the source does not state.'
-        unsized_only_one: '1 file to fetch, whose size the source does not state.'
+        totals:
+            one: '{0} file, {1}.'
+            other: '{0} files, {1}.'
+        totals_unsized:
+            one: '{0} file.'
+            other: '{0} files.'
+        unsized_only:
+            one: '{0} file to fetch, whose size the source does not state.'
+            other: '{0} files to fetch, whose size the source does not state.'
         unpack: Unpack
         unpack_title: Unpack the archives of every source marked unpack
         verify: Verify

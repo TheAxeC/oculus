@@ -8,7 +8,7 @@
     import { sessionTab } from '../card';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -55,11 +55,7 @@
 {#if working.length > 0}
     {@const live = liveCount(working)}
     <div class="sessions">
-        <Tag
-            label={working.length === 1
-                ? t('sessions.card_one')
-                : t('sessions.card_n', working.length)}
-        />
+        <Tag label={plural('sessions.card', working.length, working.length)} />
         {#if live > 0}
             <Tag label={t('sessions.card_live', live)} tone="green" />
         {/if}

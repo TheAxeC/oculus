@@ -66,7 +66,7 @@
         type RefLine,
         type RefSearch
     } from '$lib/state/system/machine/lsp/references';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -125,13 +125,14 @@
         ])
     );
 
-    /** The count line, in VS Code's four forms. */
+    /** The count line: the results and the files, each in the form of its own count. */
     const count = $derived.by(() => {
         if (held.hierarchy !== null) return directionWords(held.hierarchy.direction);
-        if (sums.locations === 1 && sums.files === 1) return t('references.count_one');
-        if (sums.locations === 1) return t('references.count_one_result', sums.files);
-        if (sums.files === 1) return t('references.count_one_file', sums.locations);
-        return t('references.count', sums.locations, sums.files);
+        return t(
+            'references.count',
+            plural('references.locations', sums.locations, sums.locations),
+            plural('references.files', sums.files, sums.files)
+        );
     });
 
     /** The word a search is titled by: what it asked, then the word under the caret. */

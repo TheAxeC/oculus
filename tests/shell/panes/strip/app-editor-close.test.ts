@@ -121,7 +121,7 @@ const ROWS: Row[] = [
         marks: [true],
         clears: false,
         closes: 'editor',
-        asks: t('ui.tab_close_dirty'),
+        asks: t('ui.tabs_close_dirty.one'),
         answer: 'cancel',
         open: ['editor', 'other']
     },
@@ -130,7 +130,7 @@ const ROWS: Row[] = [
         marks: [true],
         clears: true,
         closes: 'editor',
-        asks: t('ui.tab_close_dirty'),
+        asks: t('ui.tabs_close_dirty.one'),
         answer: 'save',
         open: ['other']
     },
@@ -139,7 +139,7 @@ const ROWS: Row[] = [
         marks: [true],
         clears: false,
         closes: 'editor',
-        asks: t('ui.tab_close_dirty'),
+        asks: t('ui.tabs_close_dirty.one'),
         answer: 'save',
         open: ['editor', 'other']
     },

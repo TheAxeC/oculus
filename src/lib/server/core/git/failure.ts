@@ -5,7 +5,7 @@
 // read path (run.ts's `reasonOf`) say a failure in one set of words. It sits beside run.ts, below
 // every folder that words a git failure.
 
-import { words } from '../words.ts';
+import { pluralWords, words } from '../words.ts';
 import type { CommandFailure, Unfinished } from './parse.ts';
 
 /** The word for the operation a command left unfinished, from the catalog. */
@@ -23,9 +23,8 @@ function sentenceOf(failure: CommandFailure, catalog: Record<string, string>): s
             : words(catalog, 'server.git.program_git');
     if (failure.code === 'cancelled') return words(catalog, 'server.git.cancelled', program);
     if (failure.code === 'timed-out') {
-        return failure.detail === '1'
-            ? words(catalog, 'server.git.timed_out_one', program)
-            : words(catalog, 'server.git.timed_out', program, failure.detail);
+        const seconds = Number(failure.detail);
+        return pluralWords(catalog, 'server.git.timed_out', seconds, program, failure.detail);
     }
     if (failure.code === 'too-much-output') {
         return words(catalog, 'server.git.too_much_output', program, failure.detail);

@@ -71,7 +71,7 @@
     import { scholarUrl } from '$lib/state/feeds/literature/scholar';
     import { radarBuckets } from '$lib/state/feeds/radar';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { t } from '$lib/state/shared/words/text';
+    import { plural, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import { projectDisplay, recordChoices, selectChoices } from '$lib/state/forms/schema';
@@ -239,9 +239,7 @@
             {#if papers.length > 0}
                 <Surface>
                     <p class="count">
-                        {papers.length === 1
-                            ? t('literature.count_one')
-                            : t('literature.count', papers.length)}
+                        {plural('literature.count', papers.length, papers.length)}
                     </p>
                 </Surface>
                 <div class="cards">

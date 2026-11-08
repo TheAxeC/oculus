@@ -106,8 +106,9 @@ text:
             no_list_for: 'The field {0} of this record names no list for {1}, so this field is left out'
             not_words: This option takes a list of words
             not_numbers: This option takes a list of numbers
-            wrong_slots: 'This option takes exactly {0} items: {1}'
-            wrong_slots_one: 'This option takes exactly 1 item: {0}'
+            wrong_slots:
+                one: 'This option takes exactly {0} item: {1}'
+                other: 'This option takes exactly {0} items: {1}'
             parked_added: This list only drops items; an item is added from the Audit section of Findings
             number_range: 'This option takes a number from {0} to {1}'
             number_min: 'This option takes a number of at least {0}'
@@ -482,8 +483,9 @@ text:
             stopped_pull: The pull
             switch_refused: Git refused the switch
             tag_needs_name: A tag needs a name
-            timed_out: '{0} did not finish within {1} seconds, so it was stopped'
-            timed_out_one: '{0} did not finish within 1 second, so it was stopped'
+            timed_out:
+                one: '{0} did not finish within {1} second, so it was stopped'
+                other: '{0} did not finish within {1} seconds, so it was stopped'
             too_much_output: '{0} wrote more than {1} MB of output, so it was stopped'
             trash_failed: The path {0} could not be moved to the Trash
             unknown_directory: That directory is not a workspace oculus knows

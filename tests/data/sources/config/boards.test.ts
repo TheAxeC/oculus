@@ -207,7 +207,7 @@ describe('categoriesFindings', () => {
     it('reads a row added after dead-ends with no finding, the first row still holding a project', () => {
         const config = withRows({
             key: 'x',
-            label: 'x',
+            label: { other: 'x' },
             color: '#16a34a',
             stages: { words: ['building'] }
         });
@@ -219,11 +219,11 @@ describe('categoriesFindings', () => {
 
     it.each([
         [
-            [{ key: 'y', label: 'y', forms: { words: ['poster'] } }],
+            [{ key: 'y', label: { other: 'y' }, forms: { words: ['poster'] } }],
             ['categories[7]: categories[7] names no color, so it is drawn in no colour']
         ],
         [
-            [{ key: 'y', label: 'y', stages: { words: ['submitted'] } }],
+            [{ key: 'y', label: { other: 'y' }, stages: { words: ['submitted'] } }],
             ['categories[7]: categories[7] names no color, so it is drawn in no colour']
         ],
         [
@@ -239,7 +239,7 @@ describe('categoriesFindings', () => {
             ]
         ],
         [
-            [{ label: 'z', color: '#9ca3af' }],
+            [{ label: { other: 'z' }, color: '#9ca3af' }],
             [
                 'categories[7]: categories[7] must be a map with a key no earlier row holds; the row is not read'
             ]
@@ -267,7 +267,9 @@ describe('the category rows of a hub that is not the primary', () => {
     it.each([
         [
             'a stage word the hub does not hold',
-            rowsFile("{ key: x, label: X, color: '#16a34a', stages: { words: [nonsense] } }"),
+            rowsFile(
+                "{ key: x, label: { other: X }, color: '#16a34a', stages: { words: [nonsense] } }"
+            ),
             [
                 [
                     'categories[7].stages.words',
@@ -277,12 +279,14 @@ describe('the category rows of a hub that is not the primary', () => {
         ],
         [
             'a row naming no color',
-            rowsFile('{ key: x, label: X, stages: { words: [building] } }'),
+            rowsFile('{ key: x, label: { other: X }, stages: { words: [building] } }'),
             [['categories[7]', 'categories[7] names no color, so it is drawn in no colour']]
         ],
         [
             'a form word the hub does not hold',
-            rowsFile("{ key: x, label: X, color: '#16a34a', forms: { words: [nonsense] } }"),
+            rowsFile(
+                "{ key: x, label: { other: X }, color: '#16a34a', forms: { words: [nonsense] } }"
+            ),
             [
                 [
                     'categories[7].forms.words',
@@ -293,7 +297,7 @@ describe('the category rows of a hub that is not the primary', () => {
         ['no categories', `${DRAFTING}\n`, []],
         [
             'a row with no key',
-            rowsFile("{ label: X, color: '#16a34a' }"),
+            rowsFile("{ label: { other: X }, color: '#16a34a' }"),
             [
                 ['categories.7.key', 'categories.7.key must be a text'],
                 [
@@ -304,14 +308,14 @@ describe('the category rows of a hub that is not the primary', () => {
         ],
         [
             'a row naming a stage word the hub adds',
-            `${DRAFTING}\n${rowsFile("{ key: x, label: X, color: '#16a34a', stages: { words: [drafting] } }")}`,
+            `${DRAFTING}\n${rowsFile("{ key: x, label: { other: X }, color: '#16a34a', stages: { words: [drafting] } }")}`,
             []
         ],
         [
             'a key in two rows',
             rowsFile(
-                "{ key: x, label: X, color: '#16a34a' }",
-                "{ key: x, label: Y, color: '#16a34a' }"
+                "{ key: x, label: { other: X }, color: '#16a34a' }",
+                "{ key: x, label: { other: Y }, color: '#16a34a' }"
             ),
             [
                 [

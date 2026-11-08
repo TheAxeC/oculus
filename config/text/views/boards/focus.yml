@@ -55,8 +55,9 @@ text:
             last_refreshed: last refreshed {0}d ago
             linkedin_glyph: linkedin
             litwatch_glyph: litwatch
-            manifest: manifest
-            manifests: manifests
+            manifests:
+                one: manifest
+                other: manifests
             more: (+{0} more)
             never_run: never run
             next_month: next month
@@ -74,8 +75,9 @@ text:
             submission_deadline: submission deadline in {0}d
             this_month: this month
             unplaced_glyph: compass
-            unplaced_many: projects whose stage is on no lane of the board
-            unplaced_one: project whose stage is on no lane of the board
+            unplaced:
+                one: project whose stage is on no lane of the board
+                other: projects whose stage is on no lane of the board
             venue_count: '{0} x{1}'
             venue_load_tail: (>={0} in flight; consider spreading)
             word_application: application

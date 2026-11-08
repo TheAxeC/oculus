@@ -221,18 +221,25 @@ export const LSP_EDIT_NOTICES = [
     'lsp_edit_not_text',
     'lsp_edit_outside',
     'lsp_edit_partial',
-    'lsp_edit_partial_one',
     'lsp_edit_readonly',
     'lsp_edit_refused',
     'lsp_edit_structure',
     'lsp_edit_too_large',
     'lsp_edit_typed',
-    'lsp_edit_typed_one',
     'lsp_rename_refused_empty'
 ] as const;
 
 /** One of those notices. */
 export type LspEditNotice = (typeof LSP_EDIT_NOTICES)[number];
+
+/**
+ * The notices whose catalog key is a plural key, each with the place among its words of the count
+ * that picks the form: both say how many files were written, in their second word.
+ */
+export const LSP_COUNTED_NOTICES: Partial<Record<LspEditNotice, number>> = {
+    lsp_edit_partial: 1,
+    lsp_edit_typed: 1
+};
 
 // ---------------------------------------------------------------------------------------------
 // The workspace edits of several served roots for one move, made into one. Each root's Markdown

@@ -6,9 +6,19 @@
 // config folder into its top-level map, with the findings of what is wrong with it, is here too,
 // since the defaults, catalog, schema and text files (merge.ts) and the options files
 // (options-folder.ts) are read by it alike.
+//
+// A word that changes with a count is a plural key: a map of the CLDR forms (zero, one, two, few,
+// many, other), `other` always among them, and the readers pick the form by the count
+// (finding-text.ts). A plural map with no `other`, and a key of one that is none of the six forms,
+// are findings of the merge.
 
 import { parse } from 'yaml';
-import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
+import {
+    findingText,
+    isPluralMap,
+    pluralIssues,
+    type TextCatalog
+} from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import type { Finding } from '../../../model/index.ts';
 import { issueText, shapeIssues } from '../../../shapes/shape-issues.ts';
@@ -74,7 +84,46 @@ export function readConfigFile(
     return top;
 }
 
-/** Fold one catalog fragment into the flat dotted map, naming any key read twice. */
+/**
+ * The findings of the plural keys under one catalog node: a map of plural forms (`isPluralMap`)
+ * with no `other` form is named by its dotted key, and each key it gives that is none of the six
+ * forms by its own. Its words are kept, so `other` stays the form a count no form names is said in.
+ */
+function pluralFindings(
+    node: unknown,
+    path: string,
+    file: string,
+    pending: PendingFinding[]
+): void {
+    if (!isMap(node)) return;
+    if (!isPluralMap(node)) {
+        for (const [key, value] of Object.entries(node)) {
+            pluralFindings(value, `${path}.${key}`, file, pending);
+        }
+        return;
+    }
+    const { noOther, outside } = pluralIssues(node);
+    if (noOther) {
+        pending.push({
+            file,
+            key: path,
+            words: (catalog) => findingText(catalog, 'findings.config.plural_no_other', path)
+        });
+    }
+    for (const form of outside) {
+        const key = `${path}.${form}`;
+        pending.push({
+            file,
+            key,
+            words: (catalog) => findingText(catalog, 'findings.config.plural_form_unknown', key)
+        });
+    }
+}
+
+/**
+ * Fold one catalog fragment into the flat dotted map, naming any key read twice and each fault of a
+ * plural key (`pluralFindings`).
+ */
 export function mergeText(
     config: Record<string, unknown>,
     value: unknown,
@@ -102,6 +151,7 @@ export function mergeText(
         pending.push({ file, key: TEXT_KEY, words: () => message });
         return;
     }
+    pluralFindings(value, TEXT_KEY, file, pending);
     const held = (config[TEXT_KEY] ??= {}) as Record<string, string>;
     for (const [key, entry] of Object.entries(flat)) {
         const dotted = `${TEXT_KEY}.${key}`;
@@ -140,7 +190,9 @@ class TextNotAMap extends Error {
 
 /**
  * Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. An
- * own `__proto__` key is skipped at every level, because it is no key of the flat map.
+ * own `__proto__` key is skipped at every level, because it is no key of the flat map. A plural key
+ * is flattened like any other map, each form to `<key>.<form>` (`literature.cites.one`,
+ * `literature.cites.other`), which is how the readers of finding-text.ts find its forms.
  */
 export function flattenText(node: unknown, prefix = ''): Record<string, string> {
     const flat: Record<string, string> = {};

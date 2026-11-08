@@ -20,9 +20,9 @@
     // On that page the card is handed `page`: its strip holds Edit in Page's place, it draws no
     // strip of projects at its foot, and under the closed card its fields are the two columns of
     // every record's page (views/shared/card/record/RecordDetails.svelte), the prose on the left
-    // and the rest on the right, where EntryFields.svelte adds the Website group and the words of a
-    // person's rows, the line of the records other than projects that name the entry follows
-    // (`named`, NamedBy.svelte), then the subtasks, follow-ups and deadline form.
+    // and the rest on the right, where EntryFields.svelte adds the words of a person's rows, the
+    // line of the records other than projects that name the entry follows (`named`,
+    // NamedBy.svelte), then the subtasks, follow-ups and deadline form.
     //
     // The entry's fields are changed in its editor, which Edit opens beside the page
     // (views/boards/editor/Editor.svelte), in the file, which Edit in File opens at the entry, or

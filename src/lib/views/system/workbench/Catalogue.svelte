@@ -372,13 +372,13 @@
 {/snippet}
 
 <style>
+    /* The view grows with what it holds and the pane body scrolls it, so the group strips stick at
+       the body's top edge (ui/frame/Pane.svelte, `--pane-pad-top`). */
     .view {
         display: flex;
         flex-direction: column;
         gap: 12px;
         padding: 8px 12px 16px;
-        overflow: auto;
-        min-height: 0;
     }
 
     .hint {

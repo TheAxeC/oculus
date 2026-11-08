@@ -459,7 +459,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # categories: []
 #   example:
 #   categories:
-#     - { key: idea, label: "early ideas", color: "#7c5cff", stages: { words: [nascent, scoping] }, sort: [title] }
+#     - { key: idea, label: { one: early idea, other: early ideas }, color: "#7c5cff", stages: { words: [nascent, scoping] }, sort: [title] }
 #     - { key: released, removed: true }
 
 # The colour this hub's project boards draw their rail count in, written #rrggbb, in place of

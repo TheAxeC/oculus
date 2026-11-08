@@ -231,7 +231,7 @@ describe("a hub's word written into the hub's settings file", { tags: ['slow'] }
         );
         expect(idea).toEqual({
             key: 'idea',
-            label: 'idea',
+            label: { one: 'idea', other: 'ideas' },
             color: '#7c5cff',
             stages: { words: ['scoping'] }
         });
@@ -391,11 +391,13 @@ const LAB_ROWS: {
         file: 'catalogs/vocab.yml',
         key: 'categories',
         value: (held) =>
-            (held as { key: string; label: string }[]).map((one) =>
-                one.key === 'idea' ? { ...one, label: 'Ideas' } : one
+            (held as { key: string }[]).map((one) =>
+                one.key === 'idea' ? { ...one, label: { one: 'Idea', other: 'Ideas' } } : one
             ),
         holds: (stored) =>
-            expect(stored).toContainEqual(expect.objectContaining({ key: 'idea', label: 'Ideas' }))
+            expect(stored).toContainEqual(
+                expect.objectContaining({ key: 'idea', label: { one: 'Idea', other: 'Ideas' } })
+            )
     },
     {
         row: 'a field added to the project form',
