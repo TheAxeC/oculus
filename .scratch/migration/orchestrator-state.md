@@ -59,7 +59,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: ae73ffc61cc4532d3 (claude-opus-5-5)
   launched: 2026-11-08
   report: .scratch/migration/agents/reviews/O172-report.md
-  round: 0
+  builder_usage: 325511 tokens, 132 tool uses, 18.7 min
+  reviewer_report: .scratch/migration/agents/reviews/O172-refuter.md (afc0139febb1e70da, claude-opus-5-5, 241873 tokens, 28 tool uses, 12.4 min)
+  round: 1
   landing: not-started
 ```
 
@@ -892,6 +894,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-08 (O172 repair round 1 sent). O172's builder reported with one red line, the floor of `html-sites.test.ts`, and its review (`agents/reviews/O172-refuter.md`) has one Spec, three Standards and four Behaviour findings. Every finding is ruled in `agents/briefs/O172-round-1.md`; the floor becomes 19 under the ruling of open item 490 (a). O170's builder is running under its round-0 ruling. Next: O172's round, its review over the round, its landing.
 - 2026-11-08 (O170's first-run case ruled). O170's builder handed back its first run with one case, item 6's candidate rule against "A slide with no caption or explanation lays out exactly as today" and C10. Ruled inside the step's part in `agents/briefs/O170-cases.md`: the forced `side` under the text is a candidate only when `side` as `placeOf` places it misses a `least`; C27 and C28 added. The same builder is resumed with `round: 0`. O172's builder is running. Next: O170's and O172's reports, their reviews and landings, then O151's repair round 2.
 - 2026-11-08 (O171 landed). O171, the slide frame a 16:9 shape with no pixel size, landed (booking in `plan.md`, `agents/reviews/O171-landing.md`), with open item 731 (a), the slide font, carried out at the landing. Open items: none. Step O172 is added by open item 732 (a). In flight: none. Next: /spec O170, correcting its `frame: { width: 400 }` case, and /spec O172, then O151's repair round 2.
 - 2026-11-08 (owed looks taken; O151 refuted over round 1). The owed looks of the 2026-11-07 run are taken (ruling 729) and recorded in `agents/reviews/owed-looks.md` under Taken: the PDF files of O147, O148, O158 and O163, O149 ruling 9, O152 C11, O155's order before, O161's find bar and menu key, O158's 400 px frame; the flaw found there (a slide's side-by-side figures overlapping in a narrow frame) is booked to O170 in `plan.md` (ruling Look flaws). The review over O151's round 1 (a79e0d6fd9a360f28, claude-opus-5-5) is appended to `agents/reviews/O151-refuter.md` under "Repair round 1, refuted" and recorded under reviewer_report: verify 1 to 5 pass; items 1 and 2 violated, item 3 holds; C9 is the orchestrator's measured fit, C10 partial. Dispositions, all at landing: R1-S1 to R1-S5 fixed on the decks inside the brief; R1-S6 under ruling 723 (a), the clinical-ai-eval-artifacts deck stating its idea in its own terms with no student study named; R1-P1 the btfno README bullet removed; R1-P2 and R1-P3 named in the landing report; R1-T1 read against the sources; R1-B1 stated in the landing report with its before and after. In flight (1 of 6): O151 (landing next, with the look C9). Queued: O170, /spec next. Open items: none.
