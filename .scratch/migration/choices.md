@@ -6062,3 +6062,7 @@ Builds on it: O157, O158, O151
 Builds on it: O157, O158
 - 2026-11-06, O162's brief check: the `first` prop of `Slide.svelte` and `Framed.svelte`, which only the key hint read, goes with the hint, and the six places that pass it (`Present.svelte:419`, `Tile.svelte:115`, `Presenter.svelte:110,122`, `print/+page.svelte:190`, `show/+page.svelte:276`) stop passing it; nothing a user sees changes. Keeping the prop with no reader was the lazy option. Named in the next report.
 Builds on it: O162
+- 2026-11-08, O170's brief check: `src/lib/server/root/context.ts` (the wrapper that forwards `nextRead`), three test fakes of `SchedulesWatcher` and the comments of `Head.svelte` join O170's paths; nothing a user sees changes by them. Leaving the fakes and the wrapper out would not compile, and leaving the comments would make them false. Named in the next report.
+Builds on it: O170
+- 2026-11-08, O172's brief check: `src/lib/views/shared/card/Clamp.svelte` moves into a new folder `card/text/` beside the new `FieldMarkdown.svelte`, since `card/` is at its limit of ten items; nothing a user sees changes. Named in the next report.
+Builds on it: O172

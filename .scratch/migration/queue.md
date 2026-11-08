@@ -1,15 +1,14 @@
-In flight (0 of 6 slots in use):
-- None.
+In flight (2 of 6 slots in use):
+- O170 (Literature and Present said and drawn plainly): preparing, the builder next.
+- O172 (a long field drawn with its newlines and paragraphs): preparing, the builder next.
 
-Queued, in order (3 steps):
-- O170 (Literature and Present said and drawn plainly): /spec next.
-- O172 (a long field drawn with its newlines and paragraphs): /spec beside O170.
+Queued, in order (1 step):
 - O151 (a deck for every research project): repair round 2 once O171 and O170 have landed.
 
 Owed looks: none.
 
 Landed, newest first:
-- O171 (the slide frame a 16:9 shape with no pixel size), 2026-11-08.
+- O171 (the slide frame a 16:9 shape with no pixel size), 2026-11-08, 4a8e29067.
 - O167 (the shell's controls hold one behaviour), 2026-11-08, d7afaf946.
 - O168 (the boards and record lists drawn whole), 2026-11-08, 47265abdf.
 - O169 (connections and their failures said in full), 2026-11-08, e93fe50e3.

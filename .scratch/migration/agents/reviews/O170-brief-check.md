@@ -1,281 +1,191 @@
-# Step O170 brief check (on main at 195d655fa)
-
-The fresh agent's report on `agents/briefs/O170.md` for the `spec` skill's "Steps / The brief check". Pages are cited by section. Code lines and grep hits are cited as `file:line`. Every command ran from `/Users/axelfaes/workspace/oculus`. Main's head is 195d655fa (`git log --oneline -5`). `git diff --stat 56a1fff1e 195d655fa -- src config docs` prints nothing, so O167's line numbers apply to this tree as well.
-
-The weightiest findings:
-
-- **The Present toolbar has no `more` button.** The toolbar wraps onto further lines, so the `more` clause of item 5 and of C7 refers to nothing (3.13).
-- **Line ranges on two shared files are wrong.**
-  - The builder of O167 already writes `Bar.svelte` well inside the range O170 claims.
-  - O167's path list takes the whole of `Presenter.svelte`, while this brief says O167 writes line 85 only.
-  - `agents/briefs/O168.md` does not exist (3.17, 3.18).
-- **Item 7 breaks the rules file.** It has the builder rewrite `docs/HELP.md` and `docs/decks.md` (4.1).
-- **Verify items 4 and 6 cannot run as written** (4.2, 4.3).
-- **Item 3 needs lines outside the path list.** `Literature.svelte:227` is outside it, a new text key would land outside it, and the Enter key in the Search box bypasses the disabled Search button (1.5, 5, 9).
+# Step O170 brief check (on main at 4a8e29067)
 
 ## 1. Names
 
-1.1 `copied_citation_js`, `citation_js`, `citation-js` and `copiedWords`.
-- Command: `git grep -n "copied_citation_js\|copiedWords\|citation-js\|citation_js" -- ':!config/local.yml' ':!.scratch'`.
-- Hits outside the paths:
-  - `src/lib/views/feeds/literature/LiteratureCard.svelte:23` and `:147`, `import { copiedWords, ... }` and `onsaid(copiedWords(entry))`. These stay true, because the function keeps its name.
-  - `src/lib/views/shared/card/feed/literature-card.ts:16,29,35`, a separate local `copiedWords` of the Literature collection. It reads `bibtex_copied*`, not the renamed key, so it stays true.
-  - `src/lib/state/feeds/literature/bibtex.ts:6,10,15,25,33,75,78,79,96,156`. These are code comments and the `from` value `citation_js`, which item 1 keeps. They stay true.
-  - `package.json:63-64` and `package-lock.json`: the dependency, which is unchanged.
-- No test or doc names the key.
-- `git grep -n "copied_" -- config src tests docs` also shows `literature.yml:18-19`, `copied_doi` and `copied_from`. Renamed in place at line 17, `copied_fields` would sort before `copied_doi`. The file is otherwise in key order, and line 18 is outside the path list. No order check was found (`git grep -n -i "sorted\|alphabet\|in order" -- tests/checks` gives no catalog hit), so this is cosmetic.
+`git rev-parse HEAD` prints 4a8e29067bbb7ac65cc9305b34821e78bf71932d. Nothing was changed. `git status --short` shows only the ledger files and the briefs.
 
-1.2 The export keys: `export_opened`, `export_blocked`, `export_busy`, `export_done`, `export_running`, `export_tip` and `export_too_large`.
-- Command: `git grep -n "export_opened\|export_blocked\|export_busy\|export_done\|export_running\|export_tip\|export_too_large\|present\.export\b" -- ':!config/local.yml' ':!.scratch'`.
-- Hits outside the paths:
-  - `src/lib/views/academic/present/acts/acts.svelte.ts:119` and `utils/diagrams/palette.mjs:144`, which read `present.export`, the label. Unchanged, so they stay true.
-  - `config/text/views/sessions/session-list.yml:20` and `session-list.ts:116`, `sessions.export_tip`, a different group. Not affected.
-- The second grep, `git grep -n -i "print dialog\|new tab\|pop-up\|already in progress" -- docs src tests README.md config`, gives:
-  - `docs/HELP.md:470`, "In a browser, Export to PDF opens the print dialog." It stays true.
-  - `src/routes/present/print/+page.svelte:32`, which stays true.
+Hits outside "Paths this step writes":
 
-1.3 The Project facts chip.
-- Command: `git grep -n -i "project facts" -- docs src tests README.md config utils`.
-- Made false, outside the paths: `src/lib/views/academic/present/Present.svelte:72-74`. The head comment reads "The toolbar's Project facts toggle, drawn while the slide on screen carries a project, shows or hides its words". Item 5 draws the chip on every slide, disabled when the slide has no project, so this sentence becomes false. `Present.svelte` is not in O170's paths, and O167 writes it whole.
-- Stays true: `docs/decks.md:362`, "The Project facts toggle in the toolbar hides or shows the strip's words."
-- The other hits (`present.svelte.ts`, `present.ts`, `export.ts`, `Slide.svelte`, `Facts.svelte`, the print and show routes) describe the toggle's value, not its presence, and stay true.
-
-1.4 The `sources` handed to Head.
-- Command: `grep -n "sources\|SourceInfo" src/lib/views/feeds/literature/LiteratureCard.svelte src/lib/views/feeds/literature/words.ts src/lib/state/feeds/literature/bibtex.ts`.
-- `LiteratureCard.svelte:44-45` says "The sources the server lists". `Literature.svelte:251` passes it the same `sources`. This stays true only if `sources` keeps the `SourceInfo[]` shape: a card exists only after a search, and a search follows the answer.
-- `src/lib/state/feeds/literature/lookup.ts:18-22,124-126` imports `SOURCES_URL`, `sourceList`, `parseForm` and `sourceOn` from the two state files O170 writes (`git grep -n "sourceList\|SOURCES_URL\|sourcesOn\|sourceOn\b\|parseForm" -- tests src`). A change to their signatures breaks `lookup.ts`, which is outside the paths.
-- Made false, outside the paths: `src/lib/state/feeds/literature/run.svelte.ts:10-12`, "a tab drawn again runs its held query once more, which the server's cache answers within `cache_min`". Item 2 makes it false, and the file is not in the paths.
-
-1.5 The Search control.
-- Command: `git grep -n "literature\.search\b\|literature\.no_sources\|literature\.idle\|literature\.none_on" -- src tests config docs utils`.
-- The hits are all in `Literature.svelte`, at `:181`, `:228`, `:230` and `:232`.
-- `:228`, the no-source line, sits under the condition at `:227`, `{#if listed !== null && listed.length === 0}`. That line is outside the path range `Literature.svelte lines 1-200`.
-- `:178`, `onenter={go}` on the Search box, is a second way to start a search. It is not named in the brief.
-
-Findings:
-- `Present.svelte:72-74` (1.3) and `run.svelte.ts:10-12` (1.4) become false and are outside the paths.
-- `lookup.ts` depends on exports the step may change (1.4).
-- `Literature.svelte:227` is needed by item 3 and is outside `lines 1-200` (1.5).
+- **`copied_citation_js`, `citation-js`, `citation_js`** (`git grep -n "citation-js\|copied_citation_js\|citation_js" -- . ':!.scratch' ':!config/local.yml'`):
+  - `words.ts:104, :107` (key stays, comment still true).
+  - `bibtex.ts:6,10,15,25,33,75,78,79,96,156` (the library and the internal word; not false).
+  - `package.json`, `package-lock.json` (not false).
+- **`export_opened`** (`git grep -n "export_opened" -- config src tests docs`): only `present.yml:52` and `export.ts:205`, both on the list.
+- **`settled.remove`, `settle.removed`, `.removed(`**:
+  - `Collection.svelte:145` `client.pages.removed(key, entry.id)`: outside the list, signature unchanged, not false.
+  - `tests/state/client/created-ids.test.ts:51` `writesOf(settle: Settle)`: outside the list, not false; a fake with fewer parameters still assigns.
+- **`settled.heard`**: `context.ts:180`, `settled.svelte.ts:77`, `page-entry.test.ts:456`, all on the list.
+- **`onUnwritten`**: `tests/state/client/held-unsaved.test.ts:97` is outside the list; a one-argument listener, not false.
+- **`unwritten`, `tell`**: all hits are on the list.
+- **`writeGit`**: `repositories.svelte.ts:316,:450`, `Deposit.svelte:64,:174`, outside the list, unchanged, not false.
+- **New required method `SchedulesWatcher.nextRead()`** (`git grep -n "SchedulesWatcher\|runNow:" -- src tests`). These object literals lack the method and are not on the list, so each is false or a type error once it is added:
+  - `src/lib/server/root/context.ts:558-562`, the wrapper object that is `locals.server.schedules`, the object the route calls. Without `nextRead` forwarded the route cannot read the number.
+  - `tests/server/root/context-fixture.ts:151-155`.
+  - `tests/server/machine/runs/schedules/file.test.ts:45`.
+  - `tests/server/machine/runs/schedules/record.test.ts:90`.
+- **`hub.nextVersion` on the write target**: `HubLike` (`src/lib/server/sessions/stores/hooks.ts:226-229`) has `latest` and `publish` only. `writes.ts:312` types `server.hub` as `HubLike`. `hooks.ts` is not on the list. Widening the type inside `writes.ts` is possible, and the brief does not say.
+- **`src/lib/views/feeds/literature/Head.svelte`** is not on the list. Its head comment (`:2-3`, "one toggle per source the server lists") and prop comment (`:32`, "The sources the server lists, in its order.") become false before the listing answers (item 3). Rule: `spec.md:72`.
+- **`Slide.svelte`** is written only at "lines 170-290". Item 6's new measure lives in `drawn-slide.ts`, so its import belongs in the import block at `Slide.svelte:56-62` (`grep -n "drawn-slide" Slide.svelte` prints `:62`), outside the range. The head comment enumerates what the layout measures (`:17-21`) and what it reads off the drawn slide (`:32-33`). `least` makes each list incomplete. The brief forbids `:30-40` and writes nowhere above `:170`, against `spec.md:72`.
+- **`docs/apps.md:459`** names the delete-entry request only. `build` reaches an app's answer through the same `answer` (`writes.ts:750-764`). `grep -n` for an answer-key description in `docs/apps.md` prints nothing, so no sentence there becomes false.
+- **`docs/HELP.md:470`** ("In a browser, Export to PDF opens the print dialog.") stays true.
 
 ## 2. The step line
 
-The step line is `plan.md:1728`, found with `grep -n '^- O170' plan.md`.
-- "the BibTeX line names no library ("built by citation-js")": item 1.
-- "a page reload sends no Literature search by itself": item 2.
-- "the source buttons are drawn from the first paint": item 3.
-- "the export line fits its toolbar and goes once the print tab has opened": item 4.
-- "the presenter screen draws the current slide at least as large as the next": item 6.
-- "the Present toolbar keeps its buttons in one order whether or not a deck is presenting": item 5.
-- "(ruling Look flaws)", at `plan.md:3649`: the ruling books flaws only. It says nothing about the guides.
+`grep -n '^- O170 ' plan.md`, part by part:
 
-Item 7 (rewriting `docs/HELP.md` and `docs/decks.md`) answers no part of the step line. The plan has no `## Goal` heading (`grep -n '^## ' plan.md` prints Steps, Could run in parallel, Rulings, Agents, Blocked); its opening paragraph names `tools/oculus/DESIGN.md` as the goal.
-
-Findings: no part of the step line lacks a requirement. Item 7 goes beyond the line and breaks a rule (4.1).
+| Part of the line | Requirement |
+|---|---|
+| BibTeX line names no library | item 1 |
+| reload sends no search | item 2 |
+| source buttons from the first paint | item 3 |
+| export line fits and goes | item 4 |
+| presenter current at least as large as next | item 5 |
+| figures side by side never narrower, block going stacked or under the text | item 6 |
+| toolbar one order whether or not presenting | item 7 (the tree already holds one order across `presenting`; item 7 ends a different movement, the Facts chip) |
+| refused git action's toast | item 8 |
+| server numbers each build and read | item 9, first two sub-bullets |
+| a write's answer carries the number | item 9, narrowed by Decision 6 to `delete-entry` and the schedules `delete`; ruling 722 says "a write's answer" |
+| held removal of a collection entry or schedule ends | item 9 |
+| **"a bookmark"** | **no requirement.** Item 9 and What is on the tree :27 exclude it. The line was corrected for `frame` and still names a bookmark. |
+| G152 states that end | item 10 |
 
 ## 3. Premises
 
-3.1 `plan.md:1728` and `plan.md:3649`: `grep -n '^- O170' plan.md` gives 1728, and `grep -n 'Look flaws' plan.md` gives 3649. Matches.
+Line ranges were printed with `sed -n` and the commands of the brief were rerun. Rerun and equal: `git grep -n "deck\.frame" -- src config` (nothing, rc=1); `git grep -n "copied_citation_js\|citation-js" -- tests docs/HELP.md docs/decks.md` (nothing, rc=1); `git grep -ln "slide-layout\|layOut" -- tests` (nothing, rc=1); `wc -l` (877, 873, 818, 794, Slide 487); and every other cited range except those listed below. `verify:` is `npm run test:quick`.
 
-3.2 `literature.yml:17`: `sed -n 10,25p` prints `copied_citation_js: BibTeX copied, built by citation-js because no source served one`. Matches.
+Mismatches:
 
-3.3 `words.ts:104-109`: the doc comment and `copiedWords`, with `:107` returning `t('literature.copied_citation_js')`. Matches.
-
-3.4 `bibtex.ts:25, 33`: line 25 is the doc comment naming `citation_js`, and line 33 is `const FORMATTED: EntrySource = { from: 'citation_js' };`. Matches.
-
-3.5 `Literature.svelte:156-163`: the `onMount` that awaits `routeBody(SOURCES_URL, ...)` and runs `go()` when `form.q.trim() !== '' && sources.length > 0`. The head comment at `:25-27` says "a tab drawn again with a query held asks it once more". Matches.
-
-3.6 `answers.ts:153`: `export const SOURCES_URL = ...?sources`. Matches.
-
-3.7 `Head.svelte:47-48` draws the group and `{#each sources as source (source.id)}`. `Literature.svelte:120-122` holds `listed`, null until the answer, and `sources = listed ?? []`. Matches.
-
-3.8 `read.ts:47-52` (`literatureRows`) and `Literature.svelte:118` (`timeoutSeconds(config()?.config ?? {})`). Matches. The server builds its list from the same reader: `src/routes/api/(docs)/literature/+server.ts:22` passes `rows: literatureRows(config)`, and `handler.ts:216` maps `sourceInfo` over the rows.
-
-3.9 `model-search.ts:219-233` (`SourceInfo`) and `handler.ts:67-81` (`sourceInfo`). Matches.
-
-3.10 `export.ts:188-209` holds `exportTab`, with its doc comment at 181-188. `present.yml:52` holds `export_opened` with the words quoted in the brief. `Bar.svelte:112` is `<span class="said" role="status">`, with its style at `:126-134` (`flex: 1 1 0; ... text-overflow: ellipsis`). `present.yml:49-55` holds the seven export lines. Matches.
-
-3.11 Presenter: `.current` is at `:176-181` (`flex: 3 1 320px`), `.side` at `:183-190`, `.next` at `:192` and `.preview` at `:198`. Matches.
-
-3.12 "Each slide is drawn by `screen/Framed.svelte`, which scales the frame into its box". This differs from the tree:
-- `Framed.svelte:49-51` only hands the slide to `Stage`.
-- The scaling is in `src/lib/views/academic/present/screen/Stage.svelte:46-48`: `const scale = $derived(fit(width, height, frame))`, with the room measured at `:80` and the transform at `:83-95`.
-- `Stage.svelte` is neither in the paths nor in the read list.
-
-3.13 "in the pane header's toolbar (`Toolbar.svelte`, which in a pane header draws the controls the line has room for and puts the rest behind a `more` button, `fit.ts`)". The tree contradicts this:
-- `Bar.svelte:72` is `<Toolbar label={t('present.toolbar')}>`, with no `overflow`.
-- `Present.svelte:357` is `<Pane title={t('present.title')} {bar}>`. The toolbar goes in the bar slot, the pane's `.viewbar`, not in the header's `toolbar` slot.
-- `Toolbar.svelte:3-4` says "Left to itself it wraps onto further lines". Its CSS `.toolbar { flex-wrap: wrap }` applies, and only `.toolbar.overflow` stops the wrap.
-- The `more` button is drawn only under `{#if overflow && shown !== null}`.
-- O167's brief, item 17, describes the same bar as "wrapped over several rows".
-- So the Present toolbar has no `more` button. Its controls wrap onto further lines.
-
-3.14 `Bar.svelte:71-114` and `:82-89`: the Toolbar runs from 72 to 114, and the facts `{#if}` is at 82-89. `facts` comes from `Present.svelte:335`. Matches.
-
-3.15 "this step writes [Bar.svelte] lines 1-112 and the style block (`:115-142`)". This differs: lines 115-122 are the `{#if filter !== null}<BoardBar .../>` markup, and the style block is 124-142.
-
-3.16 "this step writes [Presenter.svelte's] style block (`:140-246`)". This differs: lines 140-142 close the markup, and the style block is 143-246.
-
-3.17 The lines O167 writes in shared files, compared with `agents/briefs/O167.md`:
-- `present.yml` lines 25 and 58-76: the brief's path list at `O167.md:96`. Matches.
-- `Bar.svelte` line 113: `O167.md:137`. This matches the path list, but O167's own item 19 (the counter draws nothing while a deck loads) needs the type of the `count` prop and the disabled states.
-  - O167's worktree already has hunks well inside O170's range: `diff -u src/lib/views/academic/present/Bar.svelte .agents/worktrees/migration-O167/src/lib/views/academic/present/Bar.svelte` prints hunks `@@ -3,10`, `@@ -24,8`, `@@ -67,12`, `@@ -93,7` and `@@ -101,16`. They are the head comment, `count: number | null`, `const slideless`, and `disabled={slideless}` at `:74-75` and `:96`.
-  - So the "separate lines, hand merge" premise does not hold for `Bar.svelte`.
-- `Presenter.svelte` "the counter at :85": `O167.md:138` lists `src/lib/views/academic/present/presenter/Presenter.svelte` whole. This differs from the brief, which describes O167 as writing only line 85. The worktree has not changed it yet (`diff -u` prints nothing).
-- O167 also writes, whole:
-  - `Present.svelte`. Its worktree adds `--viewbar-max="33.33%"` on the Present pane and `counted`.
-  - `src/lib/ui/frame/Pane.svelte`, the `.viewbar` that holds the Present toolbar.
-  - `src/lib/ui/controls/ToolButton.svelte`.
-
-  All three bear on item 5, the toolbar's wrapping and the widths of its controls. The brief does not name them.
-
-3.18 O168: `ls .scratch/migration/agents/briefs/` lists `O167-cases.md`, `O167.md` and `O170.md`, and `find .scratch .agents -name 'O168*'` finds only `agents/reviews/O168-brief-check.md`. The O168 brief does not exist on disk, so the lines claimed for O168 (`literature.yml` 15-16, 21-22 and 100, `present.yml` 37, `Literature.svelte` 242-243) cannot be checked against it. Two leads, not verified:
-- The state file's open item 716 (`orchestrator-state.md:211`) has O168 turn every `_one` pair into a YAML map. That reshapes the lines around `literature.yml:17`.
-- `present.yml:37` is `drop_one: Drop one image at a time.`, which is not a plural pair.
-
-3.19 O169 and O151: `git show HEAD:.scratch/migration/agents/briefs/O169.md` and `O151.md`, each read for its path section. Neither names a file of O170. Matches.
-
-3.20 `ls docs/adr` prints "No such file or directory". Matches.
-
-3.21 `grep -n 'answers.ts\|form.ts\|words.ts\|bibtex.ts\|Literature.svelte\|Head.svelte\|export.ts\|Bar.svelte\|Presenter.svelte\|Framed.svelte\|feeds/literature\|present/' agents/guarded.md` returns only G-entries for `merge.ts`, `writes/`, deck writers and the config readers. None is a file O170 writes. Matches.
-
-3.22 Brief line 5 reads "Then, in full: `.scratch/migration/agents/spec.md` is the one standards page the configuration lists". The sentence is garbled: "in full:" is followed by a statement, not by a list of files. `.agents/plan.yaml:6,11` give `standards: [.scratch/migration/agents/spec.md]`, which matches the fact.
-
-Findings:
-- 3.12: the scaling is in `Stage.svelte`, not `Framed.svelte`.
-- 3.13: the Present toolbar wraps, and there is no `more` button.
-- 3.15 and 3.16: the style blocks start at `Bar.svelte:124` and `Presenter.svelte:143`.
-- 3.17:
-  - O167 writes `Presenter.svelte` whole by its path list.
-  - O167's item 19 and its worktree write `Bar.svelte` at 3-10, 24-28, 67-75 and 93-116, so the shared-line merge is not line-disjoint.
-  - O167 also writes `Present.svelte`, `Pane.svelte` and `ToolButton.svelte`, which bear on item 5.
-- 3.18: `agents/briefs/O168.md` is missing.
-- 3.22: brief line 5 is garbled.
+- **:17 (first paint).** "The rows are in the merged config the page holds from its first load (`seed: configSeed(...)`)" is false for the usual load.
+  - `src/lib/server/root/config-seed.ts:44-62`: `if (same) return { through: held.version - 1 };` carries no payload, and `held === undefined` carries none.
+  - `socket.svelte.ts:402`: `if (payload === undefined) return;`.
+  - `+page.svelte:5`: "the merged config the socket delivers".
+  - `Workbench`'s `configured` gates only two effects (`Workbench.svelte:271, :282`), so panes draw before the `config` message. On a reload `config()` is null at first paint, `literatureRows({})` gives no rows, and the buttons cannot stand in the first frame (by reading; no page was run). A payload on every seed would need `config-seed.ts`, which is not on the list.
+- **:25.** "The write target has `server` beside it at :333-336" is inexact. Those lines are in `target()` where `server` is a parameter. `WriteTarget` (`writes.ts:116`) has no `server` field.
+- **:21.**
+  - `{#if facts !== null}` is at `Bar.svelte:89` (`grep -n`), and `:93` is `pressed={facts}`.
+  - The Toolbar is `:79-:123`, and `:127` is inside `BoardBar`.
+  - The `git log -p | grep presenting` output also prints `presenting: boolean;` and `presenting,` (its lines 201, 209, 385, 397), so "shows only the pressed and active" is not what prints.
+- **:22.** `tell` is at `writes.svelte.ts:124-143` (`grep -n "function tell"` prints `:124`); the brief says `:121-140`.
+- **:23.** `createSettled` is at `context.ts:172-179`, and `afterReceive` at `:180`.
+- **:15.** `words.ts:107` reads `citation_js`, so `git grep -n citation-js -- config src` does not print it.
+- **:29.** File sizes omit `src/lib/state/client/context.ts`, which is 880 lines (`wc -l`), at the limit, and on the write list for a comment rewrite.
+- **Line 138, "a new file beside `writes.svelte.ts`".** `git ls-files src/lib/state/client | sed ... | sort -u | wc -l` prints 10, the folder limit (`spec.md:49`), so a new file there makes 11. The folder of `watch.ts` holds 6.
+- **:17 `merge.ts:32`** is correct as `src/lib/state/feeds/literature/merge.ts:32`; the brief gives no folder.
 
 ## 4. Cases and checks
 
-4.1 Item 7 has the builder rewrite every sentence of `docs/HELP.md` and `docs/decks.md` that the step makes false, and the path list contains both files. The rules file, `agents/spec.md` "What every package obeys", in the bullet on changing a name or what code does, says: "No step adds to or rewrites `docs/HELP.md`, `docs/data-map.md` or `docs/decks.md`, except the step whose brief is to write them and a line Axel ruled into a step's brief". O170's line is not that step, and no ruling of Axel's adds those lines. This is inconsistent. The rules file's form is to name each sentence with its file and line in the report.
-
-4.2 Verify 6 is `git grep -n "copied_citation_js"`. `agents/spec.md` "Where you work" allows a builder `git status`, `git diff` and `git show` only. This is inconsistent; a plain `grep -rn` over `src tests config docs` does the same job.
-
-4.3 Verify 4 is `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O170.md .agents/worktrees/O170-base`. The script takes a commit: `utils/outside-paths.mjs:150-172` runs `git rev-parse --verify --quiet ${base}^{commit}` and refuses with "git does not know the base". A folder path is not a commit, so the check exits 2 and never reports. The base copy `.agents/worktrees/O170-base` does not exist yet (`ls` prints no such file), which is expected before the worktree is made.
-
-4.4 C7 asks that "the `more` button holds the same controls at each width in both states". No such button exists (3.13). The case checks a mechanism the toolbar does not have.
-
-4.5 C9 asks that the desktop app's export say its lines as today. Item 4 asks that the busy-export line (`export_running`) be short enough for 600 px. `export.ts:227` says `export_running` on the desktop path too. The two are inconsistent if `export_running` is shortened. Item 4 also names "a refused export" line, but no export line of that name exists in the browser path (`export.ts:189-209` has only `export_blocked` and `export_running`). Which key is meant is not said.
-
-4.6 The read list (rules file, "Read first", item 2: the builder reads only the files the brief lists) leaves out files the items need:
-- `src/lib/ui/frame/Pane.svelte`, the `.viewbar` the toolbar wraps in, for item 5 and C7.
-- `src/lib/ui/controls/Chip.svelte` and `ToolButton.svelte`, for "no control changes its width with its pressed state".
-- `screen/Stage.svelte`, the scaling, for item 6.
-- `src/lib/state/feeds/literature/run.svelte.ts`, whose head comment item 2 makes false.
-- `lookup.ts`, which imports from `form.ts` and `answers.ts`.
-
-4.7 The other cases (C1 to C3, C5, C6, C8) hold. Each is checked by a case-run program, by reading or at the look, as `agents/spec.md` "What every package obeys" allows. None asks for a test. None asks the builder to check a place the step does not change. Item 5's "name every cause with its file and line" may point at `Toolbar.svelte` or the primitives. That serves the fix and is allowed.
-
-Findings: 4.1, 4.2, 4.3, 4.4, 4.5 and 4.6.
+- **C1, Verify 3, Verify 4** ask the builder to run `git grep`. `spec.md:33` allows `git status`, `git diff`, `git show` only. The O169 brief holds none (`grep -c "git grep"` prints 0).
+- **Line 9 names no base copy.** `spec.md:33` says the brief names one, and Verify 5 says "compared with main at the base". O169.md:9 names one.
+- **C14** asks the builder to list by reading each deck of the research hub that holds two or more figures. That is a place the step does not change, and it is against `spec.md:8` and `:38`.
+- **C24** (bookmark) asks the builder to check a place the step does not change. Item 9 says a bookmark is unchanged.
+- **C17** names `tests/routes/hubs/hub-writes.test.ts`, which is not on the write list. `tests/routes/edit/write.test.ts` holds no `delete-entry` row (`grep -n "delete-entry"` prints only `hub-writes.test.ts:190`).
+- **C16** "if one exists": none exists (`grep -n "notice-sources\|onUnwritten\|writeGit\|A write was refused" agents/guarded.md` prints nothing), so its proof is a quoted run.
+- **Verify 7** names the standards page's rules on list items and sentence length. `grep -n "sentence length\|list items" spec.md` prints nothing (rc=1).
+- **Other entries whose code the step changes** (`spec.md:60`): `grep -n` names G8 (`writes.ts`), G28 (`writes.svelte.ts`), G46 and G91 (`watch.ts`), G117 (`schedule.svelte.ts`, routes `write`). The brief does not name their tests.
+- C17 to C23 and C25 as rows of G152 agree with the test rule. C2, C3, C6, C7, C8, C15 as looks agree with `spec.md:65`.
 
 ## 5. The question
 
-"Could this pass without the goal being reached?" The goal is the five flaws of the step line, ended.
+Each case: "could this pass without the goal being reached?"
 
-- **C1: no.** It prints the line for every `from`, and reading it shows whether a library is named.
-- **C2: partly yes.**
-  - It covers a page reload only. A "layout restored" or a "tab shown again" is in item 2 but in no case.
-  - `run.svelte.ts:10-12` can stay false while C2 passes.
-- **C3: yes, trivially.** It already holds on the unchanged tree: `run.svelte.ts:199-200` returns when nothing was asked. It guards against a regression and proves nothing of the change.
-- **C4: yes.** Search is "off" by the button's `disabled`, but `Literature.svelte:178` `onenter={go}` still sends a search on Enter. That search would go to sources whose availability is not known, which the case says must not happen.
-- **C5: yes.** It reads a hub with no rows. A hub with rows, while the config is still null, would compute `literatureRows({})` as `[]` and draw the no-source line falsely. C5 does not catch that.
-- **C6: yes.** "A short line while it opens, nothing after" names no event for "opened". `deps.openTab` returns the window handle synchronously (`export.ts:191`), so a line said and cleared in the same press passes, and the reader sees no line at all. The brief should name the signal that ends the line, for example `print.answered` (the print page's `keep-asked` answered) or `EXPORT_HOLD_MS`.
-- **C7: yes.**
-  - The `more` clause is vacuous (3.13).
-  - The case is checked at text size 1 under the default theme only.
-  - The order could still change at text size 1.5, under a rice theme with brackets, or while a deck loads, when O167's counter goes away and the wrap point moves.
-- **C8: yes.** Three pane sizes with the default 1280 by 720 frame. A portrait frame is allowed (`docs/decks.md:92`: width 320 to 3840, height 240 to 2160), and so is text size 1.5, where the meters at `--fs-xl` take height. Either could leave the current slide smaller while C8 passes.
-- **C9: no**, apart from the `export_running` conflict (4.5).
-- **The step line's check (the look on landing): yes, as far as it is built from C7.** C7's `more` clause checks nothing.
-- **Item 1: no.**
-- **Item 2: yes for the comment.** It makes `Literature.svelte`'s head comment true, but `run.svelte.ts:10-12`, outside the paths, stays false.
-- **Item 3: yes.**
-  - The Enter bypass.
-  - A `?sources` request that fails leaves Search off for good, with no line saying why: `routeBody` returns undefined and `sourceList` returns null.
-  - The pressed state and the pressability of a toggle before the answer are not stated, so a toggle can flip when the answer lands.
-- **Item 4: yes.** The same vacuous clear as C6. "Fits without an ellipsis at 600 px" depends on the room `.said` gets (`flex: 1 1 0` in a wrapping bar, `Bar.svelte:126-134`), not on the words alone. A short sentence can still be cut unless the style changes.
-- **Item 5: yes.** Its third clause is about a button that does not exist. `Present.svelte:72-74` stays false.
-- **Item 6: yes.** "Current at least as wide as next" is met by shrinking the next slide (capping `.side`) while the current slide stays as small as the look saw. The goal is a large current slide. Stating that the current slide fills the height its box has, or that the next slide keeps its present size where the two stand side by side, would close this.
-- **Item 7: not applicable.** It breaks a rule (4.1).
+- **C1**: no. **C2**: no. **C4**: no. **C7**: no. **C10**: no. **C11**: no. **C15**: no. **C16**: no. **C17**: no. **C18**: no. **C19**: no. **C20**: no. **C22**: no. **C23**: no. **C25**: no.
+- **C3**: on the usual load it cannot pass (Premises :17).
+- **C5**: no for "before the answer". For a failed listing, "what it says today" is `none_on`, "No source is on. Turn one on to search." (`literature.yml:37`), while every drawn row is pressed; the words contradict the drawn state.
+- **C6**: no. Blocked tab and hold-ended are not exercised (section 6).
+- **C8**: no. It does not detect a wrong threshold, but the goal holds at every width in both layouts.
+- **C9**: yes. On its own inputs C9 is C13 (`least` .5 > stacked in-room .08). A Node run of the unchanged module prints `{"arr":"side","shape":"alone",...,"boxes":[0.16,0.16]}`.
+- **C12**: yes. The Node run with room .8 by .4, text .3, ratios .4 prints tall boxes of .16. `under` at the same inputs is .1 tall, so a wide block has boxes of .04. With `least` .2, "shape is wide" passes while the box is narrower than the tall column it replaced and `least` is unmet.
+- **C13**: yes. `placeOf`'s alone branch is `y = (room.height - block.height) / 2`, negative for a block past the room, and `height = max(room.height, block.y + block.height)` is still past the room. The case passes with the first figure's top above the room, over the title.
+- **C14**: no, by the look.
+- **C21**: yes unless the row calls `entities.reconnected()`. Without it `receive` drops a lower version (`entities.svelte.ts:43`) and no listener is told.
+- **C24**: not a goal of this step.
 
-Findings: C2, C4, C5, C6, C7, C8, the step-line check, and items 2 to 6, as above.
+**Item 5, the arithmetic.** With W pane width, content width W-24, gap 12, R the row height:
+
+- `>=596`: the current room is `.75(W-36)` wide and R tall. The next room is `.25(W-36)` wide and at most R tall. The largest 16:9 box of a room no wider and no taller is no larger, so the rule holds at every size.
+- `<596`: rows `.6` and `.4` of the height, the next cell half the width, so it holds.
+- At W=2400, H=300 the next frame can equal the current, which meets "at least". At H=300, W=1400 the arithmetic leaves the notes 0 px (caption about 24 + 192 + gap 12 = R=228); "The notes keep their scrolling" is not checked by C8.
+- A CSS switch on pane width needs a container query. `.presenter` has padding 12 and cannot style itself by its own query, and a query on `.presenter` measures W-24, so a literal 596 there breaks at W=620. C8 still passes at 600 and 590.
+
+**Item 6.**
+
+- Side, tall, wide, alone: `least` is compared on box width, but the brief does not say in what order arrangement and shape are decided, so `side` tested before or after `tall -> wide` gives different results. By reading `placeOf`, the wide scale can be smaller than the tall scale (C12).
+- Stacked in-room never lies over the next figure, because figures stack vertically and a wide word runs sideways. Bullet 3's scale-up is not asked by the step line; its only effect is a slide measured too tall.
+- `least` greater than `room.width`: bullet 3 makes the block wider than the room, and `x` is negative in the wide and alone branches. No case covers it.
+- `min-content`: `.fig { width: 100% }` is a percentage on a replaced element, so on `.panel` it contributes only its padding (`Panel.svelte:106-114`, `0.46875cqw` each side, `.009375`). Measured on `.cap` and `.explain` directly, the rect includes `.explain`'s padding. Either form measures what the brief says, and the panel's box width is what the layout gives.
+- Hazard: `.waiting { display: none }` applies while `box === undefined`, and `draw` runs after `show(null)` set `boxes = {}`. A `least` read before the first `show(layOut)` of the first draw reads 0 on every panel. "Measured at the factor being tried" does not say when, and the `under` loop's `break` can skip a re-layout. A unit run cannot see this.
+
+**Item 9.**
+
+- Number before any build: yes. `rebuild` is synchronous (`portfolio.ts:626`), `removeEntry` is synchronous, no await lies in `writes.ts:628-645`, `nextVersion` is read and published in one tick (`:715`, `:745`), and `grep -n "mtime\|cache"` over `build.ts` and `collections.ts` prints nothing, so the build reads the file written.
+- Held forever: a removal ends only at a later build. A file write the watcher never hears is the same dependence as today. New: after a restart a first version in `[seen, build)` holds until the new server reaches the number.
+- Schedules: the count changes only in `reload`, so non-read `publish` callers keep the same `read` and dedupe as today. Every `reload` publishes if the count is taken before the `!read.ok` branch's `publish` (`:674`). `Hub.publish` (`channels.ts:157`) has no dedupe of its own. `options.schedules.reload()` runs right after the write (`routes.ts:326`), so the number is reached.
+- "The version seen at the answer" is ambiguous for schedules: the channel version and `read` are different counters (non-read publishes advance the channel). Mixing them would make `read < version` true at once and end every removal.
+- Reconnect to a restarted server: `reconnected()` takes the first message whatever its version. A number below `seen` ends the removal, and a number at or above `build` ends it. Equal to or above `seen` and below `build` holds.
 
 ## 6. Implied inputs
 
-This is a code step. Each implied input below is missing from "Cases" unless it says otherwise.
+Missing from "Cases", each with its expected result:
 
-- **A Literature tab opened fresh with no saved query.** Missing. Expected: the toggles drawn from the config, Search off until the answer, the idle line, and no request but `?sources`. Low cost.
-- **A config that answers after the view mounts** (`config()` null at the first paint). Missing. Expected: neither toggles nor the no-source line until the config is held. A false "No literature source is configured" would cost a misleading line. The browser seeds the config at page load (`src/routes/+page.server.ts:29-31`). The desktop app and a float window are not verified.
-- **A `?sources` list that fails to answer** (a network failure, a refused token, a server restart). Missing. Expected: a line saying the list could not be read, which needs a new catalog key outside `literature.yml:17`, and Search off, or a retry. Without it the view can never search and says nothing. This costs the whole view.
-- **Enter in the Search box before the answer.** Missing. Expected: no search sent.
-- **A toggle pressed before the answer.** Missing. Expected: a stated pressed state and pressability before the answer, and no flip when an available source's answer lands.
-- **A config push that changes `literature.sources` after mount.** Missing. Expected: the new row takes the server's facts (`?sources` asked again), or is drawn as unknown, without Search going off for good. Config edits from Settings are pushed live (`+page.server.ts:19`).
-- **A config row the server's list lacks, or the reverse.** Missing. Expected: a stated rule for which list wins.
-- **A deck that loads while presenting, or a switch of deck.** Missing from C7. O167 makes the counter draw nothing while a deck loads, which changes a width in a wrapping bar. Expected: every control keeps its place.
-- **The desktop app path.**
-  - Export is covered by C9.
-  - The reload of item 2 (Cmd+R in the app, `docs/HELP.md:572`) and the toolbar order run the same code. No case is needed beyond C2 and C7.
-- **Themes and text size 1.5.** Missing from C6, C7 and C8.
-  - Expected: the toolbar order holds at text size 1.5 and under a rice theme with brackets (`ToolButton.svelte:470-500` adds `[` `]` to every non-bare button).
-  - The export line is either stated to fit or stated to wrap at 1.5.
-  - The presenter's current slide is at least as large as the next at 1.5.
-- **A portrait deck frame on the presenter screen.** Missing. Expected: current slide at least as wide as the next.
-- **The last slide on the presenter screen** (`next === null`, "End of the deck."). Missing. Expected: the current slide keeps the room it has. Low cost.
-
-Findings: every item above marked missing, the costly ones first: the failed `?sources`, the Enter bypass, the config null at the first paint, the config push, the deck loading, text size 1.5 and the rice theme for C7, and the portrait frame for C8.
+- A tab the browser blocks: `export_blocked` replaces the opening line and stays.
+- A print page that never asks: the line goes at the end of the 10 s hold.
+- A second deck's press while the first deck's hold runs: the first's end clears an equal line.
+- A reader's Cancel of a fetch or push: the server answers `'{0} was stopped by Cancel'` (`server.yml:398`), so the toast reads "The fetch failed: ..." or "The push was refused: ..."; the brief states no result.
+- A `refused` field list on a git answer: `tell` joins the fields, and the toast is the action's line with them.
+- A failed listing: the rows stay; Search says `none_on` (section 5).
+- A listing answered after the tab closed: no state change. The comment at `Literature.svelte:153` ("starts no search") goes with the `go()`.
+- An entry deleted in a hub other than the primary: the same portfolio number and the same end. `hub-writes.test.ts:190` is the fixture and it is off the list.
+- Two removals with different numbers: each ends at its own number.
+- A schedule held over a restart: a `read` below the `read` seen ends it (C21 covers collections only).
+- A restart whose first version lies in `[seen, build)`: held until that number.
+- `least` wider than the room: a stated `x` and `y`.
+- The presenter after the last slide: the side's row with the end-of-deck line and no preview.
+- A hidden tab: `Slide` returns on `offsetWidth === 0` and lays out on show; no missing input.
 
 ## 7. ADRs
 
-`ls /Users/axelfaes/workspace/oculus/docs/adr` prints "No such file or directory". No record.
-
-Findings: none.
+`ls docs/adr` prints `ls: docs/adr: No such file or directory`. Oculus has none.
 
 ## 8. Dictated text
 
-The brief quotes no words to be written into a file. It quotes existing catalog lines only as evidence, at brief lines 12 and 15. Item 1 describes the meaning of the new BibTeX line without quoting it. Item 4 asks for "one short line", and item 5 for "a tip that says why", without words.
+`grep -n` over `.scratch/migration/agents/briefs/O170.md`, each read whole against `spec.md`'s prose rule (`:21`), the ASCII rule (`:51`) and the catalog rule (`:90`):
 
-The one dictated token is the key name `copied_fields`, at brief lines 27 and 79 (`grep -n 'copied_fields' .scratch/migration/agents/briefs/O170.md`). It holds: it is ASCII and snake_case like its sibling keys, and it names what the line says. The only point against it is the key order, which is cosmetic (1.1).
-
-`LC_ALL=C grep -n '[^ -~]'` over the brief prints nothing.
-
-Findings: none.
-
-## 9. Files outside the path list
-
-- `Literature.svelte:227`, the no-source condition. Item 3 says that line is drawn "from the config alone", and `:227` is outside `lines 1-200`. The brief also says, inconsistently, "this step writes ... Literature.svelte lines 17-163".
-- `config/text/views/academic/present.yml` near lines 95-96 (`facts`, `facts_tip`). Item 5's tip on the disabled chip needs a new key, and the path list allows only lines 49-55. Those lines are free of O167 (25, 58-76) and O168 (37). A line saying the source list failed (section 6) would need a key in `literature.yml` outside line 17.
-- `src/lib/views/academic/present/Present.svelte:72-74`, the head comment made false (1.3). O167 writes this file whole.
-  - The chip itself needs no `Present.svelte` change: `Bar.svelte:82-89` can draw it disabled when `facts === null`.
-- `src/lib/state/feeds/literature/run.svelte.ts:10-12`, the head comment made false (1.4).
-- `src/lib/state/feeds/literature/lookup.ts:18-22,124-126`, if `sourceOn`, `sourceList` or `SOURCES_URL` change shape.
-- `LiteratureCard.svelte:44-45`, if `sources` stops being `SourceInfo[]`.
-- These files are not needed:
-  - The server's literature handler: the config rows are on the page (`+server.ts:22` and the page config read the same reader).
-  - The Toolbar primitive: the Present bar does not use `overflow`, and `overflow` measures against a `[data-toolbar-room]` span that only the pane header lays out (`Pane.svelte`, `<span class="room" data-toolbar-room>` inside the header's `.tools`), so it cannot be switched on in the bar.
-- `Chip.svelte` and `ToolButton.svelte` show no width change with the pressed state by reading:
-  - `ToolButton.svelte:434-438` and `.tool.active` change colours only.
-  - `Chip.svelte:242-246` and `.chip.filled` change colours and the border colour only.
-
-  If the builder finds a cause there, `ToolButton.svelte` is O167's file.
-- `screen/Stage.svelte` is probably not needed: item 6 can be met in `Presenter.svelte`'s CSS. The read list should still include it (4.6).
-
-Findings: `Literature.svelte:227`, a `present.yml` line near 95-96, `Present.svelte:72-74` and `run.svelte.ts:10-12` are needed and outside the paths. `lookup.ts` and `LiteratureCard.svelte` are needed if the `sources` shape or the form exports change.
+- `:57` `copied_citation_js: BibTeX copied, built from the paper's fields because no source served one`: holds.
+- `:58` `export_opening: Opening the print tab...`: holds.
+- `:60` `notice_fetch_refused: 'The fetch failed: {0}'`: holds.
+- `:61` `notice_push_refused: 'The push was refused: {0}'`: holds.
+- `:62` `notice_pull_refused: 'The pull failed: {0}'`: holds.
+- `:63` `notice_sync_refused: 'The sync failed: {0}'`: holds.
+- `:64` `notice_publish_refused: 'The publish was refused: {0}'`: holds.
+- `:75` "Opening the print tab...": holds.
+- `:85` the toast forms: holds.
 
 ## Declined to judge
 
-- **What the look saw for the toolbar reorder and the reload.** `agents/reviews/owed-looks.md:27` says the observations are "in the session notes", which are not in the tree. The brief's account of the look could not be checked.
-- **Whether O168's line claims hold.** Its brief is not on disk (3.18).
-- **Whether the page holds the config at the first paint in the desktop app and in a float window.** The browser's seed was read. The other two would take a run, and a builder or a checker starts no page.
-- **Whether `npm run test:quick` and the other verify commands pass on the unchanged tree.** Not run: they are the builder's, after the worktree exists.
+- Whether the brief's exclusion of the bookmark is acceptable against the step line.
+- Whether bullet 3's scale-up is what the user wants over an in-room stacked block.
+- The original words of the look behind the toolbar item: no review file names them (`grep -rn` over `agents/reviews`).
 
-Agent usage: a62bf71210ab6cbbf, claude-opus-5-5, 225844 tokens, 66 tool uses, 9.8 min.
+Usage: a0e91311c5e402ce3, claude-opus-5-5, 288712 tokens, 28 tool uses, 13.6 min
 
-## Closed (the session's change to the brief for every finding above, and each dictated line added after the check, made before the preparation commit)
+## Closed (the session's change to the brief for every finding above, made before the preparation commit)
 
-- <finding>: <the change to the brief, with its section>; or a stop, <the open item as the state file holds it>.
+- Names, `nextRead` on the wrapper and the fakes: `src/lib/server/root/context.ts`, `tests/server/root/context-fixture.ts`, `file.test.ts` and `record.test.ts` added to the paths; item 9 names the wrapper. Internal, booked in `choices.md`.
+- Names, `hub.nextVersion` on `HubLike`: item 9 types `server.hub` as `HubLike & Pick<Hub, 'nextVersion'>` inside `writes.ts` and adds a function to `WriteTarget`.
+- Names, `Head.svelte` comments: added to the paths; item 3 asks for them. Internal, booked in `choices.md`.
+- Names, `Slide.svelte`: the range is lines 15-34, 56-62 and 170-290, and Conventions names the paragraph O151 rewrites.
+- The step line, "a bookmark": `plan.md`'s line is corrected, since ruling 722 names no bookmark and a bookmark's removal already ends at the first read after its answer; the brief records it; C24 is removed.
+- The step line, "a write's answer": Decision 6 stands, since only the two removals read a number.
+- Premises :15, :21, :22, :23, :25, :29: corrected in "What is on the tree".
+- Premise :17, first paint: item 3 now keeps the last listing in the tab's instance state (`listed`), read at first paint; a new tab uses the config, which a running page holds; Decision 11; C3 rewritten.
+- Line 138, folder limit: the new-file line names `shapes/` for `writes.svelte.ts`.
+- Cases and checks, `git grep`: C1 and Verify 3 and 4 use `grep`. Base copy named at line 9. C14's reading of the hub's decks removed. C24 removed. C17 names `hub-writes.test.ts`, added to the paths in place of `write.test.ts`. C16 is a quoted run. Verify 8 reads against the rules file's prose rule. Verify 7 runs the tests of G8, G28, G46, G91 and G117.
+- The question, C5: a failed listing lets Search ask the drawn sources, so no sentence contradicts the drawn state (item 3).
+- The question, C9, C12, C13 and item 6: the third bullet (a stacked block past the room) is removed, since a stacked figure has no neighbour for a word to run over and the step line's outcome is stacked or under the text; item 6 now states the candidates and their order; C9, C12 and C13 have inputs whose results were computed; Decision 12.
+- The question, C21: the row calls `entities.reconnected()`.
+- The question, item 5: the switch is written at the content width of 572 px on an inner grid; the side's rows are 3fr and 2fr so the notes keep height at every size; C8 checks the notes and adds widths 2400, 620 and 596.
+- The question, item 6, measuring: `least` is read after the first layout of a factor, once the panels are drawn.
+- The question, item 9: `reload` counts as its first statement, before every `publish`; an entry compares channel versions and a schedule compares `read` values, never the two; the restart window is stated.
+- Implied inputs: added to C5, C8, C16, C21 and the new C26. `least` wider than the room falls away with the third bullet.
+- Dictated text: no finding; no dictated line was rewritten or added.
+- Declined to judge: the bookmark is corrected in the plan as above; the toolbar's original words are not in any file, and item 7 stands on the step line.

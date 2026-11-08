@@ -37,6 +37,12 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
+- step: O170
+  brief_check: "running: a0e91311c5e402ce3"
+  landing: preparing
+- step: O172
+  brief_check: "running: a7b3f00ada05c428a"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
