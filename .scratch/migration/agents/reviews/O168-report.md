@@ -709,7 +709,7 @@ C12 after: `npx vitest run tests/state/sessions/source/source.test.ts --reporter
 
 The step's new-project.ts and selectors.svelte.ts counts are from after the last edit (`wc -l`: 172 and 877).
 
-Outside the base copy's folders: `docs/apps.md` (+14 lines, the plural forms paragraph and its YAML example) and the generated diagrams above. `src/lib/state/sources/repositories/repositories.ts` is 885 lines, under its entry in `utils/size-allow.txt` (it was 888); the size check passed in the final quick run.
+Outside the base copy's folders: `docs/apps.md` (+14 lines, the plural forms paragraph and its YAML example) and the generated diagrams above.
 
 ## Every test assertion or fixture edited, before and after
 
@@ -810,3 +810,221 @@ No comment or test title says what the code was.
 ## Line widths
 
 `tests/checks/source/comment-width.test.ts` passed in the final quick run's checks tier. Added lines over 100 columns are strings, YAML rows of the one-line-per-row `categories:` table and a one-line YAML comment (`config/catalogs/vocab.yml`, the file's own form), and eslint comments in markup.
+
+# Round 1
+
+Everything in the round is done. Two things stand: `npm run test:quick` does not print "every command passed", because 70 rows fail under the `TMPDIR` of `.agents/scratch/` alone (each named below with its line), and four unit rows and three slow rows that timed out in the full run pass when their files run alone; and `src/lib/shell/rail/UpdateTray.svelte`, a scroller ruling 2's survey found outside any `Pane` with the same band above its stuck strip, is handed back unchanged (below).
+
+## Hand-back
+
+`src/lib/shell/rail/UpdateTray.svelte` is not changed. Ruling 2's survey (every Svelte file whose style scrolls, and whether it reaches `GroupHead.svelte` or `Table.svelte` through its imports) found its `.tray` (`overflow: auto`, `padding: 12px`, `UpdateTray.svelte:247-258`) holding a `GroupHead` (`:170`). The tray is drawn in a `Modal` of `src/lib/shell/Workbench.svelte:57`, under no `Pane`, so `--pane-pad-top` is unset there and the strip's `top` falls back to `0px`: the stuck strip stands 12px below the tray's top edge and the tray's rows scroll through that band, on the base (`top: var(--group-above)`, `O168-base/src/lib/ui/controls/heads/GroupHead.svelte:221`) and after this round alike. The fix is `--pane-pad-top: 12px` on `.tray`. The round lists scrollers under a `Pane`, and this file is not in any path list, so it is handed back for a ruling.
+
+## Rulings, what changed and the check
+
+1. **Dirty-tab pair folded.** `config/text/ui.yml:114-116` holds `tabs_close_dirty: { one: Do you want to save the changes to this tab before it closes?, other: Do you want to save the changes to {0} tabs before they close? }`; `tab_close_dirty` is gone (`grep -rn "tab_close_dirty" src tests config` prints nothing). `src/lib/state/workbench/navigation/pages.ts:133` is `return plural('ui.tabs_close_dirty', count, count);` (import at `:40`), and `src/lib/shell/panes/strip/close-question.svelte.ts:82` is `plural('ui.tabs_close_dirty', 1, 1)` (import at `:15`). The tests read the folded key with the same sentences: `tests/shell/panes/strip/tab-menu.test.ts:146,157,168,224` read `catalog('ui.tabs_close_dirty.one')` and `:179` reads `catalog('ui.tabs_close_dirty.other', 3)`; `tests/shell/panes/strip/app-editor-close.test.ts:124,133,142` read `t('ui.tabs_close_dirty.one')`. `tests/state/workbench/navigation/pages.test.ts:51,97,110,174` read the old key too and read `t('ui.tabs_close_dirty.one')` now; that file is on the brief's own list (`O168.md:226`). Check: `npx vitest run tests/shell/panes/strip/tab-menu.test.ts tests/shell/panes/strip/app-editor-close.test.ts tests/state/workbench/navigation/pages.test.ts tests/checks/source/keys.test.ts --reporter=dot` printed `Test Files  4 passed (4)` / `Tests  36 passed (36)`. `grep -rn "count === 1 ?" src` printed only `src/lib/state/system/audit.ts:73` and `src/lib/data/sources/deck/spec.ts:66`.
+2. **Nested scrollers.** `src/lib/views/system/workbench/Settings.svelte:490` gives `.list` `--pane-pad-top: 0px`, and `src/lib/views/system/help/keys/Keys.svelte:158` gives `.view` `--pane-pad-top: 8px`, each with a comment naming the property's reader. The survey read every Svelte file under `src` whose style holds `overflow: auto` or `scroll` (46 files) and followed its Svelte imports to `GroupHead.svelte` or `Table.svelte`. Eight reach one; each was read:
+   - `Settings.svelte`: `.list` scrolls (`flex: 1 1 auto`, `overflow: auto`) and holds `settings/List.svelte`'s GroupHeads with padding 0 against the Pane body's 10px: line added. Its `.contents` scroller holds `settings/Contents.svelte` (a TreeView, no GroupHead): unchanged.
+   - `Keys.svelte`: `.view` is the scroller (`height: 100%`, `overflow: auto`, `padding: 8px 16px 16px`) holding its GroupHeads: line added.
+   - `src/lib/views/system/workbench/Catalogue.svelte`: `.view` had `overflow: auto` with no height inside the Pane body, which is a block box, so it is as tall as what it holds and never scrolls; being a scroll container it held the group strips, so they never stuck, on the base and in round 0. `overflow: auto` and `min-height: 0` are removed from `.view` (`Catalogue.svelte:376-382`, with a comment), so the Pane body scrolls the view and its strips stick at the body's top edge with the body's own `--pane-pad-top`. This is a change a user sees, listed under ruling 11.
+   - `src/lib/views/system/status/Hooks.svelte`: the only scroller is a `pre` (`:72-74`) holding text: unchanged.
+   - `src/lib/views/system/machine/processes/AppHosts.svelte`: the only scroller is `pre.output` (`:132`, `:171-174`) holding text: unchanged.
+   - `src/lib/views/academic/present/Present.svelte`: `.present` scrolls only in full screen (`:446-450`, `padding: 10px 12px`), the same top padding as the Pane body, so the inherited 10px is right: unchanged. Framed, it is `overflow: hidden` and holds a slide, no strip.
+   - `src/lib/views/academic/present/presenter/Presenter.svelte`: `.text` (`:232-237`) holds the speaker notes in a `Surface`, no strip; the Table it reaches is in a slide drawn by `Framed`, outside `.text`: unchanged.
+   - `src/lib/shell/rail/UpdateTray.svelte`: under no Pane; handed back above.
+   C1 by reading, before and after, is under ruling 11.
+3. **Unkept tags drawn as written.** `src/lib/ui/html.ts:560-575` (`TAG_NAME` at `:558`): the extension `UNKEPT_TAGS_AS_TEXT` escapes an inline HTML token whenever its element is not in `ALLOWED_TAGS`, and passes a kept tag and a comment (no tag name) to the sanitiser; `placeholderTag` and its `document.createElement` test are gone (`grep -n "placeholderTag\|createElement" src/lib/ui/html.ts` prints nothing). `tests/ui/html.dom.test.ts:45-56` holds the rows for `rsync <source> <target>`, `~/data/<data>`, `done by <time> today`, `the <title> of the page` and `/local/<jobid>`, each expecting the escaped text, and `:39-43` a row for `<script>alert(1)</script>`, expecting `&lt;script&gt;alert(1)&lt;/script&gt;` and no element. Two rows made false by the ruling are carried: `:29` drops `<script>alert(1)</script>` from the loop that compares `inlineMarkdown` with `sanitise(marked.parseInline(...))` (it now draws as text, so it is its own row), and the Literature row (`:105-106`) expects the sent abstract to show `&lt;script&gt;alert(1)&lt;/script&gt;` with no `<script` and no `onerror` (it asked for no `alert` at all; the script's words are text now).
+4. **Tip key.** `config/text/views/sources/data.yml:46` is `fetch_file_title: Fetch {0} alone`, read at `src/lib/views/sources/data/recover/RecoverPlan.svelte:91` as `t('recover.fetch_file_title', name)`; `grep -rn "fetch_one_title" src config tests` prints nothing.
+5. **`repositories.ts` split.** `src/lib/state/sources/repositories/diff/diff-view.ts` (new, 216 lines) holds `DiffMode`, `DiffView`, `diffViewShape`, `diffViewOf`, `toggleFolded`, `unfolded`, `modeAfter`, `typeWords`, `typeChangeWords`, `fileDeleted`, `fileKeys`, `ViewKeeper`, `viewKeeper`, `sameChanges` and `sameFiles`, with its own head comment. The moved block is the same text: `sed -n 169,371p` of `repositories.ts` before the move compared with lines 14 to the end of `diff-view.ts` printed `IDENTICAL`. The types `DiffMode` and `DiffView` and the shape `diffViewShape` moved with `diffViewOf`, which reads them. `repositories.ts:8-11` names `diff/diff-view.ts` for the diff pane's view state, and its import of `shapes.ts` drops `mapOfShape` and `mapShape`. The importers: `src/lib/views/sources/repositories/diff/Diff.svelte:82-91` (the two reads that stay in `repositories.ts` on two lines, so the component stays at 518 lines, under 520) and `src/lib/views/sources/repositories/diff/DiffSection.svelte:76-81`; no test imports a moved name (`grep -rnw` over `tests` for each name prints no import). `wc -l src/lib/state/sources/repositories/repositories.ts` prints `682`. `diff/` holds seven items. The round-0 sentence about `utils/size-allow.txt` is removed from "Files with line counts".
+6. **Rows that pass on the unchanged tree.** Run against `O168-base`'s source through `.agents/scratch/base.config.mjs` (every import of `src/lib` sent to `O168-base/src/lib`): `CASE_FILES="tests/data/sources/config/layers/language.test.ts tests/data/shapes/catalog-files/vocab.test.ts" npx vitest run --config .agents/scratch/base.config.mjs --reporter=verbose -t "words a form outside the six plural forms|words a plural form of a key oculus holds as a plain text|reads a category with no label by its key, with no finding"` printed:
+   ```
+    <check mark> tests/data/shapes/catalog-files/vocab.test.ts > the vocabulary's words past its shape > reads a category with no label by its key, with no finding 608ms
+    <check mark> tests/data/sources/config/layers/language.test.ts > the display language > words a form outside the six plural forms 238ms
+    <check mark> tests/data/sources/config/layers/language.test.ts > the display language > words a plural form of a key oculus holds as a plain text 216ms
+    Test Files  2 passed (2)
+         Tests  3 passed | 36 skipped (39)
+   ```
+   What each preserves: 'words a form outside the six plural forms' keeps a language pack's `literature.cites.several` a finding (a key oculus's catalog lacks), now that the six forms of a plural key are accepted; 'words a plural form of a key oculus holds as a plain text' keeps `views.settings.few` a finding (a form of a key that is no plural key); 'reads a category with no label by its key, with no finding' keeps a category row with no `label` drawn by its key with no finding, now that `label` is a map of forms.
+7. **Fallback sentence.** `docs/apps.md:310` now says: "Where the language does not give that form, the count is drawn in oculus's English words for the form where they give it, else in the language's `other`, else in English `other`, so a language that gives only `other` draws oculus's English `one` for a count of 1." The sentence names the language's `other` because the catalog is merged by dotted key, so a language's `other` replaces English `other`; the ruling's two steps alone would be false for a count whose form neither gives while the language gives `other`. Check, the case program `.agents/scratch/case-r1.test.ts` (an approved app giving Polish with only `literature.cites.other: "{0} cytowan"`, read through `withSettings('  locale: pl\n', ...)` and `pluralText`) printed `pl, only other given, count 1: 1 citation`, `count 3: 3 cytowan`, `count 5: 5 cytowan`, `findings: []`.
+8. **Map labels.** `docs/templates.md:462` is `#     - { key: idea, label: { one: early idea, other: early ideas }, color: "#7c5cff", ... }`, and `tests/fixtures/hubs/deck-hub.ts:361` gives `publications` `label: { one: publication, other: publications }`. Check, the case program's row with both rows as a hub's `categories:` (`withHub`, then `findingLines` of the merge and of the readers, filtered to `categories`) printed `category findings: []` and `labels: [["idea","early ideas"],["publications","publications"]]`.
+9. **`PARTS`.** `src/lib/state/system/machine/lsp/clangd/cpp-form.ts:26` and `src/lib/state/system/machine/debug/launch-form.ts:33` are `const PARTS = ',';`. Unused exports: see the verify lines.
+10. **One locale lookup.** `src/lib/data/helpers/finding-text.ts:85-92` exports `catalogLocale(catalog)`, `byKey(catalog, LOCALE_ENTRY) ?? ENGLISH`; `pluralText` (`:107`) and `pluralOf` in `src/lib/state/shared/words/text.ts:108` read the locale through it, and `text.ts` no longer imports `LOCALE_ENTRY` or holds `'en'` (`grep -n "LOCALE_ENTRY\|'en'" src/lib/state/shared/words/text.ts` prints nothing). Check, the case program printed `en: 1 idea, 3 ideas` and, with the catalog's `locale` set to `pl`, `pl: 1 pomysl, 3 pomysly, 5 pomyslow`.
+11. **Before and after for every change a user sees.**
+    - Settings strips. Base: the strip's `top` is `var(--group-above)` (`O168-base/src/lib/ui/controls/heads/GroupHead.svelte:221`), so in `.list` (no top padding) a stuck strip stands at the list's top edge. Round 0: `top` less the inherited 10px, so the strip stood 10px above the edge, its top 10px cut off. After round 1: `--pane-pad-top: 0px` on `.list`, so the stuck strip stands at the list's top edge, as on the base. By reading.
+    - Keys strips. Base: `top: 0` inside `.view`'s 8px top padding, so the stuck strip stood 8px below the view's top edge, with rows showing in that band (the band C1 ruling (a) removes in every view). Round 0: `top: -10px` against 8px of padding, the strip 2px above the edge and cut. After round 1: `top: -8px`, the stuck strip at the view's top edge with no band. By reading.
+    - Catalogue strips. Base and round 0: the strips scroll away with the groups, since `.view` was a scroll container that never scrolls. After round 1: the Pane body scrolls the view, and a group's strip sticks at the body's top edge while its group is in view. By reading.
+    - Audit signature of a count-1 marker or provisional finding. Base: the sentence key is `audit.msg_markers_one` or `audit.msg_provisional_one`; after: the folded keys `audit.msg_markers` and `audit.msg_provisional` with the same arguments (`src/lib/server/content/audit/projects.ts:140`, `:213-217`). The signature reads the key, so a mute stored for a count-1 finding no longer matches; for counts of 2 and more the key and the signature are unchanged. The case program's `signatureOf` with sample arguments printed `markers, 1, key audit.msg_markers_one: 9b1de0f56f22`, `markers, 1, key audit.msg_markers: fd12c8b33896`, `markers, 2, key audit.msg_markers (same key on both trees): 47e9d661d45a`, `provisional, 1, key audit.msg_provisional_one: 8a86e68ee9d3`, `provisional, 1, key audit.msg_provisional: 7b209a65c709`.
+    - Waiting count. Base: a person's record page drew the waiting button as a `Tag` with the glyph `waiting` and the words "<n> waiting on <name>" (`board.record_waiting: '{0} waiting on {1}'`, `git show HEAD:src/lib/views/shared/card/record/RecordCounts.svelte`); after: `src/lib/views/shared/card/record/RecordCounts.svelte:55-77` draws each button as the `Disclosure` pill, the count in bold beside "waiting on <name>" (`board.record_waiting: 'waiting on {0}'`), with no glyph. By reading.
+    - Entry page body. Base: the entry's page drew a body field through the card's `text` snippet, which cut a long body with `Clamp` and its open control when the card was handed `onmore` (`O168-base/src/lib/views/shared/forms/entry/card/EntryFields.svelte:157-167`); after: the page's `pageField` (`EntryFields.svelte:321`, the body at `:349-352`) draws the body whole through `inlineMarkdown`, with no `Clamp` (round 0, item 6). By reading.
+    - Dirty-tab question: the same sentences on the base and after, now one key (C5 below).
+    - Inline fields: a tag the sanitiser does not keep (`<source>`, `<data>`, `<time>`, `<title>`, `<script>` and any other) shows as written; on the base and in round 0 a known element's tag was removed with nothing in its place (the failing output below).
+
+## The new rows, before and after
+
+Before, on the step's tree before the change to `html.ts` (`npx vitest run tests/ui/html.dom.test.ts`):
+```
+     <cross> draws the tag in rsync <source> <target> as written, since the sanitiser keeps no such element 3ms
+     <cross> draws the tag in ~/data/<data> as written, since the sanitiser keeps no such element 2ms
+     <cross> draws the tag in done by <time> today as written, since the sanitiser keeps no such element 1ms
+     <cross> draws the tag in the <title> of the page as written, since the sanitiser keeps no such element 1ms
+AssertionError: expected 'rsync  &lt;target&gt;' to be 'rsync &lt;source&gt; &lt;target&gt;' // Object.is equality
+AssertionError: expected '~/data/' to be '~/data/&lt;data&gt;' // Object.is equality
+AssertionError: expected 'done by  today' to be 'done by &lt;time&gt; today' // Object.is equality
+AssertionError: expected 'the ' to be 'the &lt;title&gt; of the page' // Object.is equality
+      Tests  4 failed | 9 passed (13)
+```
+The `/local/<jobid>` row passed in that run: round 0 already drew a name the document does not know as written, and the row keeps it so.
+
+The `<script>` row and the carried Literature row were written after the change to `html.ts`, so their failing run is against `O168-base`'s source (`CASE_FILES=tests/ui/html.dom.test.ts CASE_ENV=jsdom npx vitest run --config .agents/scratch/base.config.mjs -t "script|abstract"`), where `<script>` reaches the sanitiser as it did in round 0 (round 0 passed every element HTML knows to the sanitiser):
+```
+     <cross> draws a script tag as the text it is, with no script element 8ms
+     <cross> keeps the words of an abstract that held markup, and its card line holds no element of it 315ms
+AssertionError: expected '' to be '&lt;script&gt;alert(1)&lt;/script&gt;' // Object.is equality
+AssertionError: expected 'Tested <i>in vivo</i> on <img src="x"<ellipsis>' to contain '&lt;script&gt;alert(1)&lt;/script&gt;'
+      Tests  2 failed | 1 passed | 11 skipped (14)
+```
+
+After (`npx vitest run tests/ui/html.dom.test.ts --reporter=verbose`): all 14 rows `<check mark>`, among them `draws a script tag as the text it is, with no script element`, the five `draws the tag in ... as written` rows and `keeps the words of an abstract that held markup, and its card line holds no element of it`; `Tests  14 passed (14)`.
+
+## Cases run again
+
+- C1, by reading: Settings, Keys and every scroller ruling 2 read (ruling 2 above), before and after under ruling 11. The look is the orchestrator's at landing.
+- C5, the case program `.agents/scratch/case-r1.test.ts` through `.agents/scratch/tree.config.mjs` on the worktree's tree: `C5 count 1: Do you want to save the changes to this tab before it closes?` and `C5 count 3: Do you want to save the changes to 3 tabs before they close?`, the sentences of the base's `tab_close_dirty` and `tabs_close_dirty` (`git show HEAD:config/text/ui.yml | grep close_dirty`). `Tests  4 passed (4)` for its first four rows, and its fifth (ruling 8) `Tests  1 passed | 4 skipped (5)`.
+- C9: `tests/ui/html.dom.test.ts` 14 passed, with ruling 3's rows: `/local/<jobid>` as written, `**bold**` and a link the same as the sanitiser over marked, a `<script>` as text with no element.
+- No other case was run again; their results stand as in round 0.
+
+## Verify lines, as printed
+
+Every program below ran from the worktree root with `TMPDIR=$PWD/.agents/scratch/tmp` and `GIT_CEILING_DIRECTORIES=$PWD/.agents/scratch`, after this round's last change to a file of the tree.
+
+- `npm run diagrams` printed the files it wrote, ending `docs/diagrams/channels.dot`, `docs/diagrams/channels.svg`, `docs/diagrams/writes.dot`, `docs/diagrams/writes.svg`; `npm run docs:palette` printed `docs/palette.md` and left it unchanged (`git status --short docs/` does not list it).
+- `npm run test:quick` (log `.agents/scratch/quick-r1.log`) printed:
+  ```
+  ok      prettier (1.3 s): All matched files use Prettier code style!
+  ok      ASCII gate (1.4 s)
+  ok      svelte-kit sync (2.9 s)
+  ok      eslint (3.4 s)
+  ok      svelte-check (12.1 s): 1794111912139 COMPLETED 589 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest checks (259.3 s): Duration  238.11s (transform 117.16s, setup 0ms, import 269.53s, tests 533.40s, environment 6ms)
+  FAILED  vitest (327.7 s)
+  FAILED  vitest slow (1408.7 s)
+  ```
+  vitest: `Tests  21 failed | 3325 passed | 851 skipped (4197)`: the 17 rows of `library.test.ts` (listed below) and four rows that timed out at 5000ms: `tests/server/edit/app-store.test.ts > writes the store of an app as the app-store kind > a target that holds no apps, answered unwritable`, `tests/routes/git/zenodo.test.ts > what Publish and a new version send, and what a press that stops leaves > deletes nothing and writes nothing when the publish gets no answer and neither the draft nor the record reads`, and two rows of `tests/routes/machine/cpp.test.ts` (`refuses a fault the reader would find, ...` and `refuses a POST without the token ...`), each printing `Error: Test timed out in 5000ms.`. vitest slow: `Tests  56 failed | 795 passed | 342 skipped (1193)`: the 53 rows listed below and three rows of `tests/data/hubs/hub-portfolio.test.ts` (`reads a field of a second-hub entry that names a record as the key its file holds (G32)`, `keeps a primary-hub id that begins with the name of a hub folder and a colon as a record of the primary, with no finding`, `gives a key two hubs hold two records, each project naming its own hub record, each shown by the key (C1)`), each printing `Error: Test timed out in 20000ms.`. The timed-out files run again alone, each `npx vitest run <file> --reporter=dot`: `hub-portfolio.test.ts` `Tests  16 passed (16)`, `zenodo.test.ts` `Tests  51 passed (51)`, `cpp.test.ts` `Tests  5 passed (5)`, `app-store.test.ts` `Tests  15 passed (15)`.
+- ASCII gate: `ok      ASCII gate (1.4 s)` above; and `LC_ALL=C grep -nP "[^\x00-\x7F]"` over every file this round changed printed nothing.
+- `sh utils/unused-exports.sh` (exit 0), compared with `sort ../O168-base/unused-exports.txt`: both 333 lines; the one differing line is `src/lib/state/boards/collection/index.ts: hasStatusField, statusValues` against the base's `src/lib/state/boards/collection/index.ts: kindOf, hasStatusField, statusValues` (`kindOf` is module-private since round 0). No export is added; the `PARTS` of `cpp-form.ts` and `launch-form.ts` appear on no line.
+- `sh utils/folder-check.sh` printed nothing.
+- `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O168.md abebbb552` printed `.scratch/migration/agents/briefs/O168-cases.md`, `.scratch/migration/agents/briefs/O168-round1.md`, `.scratch/migration/agents/guarded.md`, `.scratch/migration/agents/spec.md` (the ledger copy's own files), `docs/templates.md`, `src/lib/data/sources/config/merge/language.ts`, `src/lib/data/sources/config/merge/workspace-layer.ts`, `src/lib/server/content/audit/rules.ts`, `src/lib/shell/panes/strip/close-question.svelte.ts`, `src/lib/state/sources/repositories/diff/diff-view.ts`, `src/lib/state/system/machine/debug/launch-form.ts`, `src/lib/state/system/machine/lsp/clangd/cpp-form.ts`, `src/lib/ui/frame/Pane.svelte`, `src/lib/views/sources/repositories/diff/Diff.svelte`, `src/lib/views/sources/repositories/diff/DiffSection.svelte`, `src/lib/views/system/help/keys/Keys.svelte`, `src/lib/views/system/workbench/Catalogue.svelte`, `src/lib/views/system/workbench/Settings.svelte`, `tests/checks/source/catalog-reads.ts`, `tests/data/sources/config/catalog/options-schema.test.ts`, `tests/data/sources/config/layers/language.test.ts`, `tests/ui/html.dom.test.ts`. Each is in the round-0 rulings' list (`Pane.svelte`, `language.ts`, `workspace-layer.ts`, `language.test.ts`), this round's list, or S4; `Catalogue.svelte` is a scroller ruling 2 found.
+- `grep -rn "count === 1 ?" src` printed `src/lib/state/system/audit.ts:73:        return count === 1 ? signature : ...` and `src/lib/data/sources/deck/spec.ts:66:        return count === 1 ? name : ...`, nothing else.
+- `wc -l src/lib/state/sources/repositories/repositories.ts` printed `682`.
+- Also: `npx prettier --check` and `npx eslint` over this round's changed files: `All matched files use Prettier code style!` and no output. The history-word grep over this round's added lines found only "still open" in the comments moved unchanged into `diff-view.ts` (the state of a tab, not history). No added comment line is over 100 columns (`awk` over the changed files printed nothing).
+
+## Rows that fail only under the `TMPDIR` of `.agents/scratch/`
+
+Seventy rows, the same files and counts as round 0. The library rows fail by the rule at `src/lib/server/machine/lsp/library/rules.ts:1-3`, which names no path with a segment starting with a dot (`.agents`); the tmux rows by the 116-character socket path ("File name too long"); the app-host rows time out. Against `O168-base`'s source this round: `CASE_FILES=tests/server/machine/lsp/library.test.ts npx vitest run --config .agents/scratch/base.config.mjs` printed `Tests  17 failed | 19 passed (36)`, and `sessions.test.ts -t "starts, lists, feeds"` printed `Error: error connecting to .../.agents/scratch/tmp/oculus-tmux-RPk8Ab/server.sock (File name too long)`. The step changes no file under `src/lib/server/machine/` but `processes/failure.ts` (`git diff HEAD --name-only -- src/lib/server/machine src/lib/server/core` printed `src/lib/server/core/git/failure.ts`, `src/lib/server/core/words.ts`, `src/lib/server/machine/processes/failure.ts`). Each row with the line vitest printed for it:
+
+- `tests/server/machine/lsp/library.test.ts > a library file > 'names a file outside every root with <ellipsis>'`: `AssertionError: expected [] to have a length of 1 but got +0`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'gives the same address to a file name<ellipsis>'`: `AssertionError: expected [ { jsonrpc: '2.0', <ellipsis>(2) } ] to have a length of 2 but got 1`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'reads the text of a file a server nam<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'refuses a token another page was given'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'refuses a read whose root is not the <ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'refuses a read sent on the channel of<ellipsis>'`: `AssertionError: expected undefined to be defined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers not_served for a token whose <ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers not_file for a file removed s<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers not_file for a path that is a<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers moved for a path whose folder<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers binary for a file that is not<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'answers too_large for a file over the<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'reads the file a path through a link <ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'drops from a notification the file no<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'gives an address to a file named in t<ellipsis>'`: `TypeError: Cannot read properties of undefined (reading 'command')`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'passes an edit a server asks the page<ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/lsp/library.test.ts > a library file > 'gives the server the real address of <ellipsis>'`: `TypeError: .toMatch() expects to receive a string, but got undefined`
+- `tests/server/machine/pty/agent-pane.test.ts > an agent in a pane, the output of one pane > forwards the output of its pane and of no other pane of the session`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/agent-panevmVQvF/server.sock (File name too long)`
+- `tests/server/machine/pty/agent-pane.test.ts > an agent in a pane, the output of one pane > leaves the environment of the session as it stood before the attach`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/agent-panevmVQvF/server.sock (File name too long)`
+- `tests/server/machine/pty/agent-pane.test.ts > an agent in a pane, the output of one pane > forwards a pane through the session it moved to`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/agent-panevmVQvF/server.sock (File name too long)`
+- `tests/server/machine/pty/agent-pane.test.ts > an agent in a pane, the output of one pane > reads what the foreground of a real pane runs`: `Error: the processes could not be read: status`
+- `tests/server/machine/pty/pane-screen.test.ts > a private tmux server > sends a line the pane wrapped as one line`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-screen-gxfP5E/server.sock (File name too long)`
+- `tests/server/machine/pty/pane-screen.test.ts > a private tmux server > gives the same screen through the control client as through tmux`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-screen-gxfP5E/server.sock (File name too long)`
+- `tests/server/machine/pty/sessions.test.ts > a private tmux server > starts, lists, feeds, resizes, captures and stops a terminal`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-tmux-owXlQN/server.sock (File name too long)`
+- `tests/server/machine/debug/channel.test.ts > the debug channel as the page reads it > shows a session of an app debugger paused on entry with its frame and variables, and hands the same to a page that reloads`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/debug/channel.test.ts > the debug channel as the page reads it > shows a session of an app debugger that declares every capability paused on entry`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/debug/channel.test.ts > the debug channel as the page reads it > shows a session of an app debugger ended by Stop, with the words of its end`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/debug/channel.test.ts > the debug channel as the page reads it > shows a session of oculus's own adapter paused with its frame and variables`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > starts through a executable descriptor with no approval, launches with the file filled in, stops at entry and fills the call stack and the variables`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > starts through a manifest descriptor with no approval, launches with the file filled in, stops at entry and fills the call stack and the variables`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > starts through a server descriptor with no approval, launches with the file filled in, stops at entry and fills the call stack and the variables`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > starts the program the manifest names for an app with no host file, with no approval question`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > ends the session and the adapter when the host is killed while a executable descriptor session is paused`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > ends the session and the adapter when the host is killed while a server descriptor session is paused`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > sends attach for an attach entry, with its own keys`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > asks which end it is when stopped, and ends an adapter that declared terminate with terminate`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > ends an adapter that declared no terminate with disconnect that ends the program`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > a session of a debugger an app declares > refuses a second session while one runs, and a type no app declares`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > what an adapter declares > offers no control and sends no extra request when it declared nothing`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > what an adapter declares > pauses a running thread of an adapter that declared nothing`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > what an adapter declares > pauses the first thread the adapter lists when the program has not stopped yet`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > what an adapter declares > draws each control and sends each request when it declared them`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > the configuration providers of a type > resolves a configuration before and after its placeholders are filled, and aborts the launch of one a provider answers nothing for`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/debug-adapters.test.ts > the host of the debugger > starts a session with startDebugging, is refused a second while one runs, reaches it with customRequest and hears it start and end`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is handed to the page client as a registration, which the transport refuses none of, for a language no oculus server serves`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is handed to the page client for a language oculus serves, when oculus own server does not declare it`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is registered for workspace symbols and the call and type hierarchies, and not for semantic tokens, which the page draws from the legend`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is handed to a second client the page makes on the same socket after its last document closed`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is handed to the client of a page that takes the running server over after a reload`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is withdrawn from the page client when the app stops acting`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a feature a server of an app declares > is handed to the page client when the server registers it after initialize, and its requests reach the server`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a request of the page for a feature > that the server of an app did not declare is answered with no result and not sent to it, asked as the document opens and once the server is ready`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a request of the page for a feature > for the workspace symbols of a root, whose server of an app did not declare them, is answered with no result and not sent to it`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/language-features.test.ts > a request of the page for a feature > that follows a call hierarchy goes to the server that declared the call hierarchy, not to the first server of the document`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a server an app registers > starts with the first document of its language under a served root, and the page gets its answers`: `AssertionError: expected [ 'null', [] ] to deeply equal [ <ellipsis>(2) ]`
+- `tests/server/machine/apps/tools/languages.test.ts > a server an app registers > starts from a serverOptions function that answers the program to run`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a server an app registers > is started once for two documents of one root and once more for a second root`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a document outside the folders of the workspace > is given to no server of an app, whether the root is unknown or the path climbs out of its root`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > several servers of one language > join their answers the way VS Code joins them: the first declaring server defines, hovers join, a slow one is cancelled after 2 s`: `Error: Test timed out in 40000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > an app that stops acting while its server runs > has its server end, its diagnostics leave the document, its capabilities withdrawn and the page told the server is gone, when the app is disabled`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a server that exits on its own > is started again by a request after each exit, at most 4 times in 3 minutes, and then left failed until Restart`: `Error: Test timed out in 60000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a root app with a language server in a workspace of two roots > is given only the documents of its own root`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > the diagnostics of several servers of one document > show together with the name of each server as the source, and a clear of one leaves the other`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > the version a document is sent to a server of an app at > is above every version sent before for the file, after a close and an open again`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > a save of a file the page holds > is sent to the server of an app that declared save, with the text when it asked for it`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/languages.test.ts > an app that stops its own client > has its server asked shutdown and then exit, and the page told it is gone`: `Error: Test timed out in 30000ms.`
+- `tests/server/machine/apps/tools/tasks.test.ts > the tasks of an app over a private tmux server > runs a shell execution and a process execution in a terminal named after the command, and a custom execution in a stream terminal, and tells the host each exit code`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-apptask-3aRpj7/server.sock (File name too long)`
+- `tests/server/machine/apps/tools/tasks.test.ts > the tasks of an app over a private tmux server > runs a task again in the terminal that ended, after the host stopped and was started by the listing`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-apptask-3aRpj7/server.sock (File name too long)`
+- `tests/server/machine/apps/tools/tasks.test.ts > the tasks of an app over a private tmux server > resolves a typed commands.yml entry by the app that defines its type, and drops one whose type no app defines or whose required property is missing, each with a finding`: `Error: error connecting to /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O168/.agents/scratch/tmp/oculus-apptask-3aRpj7/server.sock (File name too long)`
+- `tests/server/machine/apps/tools/tasks.test.ts > the tasks of an app over a private tmux server > runs a task of the host with executeTask, which the host ends with terminate`: `Error: Test timed out in 90000ms.`
+
+## Program-made file changes
+
+- `npm run diagrams`: `docs/diagrams/{layer-data,layer-state,layer-views,layers,writes}.{dot,svg}` differ from the base (`git status --short docs/`).
+- `npm run docs:palette`: no file changed.
+- Every other change of this round was made with the Edit and Write tools.
+
+## Files with line counts (base / now)
+
+| File | Base | Now |
+|---|---|---|
+| `config/text/ui.yml` | 153 | 154 |
+| `config/text/views/sources/data.yml` | 133 | 139 |
+| `docs/apps.md` | 847 | 861 |
+| `docs/templates.md` | 1941 | 1941 |
+| `src/lib/data/helpers/finding-text.ts` | 47 | 185 |
+| `src/lib/shell/panes/strip/close-question.svelte.ts` | 139 | 139 |
+| `src/lib/state/shared/words/text.ts` | 120 | 155 |
+| `src/lib/state/sources/repositories/diff/diff-view.ts` | - | 216 |
+| `src/lib/state/sources/repositories/repositories.ts` | 888 | 682 |
+| `src/lib/state/system/machine/debug/launch-form.ts` | 193 | 193 |
+| `src/lib/state/system/machine/lsp/clangd/cpp-form.ts` | 186 | 186 |
+| `src/lib/state/workbench/navigation/pages.ts` | 755 | 755 |
+| `src/lib/ui/html.ts` | 804 | 828 |
+| `src/lib/views/sources/data/recover/RecoverPlan.svelte` | 178 | 175 |
+| `src/lib/views/sources/repositories/diff/Diff.svelte` | 520 | 518 |
+| `src/lib/views/sources/repositories/diff/DiffSection.svelte` | 520 | 520 |
+| `src/lib/views/system/help/keys/Keys.svelte` | 194 | 197 |
+| `src/lib/views/system/workbench/Catalogue.svelte` | 417 | 417 |
+| `src/lib/views/system/workbench/Settings.svelte` | 491 | 495 |
+| `tests/fixtures/hubs/deck-hub.ts` | 422 | 422 |
+| `tests/shell/panes/strip/app-editor-close.test.ts` | 177 | 177 |
+| `tests/shell/panes/strip/tab-menu.test.ts` | 228 | 228 |
+| `tests/state/workbench/navigation/pages.test.ts` | 240 | 240 |
+| `tests/ui/html.dom.test.ts` | 141 | 161 |
+
+Base is `git show HEAD:<file> | wc -l` (HEAD is the base commit `abebbb552`), now is `wc -l`; the counts include round 0's changes to the same files. `src/lib/shell/rail/UpdateTray.svelte` is unchanged (`git diff HEAD --stat` prints nothing for it).
