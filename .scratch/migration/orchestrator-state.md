@@ -50,7 +50,15 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O174
-  landing: preparing
+  base: abe602359
+  worktree: .agents/worktrees/migration-O174
+  executor: agent
+  worker: claude:opus
+  session_id: ad7049ea982f2311d (claude-opus-5-5)
+  launched: 2026-11-09
+  report: .scratch/migration/agents/reviews/O174-report.md
+  round: 0
+  landing: not-started
   brief_check: agents/reviews/O174-brief-check.md (adbccfd2456711e7e, claude-opus-5-5, 149974 tokens, 15 tool uses, 7.0 min)
 ```
 
