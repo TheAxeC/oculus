@@ -33,9 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a63b8b74ba892cc66 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O167-report.md
-  builder_usage: first run handed back before any code change (cases C1 to C19; nine premises): 298079 tokens, 100 tool uses, 14.4 min; build under the round-0 rulings: 258301 tokens, 856 tool uses, 118.1 min
-  reviewer_report: .scratch/migration/agents/reviews/O167-refuter.md (a05cffdf23941c5e1, claude-opus-5-5, 316753 tokens, 103 tool uses, 21.0 min)
-  round: 1 (.scratch/migration/agents/briefs/O167-round1.md; snapshot .agents/worktrees/migration-O167-round-1)
+  builder_usage: first run handed back before any code change (cases C1 to C19; nine premises): 298079 tokens, 100 tool uses, 14.4 min; build under the round-0 rulings: 258301 tokens, 856 tool uses, 118.1 min; repair round 1: 212101 tokens, 186 tool uses, 27.6 min
+  reviewer_report: .scratch/migration/agents/reviews/O167-refuter.md (a05cffdf23941c5e1, claude-opus-5-5, 316753 tokens, 103 tool uses, 21.0 min); over round 1: a992c66873d23d525, claude-opus-5-5, running
+  round: 1 (.scratch/migration/agents/briefs/O167-round1.md; snapshot .agents/worktrees/migration-O167-round-1; reported, usage under builder_usage)
   shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O169 of this plan; O167 writes lines 130-230 (the Save buttons and the "Saved into" line), O169 lines 55-70 (the scope list), disjoint hunks, so the cherry-pick merges them without a conflict
   landing: not-started
 - step: O151
