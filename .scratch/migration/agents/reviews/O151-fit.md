@@ -1,0 +1,97 @@
+# O151 measured fit
+
+O151 C9, measured on the 8796 scratch server (O151 oculus worktree with the right-column fix, hub worktree decks), Overview tiles, 1280 by 720. T<n>: Too tall mark, content n px past the frame; -0: fits.
+95 decks, 145 slides; 92 decks and 99 slides too tall; fits: Algebraic Subtyping, Asthma-Geo, Reference Intervals.
+
+- COVERT T356 -0
+- Algebraic Effects Compilation T362 -0
+- Algebraic Subtyping (MSc) T227 -0
+- BCI Connectivity (abstract) T260
+- Block-term NCA T53
+- BSA-ECoG T1040 T122
+- BT-FNO T391 -0
+- BT-Op-Theory T429 -0
+- BTD Autoencoder T25
+- BTTN T1269 T288
+- BTTR Coactivation T263 T36
+- BTTR Finger Decoding T353 -0
+- BTTR-AF T1046 -0
+- Cirrhosis iDT T81 -0
+- Cirrhosis-CR T1068 T79
+- Clin-HCCNet T452 T24
+- Concept-Bottleneck HCC T71
+- Conformal Tensor T51
+- Coordinated Fingers from HD-EEG (abstract) T174
+- ECG-AF (FAIR) T100
+- ECG-Repr T411 -0
+- ECoG Frequency Features T343 -0
+- EEG Info-Theoretic Connectivity (MSc) T241 -0
+- EEG-sAAD T322 -0
+- eLORETA Source Reduction T240 -0
+- Engram T186 -0
+- ERP Signatures T127
+- Eval Artifacts T25
+- Faithful BT Layer T234 -0
+- Faithful-Interp Position T82
+- FBTTR Strategies T304 -0
+- Fed Neural Operators T25
+- Fed-Faithful ECG T109 -0
+- Fed-Multicellular T496 -0
+- FedBTD T25
+- FedLink T139
+- FERMAT T381 -0
+- Finger Abduction T380 -0
+- Finger Trajectories (Volga abstract) T43
+- FL Duplication T57
+- FL Partitioning T113
+- FL Privacy Audit T26
+- FLKit T99
+- FLoRank Personalization T320
+- Flow-based Network IDS (BSc) T51 -0
+- Format Theory T52
+- HarmonOp T51
+- HCCNet T590 T247
+- HCCNet FL Sweden T51
+- HCCNet Pathology T100 -0
+- HCCNet-FL T467 -0
+- High-Gamma Event Detection (abstract) T277
+- Household Survival (abstract) T209
+- HTTP/2 Best Practices T147 -0
+- HTTP/2 Web Performance T127 -0
+- Jacobian-Coupled BT-DP T250 -0
+- LF-BTD T1089 -0
+- Linfoot Estimator T628 T31
+- LMP Gamma Modulation (abstract) T252
+- Loewner T295 -0
+- Math-Primitives T82 -0
+- Modality-Dropping BTF T167
+- Modality-Specific HCC Encoding (poster) T203 -0
+- Motor-Imagery Connectivity T278 -0
+- MS Big-Data Editorial T129
+- MS Lipid Handshake T155 -0
+- Multiway FM T78 -0
+- NeuroSDE T180
+- NN Connectivity T325 -0
+- Objects as Game Controllers (abstract) T157
+- Old Charges T78 -0
+- Paleo-Tensor T51
+- Pathology Tensor-MIL T315
+- PCD T314 -0
+- PFL-MS T465 -0
+- PhD Thesis T160 -0
+- Physics-Tensor HCC T183
+- Proprioception EEG T316
+- Protocol Agents T51
+- Quantum Tensor/FL T81
+- RAW-PLS T595 -0
+- Readable-FM-ECG T233 -0
+- Robust-XAI-ECG T147 -0
+- Row-Based Effects Core Language (abstract) T196
+- Row-Based Effects Core Language (poster) T109
+- Sandpile-Op T809 -0
+- Scoped Instructions T52
+- Serial-ECG AF T165
+- Sign-Language ECoG T397 -0
+- SSM Longitudinal T73
+- StrokeOp T25
+- XSub-ECoG T184
