@@ -2,18 +2,19 @@
     // Layer 3, view partial. One cluster's section of Live HPC, under the cluster's name: its head
     // (Head.svelte) with its status and its own refresh, what its connection resolves to (the
     // `hostname`, `user`, `port` and `identityfile` that `ssh -G` printed for the options the poll
-    // connects with), its capacity, queue, recent jobs, quota, Login node and one selected log.
-    // The refresh control is in the head while the poll answers, and is the retry of the error box
-    // while it fails; the box says which of the three failures it is, with the kind and the fix of
-    // the hub's `connections.failures` row that told it apart when one did, or, when the cluster
-    // answered for the queue and Slurm did not for a table, that the tables marked stale are older
-    // than the queue. While the queue is this poll's the queue's controls, the log and the Login
-    // node section stay live. While the queue is not this poll's, Capacity, Quota, Jobs and Recent
-    // are each drawn only when they hold kept rows or, for Capacity and Recent, when the payload
-    // names them in `stale`, so no empty queue is shown for a cluster that did not answer. A table
-    // the payload names in `stale` carries its mark in its heading, and with no rows it draws its
-    // heading and mark alone, whatever the status. Every press names this cluster, so a cancel or
-    // a log reaches the job on the cluster its row came from.
+    // connects with, or why `ssh -G` could not read it while no error box says the cause), its
+    // capacity, queue, recent jobs, quota, Login node and one selected log. The refresh control is
+    // in the head while the poll answers, and is the retry of the error box while it fails; the box
+    // says which of the three failures it is, with the kind and the fix of the hub's
+    // `connections.failures` row that told it apart when one did, or, when the cluster answered for
+    // the queue and Slurm did not for a table, that the tables marked stale are older than the
+    // queue. While the queue is this poll's the queue's controls, the log and the Login node
+    // section stay live. While the queue is not this poll's, Capacity, Quota, Jobs and Recent are
+    // each drawn only when they hold kept rows or, for Capacity and Recent, when the payload names
+    // them in `stale`, so no empty queue is shown for a cluster that did not answer. A table the
+    // payload names in `stale` carries its mark in its heading, and with no rows it draws its
+    // heading and mark alone, whatever the status. Every press names this cluster, so a cancel or a
+    // log reaches the job on the cluster its row came from.
     //
     // Both refresh controls carry the refresh glyph and turn while the HPC store's `refreshing`
     // says a press of this cluster's refresh waits for its answer, so a press in the head whose
@@ -82,11 +83,18 @@
             : t('hpc.unreachable_detail', sentence, hint);
     }
 
-    /** What the connection resolves to, in one line, or empty before `ssh -G` answered. */
+    /** Whether the poll's failure is drawn, in the error box. */
+    const failed = $derived(data.status !== 'starting' && data.status !== 'ok');
+
+    /**
+     * What the connection resolves to, in one line, or empty before `ssh -G` answered. A
+     * resolution that failed is not drawn while the error box is, since the box says the cause and
+     * a second line would say it again; one that succeeded is drawn whatever the poll answers.
+     */
     const resolution = $derived.by(() => {
         const read = data.resolution;
         if (read === undefined) return '';
-        if ('error' in read) return t('hpc.resolution_error', read.error);
+        if ('error' in read) return failed ? '' : t('hpc.resolution_error', read.error);
         const keys = read.identityfile.length === 0 ? t('hpc.none') : read.identityfile.join(', ');
         return t('hpc.resolution', read.hostname, read.user, read.port, keys);
     });
@@ -132,7 +140,7 @@
     {/if}
     {#if data.status === 'starting'}
         <Empty message={t('hpc.fetching')} />
-    {:else if data.status !== 'ok'}
+    {:else if failed}
         <Empty error message={failureMessage(data)}>
             {#snippet action()}
                 <ToolButton

@@ -196,6 +196,7 @@ text:
         submit_bad_cluster: 'The cluster folder of this project is not valid: {0}'
         submit_busy: A copy of this project's code to the cluster is already running.
         submit_changed: The files or the commands changed since the question was asked; press Submit Job again.
+        submit_cluster: Cluster
         submit_confirm: Submit
         submit_confirm_anyway: Submit Anyway
         submit_copy_failed: 'The copy failed: {0}'
@@ -216,7 +217,6 @@ text:
         submit_outside: This script is outside the folders oculus serves.
         submit_outside_code: This job script is not inside the code folder of its project.
         submit_pick: 'Pick the cluster to submit {0} to.'
-        submit_picked: '{0} (picked)'
         submit_planning: Preparing the job...
         submit_planning_on: 'Preparing the job on {0}...'
         submit_refused_on: 'Submit cannot run on {0}:'

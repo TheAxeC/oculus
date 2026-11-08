@@ -15,6 +15,7 @@
 // place or a task never takes a reading tab and never ends a reading.
 
 import type { AgentId, StartKind, TaskRef } from '../../../../data/model/index.ts';
+import { addressOfId, splitHubId } from '../../../../data/helpers/hub-names.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { TerminalAnswer } from '../pty/pty-io.ts';
 import {
@@ -231,11 +232,21 @@ export function createComposerOpening(host: OpeningHost) {
     return { composeIn, composeInTab, composeAt, taskOf, loadTask, dropTask };
 }
 
+/**
+ * The key of the collection a reference names, in the hub its id names: a card names the collection
+ * by its id in the snapshot, `<hub>:tasks`, and the focus ticker by the bare key `tasks`, and the
+ * two name one collection.
+ */
+function collectionKey(ref: TaskRef): string | undefined {
+    if (ref.collection === undefined) return undefined;
+    return splitHubId(ref.collection, [addressOfId(ref.id).hub]).id;
+}
+
 /** Whether two references name the same task line. */
 function sameTask(a: TaskRef, b: TaskRef): boolean {
     return (
         a.id === b.id &&
-        a.collection === b.collection &&
+        collectionKey(a) === collectionKey(b) &&
         a.subtask?.key === b.subtask?.key &&
         a.subtask?.do === b.subtask?.do
     );

@@ -82,6 +82,20 @@ export function silenceWords(error: unknown, text: () => Record<string, string>)
 }
 
 /**
+ * What a page may be told of a failed tmux call, as the name the catalogue's sentence quotes: the
+ * catalogue's words of `silenceWords` for a call tmux said nothing in, whose message is Node's
+ * account of the call and names every argument of it, else the first line of tmux's own sentence
+ * with its closing full stops taken off, since the sentence it is quoted in ends with its own.
+ */
+export function tmuxFailureWords(error: unknown, text: () => Record<string, string>): string {
+    const silence = silenceWords(error, text);
+    if (silence !== null) return silence;
+    const said = error instanceof Error ? error.message : String(error);
+    const [first = ''] = said.trim().split('\n');
+    return first.trim().replace(/\.+$/, '');
+}
+
+/**
  * Whether tmux's error says no server runs: an empty list once every read of a run says it (see
  * `#read` of channel.ts), and a failed read until then.
  */
@@ -95,8 +109,10 @@ export function noServer(said: string): boolean {
 /**
  * One tmux command. The arguments are a list, so nothing here is ever parsed by a shell, and the
  * timeout is what stops a hung tmux from hanging a watcher. A non-zero exit rejects with tmux's own
- * stderr, which is what the terminal endpoint reports back to the page; a call killed at its
- * timeout, or one that failed with nothing on stderr, rejects as a TmuxSilence.
+ * stderr, whose first line the terminal endpoint quotes inside the catalogue's sentence for a
+ * terminal that did not start (`tmuxFailureWords`); a call killed at its timeout, or one that
+ * failed with nothing on stderr, rejects as a TmuxSilence, which the page is told in the
+ * catalogue's words.
  */
 export function run(
     args: string[],

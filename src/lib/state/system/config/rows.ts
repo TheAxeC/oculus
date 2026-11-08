@@ -47,6 +47,7 @@ import type {
     Control,
     FieldSpec
 } from '../../../data/sources/config/catalog/options.ts';
+import { titleOf, wordOf } from '../../shared/words/key-titles.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
 import { LOCAL_NAME, LOCAL_PATH } from './config-files.ts';
@@ -207,22 +208,6 @@ export function writtenWhole(control: ConfigRow['control']): boolean {
         control === 'words' ||
         control === 'family'
     );
-}
-
-/** One word of a key path as a title: underscores read as spaces, the first letter capital. */
-function wordOf(segment: string): string {
-    const spaced = segment.replaceAll('_', ' ');
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-/**
- * The title of a key path: the segments before the last joined by ` > `, then `: `, then the last,
- * and a one-segment key its name alone.
- */
-export function titleOf(path: string): string {
-    const segments = path.split('.').map(wordOf);
-    const last = segments.pop() ?? '';
-    return segments.length === 0 ? last : `${segments.join(' > ')}: ${last}`;
 }
 
 /** The heading an option is shown under: its `section:`, else its first segment as a title. */

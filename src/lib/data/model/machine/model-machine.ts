@@ -303,8 +303,12 @@ type JobSource = CommandSource | 'latex' | 'website';
 /**
  * The words a request to /api/terminal is refused with. The server answers a refusal as one of
  * them, with the names it is about in `names` where a sentence needs them, and the page says the
- * sentence the catalog holds for it (state/shared/answers/terminal-words.ts); an engine's own text
- * (tmux's, a validator's) never reaches the page.
+ * one sentence the catalog holds for the word, filled with those names
+ * (state/shared/answers/terminal-words.ts). A `terminal-not-started` that a failed tmux call
+ * raised carries the first line of tmux's own error as its one name, which the sentence gives as
+ * the cause, or the catalog's words for a call tmux said nothing in, so Node's account of the
+ * call, which lists its arguments, never reaches the page; one raised by any other check, or by a
+ * tmux failure that left no words at all, carries no name.
  */
 export const TERMINAL_REFUSALS = [
     'not-ours',

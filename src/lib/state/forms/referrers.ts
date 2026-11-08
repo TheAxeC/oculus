@@ -17,6 +17,7 @@
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { addressOfId, bareId, holdersOf, hubId, resolvedId } from '../../data/helpers/hub-names.ts';
 import type { Project, Snapshot } from '../../data/model/index.ts';
+import { titleOf } from '../shared/words/key-titles.ts';
 
 /** The settings of behavior.yml that name a resource. */
 const RESOURCE_SETTINGS: { key: string; field: string }[] = [{ key: 'slurm', field: 'resource' }];
@@ -26,6 +27,11 @@ export type Referrer = {
     kind: 'project' | 'person' | 'funding' | 'setting';
     /** The project, person or funding scheme id, or the dotted setting. */
     id: string;
+    /**
+     * The words it is named by: a project's short name or title, a person's name, a scheme's
+     * title, and a setting's title as the Settings view heads its row (`titleOf`), so a reader
+     * finds the row by the words the question used.
+     */
     label: string;
 };
 
@@ -119,7 +125,7 @@ export function referrersOf(
     ).map((one): Referrer => ({
         kind: 'setting',
         id: `${one.key}.${one.field}`,
-        label: `${one.key}.${one.field}`
+        label: titleOf(`${one.key}.${one.field}`)
     }));
     return [...projectsWhere(snapshot, (p) => p.resourceIds.includes(id)), ...settings];
 }

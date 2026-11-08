@@ -155,11 +155,20 @@ export async function readState(
 // ---------------------------------------------------------------- a failed fetch
 
 /**
+ * A sentence out of a line: the line as it is when it ends with a full stop, else with one added.
+ */
+function sentenceOf(line: string): string {
+    return line.endsWith('.') ? line : `${line}.`;
+}
+
+/**
  * A failed fetch out of the error output git and ssh wrote: the line the first row of the hub's
  * `connections.failures` whose `for` holds `git` matches, with that row's kind and fix, else
  * `reason`, the line git's own failure is said by everywhere else (its last `fatal: ` line, or the
  * sentence of a fetch that ran out of time). Rows are tried in their order, as `toldFailure` tries
- * them.
+ * them. With no row matching, the last line ssh wrote (one that begins `ssh: `), which names the
+ * cause git's line does not, comes first as a sentence of its own, cut as `reason` is, and `reason`
+ * after it; a `reason` that is that same line is not said twice.
  */
 export function fetchFailureOf(
     output: string,
@@ -182,7 +191,11 @@ export function fetchFailureOf(
             at: time
         };
     }
-    return { line: reason, at: time };
+    const ssh = lines.findLast((one) => one.startsWith('ssh: '));
+    if (ssh === undefined) return { line: reason, at: time };
+    const cause = short(ssh);
+    const said = reason === '' || reason === cause ? [] : [reason];
+    return { line: [sentenceOf(cause), ...said].join(' '), at: time };
 }
 
 /**

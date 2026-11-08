@@ -12,7 +12,8 @@ import { isEqual } from 'lodash-es';
 import { appSettingValues, readSettings } from '../../../../data/helpers/files/apps/settings.ts';
 import type { AppRow, AppSetting } from '../../../../data/model/index.ts';
 import type { CatalogEntry, Control } from '../../../../data/sources/config/catalog/options.ts';
-import { titleOf, type RowBase } from '../rows.ts';
+import { titleOf } from '../../../shared/words/key-titles.ts';
+import type { RowBase } from '../rows.ts';
 
 /** What is wrong with a value for an app's setting, for the control that holds it. */
 export { settingFlaw } from '../../../../data/helpers/files/apps/settings.ts';

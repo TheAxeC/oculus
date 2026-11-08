@@ -46,13 +46,13 @@ text:
         hint_overrun: Slurm answered, and the rest of the poll ran past its time limit
         hint_slurm_late: no answer within the time limit
         hint_ssh_exited: ssh exited {0}
-        host_none: the cluster {0} has no host
-        host_no_cluster: the settings of this hub name no cluster (slurm.resource in .oculus/config.yml)
-        host_not_cluster: '{0} is not a cluster'
-        host_not_read: the resources registry is not read yet
-        host_not_listed: '{0} is not a cluster of slurm.resource in .oculus/config.yml'
-        host_unknown: '{0} names no resource'
-        host_unusable: the host of the cluster {0} is not a usable ssh alias, DNS name or address
+        host_none: The cluster {0} has no host.
+        host_no_cluster: The settings of this hub name no cluster (slurm.resource in .oculus/config.yml).
+        host_not_cluster: '{0} is not a cluster.'
+        host_not_read: The resources registry is not read yet.
+        host_not_listed: '{0} is not a cluster of slurm.resource in .oculus/config.yml.'
+        host_unknown: '{0} names no resource.'
+        host_unusable: The host of the cluster {0} is not a usable ssh alias, DNS name or address.
         host_changed: The host's key is not the one shown. Read it again and compare its fingerprints.
         host_scan_failed: "The host's key could not be read: {0}"
         key_exists: '{0} is there already and is used as it is.'

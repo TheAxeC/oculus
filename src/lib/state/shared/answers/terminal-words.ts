@@ -1,7 +1,8 @@
 // Layer 2, client state. The sentences the catalog holds for the words POST /api/terminal refuses
 // with (data/model/machine/model-machine.ts TERMINAL_REFUSALS). The server answers a word and the
-// names its sentence is about, so no text of tmux, of a validator or of the server's English
-// reaches the reader; answers.ts says these after the file and LaTeX words.
+// names its sentence is about, so no text of a validator or of the server's English reaches the
+// reader, and tmux's only as the cause a terminal that did not start names, quoted inside the
+// catalogue's sentence; answers.ts says these after the file and LaTeX words.
 
 import { TERMINAL_REFUSALS, type TerminalRefusal } from '../../../data/model/index.ts';
 import { t as catalogText } from '../words/text.ts';
@@ -32,7 +33,9 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
         case 'terminal-failed':
             return catalogText('sessions.refused_terminal_failed');
         case 'terminal-not-started':
-            return catalogText('sessions.refused_terminal_not_started');
+            return first === ''
+                ? catalogText('sessions.refused_terminal_not_started')
+                : catalogText('sessions.refused_terminal_not_started_cause', first);
         case 'not-a-task':
             return catalogText('sessions.refused_not_a_task');
         case 'still-running':

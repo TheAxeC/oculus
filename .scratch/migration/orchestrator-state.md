@@ -33,23 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a63b8b74ba892cc66 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O167-report.md
-  builder_usage: first run handed back before any code change (cases C1 to C19; nine premises): 298079 tokens, 100 tool uses, 14.4 min
+  builder_usage: first run handed back before any code change (cases C1 to C19; nine premises): 298079 tokens, 100 tool uses, 14.4 min; build under the round-0 rulings: 258301 tokens, 856 tool uses, 118.1 min
   round: 0
   shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O169 of this plan; O167 writes lines 130-230 (the Save buttons and the "Saved into" line), O169 lines 55-70 (the scope list), disjoint hunks, so the cherry-pick merges them without a conflict
-  landing: not-started
-- step: O169
-  brief_check: .scratch/migration/agents/reviews/O169-brief-check.md (a606a2ddc903c57e5, claude-opus-5-5, 219750 tokens, 87 tool uses, 10.5 min)
-  base: 32585f1f1
-  worktree: .agents/worktrees/migration-O169
-  executor: agent
-  worker: claude:opus
-  session_id: a7454e5b279e2a62f (claude-opus-5-5)
-  launched: 2026-11-07
-  report: .scratch/migration/agents/reviews/O169-report.md
-  builder_usage: first run: 350498 tokens, 229 tool uses, 45.2 min
-  reviewer_report: .scratch/migration/agents/reviews/O169-refuter.md (ae4637ee51aa87981, claude-opus-5-5, 247221 tokens, 84 tool uses, 14.9 min)
-  round: 1
-  shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O167 of this plan; O169 writes lines 55-70, O167 lines 130-230, disjoint hunks, so the cherry-pick merges them without a conflict
   landing: not-started
 - step: O151
   brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a423faa7257a10eea, claude-opus-5-5, 217403 tokens, 73 tool uses, 12.6 min)
@@ -882,6 +868,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-08 (O169 landed). O169, connections and their failures said in full, landed (booking in `plan.md` under O169, `agents/reviews/O169-landing.md`) with the review over round 1's two comment findings fixed at landing; main's staged diff equals the gate's under `cmp`; the gate's two red rows, in files outside the step, pass alone. Four flaws the look found outside the brief are folded into O168 (its "Widened 2026-11-08" line, Z468). Open items: none. In flight (2 of 6): O167 (report in, its review next), O151 (building under its round-0 rulings). Next: /spec O168, its brief from the draft and closures kept in the session's scratchpad (`O168-brief-draft.md`, `O168-closures.md`) with the widened line added; /refute O167.
 - 2026-11-07 (O151 deleted a third time; O167 and O169 building; O168 in /spec). On Axel's word every file and record of O151 is deleted (`plan.md` Rulings, "O151 deleted a third time"); the hub's `present/` folders are at hub HEAD. O167 builds under its round-0 rulings (`agents/briefs/O167-cases.md`), O169 builds, O168's /spec checks premises. Open items: none. In flight (3 of 6). Next: /spec O151 from 0, its decks in a worktree of the hub; O168's brief; /spec O170.
 - 2026-11-07 (O165 landed). O165, the guides redesigned, landed on Axel's approval (booking in `plan.md`, `agents/reviews/O165-landing.md`): Help, the Data map and the Decks guide rewritten, with the review over round 1 closed at landing. Axel: "Once 165 is landed, please start on the queued steps"; O151, O167, O168, O169 and O170 are prepared next through /spec, in that order. Open items: none. In flight (0 of 6).
 - 2026-11-07 (looks O49 to O166 taken; flaws booked as O167 to O170). Every look of O49 to O166 that the browser can take was taken on a copy server on 8797 over a full copy of the home folder's hubs (`agents/reviews/owed-looks.md`, Taken); the flaws found are steps O167 to O170 in `plan.md` (ruling Look flaws). Not taken: the PDF file (the print dialog), O149 ruling 9, O152 C11, O155's order before, O161's real Cmd+F, O158's 400 px frame. The copy's workspace file names the real repository by absolute path under `status_bar.repository`, so the copy's status-bar git controls act on the real repository; none was pressed. Nothing is dispatched: O151 waits on Axel's go, O165 on his approval, O167 to O170 on his go. Open items: none. In flight (1 of 6): O165.

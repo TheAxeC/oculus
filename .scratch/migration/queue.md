@@ -1,15 +1,15 @@
-In flight (3 of 6 slots in use):
-- O167 (the shell's controls hold one behaviour): building, round-0 rulings sent.
-- O169 (connections and their failures said in full): review in, repair round 1 sent.
+In flight (2 of 6 slots in use):
+- O167 (the shell's controls hold one behaviour): report in, its review next.
 - O151 (a deck for every research project): building, round-0 rulings sent, in its oculus worktree and its hub worktree.
 
 Queued, in order (2 steps):
-- O168 (the boards and record lists drawn whole): waits for O169's landing, whose helper file it reuses; its brief check is done, /spec again then.
+- O168 (the boards and record lists drawn whole): next, /spec again now that O169 has landed, with the four flaws of O169's look folded in (its "Widened 2026-11-08" line in `plan.md`); its brief check is done.
 - O170 (Literature and Present said and drawn plainly): waits for O167's landing, since O167 writes the Present toolbar, the presenter screen and the Present view that O170 changes; its brief check is done, /spec again then.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
 Landed, newest first:
+- O169 (connections and their failures said in full), 2026-11-08, the commit "Land O169".
 - O165 (the guides redesigned), 2026-11-07, 3fe97e21a.
 - O161 (cheaper cards), 2026-11-07, ccabf01ef.
 - O166 (the record pages made one design), 2026-11-07, 6038e7fdc.

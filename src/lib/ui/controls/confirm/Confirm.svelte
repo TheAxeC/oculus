@@ -14,13 +14,20 @@
     // confirm hands to `onconfirm`, further buttons (`others`) between Cancel and the confirm, each
     // handing its place in the list to `onother`, and one button before Cancel (`discard`), the
     // answer that goes ahead without what the confirm keeps, as Don't Save is in a close question
-    // over unsaved text, whose confirm is Save. A confirm that cannot succeed is drawn disabled
-    // (`refused`), with the caller's words for why as the detail, and the keyboard then starts on
-    // Cancel. Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes
-    // the keyboard again when its tab shows; the keyboard comes back to the control it was raised
-    // from when it goes, as the ground says.
+    // over unsaved text, whose confirm is Save. A caller that asks for one choice among several
+    // before the confirm gives a pick (`pick`), an optional snippet drawn above the buttons, which
+    // the caller fills with ui/forms/choice/Select.svelte, so the choices are the options of one
+    // select; the caller fills it because ui/forms sits above this folder in the import order. With
+    // `focus` set to `pick`, the keyboard starts on the first control of the pick. A confirm that
+    // cannot succeed is drawn disabled (`refused`), with the caller's words for why as the detail,
+    // and the keyboard then starts on Cancel unless it starts on the pick. Drawn in a tab, it stays
+    // in that tab, and one left open in a tab the pane hides takes the keyboard again when its tab
+    // shows; the keyboard comes back to the control it was raised from when it goes, as the ground
+    // says.
 
+    import type { Snippet } from 'svelte';
     import Modal from '../../frame/Modal.svelte';
+    import { focusFirstQuietly } from '../../frame/quiet-focus';
 
     type Props = {
         /** What is about to happen, in the caller's own words, already translated. */
@@ -48,10 +55,15 @@
         detail?: string;
         /** Where the dialog stands, as ui/frame/Modal.svelte takes it; `dialog` unless given. */
         level?: 'dialog' | 'tray' | 'palette' | 'sheet';
-        /** The control that holds the keyboard when the dialog opens; the confirm unless given. */
-        focus?: 'confirm' | 'cancel';
+        /**
+         * The control that holds the keyboard when the dialog opens: the confirm unless given,
+         * Cancel, or the first control of `pick`.
+         */
+        focus?: 'confirm' | 'cancel' | 'pick';
         /** Draw the confirm disabled, for an answer that cannot succeed now. */
         refused?: boolean;
+        /** The caller's pick, drawn above the buttons; none draws none. */
+        pick?: Snippet;
     };
 
     let {
@@ -68,20 +80,26 @@
         option = '',
         level = 'dialog',
         focus = 'confirm',
-        refused = false
+        refused = false,
+        pick
     }: Props = $props();
 
     let yes: HTMLButtonElement | undefined = $state();
     let no: HTMLButtonElement | undefined = $state();
+    let held: HTMLDivElement | undefined = $state();
     let checked = $state(false);
+
+    /** Put the keyboard where `focus` asks: the pick's first control, Cancel or the confirm. */
+    function opened(): void {
+        if (focus === 'pick' && held !== undefined) {
+            focusFirstQuietly(held);
+            return;
+        }
+        (focus === 'cancel' || refused ? no : yes)?.focus();
+    }
 </script>
 
-<Modal
-    alert
-    {level}
-    onclose={oncancel}
-    onopen={() => (focus === 'cancel' || refused ? no : yes)?.focus()}
->
+<Modal alert {level} onclose={oncancel} onopen={opened}>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={message}>
             <p class="message">{message}</p>
@@ -90,6 +108,11 @@
             {/if}
             {#if option !== ''}
                 <label class="option"><input type="checkbox" bind:checked />{option}</label>
+            {/if}
+            {#if pick !== undefined}
+                <div class="pick" bind:this={held}>
+                    {@render pick()}
+                </div>
             {/if}
             <div class="row">
                 {#if discard !== ''}
@@ -157,6 +180,10 @@
         align-items: center;
         gap: 6px;
         font-size: var(--fs-sm);
+    }
+
+    .pick {
+        display: flex;
     }
 
     .row {

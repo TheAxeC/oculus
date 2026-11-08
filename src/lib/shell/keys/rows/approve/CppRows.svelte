@@ -7,7 +7,9 @@
     // (state/system/machine/lsp/clangd/cpp-form.ts); Delete asks first. A write that the server
     // refuses is said in the palette, which stays open and lists the file as it is after the write.
     // When the configuration in force is written, it is chosen again under its name, so clangd
-    // restarts on what the file now says.
+    // restarts on what the file now says. The file is read and written under the absolute folder
+    // of the tab's served root (`cppRepo`); a root whose folder does not exist sends nothing and is
+    // said in the palette.
 
     import { onMount } from 'svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
@@ -18,6 +20,7 @@
         cppChanges,
         cppFields,
         cppName,
+        cppRepo,
         readCppFile,
         writeCppEntry,
         type CppField,
@@ -27,7 +30,11 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
-    const { lsp, writes } = useState();
+    const {
+        lsp,
+        writes,
+        fs: { roots }
+    } = useState();
 
     type Props = {
         /** The tab's root and the language its server serves. */
@@ -46,8 +53,17 @@
     /** The form or the question on screen, or null. */
     let asking = $state<PromptRequest | null>(null);
 
+    /** The absolute folder of the tab's root, or null after saying that it does not exist. */
+    function repo(): string | null {
+        const folder = cppRepo(roots(), served.root);
+        if (folder === null) onsaid(t('app.palette.cpp_no_folder', served.root));
+        return folder;
+    }
+
     async function read(): Promise<void> {
-        const answer = await readCppFile(served.root);
+        const folder = repo();
+        if (folder === null) return;
+        const answer = await readCppFile(folder);
         if ('error' in answer) onsaid(answer.error);
         else file = answer;
     }
@@ -77,7 +93,9 @@
         entry: unknown,
         changes: Record<string, unknown> | null
     ): Promise<void> {
-        const refused = await writeCppEntry(writes, served.root, at, entry, changes);
+        const folder = repo();
+        if (folder === null) return;
+        const refused = await writeCppEntry(writes, folder, at, entry, changes);
         if (refused !== null) {
             onsaid(refused);
             return;

@@ -17,8 +17,9 @@
 // processes writing one transcript is what the rule against signalling exists to prevent.
 //
 // A refusal travels as one word of TERMINAL_REFUSALS (pty/refusal.ts), so the endpoint holds no
-// English and no text of tmux or of a validator reaches the page, which says the sentence the
-// catalog holds for the word (state/shared/answers/terminal-words.ts).
+// English and the page says the sentence the catalog holds for the word
+// (state/shared/answers/terminal-words.ts). No text of a validator reaches the page, and of tmux
+// only the first line of its failure to start a terminal, quoted inside the catalogue's sentence.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
@@ -77,11 +78,16 @@ import {
     type RunOptions,
     type StartOptions
 } from './sessions.ts';
-import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
+import { TmuxFailed, TerminalRefused, heldRefusal, refusal, refusalFor } from './refusal.ts';
 import { namedHub, startUpdateTask } from '../runs/schedules/task.ts';
-import { run } from './tmux.ts';
+import { run, tmuxFailureWords } from './tmux.ts';
 import type { Turns } from './latex/turns.ts';
-import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
+import type {
+    SessionRecord,
+    Terminal,
+    TerminalKind,
+    TerminalResume
+} from '../../../data/model/index.ts';
 import { taskRefOf } from '../../../data/shapes/shapes.ts';
 
 /** The name of a start request: text, and anything else starts the terminal with no name. */
@@ -137,11 +143,14 @@ const NO_STORE = { 'cache-control': 'no-store' };
 
 /**
  * The options with a runner that turns a failed tmux call into TmuxFailed, so the catch of
- * handleTerminal can tell tmux's own failure, whose text never reaches the page, from a refusal a
- * check made.
+ * handleTerminal can tell tmux's own failure from a refusal a check made. The TmuxFailed carries
+ * what the page may be told of it (tmux.ts `tmuxFailureWords`): tmux's first line, quoted only
+ * inside the catalogue's sentence for a terminal that did not start, or the catalogue's words for a
+ * call tmux said nothing in, so no argument of the call reaches the page.
  */
 function wrapped(options: TerminalOptions): TerminalOptions {
     const inner = options.run ?? run;
+    const text = () => textCatalog(options.configFor());
     return {
         ...options,
         rootsFor: options.rootsFor ?? (() => repositoryRoots(options.openFor())),
@@ -150,7 +159,8 @@ function wrapped(options: TerminalOptions): TerminalOptions {
                 return await inner(args, tmux);
             } catch (error) {
                 if (error instanceof TerminalRefused) throw error;
-                throw new TmuxFailed(error instanceof Error ? error.message : String(error));
+                const message = error instanceof Error ? error.message : String(error);
+                throw new TmuxFailed(message, tmuxFailureWords(error, text));
             }
         }
     };
@@ -267,11 +277,14 @@ async function forkSession(
 /**
  * Start the session the composer asked for. The argv is built from config/catalogs/agents.yml, the
  * account from local.yml and the prompt from the request, and tmux runs it directly; a shell's
- * prompt is its first command, typed into it once it has started.
+ * prompt is its first command, typed into it once it has started. A failed tmux call while that
+ * prompt is typed is a failure of a terminal that did start, so it answers as a steer of it does
+ * (`heldRefusal`, over the terminals `list` reads), never as a terminal that did not start.
  */
 async function composeSession(
     message: Record<string, unknown>,
-    options: TerminalOptions
+    options: TerminalOptions,
+    list: () => Promise<Terminal[]>
 ): Promise<Response> {
     const request = composeRequest(message);
     const local = options.localFor();
@@ -309,8 +322,14 @@ async function composeSession(
         },
         composed.argv === null ? options : { ...options, argv: composed.argv }
     );
-    if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);
-    options.refresh?.();
+    try {
+        if (composed.keys.trim() !== '') await steerTerminal(id, composed.keys, options);
+    } catch (error) {
+        if (error instanceof TmuxFailed) return await heldRefusal(id, list);
+        throw error;
+    } finally {
+        options.refresh?.();
+    }
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
@@ -457,7 +476,7 @@ export async function handleTerminal(
             return json({ ok: true, terminal }, { headers: NO_STORE });
         }
         if (message.action === 'compose') {
-            return await composeSession(message, options);
+            return await composeSession(message, options, () => listTerminals(plain));
         }
         if (message.action === 'seed') return seedTask(message, options);
         if (message.action === 'approve-seed') return approveSeedTask(message, options);
@@ -513,7 +532,7 @@ export async function handleTerminal(
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
     } catch (error) {
-        return refusalFor(error, message.id, () => listTerminals(plain));
+        return refusalFor(error, message.id, message.action, () => listTerminals(plain));
     }
     return refusal('not-an-action');
 }

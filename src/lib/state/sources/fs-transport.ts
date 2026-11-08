@@ -9,6 +9,7 @@ import type { OpsRefusal } from '../../data/file-ops.ts';
 import { localFileShape, type LocalFile } from '../../data/shapes/config-save.ts';
 import type { Entry, HubNotes, NoteEntry } from '../../data/model/index.ts';
 import { OCULUS_CONFIG_ROOT, fileBytesUrl, figureUrl } from '../../data/helpers/files/address.ts';
+import type { FolderMarks } from '../../data/helpers/hub-names.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
@@ -221,17 +222,23 @@ export { fileBytesUrl, figureUrl };
 export type { LocalFile };
 
 /**
- * What a folder holds that the make controls are offered by, as the endpoint sent it; a value that
- * is no such map is read as none.
+ * What a folder holds that the make controls are offered by, as the endpoint sent it, every mark
+ * of FolderMarks (data/helpers/hub-names.ts), so the mark `git` reaches the Settings view's
+ * Repository scope (state/system/config/scopes/scope.ts `reposOf`) and a workspace folder's make
+ * offer reads the marks the server's does; a value that is no such map is read as none.
  */
 const marksShape = z
     .object({
         hub: z.literal(true).optional(),
         project: z.literal(true).optional(),
-        home: z.literal(true).optional()
+        home: z.literal(true).optional(),
+        state: z.literal(true).optional(),
+        git: z.literal(true).optional(),
+        inGit: z.literal(true).optional(),
+        configured: z.literal(true).optional()
     })
     .optional()
-    .catch(undefined);
+    .catch(undefined) satisfies z.ZodType<FolderMarks | undefined>;
 
 /** One folder of a workspace, answered as the endpoint sent it, and the key it is held under. */
 const folderShape = z

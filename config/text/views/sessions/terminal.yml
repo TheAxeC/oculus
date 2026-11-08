@@ -73,6 +73,7 @@ text:
         refused_terminal_ended: The terminal has ended.
         refused_terminal_failed: The terminal could not do that.
         refused_terminal_not_started: The terminal did not start.
+        refused_terminal_not_started_cause: 'The terminal did not start: {0}.'
         stop_terminal: Stop this terminal
         terminal_glyph: terminal
         terminal_larger: Larger terminal text

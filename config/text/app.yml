@@ -91,6 +91,7 @@ text:
             cpp_detail: 'A list holds its parts split by {0}. A field left empty is taken out of the configuration.'
             cpp_edit: 'Edit Configuration {0}'
             cpp_edit_title: 'Edit the configuration {0} of .oculus/cpp.yml'
+            cpp_no_folder: 'The folder of {0} does not exist.'
             cpp_save: Save
             cpp_tags: 'parts, split by {0}'
             cpp_unnamed: 'configuration {0}'

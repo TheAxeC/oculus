@@ -40,8 +40,11 @@ export type SeedFacts = { seed: string; cwd: string; name: string };
 
 /**
  * The facts a reference names, or the refusal word thrown as a TerminalRefused. The reference names
- * its record by the id `<hub>:<key>` and its collection by the collection's key, so the hub is the
- * one the id names; an id that names no hub of the workspace names no task.
+ * its record by the id `<hub>:<key>`, so the hub is the one the id names; an id that names no hub
+ * of the workspace names no task. Its collection is named by the collection's key in that hub, bare
+ * (`tasks`, as the focus ticker sends it) or with the hub's name before it (`<hub>:tasks`, the
+ * collection's id in the snapshot, as a card sends it), and the hub's files are read by the bare
+ * key either way.
  */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
     const hubs = hubTargets(source.open, source.settings);
@@ -52,7 +55,16 @@ export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
     const home = owner?.hub ?? (own ? source.open.primaryDir : null);
     if (home === null) throw new TerminalRefused('task-unknown');
     const config = owner?.config ?? primaryConfig(source.merged, source.open, source.settings);
-    const answer = taskSeed({ ...ref, id: named.id }, home, config, textCatalog(source.merged));
+    const bare =
+        ref.collection === undefined
+            ? {}
+            : { collection: splitHubId(ref.collection, [named.root]).id };
+    const answer = taskSeed(
+        { ...ref, id: named.id, ...bare },
+        home,
+        config,
+        textCatalog(source.merged)
+    );
     if (!answer.ok) throw new TerminalRefused(answer.word);
     return { seed: answer.seed, cwd: answer.cwd, name: answer.name };
 }

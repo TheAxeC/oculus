@@ -2,7 +2,9 @@
 // the compile database list opens: its fields are those `config/schemas/cpp-schema.yml` gives a
 // configuration, read from GET /api/cpp with the entries the file holds, and its answers are made
 // into what POST /api/cpp writes (server/machine/lsp/adapters/clangd/cpp-write.ts): a new
-// configuration, or the changes to an entry of the file.
+// configuration, or the changes to an entry of the file. Both name the repository by its absolute
+// folder, the served root's folder the tab's root key names (`cppRepo`), since the server refuses
+// any other name for it.
 //
 // A `text` field is a typed line and a `tags` field a list of parts split by commas; a field of
 // another type, and a `tags` field whose list holds a part its line would not read back as (a part
@@ -18,6 +20,7 @@ import { readAs, readJson } from '../../../../../data/shapes/shapes.ts';
 import { unreachableAnswer, unreadableAnswer } from '../../../../shared/answers/answers.ts';
 import { postForRefusal } from '../../../../shared/answers/posted.ts';
 import type { TokenSource } from '../../../../shared/stores/token-post.ts';
+import type { FsRoot } from '../../../../sources/explorer/view/place.ts';
 
 /** What separates the parts of a `tags` field. */
 export const PARTS = ',';
@@ -135,6 +138,21 @@ const fileShape = z.object({
 });
 
 const answerShape = z.object({ error: z.string().optional(), line: z.number().optional() });
+
+/**
+ * The absolute folder GET and POST /api/cpp name the repository of the served root `key` by, which
+ * the tab carries as the root's key: the root's real folder (every link resolved), else its folder
+ * as the server answered it, `~` already expanded. Null for a root the list does not hold and for
+ * one whose folder does not exist (`real` empty), for which nothing is sent.
+ */
+export function cppRepo(
+    roots: readonly Pick<FsRoot, 'key' | 'dir' | 'real'>[],
+    key: string
+): string | null {
+    const root = roots.find((one) => one.key === key);
+    if (root === undefined || root.real === '') return null;
+    return root.real ?? root.dir;
+}
 
 /** The form of the repository's file, or the sentence of why it could not be read. */
 export async function readCppFile(repo: string): Promise<CppFile | { error: string }> {

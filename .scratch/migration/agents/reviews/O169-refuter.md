@@ -212,27 +212,76 @@ none
 
 Reviewer usage: ae4637ee51aa87981, claude-opus-5-5, 247221 tokens, 84 tool uses, 14.9 min.
 
-## Repair round <n>, refuted (one section per run after a round, when the configuration block says refute_after_repair: yes)
+## Repair round 1, refuted
 
 ```
-<each verification command rerun over the repaired tree, and its summary line, verbatim>
-<each command the round's report quotes as evidence, and what it printed>
+$ pgrep -fl 'vitest|svelte-check'   (before the first run: O167's verify list was running, so the related files ran alone first)
+$ prettier --check over the 28 changed non-diagram files
+All matched files use Prettier code style!
+$ eslint --no-warn-ignored over the changed src files
+eslint exit 0
+$ npx vitest run tests/checks/source tests/checks/tree tests/checks/imports tests/checks/diagrams --testTimeout 0 --hookTimeout 0 --reporter=dot
+ Test Files  14 passed (14)
+      Tests  155 passed (155)
+$ pgrep -fl 'vitest|svelte-check' | wc -l   (later)
+       0
+$ npm run diagrams
+diagrams exit 0   (md5 of docs/diagrams/* before and after: 485fe5fbc53aaf6d352bc9a879d12e98 both)
+$ TMPDIR=<scratchpad> npm run test:quick -- --base 32585f1f1
+ok      prettier, ASCII gate, svelte-kit sync, eslint
+ok      svelte-check (13.0 s): 589 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (139.0 s)
+ok      vitest checks (156.7 s)
+FAILED  vitest slow (400.6 s)
+ Test Files  6 failed | 41 passed (47)
+      Tests  15 failed | 406 passed | 246 skipped (667)
+(every failure comes from the scratchpad TMPDIR the review must use, in files the step does not change: agent-pane, pane-screen, sessions, apps/tools/tasks, terminals-tmux, "error connecting to <scratchpad>/.../server.sock (File name too long)" or the time limits behind it; tests/routes/edit/roots.test.ts, the scratchpad path holds the word "claude". The builder's time-limit failures in website-files, zenodo and hub-portfolio did not come back.)
+Verify 2: the ASCII gate over the 31 changed paths plus the report: ascii exit 0 (printed nothing)
+Verify 3: npx vitest run tests/routes/sessions/terminal-actions.test.ts: Tests 38 passed (38)
+Verify 4: sh utils/unused-exports.sh against .agents/worktrees/O169-base/unused-exports.txt: diff exit 0 (no line added)
+$ node utils/outside-paths.mjs .scratch/migration/agents/briefs/O169.md 32585f1f1
+.scratch/migration/agents/briefs/O169-round1.md, the eight docs/diagrams layer files, src/lib/data/model/machine/model-machine.ts, src/lib/state/shared/words/key-titles.ts, src/lib/state/system/config/other-rows/app-rows.ts, src/lib/state/system/config/rows.ts, src/lib/views/sources/source/actions/submit-job.svelte.ts
+(the round file is the orchestrator's; the diagrams are the brief's glob entry; the four src files are on the round's list; key-titles.ts is ruling 1's departure)
+$ sh utils/folder-check.sh: exit 0; ls src/lib/data/helpers | wc -l: 10; src/lib/state/shared/words: 10 items, 9 at the base
+Commands the round's report quotes, rerun: the layer-state.dot grep, the titleOf/wordOf grep over docs and README, the ServedFolder grep and the "and not as" grep each exit 1; the eleven files' line counts equal the report's table; the six case-run sources compare equal to their files; c1 to c5 give the outputs the report quotes; c5 over the base copy gives terminal-ended for both C9 rows.
+$ npx vitest run <website-files, zenodo, hub-portfolio, workspace-projects, clone-after>: 3 to 7 time-limit failures in hub-portfolio's slow-tagged cases under 5000 ms; with --tagsFilter slow --testTimeout 20000: Tests 16 passed (16). No decision rests on it.
+$ the 18 related test files: 17 passed, agent-pane's real-tmux cases fail on the scratchpad socket path; the 28 unit files importing a changed module: 25 passed, agent-pane, pane-screen and sessions fail on the scratchpad socket path.
 ```
 
 ### Verdicts
 
-- <n>, and <the case>: the verdicts again for the whole diff since the base, in the form of "Verdicts" above.
+- Items 1 to 8: hold (1 by the c1 run and `sameTask`; 2 by c2; 3 by the folder-order check, layer-state.dot and c3; 4 by c4 and c4-server; 5 by c5, terminal-actions 38/38 and C9; 6 by the c6 grep; 7 and 8 by reading). Drawn results are owed to the look.
+- C1 to C8: met (C3, C7 and C8 by reading for what only a page shows, owed to the look). C9 (round): met; the base copy answers terminal-ended for both rows.
+- Rulings 1 to 9: hold. Ruling 1's place is where the concern lives (state/shared/words holds the small conversions to words the state layer and the views share, is last in the state order, so state/system and state/forms may import it; folder-check exits 0; the folder now holds ten items). Ruling 2's comment is rewritten but not wholly true (Standards 2). Ruling 7's `options.refresh?.()` moved into `finally`, which is right since the terminal exists.
+- No finding was closed by removing a check: `git diff 32585f1f1 --stat -- tests` is empty.
 
 ### Findings
 
-- <file:line, or page and section>: "<the quoted hunk>"; what is wrong: <the closure claimed and what the rerun or the read showed, or what is there against what the brief or the standard asks>; under the heading it belongs to (spec, proof, standards, behaviour); failure scenario: <the input or state and the wrong result it gives, or the reader and what the text leads them to do wrong>; verdict: <the item or case it makes violated, partial or unmet, when there is one>. Or: none.
+- Spec: none.
+- Proof: none. The run-alone command's "124 passed" did not reproduce (time limits in hub-portfolio's slow cases under 5000 ms), in a file the step does not change; no decision rests on it.
+- Standards 1. `src/lib/server/machine/pty/refusal.ts:11-13`: "// there: a terminal tmux no longer has has ended, and any other failure is the terminal's own. The / // page says the sentence the catalog / // holds for the word (state/shared/answers/terminal-words.ts)."; what is wrong: the rewritten head comment is not rewrapped as a paragraph at 100 columns, so line 12 ends short inside a sentence (rules file, comment wrapping); failure scenario: a reader meets a broken line in the middle of a sentence; verdict: none.
+- Standards 2. `src/lib/data/model/machine/model-machine.ts:305-308`: "the page says the sentence the catalog holds for each name ... For `terminal-not-started` that sentence carries the first line of tmux's own error as its cause, the one name the server sends with it;"; what is wrong: the catalog holds one sentence per word, filled with the names (`terminalSentence`, terminal-words.ts:35-38), not one per name; and `terminal-not-started` carries tmux's line only when a failed tmux call raised it, since sessions.ts:662 and apps/tools/run/tasks.ts:532 throw it with no name and `refusalFor` sends `[]` for an empty `said` (refusal.ts:101); failure scenario: a maintainer reads one catalog sentence per name, or adds a thrower of `terminal-not-started` believing its one name is always tmux's line; verdict: none (item 5 holds).
+- Behaviour: none.
 
 ### Declined to judge
 
-- <a point the reviewer did not check, or declined because it is the user's call or outside what a read and a rerun can settle>, <the reason>. Or: nothing.
+- Every drawn result, owed to the look: the Submit box (the select, no pick with Submit off, a one-cluster box opening chosen, the keyboard on the select with two clusters and no pick, on Cancel with one picked); the delete ask and the "Named by" tag reading "Slurm: Resource"; the palette's compile database rows and missing-folder line; the terminal bar's "The terminal did not start: ..." line; Live HPC's host lines and the grey resolution line; the Settings scope bar offering Repository; the explorer's make menu; the status bar's fetch tip.
+- agent-pane, pane-screen, sessions, apps/tools/tasks, terminals-tmux and routes/edit/roots tests could not run green under the review's TMPDIR (socket path limit; the word "claude" in the path); none is a file the step changes, and the base was not run for comparison.
+- Real tmux's wording when a composed terminal's typed prompt fails, and for a socket path too long; c5 stubs the runner.
+- Git commands beyond the three allowed: none run by hand.
 
-Reviewer usage: <the session fills this from the completion notice: agent id, served model, tokens, tool uses, minutes>.
+Reviewer usage: a577595af5f86cb89, claude-opus-5-5, 219573 tokens, 65 tool uses, 24.2 min.
 
 ## Closed (the orchestrator's disposition of every finding above, appended before /land)
 
-- <finding>: closed in the round, <file:line, or page and section, and the check that shows it>; or fixed at landing, <what and where>; or raised to the user as an open item, <the item as the state file holds it>.
+- First run, Spec, `SubmitBox.svelte:47` with `submit-job.svelte.ts:198-206` (one cluster not chosen): closed in the round, ruling 3, `submit-job.svelte.ts:207-209`; c3 "one cluster, no server pick" picks utwente with Submit on.
+- First run, Spec, `Confirm.svelte:59-60, 101-105` (the select a caller's snippet): closed in the round, ruling 4, the snippet shape stands by the folder order and Confirm's head comment names it (`Confirm.svelte:17-21`).
+- First run, Standards, `referrers.ts:20` (the folder order): closed in the round, ruling 1, `titleOf` and `wordOf` in `src/lib/state/shared/words/key-titles.ts`, not the ruled `src/lib/data/helpers/key-titles.ts`, since that folder holds ten items; the new place is where the concern lives (round review, ruling 1); folder-check exits 0 and the upward edge is gone from layer-state.dot.
+- First run, Standards, `model-machine.ts:304-308` (a false comment): closed in the round, ruling 2; its remaining defect is round Standards 2, fixed at landing.
+- First run, Standards, the report's case-run programs not quoted: closed in the round, ruling 9; the six sources compare equal to their files.
+- First run, Standards, `cpp-form.ts:608` (`ServedFolder`): closed in the round, ruling 8, `Pick<FsRoot, 'key' | 'dir' | 'real'>`; the ServedFolder grep exits 1.
+- First run, Standards, `Confirm.svelte:17-19` (a negation contrast): closed in the round, ruling 5; the "and not as" grep exits 1.
+- First run, Behaviour, `Confirm.svelte:85-89` with `SubmitBox.svelte:33-46` (focus and tab order): closed in the round, ruling 6, `focus` takes `pick` and SubmitBox passes it with no cluster picked; the focus itself is checked at the look.
+- First run, Declined to judge, `routes.ts:316` (a failure after a composed terminal started): closed in the round, ruling 7, `heldRefusal`; C9 answers terminal-failed or terminal-ended, the base copy terminal-ended for both.
+- Round 1, Standards 1, `refusal.ts:11-13`: fixed at landing, the head comment's paragraph rewrapped at 100 columns with its words unchanged.
+- Round 1, Standards 2, `model-machine.ts:305-308`: fixed at landing, the comment says the catalog holds one sentence per word, filled with the names it is about, and that `terminal-not-started` carries the first line of tmux's own error as its one name when a failed tmux call raised it, and no name otherwise.

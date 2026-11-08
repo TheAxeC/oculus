@@ -3,12 +3,13 @@
 // (SubmitBox.svelte): a pick of the clusters of `slurm.resource`, the plan of the picked one put to
 // the reader as one confirm, and on a yes the plan sent back to run. The cluster the project's
 // `compute:` names, when it names exactly one of them, is picked at the start and its plan asked
-// for at once; with none picked the box says so and its Submit stays off until the reader picks
-// one. The plan names the code folder and where it is copied to on the picked cluster, how many
-// files and their total size, the exact command run there and that the job then shows in Live
-// HPC; a script that never names the cluster's scratch folder gets the warning first and its yes
-// reads "Submit Anyway". A refusal and the outcome are said under the editor, through `said`; a
-// refusal of the picked cluster's plan is said in the box, so another cluster can be picked.
+// for at once, and so is the one cluster of a list that holds one; with none picked the box says
+// so and its Submit stays off until the reader picks one. The plan names the code folder and where
+// it is copied to on the picked cluster, how many files and their total size, the exact command run
+// there and that the job then shows in Live HPC; a script that never names the cluster's scratch
+// folder gets the warning first and its yes reads "Submit Anyway". A refusal and the outcome are
+// said under the editor, through `said`; a refusal of the picked cluster's plan is said in the box,
+// so another cluster can be picked.
 //
 // One flow runs at a time: the press does nothing while one is planning or running, and the control
 // waits meanwhile (drawn disabled and kept focusable, ToolButton's `waiting`), so the keyboard is
@@ -203,7 +204,9 @@ export function createSubmitJob(deps: SubmitJobDeps): SubmitJob {
                 confirm: t('source.submit_confirm'),
                 off: true
             };
-            if (choices.picked !== null) await pick(choices.picked);
+            const lone = choices.clusters.length === 1 ? choices.clusters[0].resource : null;
+            const first = choices.picked ?? lone;
+            if (first !== null) await pick(first);
         } finally {
             running = '';
         }
