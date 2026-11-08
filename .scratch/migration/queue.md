@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- O167 (the shell's controls hold one behaviour): report in, its review next.
+- O167 (the shell's controls hold one behaviour): report in, its review running.
 - O151 (a deck for every research project): building, round-0 rulings sent, in its oculus worktree and its hub worktree.
-- O168 (the boards and record lists drawn whole): prepared, its brief (`agents/briefs/O168.md`) written with the brief check's findings closed and the four flaws of O169's look as items 7 to 10; its builder is launched next.
+- O168 (the boards and record lists drawn whole): building, from base abebbb552, its brief (`agents/briefs/O168.md`) with the brief check's findings closed and the four flaws of O169's look as items 7 to 10.
 
 Queued, in order (1 step):
 - O170 (Literature and Present said and drawn plainly): waits for O167's landing, since O167 writes the Present toolbar, the presenter screen and the Present view that O170 changes; its brief check is done, /spec again then.

@@ -50,7 +50,17 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0 (rulings .scratch/migration/agents/briefs/O151-cases.md)
   landing: not-started
 - step: O168
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O168-brief-check.md (ac49bd723d867d915, claude-opus-5-5, 271802 tokens, 112 tool uses, 14.5 min)
+  base: abebbb552
+  worktree: .agents/worktrees/migration-O168
+  executor: agent
+  worker: claude:opus
+  session_id: a677fb3bffc90a54b (claude-opus-5-5)
+  launched: 2026-11-08
+  report: .scratch/migration/agents/reviews/O168-report.md
+  round: 0
+  shared_paths: with O167 of this plan, src/lib/shell/status/StatusBar.svelte, src/lib/views/system/workbench/settings/Header.svelte, src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte, config/text/views/boards/focus.yml, config/text/views/system/workbench.yml, config/text/views/academic/present.yml, src/lib/state/boards/collection/index.ts, src/lib/ui/controls/heads/GroupHead.svelte and docs/diagrams/; O167 lands first, and O168's change in each is a hand-written count pick replaced by one helper call or a pair of keys folded into one, which the orchestrator re-applies by hand on O167's text where a hunk meets (StatusBar.svelte lines 327-374 do), and the diagrams are generated again at landing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
