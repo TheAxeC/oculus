@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O170 (Literature and Present said and drawn plainly): preparing, the builder next.
-- O172 (a long field drawn with its newlines and paragraphs): preparing, the builder next.
+- O170 (Literature and Present said and drawn plainly): the builder is running.
+- O172 (a long field drawn with its newlines and paragraphs): the builder is running.
 
 Queued, in order (1 step):
 - O151 (a deck for every research project): repair round 2 once O171 and O170 have landed.

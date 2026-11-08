@@ -38,13 +38,28 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
 - step: O170
-  brief_check: "running: a0e91311c5e402ce3"
+  brief_check: .scratch/migration/agents/reviews/O170-brief-check.md (a0e91311c5e402ce3, claude-opus-5-5, 288712 tokens, 28 tool uses, 13.6 min)
   base: 2385c99b6
   worktree: .agents/worktrees/migration-O170
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a8f1be288ebe70b91 (claude-opus-5-5)
+  launched: 2026-11-08
+  report: .scratch/migration/agents/reviews/O170-report.md
+  round: 0
+  shared_paths: src/lib/views/academic/present/Slide.svelte with step O151 of this plan; O151 rewrites the head comment's paragraph on the slide's foot, this step lines 15-34, 56-62 and 170-290, so the changes lie in separate hunks and the merge is simple
+  landing: not-started
 - step: O172
-  brief_check: "running: a7b3f00ada05c428a"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O172-brief-check.md (a7b3f00ada05c428a, claude-opus-5-5, 221472 tokens, 27 tool uses, 10.2 min)
+  base: bf279a486
+  worktree: .agents/worktrees/migration-O172
+  executor: agent
+  worker: claude:opus
+  session_id: ae73ffc61cc4532d3 (claude-opus-5-5)
+  launched: 2026-11-08
+  report: .scratch/migration/agents/reviews/O172-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
