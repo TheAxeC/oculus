@@ -105,20 +105,22 @@ export function refusalOf(body: unknown): LiteratureRefusal | null {
 }
 
 const listShape = z.object({
-    sources: z.array(
-        z.object({
-            id: sourceShape,
-            name: z.string(),
-            keyed: z.boolean(),
-            available: z.boolean(),
-            key: z.string().nullable(),
-            help: z.string().nullable(),
-            bibtex: z.string().nullable()
-        })
-    )
+    sources: z
+        .array(
+            z.object({
+                id: sourceShape,
+                name: z.string(),
+                keyed: z.boolean(),
+                available: z.boolean(),
+                key: z.string().nullable(),
+                help: z.string().nullable(),
+                bibtex: z.string().nullable()
+            })
+        )
+        .refine((rows) => new Set(rows.map((row) => row.id)).size === rows.length)
 });
 
-/** The sources a `?sources` body lists, or null when it is not a list. */
+/** The sources a `?sources` body lists, or null when it is not a list or names a source twice. */
 export function sourceList(body: unknown): SourceInfo[] | null {
     return readAs(listShape, body)?.sources ?? null;
 }

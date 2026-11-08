@@ -23,7 +23,7 @@
         type RegistryCardProps
     } from '$lib/views/shared/forms/registry/registry-card.svelte';
     import { projectCount } from '$lib/views/shared/card/card';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import { isDormant, type Domain } from '$lib/state/boards/structure/lines';
     import { domainTone, vocabOf } from '$lib/state/shared/words/tones';

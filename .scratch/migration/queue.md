@@ -1,13 +1,13 @@
-In flight (1 of 6 slots in use):
-- O170 (Literature and Present said and drawn plainly): reviewed; repair round 1 is being sent.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O151 (a deck for every research project): repair round 2 once O170 has landed.
+- O151 (a deck for every research project): repair round 2, next.
 
 Owed looks: none.
 
 Landed, newest first:
-- O172 (a long field drawn with its newlines and paragraphs), 2026-11-08.
+- O170 (Literature and Present said and drawn plainly), 2026-11-08.
+- O172 (a long field drawn with its newlines and paragraphs), 2026-11-08, 014cc1c0d.
 - O171 (the slide frame a 16:9 shape with no pixel size), 2026-11-08, 4a8e29067.
 - O167 (the shell's controls hold one behaviour), 2026-11-08, d7afaf946.
 - O168 (the boards and record lists drawn whole), 2026-11-08, 47265abdf.

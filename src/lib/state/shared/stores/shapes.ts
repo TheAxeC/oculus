@@ -188,6 +188,8 @@ export type WriteAnswer = {
      * write.
      */
     file?: string;
+    /** The portfolio build a removal of a collection entry will be in. Absent on any other. */
+    build?: number;
 };
 
 /**
@@ -277,7 +279,12 @@ export type SendOptions = {
     said?: boolean;
     asked?: readonly string[];
     words?: (code: string, reason?: string) => string;
+    /** The git action the write is, handed to the listeners with a refusal. */
+    action?: string;
 };
+
+/** Told of a write that did not land: why, whether the server answered, and its git action. */
+export type UnwrittenListener = (reason: string, refused: boolean, action?: string) => void;
 
 /**
  * What went wrong before the endpoint's answer could be read: no answer came, or the answer was not
@@ -481,7 +488,7 @@ export type WritesStore = {
      * Hear every write that does not land, unless its caller says it: the words the server gave,
      * or the error of a write that got no answer, with whether the server answered.
      */
-    onUnwritten: (listener: (reason: string, refused: boolean) => void) => void;
+    onUnwritten: (listener: UnwrittenListener) => void;
 };
 
 /**

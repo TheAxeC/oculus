@@ -11,8 +11,8 @@
     // the ASCII stand-in of config/catalogs/glyphs.yml is drawn as text instead. A name with no
     // drawing is a finding the server reports, and in the icon mode it draws an empty box rather
     // than any text. The drawing comes from a file rather than from this tree, so it passes the
-    // icon filter of ui/html.ts before it is put into the page, once per file for the page whose
-    // memo is provided above it (`useHtmlMemo`). The box carries the name it draws, so what a
+    // icon filter of ui/html/html.ts before it is put into the page, once per file for the page
+    // whose memo is provided above it (`useHtmlMemo`). The box carries the name it draws, so what a
     // surface draws is read by name in either mode rather than off the drawing.
     //
     // It is drawn at `--icon-box`, 16 px times the text scale, whatever the text beside it is; the
@@ -20,7 +20,7 @@
     // surfaces.
 
     import { glyph, glyphMode, iconSvg } from '$lib/state/shared/words/text';
-    import { sanitiseSvg, useHtmlMemo } from '../html.ts';
+    import { sanitiseSvg, useHtmlMemo } from '../html/html.ts';
 
     type Props = {
         /** A name in the `glyphs:` map of config/catalogs/glyphs.yml. An unknown name throws. */

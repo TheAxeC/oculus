@@ -385,3 +385,41 @@ describe('watchSchedules', () => {
         });
     });
 });
+
+describe('the read number of the schedules payload', () => {
+    /** The number of the last payload published. */
+    function readNumber(hub: Hub): unknown {
+        return (hub.latest('schedule')?.payload as { read?: unknown }).read;
+    }
+
+    it('publishes every read with its number, also one whose rows equal the last', async () => {
+        const { w, hub, driver } = daily('task');
+        const made = watch(w, hub, driver);
+        await settle();
+        const version = hub.version('schedule');
+        const read = readNumber(hub) as number;
+        expect(made.nextRead()).toBe(read + 1);
+        made.reload();
+        expect(hub.version('schedule')).toBe(version + 1);
+        expect(readNumber(hub)).toBe(read + 1);
+        expect(made.nextRead()).toBe(read + 2);
+    });
+
+    it('sends one message for two publishes with no read between', async () => {
+        const { w, hub, driver } = daily('task');
+        let tell = (): void => undefined;
+        const made = watcherOver(w, hub, driver, undefined, {
+            unreadable: () => null,
+            onChange: (listener) => {
+                tell = listener;
+                return () => undefined;
+            }
+        });
+        open.push(made);
+        await settle();
+        const version = hub.version('schedule');
+        tell();
+        tell();
+        expect(hub.version('schedule')).toBe(version);
+    });
+});

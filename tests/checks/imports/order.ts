@@ -79,6 +79,7 @@ const ORDER: Record<string, string[]> = {
         'ui/frame',
         'ui/display',
         'ui/theme',
+        'ui/html',
         'ui'
     ],
     shell: [

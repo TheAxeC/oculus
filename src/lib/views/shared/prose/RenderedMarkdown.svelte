@@ -33,7 +33,7 @@
 
     import { getContext } from 'svelte';
     import Markdown from './Markdown.svelte';
-    import { blockMarkdownParts, type MathDrawing } from '$lib/ui/html';
+    import { blockMarkdownParts, type MathDrawing } from '$lib/ui/html/html';
     import { FRONT_MATTER } from '$lib/data/prose/markdown/front-matter';
     import { docOfHtml, type RenderedHeading } from '$lib/state/system/docs.svelte';
     import { STATE_KEY } from '$lib/state/client/use';

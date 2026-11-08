@@ -141,7 +141,8 @@ type RowRef = Pick<ScheduleRowView, 'at' | 'name'>;
 
 /** What a save, a delete, a pause or a resume, or a Run now, came to. */
 type ScheduleAnswer =
-    { ok: true; terminal: string | null; skipped: string } | { ok: false; error: string };
+    | { ok: true; terminal: string | null; skipped: string; read?: number }
+    | { ok: false; error: string };
 
 /** One choice of a box the dialog draws: an id the draft holds and the words beside it. */
 type CommandChoice = { id: string; label: string };
@@ -241,7 +242,8 @@ const answerShape = z.object({
     error: z.string().optional().catch(undefined),
     names: z.array(z.string()).optional().catch(undefined),
     terminal: z.string().optional().catch(undefined),
-    skipped: z.string().nullable().optional().catch(undefined)
+    skipped: z.string().nullable().optional().catch(undefined),
+    read: z.number().optional().catch(undefined)
 });
 
 /** The last segment of a path, for a line that names a folder. */
@@ -329,12 +331,12 @@ const REFUSED = {
 };
 
 /**
- * An entry a delete the server took removed, left out of the rows until a read of the schedules
- * file that no longer holds it arrives: its position and name, and the rows read when the delete
- * was sent. A named entry is found by its name, since the entries after it move up; an entry with
- * no name is found by its position, and only in the rows it was removed from.
+ * An entry a delete the server took removed, left out of the rows until the read of the schedules
+ * file the answer named, or a later one, arrives: its position and name, that number, and the
+ * number of the last read at the answer. A named entry is found by its name, since the entries
+ * after it move up; an entry with no name is found by its position.
  */
-type Removal = { at: number; name: string; seen: ScheduleRow[] };
+type Removal = { at: number; name: string; read: number; seen: number };
 
 /** A choice for each id of a table of labels. */
 function choice<Id extends string>(labels: Record<Id, () => string>) {
@@ -430,17 +432,8 @@ export function createSchedule(
         };
     }
 
-    /** The deletes the server took whose entry the last read of the file still holds. */
+    /** The deletes the server took whose read has not arrived. */
     let removals: Removal[] = $state.raw([]);
-
-    /**
-     * Whether the read `now` holds the entry a removal took out: a named entry by its name, an
-     * entry with no name at its position, and only in the read it was removed from.
-     */
-    function holds(one: Removal, now: ScheduleRow[]): boolean {
-        if (one.name === '') return now === one.seen && now.some((row) => row.at === one.at);
-        return now.some((row) => nameKey(row.name) === nameKey(one.name));
-    }
 
     /** Whether a removal takes the row out: the row is the entry it removed. */
     function takes(one: Removal, row: ScheduleRow): boolean {
@@ -458,23 +451,24 @@ export function createSchedule(
     }
 
     /**
-     * A read of the file arrived: a removal whose entry it no longer holds ends there, so an entry
-     * saved again under that name by another hand after this read is shown.
+     * A payload arrived: a removal ends at the first numbered at its read or later, whether or not
+     * it holds the entry, so an entry saved again by another hand is shown. A number below what was
+     * seen at the answer means a restarted server, and ends it too.
      */
     entities.afterReceive((message) => {
         if (message.channel !== 'schedule' || removals.length === 0) return;
-        const now = entities.schedule()?.schedules ?? [];
-        removals = removals.filter((one) => holds(one, now));
+        const now = entities.schedule()?.read ?? 0;
+        removals = removals.filter((one) => now < one.read && now >= one.seen);
     });
 
     /**
-     * Leave a deleted entry out of the rows from the answer on, when the read the delete was sent
-     * over is still the last one or the last one still holds the entry; a read that arrived
-     * without it before the answer leaves nothing to take out.
+     * Leave a deleted entry out of the rows from the answer on, until the read its answer names;
+     * nothing is held when the last payload is already at that read or the answer names none.
      */
-    function removed(row: RowRef, seen: ScheduleRow[]): void {
-        const one = { at: row.at, name: row.name, seen };
-        if (holds(one, entities.schedule()?.schedules ?? [])) removals = [...removals, one];
+    function removed(row: RowRef, read: number | undefined): void {
+        const seen = entities.schedule()?.read ?? 0;
+        if (read === undefined || seen >= read) return;
+        removals = [...removals, { at: row.at, name: row.name, read, seen }];
     }
 
     /** Stop leaving out an entry saved again under the name a delete took out. */
@@ -750,7 +744,7 @@ export function createSchedule(
         if (read.skipped !== undefined) {
             return { ok: true, terminal: null, skipped: t('app.schedules.run_now_skipped', name) };
         }
-        return { ok: true, terminal: read.terminal ?? null, skipped: '' };
+        return { ok: true, terminal: read.terminal ?? null, skipped: '', read: read.read };
     }
 
     async function save(one: ScheduleDraft, chain: ChainLine[] | null): Promise<ScheduleAnswer> {
@@ -772,9 +766,8 @@ export function createSchedule(
 
     /** Delete an entry; one the server took leaves the rows at once. */
     async function remove(row: RowRef): Promise<ScheduleAnswer> {
-        const seen = entities.schedule()?.schedules ?? [];
         const answer = await act('delete')(row);
-        if (answer.ok) removed(row, seen);
+        if (answer.ok) removed(row, answer.read);
         return answer;
     }
 

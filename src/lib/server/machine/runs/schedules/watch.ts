@@ -2,9 +2,11 @@
 // has a cron pattern, is not paused and has no problem has one croner job, in the local time zone;
 // at each due time the entry starts what it runs (schedules/run.ts), unless its earlier run is
 // still working. The watcher publishes one complete payload on the `schedule` channel after every
-// change of a job, of the run record or of one of the files it reads, the payload naming the update
-// tasks whose file a hub's `.oculus/tasks/` holds, each with that hub, for every hub of the
-// workspace.
+// read of the schedules file and every change of a job, of the run record or of one of the files it
+// reads, the payload naming the update tasks whose file a hub's `.oculus/tasks/` holds, each with
+// that hub, for every hub of the workspace. Every read of the schedules file has a number, which
+// the payload carries as `read`, so a read whose rows equal the last one is published too, and a
+// page told the number a delete will be in knows when it has arrived.
 //
 // The file is read at start and again on every change of it, of the `.oculus/commands.yml` of a
 // repository whose commands the payload lists, and through `reload()` after the route's write. The
@@ -72,6 +74,7 @@ import {
     type ScheduleLog,
     type Settle
 } from './record.ts';
+import { dueAt } from './due.ts';
 import type { RunAnswer } from './run.ts';
 import { SCHEDULED_SIZE, TASKS_FOLDER, offeredTasks, type TaskHubs } from './task.ts';
 
@@ -123,6 +126,8 @@ export type SchedulesWatcher = {
     reload(): void;
     /** Start the entry of that name now, by the one-run rule. */
     runNow(name: string): Promise<RunNowAnswer>;
+    /** The number the next read of the schedules file will have. */
+    nextRead(): number;
     /** Stop every job. Nothing starts and nothing is published after it. */
     close(): void;
 };
@@ -141,85 +146,6 @@ const sessionsShape = z.object({
         )
         .optional()
 });
-
-/**
- * How many due times before a moment `dueAt` looks through: the due times of a minute pattern that
- * croner moves out of an hour the clocks skip, one per minute of that hour, can all lie after it.
- */
-const LOOKBACK = 61;
-
-/** The span `walkedDueAt` first walks over, in milliseconds, and the factor it widens by. */
-const WALK_FIRST_MS = 90_000;
-const WALK_GROWTH = 4;
-/** The longest span `walkedDueAt` walks over: a 29 February pattern that also names a weekday. */
-const WALK_LAST_MS = 30 * 366 * 86_400_000;
-
-/**
- * The newest due time of a job at or before `now` found by walking croner's forward runs from a
- * moment before `now`, the span widening until a run falls inside it, or undefined when it has
- * none.
- */
-function walkedDueAt(job: Cron, now: Date): Date | undefined {
-    const end = now.getTime();
-    for (let span = WALK_FIRST_MS; ; span *= WALK_GROWTH) {
-        const first = job.nextRun(new Date(end - span));
-        if (first !== null && first.getTime() <= end) return lastRunUpTo(job, first, end);
-        if (span > WALK_LAST_MS) return undefined;
-    }
-}
-
-/**
- * The last run of a job at or before `end`, from `run`, a run at or before it. No run lies after
- * `upper` and at or before `end`; each turn either moves to a run past the middle of what is left
- * or halves it, so a pattern that runs every minute of a month takes a few dozen of croner's
- * forward walks, never one per run.
- */
-function lastRunUpTo(job: Cron, run: Date, end: number): Date {
-    let latest = run;
-    let upper = end;
-    for (;;) {
-        const after = job.nextRun(latest);
-        if (after === null || after.getTime() > end) return latest;
-        latest = after;
-        const middle = Math.floor((latest.getTime() + upper) / 2);
-        if (middle <= latest.getTime()) continue;
-        const probe = job.nextRun(new Date(middle));
-        if (probe !== null && probe.getTime() <= end) latest = probe;
-        else upper = middle;
-    }
-}
-
-/**
- * The newest due time of a job at or before `now`, or undefined when it has none. Croner answers
- * "before" in whole seconds, so a `now` inside the second of a due time still sees the one before
- * it; asking from the start of the next second gives the due time that second holds. On the day
- * the clocks skip an hour croner answers the due times inside that hour, moved after it (a 02:30
- * as 03:30), from the start of the hour, so a due time later than `now` is passed over. Croner's
- * backward walk throws for some patterns the pattern rule accepts (`0 0 29 2 *`, `0 7 29 2 *`,
- * `0 0 30 1-2 *`); the due time of such a job is found by `walkedDueAt`. A pattern croner cannot
- * walk either way has no due time and is worded once, so a failure of croner never stops the
- * server.
- */
-function dueAt(job: Cron, now: Date, unreadable: Set<string>): Date | undefined {
-    try {
-        try {
-            const ask = new Date(Math.floor(now.getTime() / 1000) * 1000 + 1000);
-            return job.previousRuns(LOOKBACK, ask).find((due) => due.getTime() <= now.getTime());
-        } catch {
-            return walkedDueAt(job, now);
-        }
-    } catch (error) {
-        const pattern = job.getPattern() ?? '';
-        if (!unreadable.has(pattern)) {
-            unreadable.add(pattern);
-            const reason = error instanceof Error ? error.message : String(error);
-            console.error(
-                `schedule: the due time of the pattern ${pattern} was not found: ${reason}`
-            );
-        }
-        return undefined;
-    }
-}
 
 /** Whether the process `pid` is `root` or has it among its ancestors in the table. */
 function under(table: Entry[], root: number, pid: number): boolean {
@@ -242,6 +168,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     const stopped = (): boolean => closed;
     /** The last read of the schedules file. */
     let current: Reading = { ok: true, rows: [] };
+    /** How many reads of the schedules file this watcher has made, the number of the last one. */
+    let reads = 0;
     /** The pattern each named entry was last applied with, empty when it does not run. */
     const patterns = new Map<string, string>();
     /** The entry each running schedule starts, as the last read holds it. */
@@ -335,7 +263,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             tasks: offeredTasks(open),
             primary: open.primary,
             unread,
-            waiting: sessionsNow() === null ? options.listing.unreadable() : null
+            waiting: sessionsNow() === null ? options.listing.unreadable() : null,
+            read: reads
         };
     };
 
@@ -656,6 +585,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         files.schedules === null ? { ok: true, rows: [] } : readSchedules(files.schedules, disk());
 
     const reload = (): void => {
+        reads += 1;
         if (stopped()) return;
         followTasks();
         const read = readFile();
@@ -855,6 +785,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     return {
         reload,
         runNow,
+        nextRead: () => reads + 1,
         close(): void {
             closed = true;
             for (const job of jobs.values()) job.stop();

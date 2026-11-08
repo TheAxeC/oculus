@@ -384,28 +384,665 @@ Tests  110 passed (110)
 
 ### Every edit to an existing test
 
-No threshold or predicate was loosened; each row below follows an item of the brief.
+No threshold or predicate was loosened. The table has one row per changed line, 524 rows, made from `diff <base copy's file> <worktree's file>` of the eight changed test files, with the lines of each hunk paired in order. A dash is a line on neither side of that pair: a line added, or a line removed. The file is named by its base name; the columns give the line in the base copy, its text, the line in the worktree, its text. `hub-writes` base lines 47 to 75 are the helpers now in `tests/routes/hubs/hub-files-fixture.ts`, and base lines 774 to 859 are the describe and helper now in `tests/routes/hubs/hub-deck-writes.test.ts`; the "Repair round 1" section quotes the `diff` that shows those lines moved unchanged, an `export` added to each of the three functions apart.
 
-| File | Was | Is | Why |
-| --- | --- | --- | --- |
-| `tests/state/forms/page-entry.test.ts` | rows 'a delete answered before the snapshot without the entry arrives', 'a delete answered after the snapshot without the entry arrived', 'an entry put back by another hand in the next snapshot', each ended by the entry's absence | seven rows in `ROWS`, each with a numbered step, the three old stories among them as 'a snapshot below the build holds it and the one at the build ends it', 'a removal answered with the channel already at the build holds nothing', 'an entry put back by another hand after the build is shown' | item 9: a removal ends by its number |
-| same | "is left out until a snapshot without it arrives through the client's own wiring" | "is left out until its build through the client's own wiring, a reconnect included" | item 9 and C21 |
-| `tests/state/system/schedule-lines.test.ts` | three rows ended by a read without the entry; `readOf(names)`; payload without `read` | eight rows with numbers; `readOf(names, read)`; `read: 0` in `linesOver`'s payload | item 9 |
-| `tests/routes/machine/schedules.test.ts`, `tests/server/machine/runs/schedules/file.test.ts`, `record.test.ts`, `tests/server/root/context-fixture.ts` | the fake of `SchedulesWatcher` | gains `nextRead: () => 1`, no assertion touched | `nextRead` joins the type |
+| File | Base | Before | Worktree | After |
+| --- | --- | --- | --- | --- |
+| hub-writes | 11 | `` import { `` | 11 | `` import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'; `` |
+| hub-writes | 12 | ``     existsSync, `` | 12 | `` import { isAbsolute, join } from 'node:path'; `` |
+| hub-writes | 13 | ``     mkdirSync, `` | - | - |
+| hub-writes | 14 | ``     readdirSync, `` | - | - |
+| hub-writes | 15 | ``     readFileSync, `` | - | - |
+| hub-writes | 16 | ``     realpathSync, `` | - | - |
+| hub-writes | 17 | ``     statSync, `` | - | - |
+| hub-writes | 18 | ``     writeFileSync `` | - | - |
+| hub-writes | 19 | `` } from 'node:fs'; `` | - | - |
+| hub-writes | 20 | `` import { isAbsolute, join, relative } from 'node:path'; `` | - | - |
+| hub-writes | - | - | 17 | ``     carriedOf, `` |
+| hub-writes | - | - | 19 | ``     target as serverTarget, `` |
+| hub-writes | - | - | 23 | `` import { engineDir } from '../../../src/lib/data/sources/config.ts'; `` |
+| hub-writes | - | - | 26 | `` import { contextFixture } from '../../server/root/context-fixture.ts'; `` |
+| hub-writes | 32 | `` import { `` | 28 | `` import { TOKEN, changesOf, request, target, undone, warmConfig } from '../edit/write-fixture.ts'; `` |
+| hub-writes | 33 | ``     DECK_ORDER, `` | 29 | `` import { differing, filesOf, heldBy } from './hub-files-fixture.ts'; `` |
+| hub-writes | 34 | ``     DECK_PATH, `` | - | - |
+| hub-writes | 35 | ``     TOKEN, `` | - | - |
+| hub-writes | 36 | ``     changesOf, `` | - | - |
+| hub-writes | 37 | ``     deckOf, `` | - | - |
+| hub-writes | 38 | ``     deckTarget, `` | - | - |
+| hub-writes | 39 | ``     request, `` | - | - |
+| hub-writes | 40 | ``     target, `` | - | - |
+| hub-writes | 41 | ``     undone, `` | - | - |
+| hub-writes | 42 | ``     warmConfig `` | - | - |
+| hub-writes | 43 | `` } from '../edit/write-fixture.ts'; `` | - | - |
+| hub-writes | 46 | (blank) | - | - |
+| hub-writes | 47 | `` /** The log, the overrides and the bookmarks are beside the hub's files and are not its content. */ `` | - | - |
+| hub-writes | 48 | `` const BESIDE = new Set(['changes.jsonl', 'sessions.json', 'bookmarks.yml']); `` | - | - |
+| hub-writes | 49 | (blank) | - | - |
+| hub-writes | 50 | `` /** Every file under a hub by its path inside it, with its text. */ `` | - | - |
+| hub-writes | 51 | `` function filesOf(dir: string, at = ''): Map<string, string> { `` | - | - |
+| hub-writes | 52 | ``     const held = new Map<string, string>(); `` | - | - |
+| hub-writes | 53 | ``     for (const name of readdirSync(join(dir, at))) { `` | - | - |
+| hub-writes | 54 | ``         const path = join(at, name); `` | - | - |
+| hub-writes | 55 | ``         if (at === '' && BESIDE.has(name)) continue; `` | - | - |
+| hub-writes | 56 | ``         if (statSync(join(dir, path)).isDirectory()) { `` | - | - |
+| hub-writes | 57 | ``             for (const [key, text] of filesOf(dir, path)) held.set(key, text); `` | - | - |
+| hub-writes | 58 | ``         } else { `` | - | - |
+| hub-writes | 59 | ``             held.set(path, readFileSync(join(dir, path), 'utf8')); `` | - | - |
+| hub-writes | 60 | ``         } `` | - | - |
+| hub-writes | 61 | ``     } `` | - | - |
+| hub-writes | 62 | ``     return held; `` | - | - |
+| hub-writes | 63 | `` } `` | - | - |
+| hub-writes | 65 | `` /** The paths whose text differs between two readings, or that only one of them holds. */ `` | - | - |
+| hub-writes | 66 | `` function differing(before: Map<string, string>, after: Map<string, string>): string[] { `` | - | - |
+| hub-writes | 67 | ``     const paths = new Set([...before.keys(), ...after.keys()]); `` | - | - |
+| hub-writes | 68 | ``     return [...paths].filter((path) => before.get(path) !== after.get(path)).sort(); `` | - | - |
+| hub-writes | 69 | `` } `` | - | - |
+| hub-writes | 70 | (blank) | - | - |
+| hub-writes | 71 | `` /** Whether a file lies inside a hub's folder, the folder named by either of its two spellings. */ `` | - | - |
+| hub-writes | 72 | `` function heldBy(dir: string, file: string): boolean { `` | - | - |
+| hub-writes | 73 | ``     return [dir, realpathSync(dir)].some((one) => !relative(one, file).startsWith('..')); `` | - | - |
+| hub-writes | 74 | `` } `` | - | - |
+| hub-writes | 75 | (blank) | - | - |
+| hub-writes | - | - | 216 | (blank) |
+| hub-writes | - | - | 217 | `` describe('the build a delete-entry answer names', () => { `` |
+| hub-writes | - | - | 218 | ``     it.each([ `` |
+| hub-writes | - | - | 219 | ``         { name: 'an entry of the primary hub', id: 'hub:Another task' }, `` |
+| hub-writes | - | - | 220 | ``         { name: 'an entry of the second hub', id: 'lab:Another task' } `` |
+| hub-writes | - | - | 221 | ``     ])('is the version of the next portfolio message: $name', async ({ id }) => { `` |
+| hub-writes | - | - | 222 | ``         const context = contextFixture({ engine: engineDir() }); `` |
+| hub-writes | - | - | 223 | ``         const { nextBuild } = serverTarget( `` |
+| hub-writes | - | - | 224 | ``             context.engine, `` |
+| hub-writes | - | - | 225 | ``             context.configCache.read().config, `` |
+| hub-writes | - | - | 226 | ``             carriedOf(context), `` |
+| hub-writes | - | - | 227 | ``             context `` |
+| hub-writes | - | - | 228 | ``         ); `` |
+| hub-writes | - | - | 229 | ``         context.hub.publish('portfolio', { built: 'before the write' }); `` |
+| hub-writes | - | - | 230 | ``         const { into } = twoHubs(); `` |
+| hub-writes | - | - | 231 | ``         const response = await handleWrite( `` |
+| hub-writes | - | - | 232 | ``             request({ kind: 'delete-entry', collection: 'tasks', id }), `` |
+| hub-writes | - | - | 233 | ``             TOKEN, `` |
+| hub-writes | - | - | 234 | ``             { ...into, nextBuild } `` |
+| hub-writes | - | - | 235 | ``         ); `` |
+| hub-writes | - | - | 236 | ``         expect(response.status).toBe(200); `` |
+| hub-writes | - | - | 237 | ``         const { build } = (await response.json()) as { build?: number }; `` |
+| hub-writes | - | - | 238 | ``         expect(build).toBe(2); `` |
+| hub-writes | - | - | 239 | ``         expect(context.hub.publish('portfolio', { built: 'after the write' })).toBe(build); `` |
+| hub-writes | - | - | 240 | ``         context.close(); `` |
+| hub-writes | - | - | 241 | ``     }); `` |
+| hub-writes | - | - | 242 | `` }); `` |
+| hub-writes | 773 | (blank) | - | - |
+| hub-writes | 774 | `` /** Two deck hubs: each holds the portfolio deck and the decks of its three projects. */ `` | - | - |
+| hub-writes | 775 | `` function twoDeckHubs(): { into: PrimaryTarget; first: string; lab: string } { `` | - | - |
+| hub-writes | 776 | ``     const first = deckTarget(); `` | - | - |
+| hub-writes | 777 | ``     const second = deckTarget(); `` | - | - |
+| hub-writes | 778 | ``     const labProjects = second.projects().map((project) => ({ `` | - | - |
+| hub-writes | 779 | ``         ...project, `` | - | - |
+| hub-writes | 780 | ``         id: `lab:${project.id}`, `` | - | - |
+| hub-writes | 781 | ``         root: 'lab' `` | - | - |
+| hub-writes | 782 | ``     })); `` | - | - |
+| hub-writes | 783 | ``     const into: PrimaryTarget = { `` | - | - |
+| hub-writes | 784 | ``         ...first, `` | - | - |
+| hub-writes | 785 | ``         projects: () => [...first.projects(), ...labProjects], `` | - | - |
+| hub-writes | 786 | ``         files: { `` | - | - |
+| hub-writes | 787 | ``             roots: () => [ `` | - | - |
+| hub-writes | 788 | ``                 { key: 'hub', dir: first.hub }, `` | - | - |
+| hub-writes | 789 | ``                 { key: 'lab', dir: second.hub } `` | - | - |
+| hub-writes | 790 | ``             ] `` | - | - |
+| hub-writes | 791 | ``         }, `` | - | - |
+| hub-writes | 792 | ``         hubs: [{ key: 'lab', hub: second.hub, config: second.config }] `` | - | - |
+| hub-writes | 793 | ``     }; `` | - | - |
+| hub-writes | 794 | ``     return { into, first: first.hub, lab: second.hub }; `` | - | - |
+| hub-writes | 795 | `` } `` | - | - |
+| hub-writes | 796 | (blank) | - | - |
+| hub-writes | 797 | `` describe('a deck write to the second hub', () => { `` | - | - |
+| hub-writes | 798 | ``     const MOVE = [ `` | - | - |
+| hub-writes | 799 | ``         { group: 'pillars', base: ['alpha'], slides: ['beta'] }, `` | - | - |
+| hub-writes | 800 | ``         { group: 'more', base: [], slides: ['alpha'] } `` | - | - |
+| hub-writes | 801 | ``     ]; `` | - | - |
+| hub-writes | 802 | ``     const send = (groups: unknown, over: Record<string, unknown> = {}): unknown => ({ `` | - | - |
+| hub-writes | 803 | ``         kind: 'deck-slides', `` | - | - |
+| hub-writes | 804 | ``         root: 'lab', `` | - | - |
+| hub-writes | 805 | ``         path: DECK_PATH, `` | - | - |
+| hub-writes | 806 | ``         groups, `` | - | - |
+| hub-writes | 807 | ``         ...over `` | - | - |
+| hub-writes | 808 | ``     }); `` | - | - |
+| hub-writes | 809 | (blank) | - | - |
+| hub-writes | 810 | ``     it('writes the deck file of the second hub, logs its path and undoes it', async () => { `` | - | - |
+| hub-writes | 811 | ``         const { into, first, lab } = twoDeckHubs(); `` | - | - |
+| hub-writes | 812 | ``         const before = { first: filesOf(first), lab: filesOf(lab) }; `` | - | - |
+| hub-writes | 813 | ``         const response = await handleWrite(request(send(MOVE)), TOKEN, into); `` | - | - |
+| hub-writes | 814 | ``         expect(response.status).toBe(200); `` | - | - |
+| hub-writes | 815 | ``         expect(differing(before.first, filesOf(first))).toEqual([]); `` | - | - |
+| hub-writes | 816 | ``         expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]); `` | - | - |
+| hub-writes | 817 | ``         const records = changesOf(into); `` | - | - |
+| hub-writes | 818 | ``         expect(records).toHaveLength(2); `` | - | - |
+| hub-writes | 819 | ``         for (const record of records) { `` | - | - |
+| hub-writes | 820 | ``             expect(heldBy(lab, record.file)).toBe(true); `` | - | - |
+| hub-writes | 821 | ``             expect(record.file.endsWith(DECK_PATH)).toBe(true); `` | - | - |
+| hub-writes | 822 | ``             expect((await undone(into, record)).status).toBe(200); `` | - | - |
+| hub-writes | 823 | ``         } `` | - | - |
+| hub-writes | 824 | ``         expect(differing(before.lab, filesOf(lab))).toEqual([]); `` | - | - |
+| hub-writes | 825 | ``         expect(deckOf({ ...into, hub: lab })).toBe(before.lab.get(DECK_PATH)); `` | - | - |
+| hub-writes | 826 | ``     }); `` | - | - |
+| hub-writes | 827 | (blank) | - | - |
+| hub-writes | 828 | ``     it('refuses a base the file of the second hub does not hold, and writes nothing', async () => { `` | - | - |
+| hub-writes | 829 | ``         const { into, first, lab } = twoDeckHubs(); `` | - | - |
+| hub-writes | 830 | ``         const before = { first: filesOf(first), lab: filesOf(lab) }; `` | - | - |
+| hub-writes | 831 | ``         const response = await handleWrite( `` | - | - |
+| hub-writes | 832 | ``             request(send([{ group: 'pillars', base: ['beta'], slides: ['alpha'] }])), `` | - | - |
+| hub-writes | 833 | ``             TOKEN, `` | - | - |
+| hub-writes | 834 | ``             into `` | - | - |
+| hub-writes | 835 | ``         ); `` | - | - |
+| hub-writes | 836 | ``         expect(response.status).toBe(200); `` | - | - |
+| hub-writes | 837 | ``         const answer = (await response.json()) as { `` | - | - |
+| hub-writes | 838 | ``             changed: string[]; `` | - | - |
+| hub-writes | 839 | ``             refused: { reason: string }[]; `` | - | - |
+| hub-writes | 840 | ``         }; `` | - | - |
+| hub-writes | 841 | ``         expect(answer.changed).toEqual([]); `` | - | - |
+| hub-writes | 842 | ``         expect(answer.refused.map((one) => one.reason)).toEqual([ `` | - | - |
+| hub-writes | 843 | ``             "The group's slides list changed on disk while you were working. Read the deck again and make the change again." `` | - | - |
+| hub-writes | 844 | ``         ]); `` | - | - |
+| hub-writes | 845 | ``         expect(differing(before.first, filesOf(first))).toEqual([]); `` | - | - |
+| hub-writes | 846 | ``         expect(differing(before.lab, filesOf(lab))).toEqual([]); `` | - | - |
+| hub-writes | 847 | ``         expect(changesOf(into)).toEqual([]); `` | - | - |
+| hub-writes | 848 | ``     }); `` | - | - |
+| hub-writes | 849 | (blank) | - | - |
+| hub-writes | 850 | ``     it('writes the order list of the second hub', async () => { `` | - | - |
+| hub-writes | 851 | ``         const { into, first, lab } = twoDeckHubs(); `` | - | - |
+| hub-writes | 852 | ``         const before = { first: filesOf(first), lab: filesOf(lab) }; `` | - | - |
+| hub-writes | 853 | ``         const order = { base: DECK_ORDER, entries: ['slides:more', 'intro.md', 'slides:pillars'] }; `` | - | - |
+| hub-writes | 854 | ``         const response = await handleWrite(request(send([], { order })), TOKEN, into); `` | - | - |
+| hub-writes | 855 | ``         expect(response.status).toBe(200); `` | - | - |
+| hub-writes | 856 | ``         expect(differing(before.first, filesOf(first))).toEqual([]); `` | - | - |
+| hub-writes | 857 | ``         expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]); `` | - | - |
+| hub-writes | 858 | ``     }); `` | - | - |
+| hub-writes | 859 | `` }); `` | - | - |
+| schedules | 29 | ``         const schedules: SchedulesWatcher = { reload, runNow, close: vi.fn() }; `` | 29 | ``         const schedules: SchedulesWatcher = { reload, runNow, nextRead: () => 1, close: vi.fn() }; `` |
+| schedules | - | - | 67 | ``             nextRead: () => 1, `` |
+| schedules | - | - | 100 | (blank) |
+| schedules | - | - | 101 | ``     it.each([ `` |
+| schedules | - | - | 102 | ``         { name: 'a delete names the read taken right after its commit', action: 'delete', read: 7 }, `` |
+| schedules | - | - | 103 | ``         { name: 'a pause names none', action: 'pause', read: undefined } `` |
+| schedules | - | - | 104 | ``     ])('$name', async ({ action, read }) => { `` |
+| schedules | - | - | 105 | ``         const w = world(); `` |
+| schedules | - | - | 106 | ``         const held = entryText(w, 'task'); `` |
+| schedules | - | - | 107 | ``         writeFileSync(w.files.schedules, held); `` |
+| schedules | - | - | 108 | ``         const holdsAtTheCall: boolean[] = []; `` |
+| schedules | - | - | 109 | ``         const schedules: SchedulesWatcher = { `` |
+| schedules | - | - | 110 | ``             reload: vi.fn(), `` |
+| schedules | - | - | 111 | ``             runNow: vi.fn(), `` |
+| schedules | - | - | 112 | ``             nextRead: () => { `` |
+| schedules | - | - | 113 | ``                 holdsAtTheCall.push(readFileSync(w.files.schedules, 'utf8') === held); `` |
+| schedules | - | - | 114 | ``                 return 7; `` |
+| schedules | - | - | 115 | ``             }, `` |
+| schedules | - | - | 116 | ``             close: vi.fn() `` |
+| schedules | - | - | 117 | ``         }; `` |
+| schedules | - | - | 118 | ``         const response = await handleSchedules( `` |
+| schedules | - | - | 119 | ``             pagePost(`${HOST}/api/schedules`, { action, at: 0, name: 'Weekly radar' }, TOKEN), `` |
+| schedules | - | - | 120 | ``             TOKEN, `` |
+| schedules | - | - | 121 | ``             routeOptions(w, schedules) `` |
+| schedules | - | - | 122 | ``         ); `` |
+| schedules | - | - | 123 | ``         expect(response.status).toBe(200); `` |
+| schedules | - | - | 124 | ``         expect(await response.json()).toEqual( `` |
+| schedules | - | - | 125 | ``             read === undefined ? { ok: true } : { ok: true, read } `` |
+| schedules | - | - | 126 | ``         ); `` |
+| schedules | - | - | 127 | ``         expect(holdsAtTheCall).toEqual(read === undefined ? [] : [false]); `` |
+| schedules | - | - | 128 | ``     }); `` |
+| file | 45 | ``         const schedules: SchedulesWatcher = { reload, runNow: vi.fn(), close: vi.fn() }; `` | 45 | ``         const schedules: SchedulesWatcher = { `` |
+| file | - | - | 46 | ``             reload, `` |
+| file | - | - | 47 | ``             runNow: vi.fn(), `` |
+| file | - | - | 48 | ``             nextRead: () => 1, `` |
+| file | - | - | 49 | ``             close: vi.fn() `` |
+| file | - | - | 50 | ``         }; `` |
+| record | 90 | ``             const schedules: SchedulesWatcher = { reload, runNow: vi.fn(), close: vi.fn() }; `` | 90 | ``             const schedules: SchedulesWatcher = { `` |
+| record | - | - | 91 | ``                 reload, `` |
+| record | - | - | 92 | ``                 runNow: vi.fn(), `` |
+| record | - | - | 93 | ``                 nextRead: () => 1, `` |
+| record | - | - | 94 | ``                 close: vi.fn() `` |
+| record | - | - | 95 | ``             }; `` |
+| watch | - | - | 385 | ``         }); `` |
+| watch | - | - | 386 | ``     }); `` |
+| watch | - | - | 387 | `` }); `` |
+| watch | - | - | 388 | (blank) |
+| watch | - | - | 389 | `` describe('the read number of the schedules payload', () => { `` |
+| watch | - | - | 390 | ``     /** The number of the last payload published. */ `` |
+| watch | - | - | 391 | ``     function readNumber(hub: Hub): unknown { `` |
+| watch | - | - | 392 | ``         return (hub.latest('schedule')?.payload as { read?: unknown }).read; `` |
+| watch | - | - | 393 | ``     } `` |
+| watch | - | - | 394 | (blank) |
+| watch | - | - | 395 | ``     it('publishes every read with its number, also one whose rows equal the last', async () => { `` |
+| watch | - | - | 396 | ``         const { w, hub, driver } = daily('task'); `` |
+| watch | - | - | 397 | ``         const made = watch(w, hub, driver); `` |
+| watch | - | - | 398 | ``         await settle(); `` |
+| watch | - | - | 399 | ``         const version = hub.version('schedule'); `` |
+| watch | - | - | 400 | ``         const read = readNumber(hub) as number; `` |
+| watch | - | - | 401 | ``         expect(made.nextRead()).toBe(read + 1); `` |
+| watch | - | - | 402 | ``         made.reload(); `` |
+| watch | - | - | 403 | ``         expect(hub.version('schedule')).toBe(version + 1); `` |
+| watch | - | - | 404 | ``         expect(readNumber(hub)).toBe(read + 1); `` |
+| watch | - | - | 405 | ``         expect(made.nextRead()).toBe(read + 2); `` |
+| watch | - | - | 406 | ``     }); `` |
+| watch | - | - | 407 | (blank) |
+| watch | - | - | 408 | ``     it('sends one message for two publishes with no read between', async () => { `` |
+| watch | - | - | 409 | ``         const { w, hub, driver } = daily('task'); `` |
+| watch | - | - | 410 | ``         let tell = (): void => undefined; `` |
+| watch | - | - | 411 | ``         const made = watcherOver(w, hub, driver, undefined, { `` |
+| watch | - | - | 412 | ``             unreadable: () => null, `` |
+| watch | - | - | 413 | ``             onChange: (listener) => { `` |
+| watch | - | - | 414 | ``                 tell = listener; `` |
+| watch | - | - | 415 | ``                 return () => undefined; `` |
+| watch | - | - | 416 | ``             } `` |
+| watch | - | - | 418 | ``         open.push(made); `` |
+| watch | - | - | 419 | ``         await settle(); `` |
+| watch | - | - | 420 | ``         const version = hub.version('schedule'); `` |
+| watch | - | - | 421 | ``         tell(); `` |
+| watch | - | - | 422 | ``         tell(); `` |
+| watch | - | - | 423 | ``         expect(hub.version('schedule')).toBe(version); `` |
+| context-fixture | - | - | 154 | ``             nextRead: () => 1, `` |
+| page-entry | 4 | `` // out of its list: until a snapshot that no longer holds it arrives, and no longer. The snapshot `` | 4 | `` // out of its list: until the first snapshot numbered at the build its answer named or later, or `` |
+| page-entry | 5 | `` // and the feeds are synthetic and hold only what the page reads. `` | 5 | `` // below what was seen at the answer. The snapshot and the feeds are synthetic and hold only what `` |
+| page-entry | - | - | 6 | `` // the page reads. `` |
+| page-entry | 7 | `` import { describe, expect, it } from 'vitest'; `` | 8 | `` import { describe, expect, it, vi } from 'vitest'; `` |
+| page-entry | 422 | ``     /** A delete of `hub:a` answered with success, or a snapshot arriving holding the keys given. */ `` | 423 | ``     /** `` |
+| page-entry | 423 | ``     type Step = 'delete' \| string[]; `` | 424 | ``      * A delete of `hub:a` answered with the build given (undefined for an answer that names none), `` |
+| page-entry | 424 | ``     /** The steps, and after each whether the Tasks list leaves `hub:a` out. */ `` | 425 | ``      * or a snapshot of the version given arriving, holding the keys given. `` |
+| page-entry | - | - | 426 | ``      */ `` |
+| page-entry | - | - | 427 | ``     type Step = { build: number \| undefined } \| { version: number; keys: string[] }; `` |
+| page-entry | - | - | 428 | ``     /** The steps, the channel starting at version 1, and after each whether `hub:a` is left out. */ `` |
+| page-entry | - | - | 431 | ``     const AB = ['a', 'b']; `` |
+| page-entry | - | - | 432 | (blank) |
+| page-entry | 429 | ``             name: 'a delete answered before the snapshot without the entry arrives', `` | 435 | ``             name: 'a snapshot below the build holds it and the one at the build ends it', `` |
+| page-entry | 430 | ``             steps: ['delete', ['a', 'b'], ['a', 'b'], ['b'], ['b']], `` | 436 | ``             steps: [ `` |
+| page-entry | 431 | ``             left: [true, true, true, false, false] `` | 437 | ``                 { build: 3 }, `` |
+| page-entry | - | - | 438 | ``                 { version: 2, keys: AB }, `` |
+| page-entry | - | - | 439 | ``                 { version: 3, keys: ['b'] }, `` |
+| page-entry | - | - | 440 | ``                 { version: 4, keys: ['b'] } `` |
+| page-entry | - | - | 441 | ``             ], `` |
+| page-entry | - | - | 442 | ``             left: [true, true, false, false] `` |
+| page-entry | 434 | ``             name: 'a delete answered after the snapshot without the entry arrived', `` | 445 | ``             name: 'a snapshot at the build that still holds the entry ends it', `` |
+| page-entry | 435 | ``             steps: [['b'], 'delete', ['b']], `` | 446 | ``             steps: [{ build: 2 }, { version: 2, keys: AB }], `` |
+| page-entry | 436 | ``             left: [false, false, false] `` | 447 | ``             left: [true, false] `` |
+| page-entry | 439 | ``             name: 'an entry put back by another hand in the next snapshot', `` | 450 | ``             name: 'a removal answered with the channel already at the build holds nothing', `` |
+| page-entry | 440 | ``             steps: ['delete', ['b'], ['a', 'b']], `` | 451 | ``             steps: [{ version: 2, keys: ['b'] }, { build: 2 }], `` |
+| page-entry | - | - | 452 | ``             left: [false, false] `` |
+| page-entry | - | - | 453 | ``         }, `` |
+| page-entry | - | - | 454 | ``         { `` |
+| page-entry | - | - | 455 | ``             name: 'an answer that names no build holds nothing', `` |
+| page-entry | - | - | 456 | ``             steps: [{ build: undefined }], `` |
+| page-entry | - | - | 457 | ``             left: [false] `` |
+| page-entry | - | - | 458 | ``         }, `` |
+| page-entry | - | - | 459 | ``         { `` |
+| page-entry | - | - | 460 | ``             name: 'a snapshot below what was seen at the answer, a restarted server, ends it', `` |
+| page-entry | - | - | 461 | ``             steps: [{ version: 3, keys: AB }, { build: 5 }, { version: 1, keys: AB }], `` |
+| page-entry | - | - | 462 | ``             left: [false, true, false] `` |
+| page-entry | - | - | 463 | ``         }, `` |
+| page-entry | - | - | 464 | ``         { `` |
+| page-entry | - | - | 465 | ``             name: 'a snapshot between what was seen and the build holds it until the build', `` |
+| page-entry | - | - | 466 | ``             steps: [ `` |
+| page-entry | - | - | 467 | ``                 { version: 3, keys: AB }, `` |
+| page-entry | - | - | 468 | ``                 { build: 5 }, `` |
+| page-entry | - | - | 469 | ``                 { version: 4, keys: AB }, `` |
+| page-entry | - | - | 470 | ``                 { version: 5, keys: AB } `` |
+| page-entry | - | - | 471 | ``             ], `` |
+| page-entry | - | - | 472 | ``             left: [false, true, true, false] `` |
+| page-entry | - | - | 473 | ``         }, `` |
+| page-entry | - | - | 474 | ``         { `` |
+| page-entry | - | - | 475 | ``             name: 'an entry put back by another hand after the build is shown', `` |
+| page-entry | - | - | 476 | ``             steps: [{ build: 2 }, { version: 2, keys: ['b'] }, { version: 3, keys: AB }], `` |
+| page-entry | 445 | ``     it.each(ROWS)('is left out only until a snapshot without it: $name', ({ steps, left }) => { `` | 481 | ``     it.each(ROWS)('is left out until its build: $name', ({ steps, left }) => { `` |
+| page-entry | 446 | ``         let held = tasksOf(['a', 'b']); `` | 482 | ``         let held = tasksOf(AB); `` |
+| page-entry | 451 | ``             if (step === 'delete') { `` | 487 | ``             if ('build' in step) { `` |
+| page-entry | 452 | ``                 pages.settle.removed('tasks', 'hub:a', settled.begin()); `` | 488 | ``                 pages.settle.removed('tasks', 'hub:a', settled.begin(), step.build); `` |
+| page-entry | 454 | ``                 held = tasksOf(step); `` | 490 | ``                 held = tasksOf(step.keys); `` |
+| page-entry | 455 | ``                 version += 1; `` | 491 | ``                 version = step.version; `` |
+| page-entry | 463 | ``     it("is left out until a snapshot without it arrives through the client's own wiring", () => { `` | 499 | ``     it('ends two removals each at its own build', () => { `` |
+| page-entry | 464 | ``         const client = createClientState(); `` | - | - |
+| page-entry | 466 | ``         const arrive = (keys: string[]): boolean => { `` | 501 | ``         const settled = createSettled(() => version); `` |
+| page-entry | 467 | ``             client.entities.receive({ channel: 'portfolio', version, payload: tasksOf(keys) }); `` | 502 | ``         const pages = createPages({ snapshot: () => tasksOf(AB), feeds: () => null }, settled); `` |
+| page-entry | 468 | ``             version += 1; `` | 503 | ``         pages.settle.removed('tasks', 'hub:a', settled.begin(), 2); `` |
+| page-entry | - | - | 504 | ``         pages.settle.removed('tasks', 'hub:b', settled.begin(), 3); `` |
+| page-entry | - | - | 505 | ``         const left = (): boolean[] => [ `` |
+| page-entry | - | - | 506 | ``             pages.removed('tasks', 'hub:a'), `` |
+| page-entry | - | - | 507 | ``             pages.removed('tasks', 'hub:b') `` |
+| page-entry | - | - | 508 | ``         ]; `` |
+| page-entry | - | - | 509 | ``         const seen = [left()]; `` |
+| page-entry | - | - | 510 | ``         for (const next of [2, 3]) { `` |
+| page-entry | - | - | 511 | ``             version = next; `` |
+| page-entry | - | - | 512 | ``             settled.heard(); `` |
+| page-entry | - | - | 513 | ``             seen.push(left()); `` |
+| page-entry | - | - | 514 | ``         } `` |
+| page-entry | - | - | 515 | ``         expect(seen).toEqual([ `` |
+| page-entry | - | - | 516 | ``             [true, true], `` |
+| page-entry | - | - | 517 | ``             [false, true], `` |
+| page-entry | - | - | 518 | ``             [false, false] `` |
+| page-entry | - | - | 519 | ``         ]); `` |
+| page-entry | - | - | 520 | ``     }); `` |
+| page-entry | - | - | 521 | (blank) |
+| page-entry | - | - | 522 | ``     it("is left out until its build through the client's own wiring, a reconnect included", () => { `` |
+| page-entry | - | - | 523 | ``         const client = createClientState(); `` |
+| page-entry | - | - | 524 | ``         const arrive = (version: number): boolean => { `` |
+| page-entry | - | - | 525 | ``             client.entities.receive({ channel: 'portfolio', version, payload: tasksOf(AB) }); `` |
+| page-entry | 471 | ``         arrive(['a', 'b']); `` | 528 | ``         arrive(4); `` |
+| page-entry | 472 | ``         client.pages.settle.removed('tasks', 'hub:a', client.settled.begin()); `` | 529 | ``         client.pages.settle.removed('tasks', 'hub:a', client.settled.begin(), 6); `` |
+| page-entry | 473 | ``         const seen = [client.pages.removed('tasks', 'hub:a')]; `` | 530 | ``         const seen = [client.pages.removed('tasks', 'hub:a'), arrive(5), arrive(6)]; `` |
+| page-entry | 474 | ``         for (const keys of [['a', 'b'], ['b'], ['a', 'b']]) seen.push(arrive(keys)); `` | 531 | ``         client.pages.settle.removed('tasks', 'hub:a', client.settled.begin(), 8); `` |
+| page-entry | 475 | ``         expect(seen).toEqual([true, true, false, false]); `` | 532 | ``         seen.push(client.pages.removed('tasks', 'hub:a')); `` |
+| page-entry | - | - | 533 | ``         client.entities.reconnected(); `` |
+| page-entry | - | - | 534 | ``         seen.push(arrive(1)); `` |
+| page-entry | - | - | 535 | ``         expect(seen).toEqual([true, true, false, true, false]); `` |
+| page-entry | - | - | 537 | (blank) |
+| page-entry | - | - | 538 | ``     it.each([ `` |
+| page-entry | - | - | 539 | ``         { name: 'refused', status: 404, body: { error: 'no entry' }, left: false }, `` |
+| page-entry | - | - | 540 | ``         { `` |
+| page-entry | - | - | 541 | ``             name: 'taken, its answer naming a build', `` |
+| page-entry | - | - | 542 | ``             status: 200, `` |
+| page-entry | - | - | 543 | ``             body: { ok: true, changed: [], refused: [], build: 6 }, `` |
+| page-entry | - | - | 544 | ``             left: true `` |
+| page-entry | - | - | 545 | ``         }, `` |
+| page-entry | - | - | 546 | ``         { `` |
+| page-entry | - | - | 547 | ``             name: 'taken, its answer naming no build', `` |
+| page-entry | - | - | 548 | ``             status: 200, `` |
+| page-entry | - | - | 549 | ``             body: { ok: true, changed: [], refused: [] }, `` |
+| page-entry | - | - | 550 | ``             left: false `` |
+| page-entry | - | - | 551 | ``         } `` |
+| page-entry | - | - | 552 | ``     ])('is held by the answer of the delete: $name', async ({ status, body, left }) => { `` |
+| page-entry | - | - | 553 | ``         const client = createClientState(); `` |
+| page-entry | - | - | 554 | ``         client.entities.receive({ channel: 'portfolio', version: 5, payload: tasksOf(AB) }); `` |
+| page-entry | - | - | 555 | ``         vi.stubGlobal( `` |
+| page-entry | - | - | 556 | ``             'fetch', `` |
+| page-entry | - | - | 557 | ``             vi.fn(() => `` |
+| page-entry | - | - | 558 | ``                 Promise.resolve( `` |
+| page-entry | - | - | 559 | ``                     new Response(JSON.stringify(body), { `` |
+| page-entry | - | - | 560 | ``                         status, `` |
+| page-entry | - | - | 561 | ``                         headers: { 'content-type': 'application/json' } `` |
+| page-entry | - | - | 562 | ``                     }) `` |
+| page-entry | - | - | 563 | ``                 ) `` |
+| page-entry | - | - | 564 | ``             ) `` |
+| page-entry | - | - | 565 | ``         ); `` |
+| page-entry | - | - | 566 | ``         await client.writes.deleteEntry('tasks', 'hub:a'); `` |
+| page-entry | - | - | 567 | ``         vi.unstubAllGlobals(); `` |
+| page-entry | - | - | 568 | ``         expect(client.pages.removed('tasks', 'hub:a')).toBe(left); `` |
+| page-entry | - | - | 569 | ``     }); `` |
+| schedule-lines | 6 | `` // answer until a read of the file that no longer holds it arrives, and no longer: an entry saved `` | 6 | `` // answer until the first read numbered at the read that answer named or later, or below what was `` |
+| schedule-lines | 7 | `` // again under its name by another hand after that read is shown, and a delete answered after that `` | 7 | `` // seen at the answer: an entry saved again under its name by another hand after that read is shown, `` |
+| schedule-lines | 8 | `` // read holds nothing. `` | 8 | `` // and a delete answered with that read already seen holds nothing. `` |
+| schedule-lines | 33 | ``         waiting `` | 33 | ``         waiting, `` |
+| schedule-lines | - | - | 34 | ``         read: 0 `` |
+| schedule-lines | 58 | `` /** A read of the schedules file holding entries of the names given, in that order. */ `` | 59 | `` /** The read of the schedules file numbered `read`, holding entries of the names given, in order. */ `` |
+| schedule-lines | 59 | `` function readOf(names: string[]): SchedulePayload { `` | 60 | `` function readOf(names: string[], read: number): SchedulePayload { `` |
+| schedule-lines | 75 | ``         waiting: null `` | 76 | ``         waiting: null, `` |
+| schedule-lines | - | - | 77 | ``         read `` |
+| schedule-lines | - | - | 82 | ``     const BOTH = ['one', 'two']; `` |
+| schedule-lines | - | - | 83 | (blank) |
+| schedule-lines | 81 | ``      * A step: the delete of the entry `one` at position 0 sent, the server's success answering `` | 85 | ``      * A step: the delete of the entry `one` at position 0 sent, the server's success answering it `` |
+| schedule-lines | 82 | ``      * it, a read of the schedules file arriving with the names given, or the rows read. `` | 86 | ``      * with the read given (undefined for an answer that names none), its refusal answering it, the `` |
+| schedule-lines | - | - | 87 | ``      * socket reconnecting, a read of the schedules file arriving with its number and the names `` |
+| schedule-lines | - | - | 88 | ``      * given, or the rows read. `` |
+| schedule-lines | 84 | ``     type Step = 'delete' \| 'answer' \| 'read' \| string[]; `` | 90 | ``     type Step = `` |
+| schedule-lines | 85 | ``     /** The steps, and the names of the rows at each read. */ `` | 91 | ``         \| 'delete' `` |
+| schedule-lines | 86 | ``     type Row = { name: string; steps: Step[]; read: string[][] }; `` | 92 | ``         \| 'refused' `` |
+| schedule-lines | - | - | 93 | ``         \| 'reconnect' `` |
+| schedule-lines | - | - | 94 | ``         \| 'rows' `` |
+| schedule-lines | - | - | 95 | ``         \| { answer: number \| undefined } `` |
+| schedule-lines | - | - | 96 | ``         \| { read: number; names: string[] }; `` |
+| schedule-lines | - | - | 97 | ``     /** The steps, the file read as number 1 at the start, and the rows' names at each read. */ `` |
+| schedule-lines | - | - | 98 | ``     type Row = { name: string; steps: Step[]; rows: string[][] }; `` |
+| schedule-lines | 90 | ``             name: 'it is left out from the answer, through a read that still holds it, until a read without it', `` | 102 | ``             name: 'it is left out from the answer, through a read below its number, until a read at it', `` |
+| schedule-lines | 91 | ``             steps: ['delete', 'answer', 'read', ['one', 'two'], 'read', ['two'], 'read'], `` | 103 | ``             steps: [ `` |
+| schedule-lines | 92 | ``             read: [['two'], ['two'], ['two']] `` | 104 | ``                 'delete', `` |
+| schedule-lines | - | - | 105 | ``                 { answer: 3 }, `` |
+| schedule-lines | - | - | 106 | ``                 'rows', `` |
+| schedule-lines | - | - | 107 | ``                 { read: 2, names: BOTH }, `` |
+| schedule-lines | - | - | 108 | ``                 'rows', `` |
+| schedule-lines | - | - | 109 | ``                 { read: 3, names: ['two'] }, `` |
+| schedule-lines | - | - | 110 | ``                 'rows' `` |
+| schedule-lines | - | - | 111 | ``             ], `` |
+| schedule-lines | - | - | 112 | ``             rows: [['two'], ['two'], ['two']] `` |
+| schedule-lines | 95 | ``             name: 'saved again by another hand after the read without it, it shows with no read between', `` | 115 | ``             name: 'a read at its number whose rows are the same ends it', `` |
+| schedule-lines | 96 | ``             steps: ['delete', 'answer', ['two'], ['one', 'two'], 'read'], `` | 116 | ``             steps: ['delete', { answer: 2 }, { read: 2, names: BOTH }, 'rows'], `` |
+| schedule-lines | 97 | ``             read: [['one', 'two']] `` | 117 | ``             rows: [BOTH] `` |
+| schedule-lines | 100 | ``             name: 'a delete answered after the read without it holds nothing', `` | 120 | ``             name: 'saved again by another hand after the read at its number, it shows with no read between', `` |
+| schedule-lines | 101 | ``             steps: ['delete', ['two'], 'answer', 'read', ['one', 'two'], 'read'], `` | 121 | ``             steps: [ `` |
+| schedule-lines | 102 | ``             read: [['two'], ['one', 'two']] `` | 122 | ``                 'delete', `` |
+| schedule-lines | - | - | 123 | ``                 { answer: 2 }, `` |
+| schedule-lines | - | - | 124 | ``                 { read: 2, names: ['two'] }, `` |
+| schedule-lines | - | - | 125 | ``                 { read: 3, names: BOTH }, `` |
+| schedule-lines | - | - | 126 | ``                 'rows' `` |
+| schedule-lines | - | - | 127 | ``             ], `` |
+| schedule-lines | - | - | 128 | ``             rows: [BOTH] `` |
+| schedule-lines | - | - | 129 | ``         }, `` |
+| schedule-lines | - | - | 130 | ``         { `` |
+| schedule-lines | - | - | 131 | ``             name: 'a delete answered with the read at its number already seen holds nothing', `` |
+| schedule-lines | - | - | 132 | ``             steps: [ `` |
+| schedule-lines | - | - | 133 | ``                 'delete', `` |
+| schedule-lines | - | - | 134 | ``                 { read: 2, names: ['two'] }, `` |
+| schedule-lines | - | - | 135 | ``                 { answer: 2 }, `` |
+| schedule-lines | - | - | 136 | ``                 'rows', `` |
+| schedule-lines | - | - | 137 | ``                 { read: 3, names: BOTH }, `` |
+| schedule-lines | - | - | 138 | ``                 'rows' `` |
+| schedule-lines | - | - | 139 | ``             ], `` |
+| schedule-lines | - | - | 140 | ``             rows: [['two'], BOTH] `` |
+| schedule-lines | - | - | 141 | ``         }, `` |
+| schedule-lines | - | - | 142 | ``         { `` |
+| schedule-lines | - | - | 143 | ``             name: 'an answer that names no read holds nothing', `` |
+| schedule-lines | - | - | 144 | ``             steps: ['delete', { answer: undefined }, 'rows'], `` |
+| schedule-lines | - | - | 145 | ``             rows: [BOTH] `` |
+| schedule-lines | - | - | 146 | ``         }, `` |
+| schedule-lines | - | - | 147 | ``         { `` |
+| schedule-lines | - | - | 148 | ``             name: 'a delete the server refused keeps its row and holds nothing', `` |
+| schedule-lines | - | - | 149 | ``             steps: ['delete', 'refused', 'rows'], `` |
+| schedule-lines | - | - | 150 | ``             rows: [BOTH] `` |
+| schedule-lines | - | - | 151 | ``         }, `` |
+| schedule-lines | - | - | 152 | ``         { `` |
+| schedule-lines | - | - | 153 | ``             name: 'a read below what was seen at the answer, a restarted server, ends it', `` |
+| schedule-lines | - | - | 154 | ``             steps: [ `` |
+| schedule-lines | - | - | 155 | ``                 { read: 3, names: BOTH }, `` |
+| schedule-lines | - | - | 156 | ``                 'delete', `` |
+| schedule-lines | - | - | 157 | ``                 { answer: 5 }, `` |
+| schedule-lines | - | - | 158 | ``                 'reconnect', `` |
+| schedule-lines | - | - | 159 | ``                 { read: 1, names: BOTH }, `` |
+| schedule-lines | - | - | 160 | ``                 'rows' `` |
+| schedule-lines | - | - | 161 | ``             ], `` |
+| schedule-lines | - | - | 162 | ``             rows: [BOTH] `` |
+| schedule-lines | - | - | 163 | ``         }, `` |
+| schedule-lines | - | - | 164 | ``         { `` |
+| schedule-lines | - | - | 165 | ``             name: 'a read between what was seen and its number holds it until its number', `` |
+| schedule-lines | - | - | 166 | ``             steps: [ `` |
+| schedule-lines | - | - | 167 | ``                 { read: 3, names: BOTH }, `` |
+| schedule-lines | - | - | 168 | ``                 'delete', `` |
+| schedule-lines | - | - | 169 | ``                 { answer: 5 }, `` |
+| schedule-lines | - | - | 170 | ``                 'reconnect', `` |
+| schedule-lines | - | - | 171 | ``                 { read: 4, names: BOTH }, `` |
+| schedule-lines | - | - | 172 | ``                 'rows', `` |
+| schedule-lines | - | - | 173 | ``                 { read: 5, names: BOTH }, `` |
+| schedule-lines | - | - | 174 | ``                 'rows' `` |
+| schedule-lines | - | - | 175 | ``             ], `` |
+| schedule-lines | - | - | 176 | ``             rows: [['two'], BOTH] `` |
+| schedule-lines | 106 | ``     it.each(ROWS)('$name', async ({ steps, read }) => { `` | 180 | ``     /** A channel holding the file read as number 1, and how to hand it the next read. */ `` |
+| schedule-lines | - | - | 181 | ``     function channelOf(): { `` |
+| schedule-lines | - | - | 182 | ``         entities: EntitiesStore; `` |
+| schedule-lines | - | - | 183 | ``         arrive: (names: string[], read: number) => void; `` |
+| schedule-lines | - | - | 184 | ``     } { `` |
+| schedule-lines | 109 | ``         const arrive = (names: string[]): void => { `` | 187 | ``         const arrive = (names: string[], read: number): void => { `` |
+| schedule-lines | 110 | ``             entities.receive({ channel: 'schedule', version, payload: readOf(names) }); `` | 188 | ``             entities.receive({ channel: 'schedule', version, payload: readOf(names, read) }); `` |
+| schedule-lines | 113 | ``         arrive(['one', 'two']); `` | 191 | ``         arrive(BOTH, 1); `` |
+| schedule-lines | 114 | ``         let answer = (): void => undefined; `` | 192 | ``         return { entities, arrive }; `` |
+| schedule-lines | - | - | 193 | ``     } `` |
+| schedule-lines | - | - | 194 | (blank) |
+| schedule-lines | - | - | 195 | ``     it.each(ROWS)('$name', async ({ steps, rows }) => { `` |
+| schedule-lines | - | - | 196 | ``         const { entities, arrive } = channelOf(); `` |
+| schedule-lines | - | - | 197 | ``         let answer = (_posted: unknown): void => undefined; `` |
+| schedule-lines | 116 | ``             answer = () => resolve({ ok: true, status: 200, body: {} }); `` | 199 | ``             answer = resolve; `` |
+| schedule-lines | 126 | ``             else if (step === 'answer') { `` | 209 | ``             else if (step === 'reconnect') entities.reconnected(); `` |
+| schedule-lines | 127 | ``                 answer(); `` | 210 | ``             else if (step === 'rows') seen.push(store.rows().map((row) => row.name)); `` |
+| schedule-lines | - | - | 211 | ``             else if (step === 'refused') { `` |
+| schedule-lines | - | - | 212 | ``                 answer({ `` |
+| schedule-lines | - | - | 213 | ``                     ok: false, `` |
+| schedule-lines | - | - | 214 | ``                     status: 409, `` |
+| schedule-lines | - | - | 215 | ``                     body: { error: 'entry-changed', names: [] }, `` |
+| schedule-lines | - | - | 216 | ``                     failed: '' `` |
+| schedule-lines | - | - | 217 | ``                 }); `` |
+| schedule-lines | 129 | ``             } else if (step === 'read') seen.push(store.rows().map((row) => row.name)); `` | 219 | ``             } else if ('answer' in step) { `` |
+| schedule-lines | 130 | ``             else arrive(step); `` | 220 | ``                 const body = step.answer === undefined ? {} : { read: step.answer }; `` |
+| schedule-lines | - | - | 221 | ``                 answer({ ok: true, status: 200, body, failed: '' }); `` |
+| schedule-lines | - | - | 222 | ``                 await deleting; `` |
+| schedule-lines | - | - | 223 | ``             } else arrive(step.names, step.read); `` |
+| schedule-lines | 132 | ``         expect(seen).toEqual(read); `` | 225 | ``         expect(seen).toEqual(rows); `` |
+| schedule-lines | - | - | 227 | (blank) |
+| schedule-lines | - | - | 228 | ``     it('ends two removals each at its own read', async () => { `` |
+| schedule-lines | - | - | 229 | ``         const { entities, arrive } = channelOf(); `` |
+| schedule-lines | - | - | 230 | ``         const answers = [2, 3].map((read) => ({ `` |
+| schedule-lines | - | - | 231 | ``             ok: true, `` |
+| schedule-lines | - | - | 232 | ``             status: 200, `` |
+| schedule-lines | - | - | 233 | ``             body: { read }, `` |
+| schedule-lines | - | - | 234 | ``             failed: '' `` |
+| schedule-lines | - | - | 235 | ``         })); `` |
+| schedule-lines | - | - | 236 | ``         const store = createSchedule(entities, { `` |
+| schedule-lines | - | - | 237 | ``             terminalById: () => null, `` |
+| schedule-lines | - | - | 238 | ``             writes: { `` |
+| schedule-lines | - | - | 239 | ``                 postCommand: () => Promise.resolve(answers.shift()) `` |
+| schedule-lines | - | - | 240 | ``             } as unknown as WritesStore `` |
+| schedule-lines | - | - | 241 | ``         }); `` |
+| schedule-lines | - | - | 242 | ``         await store.remove({ at: 0, name: 'one' }); `` |
+| schedule-lines | - | - | 243 | ``         await store.remove({ at: 1, name: 'two' }); `` |
+| schedule-lines | - | - | 244 | ``         const seen = [store.rows().map((row) => row.name)]; `` |
+| schedule-lines | - | - | 245 | ``         for (const read of [2, 3]) { `` |
+| schedule-lines | - | - | 246 | ``             arrive(BOTH, read); `` |
+| schedule-lines | - | - | 247 | ``             seen.push(store.rows().map((row) => row.name)); `` |
+| schedule-lines | - | - | 248 | ``         } `` |
+| schedule-lines | - | - | 249 | ``         expect(seen).toEqual([[], ['one'], BOTH]); `` |
+| schedule-lines | - | - | 250 | ``     }); `` |
 
-The rows added beside these are `hub-writes.test.ts`, describe 'the build a delete-entry answer names'; `schedules.test.ts`, the `it.each` of 'a delete names the read taken right after its commit' and 'a pause names none'; `watch.test.ts`, describe 'the read number of the schedules payload'; page-entry's 'ends two removals each at its own build' and 'is held by the answer of the delete: $name'; schedule-lines' 'ends two removals each at its own read'.
+The tests of the two new files, `tests/routes/hubs/hub-deck-writes.test.ts` and `tests/routes/hubs/hub-files-fixture.ts`, are the moved lines the "Repair round 1" section shows: no assertion is edited.
+
+The rows the build adds are named in the table. The cases they cover are C17 to C23 and C25.
+
+## Repair round 1
+
+The round is `.scratch/migration/agents/briefs/O170-round-1.md`, over the review `.scratch/migration/agents/reviews/O170-refuter.md`. Standards S2 was not sent; `hub-writes.test.ts` carries `// @module-tag slow`, and the file run alone is quoted below.
+
+**Item 1 (S1, P1).** `describe('a deck write to the second hub')` and `twoDeckHubs` are in `tests/routes/hubs/hub-deck-writes.test.ts`, with `// @module-tag slow` and a head comment of its own, the titles unchanged. `filesOf`, `differing` and `heldBy`, which both files need, with `BESIDE`, are in `tests/routes/hubs/hub-files-fixture.ts`, imported by both. `wc -l`:
+
+```
+     756 tests/routes/hubs/hub-writes.test.ts
+     112 tests/routes/hubs/hub-deck-writes.test.ts
+      35 tests/routes/hubs/hub-files-fixture.ts
+```
+
+The moved text against the base copy, where the deck describe lies at base lines 774 to 859 and the helpers at 47 to 74 (the three `<` and `>` pairs are the `export` added to each function):
+
+```
+$ diff <(sed -n 774,859p ../O170-base/tests/routes/hubs/hub-writes.test.ts) <(sed -n 27,112p tests/routes/hubs/hub-deck-writes.test.ts)
+(prints nothing)
+$ diff <(sed -n 47,74p ../O170-base/tests/routes/hubs/hub-writes.test.ts) <(sed -n 8,35p tests/routes/hubs/hub-files-fixture.ts)
+5c5
+< function filesOf(dir: string, at = ''): Map<string, string> {
+---
+> export function filesOf(dir: string, at = ''): Map<string, string> {
+20c20
+< function differing(before: Map<string, string>, after: Map<string, string>): string[] {
+---
+> export function differing(before: Map<string, string>, after: Map<string, string>): string[] {
+26c26
+< function heldBy(dir: string, file: string): boolean {
+---
+> export function heldBy(dir: string, file: string): boolean {
+```
+
+Each file alone, as a slow test is run:
+
+```
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/routes/hubs/hub-writes.test.ts --reporter=dot
+ Test Files  1 passed (1)
+      Tests  46 passed (46)
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/routes/hubs/hub-deck-writes.test.ts --reporter=verbose
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+```
+
+The grep of `agents/guarded.md` for the moved titles:
+
+```
+$ grep -n "a deck write to the second hub\|writes the deck file of the second hub\|refuses a base the file of the second hub\|writes the order list of the second hub\|twoDeckHubs" .scratch/migration/agents/guarded.md
+(prints nothing, exit 1)
+```
+
+No `Test:` line names a moved title, so none changes (see "Doc text"). The paths the round adds to the step's write list are `tests/routes/hubs/hub-deck-writes.test.ts` and `tests/routes/hubs/hub-files-fixture.ts`.
+
+**Item 2 (P2).** `src/lib/views/academic/present/acts/acts.svelte.ts:58` reads `const SAID_NOTHING: Readonly<{ line: string }> = Object.freeze({ line: '' });`, and the identity comparison stays.
+
+**Item 3 (S3).** The head comment of `src/lib/views/academic/present/Bar.svelte` is rewrapped as one paragraph at 100 columns.
+
+**Item 4 (S4).** `Unwritten` in `src/lib/state/client/shapes/unwritten.ts:14` has lost its `export`; `grep -rn "\bUnwritten\b" src tests` prints only that file's lines 14 and 19, its own declaration and `createUnwritten`'s return type.
+
+**Item 5, S5: the grep before each new name.** Each ran over `src` and `tests` of the base copy, the tree as it stood before these names were written, with `--include='*.ts' --include='*.svelte' --include='*.css'`.
+
+| Name, key call | Hits on the base copy | Judged |
+| --- | --- | --- |
+| `configuredSources` | none | new |
+| `literatureRows(` | `read.ts:47` (definition), `:114`, `:123`; `routes/api/(docs)/literature/+server.ts:22`; `tests/server/core/reader/rows.ts:39`; `reader.test.ts:171`, `:589` | the reader of the config rows, reused. The server's `sourceInfo` (`handler.ts:216`) needs `downloads`, which a page does not hold, so it cannot be reused for the rows drawn before a listing |
+| `leastOf` | none | new |
+| `min-content` | none | new |
+| `sayFor` | none | new |
+| `=== mine` | `src/lib/server/core/json.ts:378` (a lock file's name); `src/lib/state/sessions/terminal/pty/pty-subscribe.ts:122` (a tail's identity) | other concerns; the pattern is the same, the values are unrelated |
+| `createUnwritten` | none | new |
+| `onUnwritten` | `shapes.ts:484`; `notice-sources.ts:19`; `client/context.ts:716`; `writes.svelte.ts:11`, `:17`, `:23`, `:114`, `:875`; `tests/state/client/held-unsaved.test.ts:97` | the listeners this step moved into `shapes/unwritten.ts`, the same function |
+| `nextRead` | `src/lib/state/sources/repositories/answers.ts:293`, `:298`, `:303` | a parameter handing out a read's freshness check in the repositories store, another concern |
+| `nextBuild` | none | new |
+| `nextVersion(` | `core/channels.ts:71`, `:158`; `machine/runs/recover/live/watch.ts:175`; `root/watch/portfolio/portfolio.ts:715` | the Hub's method, reused |
+| `Candidate` | `server/sessions/registry.ts:44` and uses; `server/accounts/mail/plate.ts:44` and uses (`poll.ts`, `google.ts`, `microsoft.ts`); `data/snapshot/references/model.ts:33` | exported types of other modules; the one in `slide-layout.ts` is local and exports nothing |
+
+**Item 5, S6: empty, duplicated, colliding.**
+
+- `listed`, the saved key. Empty: a saved `listed: []` is what a tab keeps when its last listing answered no source. It is not nullish, so `sources` is `[]`. From the first paint until the listing answers no source button is drawn, the Search button is enabled (its `disabled` reads the running `listed`, which is null) and pressing it or Enter does nothing, since `settled` is false, and the list shows the idle line (`no_sources` reads the running `listed`). The answer replaces it: rows are drawn, or, for an empty answer, the `no_sources` line and a disabled Search. Absent, or not a list, or a row of the wrong type: `sourceList` answers null and the tab falls to the config's rows. Duplicated: the server's listing and the config's rows both come through `checkRows` (`check.ts:309`), which leaves out a row whose key an earlier row holds, so neither holds a repeat; a repeat could only be in a layout edited by hand, where `{#each sources as source (source.id)}` in `Head.svelte` would throw `each_key_duplicate` at first paint; `sourceList` reads a list that names a source twice as no list, so the tab falls to the config's rows. Colliding: `listed` is one field of Literature's own instance state, read only by `formShape`; no config key reaches it. A saved row whose `id` the config no longer names is drawn until the listing answers, and a press of Search is refused until then, so no request names it.
+- `build`, the wire key. Empty: absent or not a number reads as undefined (`z.number().optional().catch(undefined)`), and no removal is held (row 'an answer that names no build holds nothing'); a server target with no `nextBuild` sends none. A 0 cannot be sent, the Hub's versions counting from 1. Duplicated: two deletes each carry their own number and are held per record key, each ending at its own (row 'ends two removals each at its own build'); a second delete of the same key replaces the first's `gone` entry; two records with the same number each end at it. Colliding: of the write answers only `delete-entry` carries `build` (`writes.ts`, `answer`), and `answerShape` reads it under that name alone. It is never compared with `read`.
+- `read`, the wire key on the schedules answer and the `schedule` payload. Empty: the payload's `read` is required (`payloads.ts:81`, `z.number()`), the server always sends it, and `reads` is 1 at the first `publish` of `reload`; before any payload the page reads 0 (`entities.schedule()?.read ?? 0`). An answer with no number holds nothing (row 'an answer that names no read holds nothing'). Duplicated: two `publish` calls with no read between are one message (C25); two deletes answered with one number are each held until that read, and with two numbers each end at their own (row 'ends two removals each at its own read'). Colliding: the route's answer carries `read` for a delete alone, beside `{ ok }`, and no other key of the answer or of `SchedulePayload` has that name; the `read` field of a notification belongs to another shape on another channel.
+- The asynchronous paths are C5, C6 and C26, above.
+
+**Item 5, S7.** "Every edit to an existing test", above, is the table of 524 rows, one per changed line.
+
+The cases, again through the real code, after the round's last change:
+
+```
+$ node --input-type=module -e "<the program quoted under 'The Node run of C9 to C13, C27 and C28, after the build'>"
+C9 {"arrangement":"stacked","shape":"alone","height":0.4,"boxes":[0.08,0.08]}
+C10 {"arrangement":"side","shape":"alone","height":0.4,"boxes":[0.45,0.45]}
+C11-none {"arrangement":"one","shape":"alone","height":0.4,"boxes":[0.48]}
+C11-least {"arrangement":"one","shape":"alone","height":0.4,"boxes":[0.48]}
+C12 {"arrangement":"side","shape":"wide","height":0.4,"boxes":[0.38,0.38]}
+C13 {"arrangement":"stacked","shape":"tall","height":0.4,"boxes":[0.2,0.2]}
+C27 {"arrangement":"side","shape":"tall","height":0.4,"boxes":[0.3492,0.3492]}
+C28 {"arrangement":"side","shape":"tall","height":0.4,"boxes":[0.3492,0.3492]}
+no-caption-one-line-text {"arrangement":"side","shape":"tall","height":0.35,"boxes":[0.2555,0.2555]}
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run --config .agents/scratch/v.config.ts --reporter=dot --silent=false
+C16 fetch refused: ["The fetch failed: no remote"]
+C16 push refused: ["The push was refused: rejected"]
+C16 pull refused: ["The pull failed: conflict"]
+C16 sync refused: ["The sync failed: behind"]
+C16 publish refused: ["The publish was refused: exists"]
+C16 commit refused: ["A write was refused: nothing"]
+C16 fetch no answer: ["A write got no answer: socket hung up"]
+C16 fetch cancelled: ["The fetch failed: fetch was stopped by Cancel"]
+C16 fetch refused with fields: ["The fetch failed: one; two"]
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/state/forms/page-entry.test.ts tests/state/system/schedule-lines.test.ts tests/routes/machine/schedules.test.ts tests/server/machine/runs/schedules/watch.test.ts tests/routes/hubs/hub-writes.test.ts tests/routes/hubs/hub-deck-writes.test.ts --reporter=dot
+      Tests  110 passed (110)
+```
+
+`after.case.ts` and `v.config.ts` are as quoted above. A case that only a page shows is owed to the look, as above.
 
 ## DONE / NOT DONE
 
 | Row | State | Proof |
 | --- | --- | --- |
-| Items 1 to 10 | DONE | the sections above and the checks below; item 10's ledger text is under "Doc text" for the orchestrator |
+| Items 1 to 10 of the brief | DONE | the sections above and the checks below; item 10's ledger text is under "Doc text" for the orchestrator |
+| Items 1 to 5 of the round | DONE | the section "Repair round 1" |
 | The first run of every case | DONE | the section above |
-| The cases after the build | DONE where a run reaches them; C1 to C8, C14, C15 and C26, and C16's remote case, name their look on landing | the section above |
-| `npm run diagrams` | DONE, exit 0 | 2 runs, one before each `npm run test:quick` |
-| `npm run test:quick` | DONE, the last run prints `test:quick: 248.0 s; every command passed` | the lines below |
-| The failed command, rerun alone | DONE | `npx vitest run tests/checks/source/comment-width.test.ts`: `Test Files  1 passed (1)`, `Tests  2 passed (2)` |
-| The ASCII gate over every file the step changes | DONE, prints nothing, exit 0 | the perl line of the brief over the 38 paths |
+| The cases after the build and after the round | DONE where a run reaches them; C1 to C8, C14, C15 and C26, and C16's remote case, name their look on landing | the sections above |
+| `npm run diagrams` | DONE, exit 0 | run once in the round, before `npm run test:quick` |
+| `npm run test:quick` | DONE, prints `test:quick: 240.9 s; every command passed` | the lines below |
+| The ASCII gate over every file the step changes | DONE, prints nothing, exit 0 | the perl line of the brief over the 44 paths `git status` names outside `.scratch` |
 | `grep -rn "citation-js" config --exclude=local.yml` | DONE, prints nothing, exit 1 | |
 | `grep -rn "export_opened" config src tests --exclude=local.yml` | DONE, prints nothing, exit 1 | |
 | `grep -n "shows()" src/lib/state/forms/settled.svelte.ts` | DONE, prints nothing, exit 1 | |
@@ -414,24 +1051,24 @@ The rows added beside these are `hub-writes.test.ts`, describe 'the build a dele
 | Each new or changed test on the unchanged tree, then after | DONE | the section above |
 | Each new or changed sentence against the prose rule | DONE, by reading | the sentences read true; no departure to name |
 | No history in added comments and titles | DONE | below |
-| Size limits | DONE | every file in the list below is at or under 880 lines and every component at or under 520 |
+| Size limits | DONE | `wc -l` prints 880 `src/lib/state/client/context.ts`, 859 `src/lib/server/root/context.ts`, 852 `src/lib/data/model/machine/model-machine.ts`, 845 `src/lib/state/client/writes.svelte.ts`, 811 `schedule.svelte.ts`, 805 `src/lib/server/edit/writes.ts`, 804 `watch.ts` and 756 `tests/routes/hubs/hub-writes.test.ts`, the largest of the step; the largest component is `Slide.svelte` at 493; the whole list is under "Files with line counts" |
 
-**Full-list runs: 2.** The first failed one check: `FAILED  vitest checks (187.2 s)`, `tests/checks/source/comment-width.test.ts`, `tests/state/system/schedule-lines.test.ts:97` over the hundredth column. That comment was shortened, the check rerun alone, the list run once more.
+**Full-list runs in the round: 1**, and it passed. The step's own build ran it twice.
 
-The last run, `npm run test:quick -- <the 38 paths>` with `TMPDIR` unset:
+The round's run, `npm run test:quick -- <the 44 paths>` with `TMPDIR` unset:
 
 ```
-test:quick: 38 changed file(s), from the given paths
-test:quick: 227 test file(s)
+test:quick: 44 changed file(s), from the given paths
+test:quick: 228 test file(s)
 ok      prettier (1.0 s): All matched files use Prettier code style!
-ok      ASCII gate (1.0 s)
-ok      svelte-kit sync (2.7 s)
-ok      svelte-check (13.3 s): 1794169573895 COMPLETED 590 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      eslint (13.5 s)
-ok      vitest checks (122.5 s): Duration  105.29s (transform 47.64s, setup 0ms, import 113.25s, tests 257.86s, environment 4ms)
-ok      vitest (142.8 s): Duration  126.69s (transform 77.79s, setup 0ms, import 208.64s, tests 271.84s, environment 15.38s)
-ok      vitest slow (245.3 s): Duration  229.26s (transform 25.31s, setup 0ms, import 133.62s, tests 774.86s, environment 14ms)
-test:quick: 248.0 s; every command passed
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.2 s)
+ok      eslint (11.1 s)
+ok      svelte-check (13.1 s): 1794172697956 COMPLETED 590 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (111.7 s): Duration  97.60s (transform 44.93s, setup 0ms, import 101.97s, tests 246.41s, environment 4ms)
+ok      vitest (138.7 s): Duration  125.69s (transform 81.15s, setup 0ms, import 209.37s, tests 271.08s, environment 9.33s)
+ok      vitest slow (238.7 s): Duration  225.71s (transform 19.12s, setup 0ms, import 116.04s, tests 777.95s, environment 14ms)
+test:quick: 240.9 s; every command passed
 test:quick: not covered: tests that reach no changed file within the import depth,
             other than the checks under tests/checks/source and tests/checks/tree,
             which run for any change under src, tests or utils; the build, the lint
@@ -442,16 +1079,11 @@ The guarded tests, the 60 files named on the `Test:` lines of G8, G28, G46, G91 
 
 ```
 $ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run <the 60 files> --reporter=dot
- FAIL  |unit| tests/routes/edit/undo/config-save.test.ts > the Save of a Settings scope, one write of its file and one record > writes 'two options of the workspace file' in one record, and the undo puts it back
-Error: Test timed out in 5000ms.
- Test Files  1 failed | 59 passed (60)
-      Tests  1 failed | 794 passed (795)
-$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/routes/edit/undo/config-save.test.ts --reporter=dot
- Test Files  1 passed (1)
-      Tests  13 passed (13)
+ Test Files  60 passed (60)
+      Tests  792 passed (792)
 ```
 
-That test hit vitest's 5000 ms limit with 60 files running side by side, and the file passes alone; this step changes neither it nor the config writes it covers. Whether it was load alone is a judgment, and the look is not what would settle it: a run of the same 60 files on the base copy would.
+The count is three below the build's 795 because the three deck tests left `hub-writes.test.ts`, one of the 60, for `hub-deck-writes.test.ts`.
 
 `diff .agents/worktrees/O170-base/unused-exports.txt <(sh utils/unused-exports.sh)` prints only lines the base has and this tree has not, so the step adds no line:
 
@@ -519,7 +1151,9 @@ Greps of the names the step removes: `export_opened` and `shows()` as above; `un
 | `src/lib/views/academic/present/screen/slide-layout.ts` | 303 |
 | `src/lib/views/feeds/literature/Head.svelte` | 163 |
 | `src/lib/views/feeds/literature/Literature.svelte` | 345 |
-| `tests/routes/hubs/hub-writes.test.ts` | 890 |
+| `tests/routes/hubs/hub-writes.test.ts` | 756 |
+| `tests/routes/hubs/hub-deck-writes.test.ts` (new) | 112 |
+| `tests/routes/hubs/hub-files-fixture.ts` (new) | 35 |
 | `tests/routes/machine/schedules.test.ts` | 129 |
 | `tests/server/machine/runs/schedules/file.test.ts` | 87 |
 | `tests/server/machine/runs/schedules/record.test.ts` | 117 |
@@ -534,6 +1168,7 @@ Greps of the names the step removes: `export_opened` and `shows()` as above; `un
 
 - **The clearing of the export line** is `sayFor(line)`, which answers a function that clears the line only while the same object is on show; `said` is held as a `$state.raw` object so two lines of equal words are told apart. The alternative, comparing the words, would clear a later act's identical line.
 - **The name `nextBuild`** on `WriteTarget`, optional since `target()`'s callers without a server have none to ask; such a removal answers with no `build` and holds nothing.
+- **The name of the round's fixture**, `tests/routes/hubs/hub-files-fixture.ts`, by the `*-fixture.ts` files of the neighbouring folders.
 - **The two splits.** `shapes/unwritten.ts` holds the listeners and `tell`, since `writes.svelte.ts` stood at 877 lines of 880; `schedules/due.ts` holds the due-time helpers, since `watch.ts` stood at 873. `src/lib/state/client` is left at 10 items.
 - **`Removal`'s shape** on the page: `{ seq, build, seen }` for an entry and `{ at, name, read, seen }` for a schedule.
 - **`configuredSources`** is the name of the rows from the config, `keyed` being true when an `auth` row is required, and `key`, `help` and `bibtex` null, no listing having said them.
@@ -574,6 +1209,8 @@ G152's three lines of `agents/guarded.md` as `grep -n` prints them:
 238:  Code: `src/lib/state/forms/settled.svelte.ts` (`remove`, `heard`), `src/lib/state/forms/page-entry.ts` (`settle.removed`, `removed`), `src/lib/state/client/context.ts` (`entities.afterReceive(settled.heard)`), `src/lib/state/system/machine/schedules/schedule.svelte.ts` (`removed`, the `afterReceive` listener).
 239:  Test: `tests/state/forms/page-entry.test.ts`, describe 'an entry of a collection a write removed', every row, among them "is left out until a snapshot without it arrives through the client's own wiring"; `tests/state/system/schedule-lines.test.ts`, describe 'a schedule a delete took', every row.
 ```
+
+No `Test:` line of `agents/guarded.md` names a title the round moved out of `tests/routes/hubs/hub-writes.test.ts` (the grep is under "Repair round 1"), so item 1 changes no line of that file and the file's other titles stay where its `Test:` lines name them; G152's replacement below names only `hub-writes.test.ts`'s describe 'the build a delete-entry answer names', which stays there.
 
 Their replacements:
 

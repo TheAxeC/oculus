@@ -1,11 +1,12 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/literature/Literature.svelte. The part of the view above
-    // the list: one toggle per source the server lists (the rows of `literature.sources` of the
-    // primary hub, in their order, each by its name) with the state of its latest answer beside it,
-    // and the filters and the sort. A source whose required `downloads` row the machine does not
-    // hold is a toggle that cannot be pressed, and its tooltip names the row and says where its
-    // secret is made. Nothing here sends a request: a toggle and the filters change the form, the
-    // view's Search asks.
+    // the list: one toggle per source the view hands in (the rows of `literature.sources` of the
+    // primary hub, in their order, each by its name: the running listing once the server has
+    // answered, else the listing the tab saved, else one per row of the page's config) with the
+    // state of its latest answer beside it, and the filters and the sort. A source whose required
+    // `downloads` row the machine does not hold is a toggle that cannot be pressed once a listing
+    // says so, and its tooltip names the row and says where its secret is made. Nothing here sends
+    // a request: a toggle and the filters change the form, the view's Search asks.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import NumberInput from '$lib/ui/forms/NumberInput.svelte';
@@ -29,7 +30,7 @@
 
     type Props = {
         form: LiteratureForm;
-        /** The sources the server lists, in its order. */
+        /** The buttons: the running listing, else the saved one, else the config's rows. */
         sources: SourceInfo[];
         runs: Partial<Record<LiteratureSource, SourceRun>>;
         timeoutS: number | null;

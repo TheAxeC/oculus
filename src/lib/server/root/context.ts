@@ -558,6 +558,7 @@ export function createServerContext(
         schedules: {
             reload: () => owned().schedules.reload(),
             runNow: (name) => owned().schedules.runNow(name),
+            nextRead: () => owned().schedules.nextRead(),
             close: () => owned().schedules.close()
         },
         apps,

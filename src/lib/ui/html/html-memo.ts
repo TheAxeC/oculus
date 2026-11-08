@@ -1,12 +1,12 @@
-// Layer 3, primitive. The memo of one page's HTML drawings: each result ui/html.ts is asked for
-// again and again, held per page. It is apart from html.ts because holding a result has no part in
-// how it is drawn. The page root makes one and provides it through Svelte's context, as
+// Layer 3, primitive. The memo of one page's HTML drawings: each result ui/html/html.ts is asked
+// for again and again, held per page. It is apart from html.ts because holding a result has no part
+// in how it is drawn. The page root makes one and provides it through Svelte's context, as
 // ui/menu/tip-ids.ts provides its counter, so two pages never share a result and a call given none
-// draws afresh; ui/html.ts hands its functions on, so a view imports them where it imports the
+// draws afresh; ui/html/html.ts hands its functions on, so a view imports them where it imports the
 // drawing.
 
 import { getContext, setContext } from 'svelte';
-import type { MathDrawing, MathModules } from '../../html.ts';
+import type { MathDrawing, MathModules } from './html.ts';
 
 /**
  * How many results each map of an `HtmlMemo` keeps. Past it the oldest result is let go, so a long

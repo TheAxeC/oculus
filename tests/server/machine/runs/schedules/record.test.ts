@@ -87,7 +87,12 @@ describe('the run record', () => {
             }
             expect(commit).not.toHaveBeenCalled();
             const reload = vi.fn();
-            const schedules: SchedulesWatcher = { reload, runNow: vi.fn(), close: vi.fn() };
+            const schedules: SchedulesWatcher = {
+                reload,
+                runNow: vi.fn(),
+                nextRead: () => 1,
+                close: vi.fn()
+            };
             const answered = handleSchedules(
                 pagePost(
                     'http://127.0.0.1:8791/api/schedules',

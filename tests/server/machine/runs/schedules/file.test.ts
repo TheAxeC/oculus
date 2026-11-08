@@ -42,7 +42,12 @@ describe('the schedules file', () => {
         const disk = { hub: dir, roots: [dir], hubs: [] };
         const w = world();
         const reload = vi.fn();
-        const schedules: SchedulesWatcher = { reload, runNow: vi.fn(), close: vi.fn() };
+        const schedules: SchedulesWatcher = {
+            reload,
+            runNow: vi.fn(),
+            nextRead: () => 1,
+            close: vi.fn()
+        };
         const files: [string, string, number | null][] = [
             ['an editor halfway through a line', '- name: [\n', 2],
             ['a map at the top', 'name: Weekly radar\nwhen: "0 7 * * 1"\n', null],

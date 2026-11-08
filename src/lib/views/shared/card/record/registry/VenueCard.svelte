@@ -39,7 +39,7 @@
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
     import { createRegistryCard } from '$lib/views/shared/forms/registry/registry-card.svelte';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         hrefOf,

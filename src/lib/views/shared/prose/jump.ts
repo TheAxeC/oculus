@@ -24,7 +24,7 @@
 // pixels and scrolls in layout pixels, so the distance to the heading is divided by the box's
 // scale.
 
-import { HEADING_ID_PREFIX } from '$lib/ui/html';
+import { HEADING_ID_PREFIX } from '$lib/ui/html/html';
 import { docLinkOf, type DocLink } from './doc-link';
 
 /** What opens a link between documents: the linking document's path and the opener. */

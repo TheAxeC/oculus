@@ -10,7 +10,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import type { Project } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
 

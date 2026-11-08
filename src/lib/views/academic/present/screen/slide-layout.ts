@@ -8,7 +8,15 @@
 // it is under Node.
 //
 // The figures of a slide are placed as one block: one figure alone, or every figure side by side
-// (one image height) or stacked (one image width), whichever draws the figures larger in the room.
+// (one image height) or stacked (one image width), whichever of the candidates draws the figures
+// larger in the room, a tie going to side by side. The candidates are three. Side by side as the
+// place rule below sets it, when every figure's box is at least the width its caption and
+// explanation need (`least`). With text, and only when that placing misses a `least`, side by side
+// forced under the text (wide), when it has room of its own and every box is at least its `least`.
+// And stacked, which has no neighbour beside it for a word to run over and so takes no `least`, and
+// stays in the room when it does not meet a word's width. A figure with no `least` meets it, so a
+// slide with no caption or explanation has no forced candidate. One figure alone takes no `least`.
+//
 // A block that the room's full height leaves narrower than the room is tall: a column at the
 // room's right, centred in the room's height, the text beside it keeping at least `TEXT_LEAST` of
 // the frame's width and the gap. Any other block, and a tall one in a room too narrow to keep the
@@ -57,6 +65,8 @@ export type Figure = {
     frame?: number;
     /** The height drawn under the figure's box: its caption and its explanation. */
     under?: number;
+    /** The least width its box may have beside a neighbour: the widest run of its words. */
+    least?: number;
 };
 
 /** How the figures of the block are set against each other. */
@@ -148,7 +158,8 @@ type Placed = {
     room: boolean;
 };
 
-function placeOf(line: Line, bare: Line, room: Size, text: number | null): Placed {
+/** Where the block goes; `under` keeps it from the column beside the text. */
+function placeOf(line: Line, bare: Line, room: Size, text: number | null, under = false): Placed {
     const size = (s: number): Size => ({ width: line.a * s + line.b, height: line.p * s + line.q });
     if (text === null) {
         const scale =
@@ -161,6 +172,7 @@ function placeOf(line: Line, bare: Line, room: Size, text: number | null): Place
     const column = room.width - TEXT_LEAST - TEXT_GAP;
     const full = (room.height - line.q) / line.p;
     if (
+        !under &&
         line.a * full + line.b < room.width &&
         column > 0 &&
         scaleIn(line, column, room.height) > 0
@@ -172,13 +184,13 @@ function placeOf(line: Line, bare: Line, room: Size, text: number | null): Place
         const beside = { x: 0, y: 0, width: x - TEXT_GAP, height: room.height };
         return { shape: 'tall', scale, x, y, text: beside, room: true };
     }
-    const under = scaleIn(line, room.width, room.height - text);
-    if (under > 0) {
-        const block = size(under);
+    const beneath = scaleIn(line, room.width, room.height - text);
+    if (beneath > 0) {
+        const block = size(beneath);
         const y = room.height - block.height;
         const above = { x: 0, y: 0, width: room.width, height: y };
         const x = (room.width - block.width) / 2;
-        return { shape: 'wide', scale: under, x, y, text: above, room: true };
+        return { shape: 'wide', scale: beneath, x, y, text: above, room: true };
     }
     // The text at its least size leaves the block no room: it is drawn under the text whole, as
     // the room's full width and height allow, and the slide runs past its frame. Where what is
@@ -190,20 +202,24 @@ function placeOf(line: Line, bare: Line, room: Size, text: number | null): Place
     return { shape: 'wide', scale, x, y: text, text: above, room: false };
 }
 
+/** A layout, the figures' own area in it, and whether the block has room of its own. */
+type Candidate = { layout: Layout; area: number; room: boolean };
+
 function layoutOf(
     figures: Figure[],
     arrangement: Arrangement,
     room: Size,
     text: number | null,
-    between: number
-): { layout: Layout; area: number } {
+    between: number,
+    under = false
+): Candidate {
     const line = lineOf(figures, arrangement, between);
     const bare = lineOf(
         figures.map((one) => ({ ...one, under: 0 })),
         arrangement,
         between
     );
-    const placed = placeOf(line, bare, room, text);
+    const placed = placeOf(line, bare, room, text, under);
     const s = placed.scale;
     const block = {
         x: placed.x,
@@ -246,7 +262,29 @@ function layoutOf(
         text: placed.text,
         height
     };
-    return { layout, area };
+    return { layout, area, room: placed.room };
+}
+
+/** Whether every figure's box is at least its `least`; a figure with none meets it. */
+function meets(layout: Layout, figures: Figure[]): boolean {
+    return layout.figures.every((box, at) => box.width >= (figures[at].least ?? 0));
+}
+
+/**
+ * The side-by-side candidate: as the place rule sets it when every box meets its `least`, else,
+ * with text, forced under the text when that has room of its own and meets it; null for neither.
+ */
+function sideCandidate(
+    figures: Figure[],
+    room: Size,
+    text: number | null,
+    between: number
+): Candidate | null {
+    const placed = layoutOf(figures, 'side', room, text, between);
+    if (meets(placed.layout, figures)) return placed;
+    if (text === null) return null;
+    const forced = layoutOf(figures, 'side', room, text, between, true);
+    return forced.room && meets(forced.layout, figures) ? forced : null;
 }
 
 /**
@@ -259,7 +297,7 @@ export function layOut(ask: LayoutAsk): Layout | null {
     const between = ask.between ?? 0;
     if (figures.length === 0) return null;
     if (figures.length === 1) return layoutOf(figures, 'one', room, text, between).layout;
-    const side = layoutOf(figures, 'side', room, text, between);
+    const side = sideCandidate(figures, room, text, between);
     const stacked = layoutOf(figures, 'stacked', room, text, between);
-    return stacked.area > side.area ? stacked.layout : side.layout;
+    return side === null || stacked.area > side.area ? stacked.layout : side.layout;
 }

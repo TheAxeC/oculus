@@ -36,7 +36,7 @@
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         appliedWord,

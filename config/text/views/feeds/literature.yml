@@ -15,7 +15,7 @@ text:
         cites:
             one: '{0} citation'
             other: '{0} citations'
-        copied_citation_js: BibTeX copied, built by citation-js because no source served one
+        copied_citation_js: BibTeX copied, built from the paper's fields because no source served one
         copied_doi: BibTeX copied, from the DOI link
         copied_from: BibTeX copied, from {0}
         copy_failed: Could not copy the BibTeX entry

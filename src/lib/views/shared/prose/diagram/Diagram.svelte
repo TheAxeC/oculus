@@ -5,8 +5,8 @@
     // The drawing is the diagram route's SVG, which utils/diagrams/diagrams.mjs writes with no
     // background and every line and letter in `currentColor`. Drawn by an `img` it would keep black
     // under every theme, since an image is a document of its own, so the file is fetched as text,
-    // passed through ui/html.ts's graph filter and put into the page, where `currentColor` is the
-    // colour of the figure around it: the prose colour of the theme in force.
+    // passed through ui/html/html.ts's graph filter and put into the page, where `currentColor` is
+    // the colour of the figure around it: the prose colour of the theme in force.
     //
     // A later name supersedes a fetch in flight, and a closed view stops one: newest.ts
     // aborts the fetch its stop is called for and hands on an answer only while its fetch is the
@@ -14,7 +14,7 @@
     // diagram and why, instead of an empty box.
 
     import { t } from '$lib/state/shared/words/text';
-    import { sanitiseGraph } from '$lib/ui/html';
+    import { sanitiseGraph } from '$lib/ui/html/html';
     import { loadDiagram, type DiagramFile } from './diagram-file';
     import { newestAnswer } from './newest';
 

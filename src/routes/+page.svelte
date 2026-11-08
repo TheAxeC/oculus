@@ -41,7 +41,7 @@
     import { provideState } from '$lib/state/client/use';
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html';
+    import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html/html';
     import {
         collectionRefusals,
         pageBoards,

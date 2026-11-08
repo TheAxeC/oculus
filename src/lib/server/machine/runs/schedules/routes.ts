@@ -21,12 +21,14 @@
 // name reused for a new schedule never inherits a handled time). They take the record's lock first,
 // check that the record reads, commit the schedules file, change the record and release the lock: a
 // lock that stays taken or a record that does not read refuses before anything is written, and a
-// commit that failed leaves the record as it was. The answer is `{ ok: true }`, `{ ok: true,
-// terminal }` or `{ ok: true, skipped }`, or `{ error: <word>, names }` with 400 for a rule, 409
-// for a file or a record that does not read, a record whose lock is taken, an entry or a chain that
-// changed or an entry that cannot be edited in place, 500 for a file, a record or an approvals file
-// that could not be written, and 403 without the token. The word is a SCHEDULE_WORDS word or a
-// TERMINAL_REFUSALS word; the system's own reason for a failed write goes to the server log.
+// commit that failed leaves the record as it was. The answer is `{ ok: true }`, for a delete
+// `{ ok: true, read }` with the number of the read that will hold it, taken right after the
+// commit, `{ ok: true, terminal }` or `{ ok: true, skipped }`, or `{ error: <word>, names }` with
+// 400 for a rule, 409 for a file or a record that does not read, a record whose lock is taken, an
+// entry or a chain that changed or an entry that cannot be edited in place, 500 for a file, a
+// record or an approvals file that could not be written, and 403 without the token. The word is
+// a SCHEDULE_WORDS word or a TERMINAL_REFUSALS word; the system's own reason for a failed write
+// goes to the server log.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
@@ -120,7 +122,8 @@ function refuse(error: string, names: string[] = [], status?: number): Response 
     return json({ error, names }, { status: code, headers: NO_STORE });
 }
 
-const OK = (): Response => json({ ok: true }, { headers: NO_STORE });
+const OK = (read?: number): Response =>
+    json(read === undefined ? { ok: true } : { ok: true, read }, { headers: NO_STORE });
 
 /** What a write did that the change log and the watcher need. */
 type Wrote = {
@@ -129,6 +132,8 @@ type Wrote = {
     before: unknown;
     after: unknown;
     name: string;
+    /** For a delete, the number of the read that will hold it. */
+    read: number | undefined;
     /**
      * The refusal of a record that could not be written after the file was committed, when the
      * file could not be written back either.
@@ -257,16 +262,20 @@ async function write(
     if (planned.text === null) return approve();
     const text = planned.text;
     const move = recordMove(edit, planned.was);
-    const result: { commit: ReturnType<typeof commitText> | null; changed: boolean } = {
-        commit: null,
-        changed: false
-    };
+    const result: {
+        commit: ReturnType<typeof commitText> | null;
+        changed: boolean;
+        read: number | undefined;
+    } = { commit: null, changed: false, read: undefined };
     const commit = (): boolean => {
         if (!holdsText(files.schedules, planned.from)) {
             result.changed = true;
             return false;
         }
         result.commit = commitText(files.schedules, text);
+        if (result.commit.ok && action.action === 'delete') {
+            result.read = options.schedules.nextRead();
+        }
         return result.commit.ok;
     };
     let late: Response | null = null;
@@ -291,7 +300,14 @@ async function write(
     }
     late ??= approve();
     const name = edit.action === 'save' ? edit.entry.name : edit.name;
-    return { file: files.schedules, before: planned.before, after: planned.after, name, late };
+    return {
+        file: files.schedules,
+        before: planned.before,
+        after: planned.after,
+        name,
+        read: result.read,
+        late
+    };
 }
 
 /** POST /api/schedules: save, delete, pause, resume or run. */
@@ -334,5 +350,5 @@ export async function handleSchedules(
             undo: 'none'
         }
     ]);
-    return wrote.late ?? OK();
+    return wrote.late ?? OK(wrote.read);
 }

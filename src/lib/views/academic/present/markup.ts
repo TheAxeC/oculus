@@ -2,21 +2,22 @@
 // the LaTeX inside it typeset by KaTeX.
 //
 // A deck field is one line of Markdown with mathematics in it, so neither renderer alone does the
-// job: the formulas are lifted out first, the rest goes through the renderer of ui/html.ts, and the
-// typeset formulas are put back afterwards. Lifting them out is also what keeps the Markdown
-// renderer away from a backslash or a star inside a formula.
+// job: the formulas are lifted out first, the rest goes through the renderer of ui/html/html.ts,
+// and the typeset formulas are put back afterwards. Lifting them out is also what keeps the
+// Markdown renderer away from a backslash or a star inside a formula.
 //
-// KaTeX's own markup is not sanitised, and the sanitiser would ruin it: the profile of ui/html.ts
-// drops `style`, which is what positions every box KaTeX draws. What is drawn is KaTeX's markup and
-// not the file's. `trust: false` refuses every command that would emit a link, a class or raw HTML,
-// and the source itself reaches the page as escaped text. A formula that does not parse is drawn as
-// its own source in the error colour rather than thrown, so one mistyped line costs its own slide.
+// KaTeX's own markup is not sanitised, and the sanitiser would ruin it: the profile of
+// ui/html/html.ts drops `style`, which is what positions every box KaTeX draws. What is drawn is
+// KaTeX's markup and not the file's. `trust: false` refuses every command that would emit a link, a
+// class or raw HTML, and the source itself reaches the page as escaped text. A formula that does
+// not parse is drawn as its own source in the error colour rather than thrown, so one mistyped line
+// costs its own slide.
 
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { DECK_GAP } from '$lib/state/life/present';
 import { t } from '$lib/state/shared/words/text';
-import { blockMarkdown, inlineMarkdown, type HtmlMemo } from '$lib/ui/html';
+import { blockMarkdown, inlineMarkdown, type HtmlMemo } from '$lib/ui/html/html';
 
 /**
  * The four delimiter pairs a slide writes a formula in: `$$...$$` and `\[...\]` set a display

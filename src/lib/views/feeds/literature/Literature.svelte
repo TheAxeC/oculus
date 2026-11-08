@@ -22,14 +22,21 @@
     // API and its terms forbid scraping, so it is a link that opens the same query on its site,
     // drawn when the hub's `links` hold a `scholar` row.
     //
-    // The query, the filters, the sort and the toggles are the tab's instance state, saved with the
-    // layout. The answers are not: a tab drawn again with a query held asks it once more, which the
-    // server answers from its cache within `literature.cache_min`. A search started while one is in
-    // flight aborts it, and only the latest search's answers are drawn. Every filter is applied
-    // again to the merged list, whatever the sources did with it; changing the sort asks nothing.
-    // While a search is under way a moving line is drawn across the top of the results, named
-    // Searching, above the papers already answered; under the system's reduce-motion setting it is
-    // drawn still.
+    // The source buttons stand from the first paint: the running listing once `?sources` has
+    // answered, else the listing the tab last saved, else one button per row of the page's config
+    // (state/feeds/literature/form.ts). A search is sent only from the Search button or Enter, and
+    // only after the listing has answered or failed: before that both do nothing, since a source
+    // the machine cannot ask is not sent a request. A listing that fails leaves the rows drawn, and
+    // Search asks those that are on and available, each showing its own state as it answers.
+    //
+    // The query, the filters, the sort, the toggles and the last listing are the tab's instance
+    // state, saved with the layout. The answers are not: a tab drawn again with a query held shows
+    // the form and the idle line, and sends nothing until Search is pressed. A search started while
+    // one is in flight aborts it, and only the latest search's answers are drawn. Every filter is
+    // applied again to the merged list, whatever the sources did with it; changing the sort asks
+    // nothing. While a search is under way a moving line is drawn across the top of the results,
+    // named Searching, above the papers already answered; under the system's reduce-motion setting
+    // it is drawn still.
     //
     // The view sends the query and its filters to the sources toggled on, through the server, and
     // writes nothing but the Lit Watch entry the reader adds. It never writes a `.bib` file.
@@ -51,6 +58,7 @@
     import { refusalWords } from './words';
     import { SOURCES_URL, routeBody, sourceList } from '$lib/state/feeds/literature/answers';
     import {
+        configuredSources,
         formRefusal,
         parseForm,
         sourcesOn,
@@ -119,7 +127,8 @@
 
     /** The sources the server lists, in its order: null until `?sources` answers. */
     let listed = $state<SourceInfo[] | null>(null);
-    const sources = $derived(listed ?? []);
+    /** The buttons drawn: the running listing, else the one saved, else the config's rows. */
+    const sources = $derived(listed ?? form.listed ?? configuredSources(config()?.config ?? {}));
     const read = $derived(orderOf(config()?.config ?? {}));
     const scholar = $derived(scholarUrl(form, read.links));
     let said = $state('');
@@ -140,7 +149,11 @@
         setInstanceState(instance.id, { ...form, ...changes });
     }
 
+    // Whether `?sources` has answered or failed, before which a search sends nothing.
+    let settled = false;
+
     function go(): void {
+        if (!settled) return;
         said = '';
         run.search(form, sourcesOn(form, sources));
     }
@@ -150,15 +163,20 @@
         run.toggle(source, on);
     }
 
-    // Whether the tab was closed, so the listing of sources that lands after it starts no search.
+    // Whether the tab was closed, so the listing of sources that lands after it changes nothing.
     let closed = false;
 
     onMount(() => {
         void (async () => {
             const listing = sourceList(await routeBody(SOURCES_URL, writeToken()));
             if (closed) return;
-            if (listing !== null) listed = listing;
-            if (form.q.trim() !== '' && sources.length > 0) go();
+            settled = true;
+            if (listing === null) return;
+            listed = listing;
+            // Saved only when it differs, so a listing that repeats itself writes no layout.
+            if (JSON.stringify(listing) !== JSON.stringify(form.listed)) {
+                change({ listed: listing });
+            }
         })();
     });
 

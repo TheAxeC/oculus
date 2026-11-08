@@ -37,20 +37,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
-- step: O170
-  brief_check: .scratch/migration/agents/reviews/O170-brief-check.md (a0e91311c5e402ce3, claude-opus-5-5, 288712 tokens, 28 tool uses, 13.6 min)
-  base: 2385c99b6
-  worktree: .agents/worktrees/migration-O170
-  executor: agent
-  worker: claude:opus
-  session_id: a8f1be288ebe70b91 (claude-opus-5-5)
-  launched: 2026-11-08
-  report: .scratch/migration/agents/reviews/O170-report.md
-  builder_usage: first run (hand-back on item 6's candidates): 288889 tokens, 75 tool uses, 10.1 min; build under the round-0 ruling: 248284 tokens, 261 tool uses, 36.3 min
-  reviewer_report: .scratch/migration/agents/reviews/O170-refuter.md (ace225e279285d09b, claude-opus-5-5, 300603 tokens, 38 tool uses, 20.0 min)
-  round: 1
-  shared_paths: src/lib/views/academic/present/Slide.svelte with step O151 of this plan; O151 rewrites the head comment's paragraph on the slide's foot, this step lines 15-34, 56-62 and 170-290, so the changes lie in separate hunks and the merge is simple
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -882,6 +868,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-08 (O170 landed). O170, Literature and Present said and drawn plainly, landed (booking in `plan.md`, report `agents/reviews/O170-landing.md`). `src/lib/ui/html/` now holds `html.ts` and `html-memo.ts`. Next: O151's repair round 2, its builder fitting every deck on its own scratch server at main's head with O151's oculus changes applied, then the review over the round, the measurement of every deck, O151's landing and the hub commit on Axel's word.
 - 2026-11-08 (O170 repair round 1 sent). Every finding of O170's review is ruled in `agents/briefs/O170-round-1.md`, except Standards S2, which rests on a false premise: the file carries `// @module-tag slow`. Next: O170's round, its review over the round, its landing, then O151's repair round 2.
 - 2026-11-08 (O172 landed). O172, a long field drawn with its newlines and paragraphs, landed (booking in `plan.md`, `agents/reviews/O172-landing.md`). O170's review (`agents/reviews/O170-refuter.md`) has two Proof and seven Standards findings and no Spec or Behaviour finding. Open items: none. Next: O170's repair round 1, its review over the round, its landing, then O151's repair round 2.
 - 2026-11-08 (O172 repair round 1 sent). O172's builder reported with one red line, the floor of `html-sites.test.ts`, and its review (`agents/reviews/O172-refuter.md`) has one Spec, three Standards and four Behaviour findings. Every finding is ruled in `agents/briefs/O172-round-1.md`; the floor becomes 19 under the ruling of open item 490 (a). O170's builder is running under its round-0 ruling. Next: O172's round, its review over the round, its landing.

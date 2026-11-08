@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, primitive. A text of the hub's data (a meta row's value, a subtitle, a note, a
     // free-text field, a card's line) with each web address in it drawn as a link: the runs
-    // ui/html.ts's linkRuns cuts the text into, an address as an `<a>` holding the address as
+    // ui/html/html.ts's linkRuns cuts the text into, an address as an `<a>` holding the address as
     // written, opened in a new browser tab, and a plain run as text, with no element of its own
     // around them, so the text sits in its parent's layout as the bare text did. In the desktop
     // app the window guard (src/desktop/windows/) sends such a link to the system browser. A
@@ -9,7 +9,7 @@
     // the press as its own. CodeText.svelte draws its plain words through this when it is asked to
     // link them, for a data text whose backticked words are code.
 
-    import { linkRuns } from '../../html';
+    import { linkRuns } from '../../html/html.ts';
 
     type Props = {
         /** The text as the data holds it. */

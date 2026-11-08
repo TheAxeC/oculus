@@ -151,6 +151,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         schedules: {
             reload: noop,
             runNow: () => Promise.resolve({ refused: 'record-unread', names: [] }),
+            nextRead: () => 1,
             close: noop
         },
         appsSecret: 'the-apps-secret-of-this-context',

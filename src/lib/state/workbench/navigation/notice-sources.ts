@@ -16,9 +16,10 @@
 // Seven sources post: a refused rail write, a session that starts waiting on a permission prompt or
 // goes idle after its turn (`permission_prompt`, `idle_prompt`), each worded as what it waits for,
 // an update task whose run date moved, a Live HPC job newly in `recent`, any write refused or
-// unanswered (`writes.onUnwritten`), a save of the page state the server refused
-// (`pageState.onRefused`), and an option a control set while no workspace file is open, which
-// offers Save Workspace As (`noWorkspace`, called by the ui store).
+// unanswered (`writes.onUnwritten`, a refused fetch, push, pull, sync or publish in words of its
+// own), a save of the page state the server refused (`pageState.onRefused`), and an option a
+// control set while no workspace file is open, which offers Save Workspace As (`noWorkspace`,
+// called by the ui store).
 //
 // An update task's run date is its hub's own, from that hub's row of the portfolio's feed summary
 // (`byHub`), and the inbox triage's one date of the machine. The dates are remembered by task and
@@ -36,6 +37,15 @@ import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import { pairLabel, taskLabel } from '../../system/machine/schedules/schedule-words.ts';
 import type { NoticeAction, NoticesStore } from './notices.svelte.ts';
 import { t } from '../../shared/words/text.ts';
+
+/** The line of a refused git action that names it, by the action; any other has the general one. */
+const GIT_REFUSED: ReadonlyMap<string, (reason: string) => string> = new Map([
+    ['fetch', (reason: string) => t('statusbar.notice_fetch_refused', reason)],
+    ['push', (reason: string) => t('statusbar.notice_push_refused', reason)],
+    ['pull', (reason: string) => t('statusbar.notice_pull_refused', reason)],
+    ['sync', (reason: string) => t('statusbar.notice_sync_refused', reason)],
+    ['publish', (reason: string) => t('statusbar.notice_publish_refused', reason)]
+]);
 
 /** The words of a hook the notifications compare: what happened and what kind of notification. */
 type HookWords = { event: string; kind?: string };
@@ -388,11 +398,13 @@ export function createNoticeSources(
         }
     }
 
-    function unwritten(reason: string, refused: boolean): void {
+    function unwritten(reason: string, refused: boolean, action?: string): void {
+        const named = refused && action !== undefined ? GIT_REFUSED.get(action) : undefined;
         notices.post(
-            refused
-                ? t('statusbar.notice_write_refused', reason)
-                : t('statusbar.notice_write_failed', reason),
+            named?.(reason) ??
+                (refused
+                    ? t('statusbar.notice_write_refused', reason)
+                    : t('statusbar.notice_write_failed', reason)),
             { tone: 'error' }
         );
     }

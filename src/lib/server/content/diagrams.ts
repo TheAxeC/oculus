@@ -11,10 +11,10 @@
 // of the engine directory or out of the folder serves nothing. Every refusal is a 404 that says
 // nothing about what is on disk.
 //
-// The doc view passes what this answers through ui/html.ts's graph filter before it draws it. The
-// headers keep the file an image when its address is opened on its own: `nosniff` holds the type,
-// and the content security policy lets the file carry its own styles and nothing that loads or
-// runs, the pair the file route sends with every SVG (server/files/files.ts's SVG_GUARD).
+// The doc view passes what this answers through ui/html/html.ts's graph filter before it draws it.
+// The headers keep the file an image when its address is opened on its own: `nosniff` holds the
+// type, and the content security policy lets the file carry its own styles and nothing that loads
+// or runs, the pair the file route sends with every SVG (server/files/files.ts's SVG_GUARD).
 
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';

@@ -15,11 +15,13 @@
 // added is held with its fields until the snapshot holds it.
 //
 // An entry that was removed is held as removed, so a list leaves its row out from the answer on,
-// until a snapshot that no longer holds the entry arrives, and no longer: each arrival is told to
-// the store (`heard`), which asks each removal whether the snapshot still holds its entry, so an
-// entry put back by another hand in a later snapshot is shown. A removal answered once such a
-// snapshot has already arrived is not held at all. An entry added again under the same key by a
-// later write is no longer held as removed.
+// until the first snapshot numbered at the build the server named in its answer or later, whether
+// or not that snapshot holds the entry, so an entry put back by another hand is shown. Each arrival
+// is told to the store (`heard`). A snapshot numbered below what was seen at the answer means a
+// restarted server, whose first snapshot holds every write the old one made, so it ends the removal
+// too; one between what was seen and the build holds it until the build. A removal answered with
+// the snapshot already at its build, or by an answer that names no build, is not held at all. An
+// entry added again under the same key by a later write ends its removal.
 //
 // The store is memory only and belongs to one client; a reload reads the server's files.
 
@@ -67,23 +69,23 @@ export type SettledStore = {
     /** The key a record under `prefix` had before a write gave it the key `now`, if one did. */
     renamedFrom: (prefix: string, now: string) => string | undefined;
     /**
-     * Hold the record `key` as removed by write number `seq`, while `shows` answers that the
-     * snapshot holds it; nothing is held when it already answers no.
+     * Hold the record `key` as removed by write number `seq` until the snapshot numbered `build`;
+     * nothing is held when the snapshot is already at it or `build` is undefined.
      */
-    remove: (key: string, seq: number, shows: () => boolean) => void;
-    /** Whether the record `key` was removed and no snapshot without it has arrived since. */
+    remove: (key: string, seq: number, build: number | undefined) => void;
+    /** Whether the record `key` was removed and its removal has not ended. */
     removed: (key: string) => boolean;
-    /** A snapshot arrived: each removal whose record it no longer holds ends. */
+    /** A snapshot arrived: each removal it is at the build of, or below what was seen, ends. */
     heard: () => void;
 };
 
-/** A removal held: its write's number, and whether the snapshot as it is now holds the record. */
-type Removal = { seq: number; shows: () => boolean };
+/** A removal held: its write's number, the build it ends at, the version seen at the answer. */
+type Removal = { seq: number; build: number; seen: number };
 
 /** Settled writes; `versionOf` gives the version of the snapshot a record's key is read in. */
 export function createSettled(versionOf: (key: string) => number): SettledStore {
     const groups = new SvelteMap<string, Group>();
-    /** The records removed that the snapshot still holds, by key. */
+    /** The records removed whose removal has not ended, by key. */
     const gone = new SvelteMap<string, Removal>();
     let sequence = 0;
 
@@ -155,10 +157,11 @@ export function createSettled(versionOf: (key: string) => number): SettledStore 
         return undefined;
     }
 
-    function remove(key: string, seq: number, shows: () => boolean): void {
+    function remove(key: string, seq: number, build: number | undefined): void {
         const created = groups.get(key);
         if (created?.created === true) groups.delete(key);
-        if (shows()) gone.set(key, { seq, shows });
+        const seen = versionOf(key);
+        if (build !== undefined && seen < build) gone.set(key, { seq, build, seen });
         else gone.delete(key);
     }
 
@@ -167,7 +170,10 @@ export function createSettled(versionOf: (key: string) => number): SettledStore 
     }
 
     function heard(): void {
-        for (const [name, away] of gone) if (!away.shows()) gone.delete(name);
+        for (const [name, away] of gone) {
+            const now = versionOf(name);
+            if (now >= away.build || now < away.seen) gone.delete(name);
+        }
     }
 
     return { begin, record, overlay, pending, renamedFrom, remove, removed, heard };

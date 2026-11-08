@@ -3,9 +3,9 @@
 // shell/rail/ScheduleList.svelte): while the `schedule` payload carries tmux's words as `waiting`,
 // a line says that no schedule runs because tmux lists no terminal, with those words; with none,
 // no such line is drawn. The rows (`rows`) leave out an entry a delete took from the server's
-// answer until a read of the file that no longer holds it arrives, and no longer: an entry saved
-// again under its name by another hand after that read is shown, and a delete answered after that
-// read holds nothing.
+// answer until the first read numbered at the read that answer named or later, or below what was
+// seen at the answer: an entry saved again under its name by another hand after that read is shown,
+// and a delete answered with that read already seen holds nothing.
 //
 // It does not cover the line's place in the tray, which the look does.
 
@@ -30,7 +30,8 @@ function linesOver(waiting: string | null): string[] {
         tasks: null,
         primary: null,
         unread: [],
-        waiting
+        waiting,
+        read: 0
     };
     const entities = {
         schedule: () => payload,
@@ -55,8 +56,8 @@ describe('the Schedules section of the tray', () => {
     });
 });
 
-/** A read of the schedules file holding entries of the names given, in that order. */
-function readOf(names: string[]): SchedulePayload {
+/** The read of the schedules file numbered `read`, holding entries of the names given, in order. */
+function readOf(names: string[], read: number): SchedulePayload {
     return {
         schedules: names.map((name, at) => ({
             at,
@@ -72,48 +73,130 @@ function readOf(names: string[]): SchedulePayload {
         tasks: null,
         primary: null,
         unread: [],
-        waiting: null
+        waiting: null,
+        read
     };
 }
 
 describe('a schedule a delete took', () => {
+    const BOTH = ['one', 'two'];
+
     /**
-     * A step: the delete of the entry `one` at position 0 sent, the server's success answering
-     * it, a read of the schedules file arriving with the names given, or the rows read.
+     * A step: the delete of the entry `one` at position 0 sent, the server's success answering it
+     * with the read given (undefined for an answer that names none), its refusal answering it, the
+     * socket reconnecting, a read of the schedules file arriving with its number and the names
+     * given, or the rows read.
      */
-    type Step = 'delete' | 'answer' | 'read' | string[];
-    /** The steps, and the names of the rows at each read. */
-    type Row = { name: string; steps: Step[]; read: string[][] };
+    type Step =
+        | 'delete'
+        | 'refused'
+        | 'reconnect'
+        | 'rows'
+        | { answer: number | undefined }
+        | { read: number; names: string[] };
+    /** The steps, the file read as number 1 at the start, and the rows' names at each read. */
+    type Row = { name: string; steps: Step[]; rows: string[][] };
 
     const ROWS: Row[] = [
         {
-            name: 'it is left out from the answer, through a read that still holds it, until a read without it',
-            steps: ['delete', 'answer', 'read', ['one', 'two'], 'read', ['two'], 'read'],
-            read: [['two'], ['two'], ['two']]
+            name: 'it is left out from the answer, through a read below its number, until a read at it',
+            steps: [
+                'delete',
+                { answer: 3 },
+                'rows',
+                { read: 2, names: BOTH },
+                'rows',
+                { read: 3, names: ['two'] },
+                'rows'
+            ],
+            rows: [['two'], ['two'], ['two']]
         },
         {
-            name: 'saved again by another hand after the read without it, it shows with no read between',
-            steps: ['delete', 'answer', ['two'], ['one', 'two'], 'read'],
-            read: [['one', 'two']]
+            name: 'a read at its number whose rows are the same ends it',
+            steps: ['delete', { answer: 2 }, { read: 2, names: BOTH }, 'rows'],
+            rows: [BOTH]
         },
         {
-            name: 'a delete answered after the read without it holds nothing',
-            steps: ['delete', ['two'], 'answer', 'read', ['one', 'two'], 'read'],
-            read: [['two'], ['one', 'two']]
+            name: 'saved again by another hand after the read at its number, it shows with no read between',
+            steps: [
+                'delete',
+                { answer: 2 },
+                { read: 2, names: ['two'] },
+                { read: 3, names: BOTH },
+                'rows'
+            ],
+            rows: [BOTH]
+        },
+        {
+            name: 'a delete answered with the read at its number already seen holds nothing',
+            steps: [
+                'delete',
+                { read: 2, names: ['two'] },
+                { answer: 2 },
+                'rows',
+                { read: 3, names: BOTH },
+                'rows'
+            ],
+            rows: [['two'], BOTH]
+        },
+        {
+            name: 'an answer that names no read holds nothing',
+            steps: ['delete', { answer: undefined }, 'rows'],
+            rows: [BOTH]
+        },
+        {
+            name: 'a delete the server refused keeps its row and holds nothing',
+            steps: ['delete', 'refused', 'rows'],
+            rows: [BOTH]
+        },
+        {
+            name: 'a read below what was seen at the answer, a restarted server, ends it',
+            steps: [
+                { read: 3, names: BOTH },
+                'delete',
+                { answer: 5 },
+                'reconnect',
+                { read: 1, names: BOTH },
+                'rows'
+            ],
+            rows: [BOTH]
+        },
+        {
+            name: 'a read between what was seen and its number holds it until its number',
+            steps: [
+                { read: 3, names: BOTH },
+                'delete',
+                { answer: 5 },
+                'reconnect',
+                { read: 4, names: BOTH },
+                'rows',
+                { read: 5, names: BOTH },
+                'rows'
+            ],
+            rows: [['two'], BOTH]
         }
     ];
 
-    it.each(ROWS)('$name', async ({ steps, read }) => {
+    /** A channel holding the file read as number 1, and how to hand it the next read. */
+    function channelOf(): {
+        entities: EntitiesStore;
+        arrive: (names: string[], read: number) => void;
+    } {
         const entities = createEntities();
         let version = 1;
-        const arrive = (names: string[]): void => {
-            entities.receive({ channel: 'schedule', version, payload: readOf(names) });
+        const arrive = (names: string[], read: number): void => {
+            entities.receive({ channel: 'schedule', version, payload: readOf(names, read) });
             version += 1;
         };
-        arrive(['one', 'two']);
-        let answer = (): void => undefined;
+        arrive(BOTH, 1);
+        return { entities, arrive };
+    }
+
+    it.each(ROWS)('$name', async ({ steps, rows }) => {
+        const { entities, arrive } = channelOf();
+        let answer = (_posted: unknown): void => undefined;
         const posted = new Promise((resolve) => {
-            answer = () => resolve({ ok: true, status: 200, body: {} });
+            answer = resolve;
         });
         const store = createSchedule(entities, {
             terminalById: () => null,
@@ -123,12 +206,46 @@ describe('a schedule a delete took', () => {
         const seen: string[][] = [];
         for (const step of steps) {
             if (step === 'delete') deleting = store.remove({ at: 0, name: 'one' });
-            else if (step === 'answer') {
-                answer();
+            else if (step === 'reconnect') entities.reconnected();
+            else if (step === 'rows') seen.push(store.rows().map((row) => row.name));
+            else if (step === 'refused') {
+                answer({
+                    ok: false,
+                    status: 409,
+                    body: { error: 'entry-changed', names: [] },
+                    failed: ''
+                });
                 await deleting;
-            } else if (step === 'read') seen.push(store.rows().map((row) => row.name));
-            else arrive(step);
+            } else if ('answer' in step) {
+                const body = step.answer === undefined ? {} : { read: step.answer };
+                answer({ ok: true, status: 200, body, failed: '' });
+                await deleting;
+            } else arrive(step.names, step.read);
         }
-        expect(seen).toEqual(read);
+        expect(seen).toEqual(rows);
+    });
+
+    it('ends two removals each at its own read', async () => {
+        const { entities, arrive } = channelOf();
+        const answers = [2, 3].map((read) => ({
+            ok: true,
+            status: 200,
+            body: { read },
+            failed: ''
+        }));
+        const store = createSchedule(entities, {
+            terminalById: () => null,
+            writes: {
+                postCommand: () => Promise.resolve(answers.shift())
+            } as unknown as WritesStore
+        });
+        await store.remove({ at: 0, name: 'one' });
+        await store.remove({ at: 1, name: 'two' });
+        const seen = [store.rows().map((row) => row.name)];
+        for (const read of [2, 3]) {
+            arrive(BOTH, read);
+            seen.push(store.rows().map((row) => row.name));
+        }
+        expect(seen).toEqual([[], ['one'], BOTH]);
     });
 });

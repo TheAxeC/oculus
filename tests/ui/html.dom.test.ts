@@ -18,7 +18,7 @@ import {
     inlineMarkdown,
     sanitise,
     type MarkdownExtras
-} from '../../src/lib/ui/html.ts';
+} from '../../src/lib/ui/html/html.ts';
 import { MATH_OPTIONS } from '../../src/lib/views/shared/latex/math.ts';
 import { saveLiterature } from '../../src/lib/server/edit/feeds/literature.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';

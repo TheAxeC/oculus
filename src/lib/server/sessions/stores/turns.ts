@@ -16,10 +16,10 @@
 //
 // The Markdown of an assistant turn is rendered here, by renderTurns() once a read has settled
 // which turns it answers, and filtered on the page, the way server/content/docs.ts renders a
-// README: views/shared/prose/Markdown.svelte runs ui/html.ts's sanitise over the HTML as it draws
-// an answer of the Terminal view's transcript, so the rendering and the filtering stay one each and
-// in one place. Its fenced code is painted by the highlighter's extension (data/prose/languages.ts,
-// `codeColour`), as a document's is.
+// README: views/shared/prose/Markdown.svelte runs ui/html/html.ts's sanitise over the HTML as it
+// draws an answer of the Terminal view's transcript, so the rendering and the filtering stay one
+// each and in one place. Its fenced code is painted by the highlighter's extension
+// (data/prose/languages.ts, `codeColour`), as a document's is.
 
 import { setImmediate as nextMacrotask } from 'node:timers/promises';
 import { Marked } from 'marked';

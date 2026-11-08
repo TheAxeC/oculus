@@ -36,21 +36,20 @@
 // the server. tests/ui/html.dom.test.ts runs the sanitiser over jsdom's document.
 //
 // The drawings many controls ask for again, an icon's filtering, a line's inline Markdown and a
-// long field's block Markdown, are held per page in an `HtmlMemo` (ui/display/text/html-memo.ts,
-// its functions handed on from here), so two pages never share one and a call given none draws
-// afresh.
+// long field's block Markdown, are held per page in an `HtmlMemo` (ui/html/html-memo.ts, its
+// functions handed on from here), so two pages never share one and a call given none draws afresh.
 
 import DOMPurify from 'dompurify';
 import { Lexer, Marked, type MarkedExtension, type Tokens } from 'marked';
-import { heldDrawing, remembered, type HtmlMemo } from './display/text/html-memo.ts';
+import { heldDrawing, remembered, type HtmlMemo } from './html-memo.ts';
 import {
     HEADING_PREFIX,
     escapeAttribute,
     renderDocumentParts,
     type RenderedHeading
-} from '../data/prose/markdown/markdown.ts';
-import { FRONT_MATTER } from '../data/prose/markdown/front-matter.ts';
-import { scanNote, sectionOf } from '../data/prose/markdown/note-links.ts';
+} from '../../data/prose/markdown/markdown.ts';
+import { FRONT_MATTER } from '../../data/prose/markdown/front-matter.ts';
+import { scanNote, sectionOf } from '../../data/prose/markdown/note-links.ts';
 import {
     EMBED_CLASS,
     LINK_CLASS,
@@ -60,10 +59,10 @@ import {
     noteHref,
     type EmbedSlot,
     type NoteDrawing
-} from '../data/prose/markdown/note-render.ts';
+} from '../../data/prose/markdown/note-render.ts';
 
-export { createHtmlMemo, provideHtmlMemo, useHtmlMemo } from './display/text/html-memo.ts';
-export type { HtmlMemo } from './display/text/html-memo.ts';
+export { createHtmlMemo, provideHtmlMemo, useHtmlMemo } from './html-memo.ts';
+export type { HtmlMemo } from './html-memo.ts';
 
 /**
  * What every heading id of a rendered document starts with, which a press on a link to a fragment

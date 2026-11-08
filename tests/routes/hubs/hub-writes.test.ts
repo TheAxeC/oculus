@@ -8,70 +8,27 @@
 // compares every file of both hubs before and after the write and after the undo.
 // @module-tag slow: each case builds two hubs and takes 300 ms or more, so npm test leaves it out.
 
-import {
-    existsSync,
-    mkdirSync,
-    readdirSync,
-    readFileSync,
-    realpathSync,
-    statSync,
-    writeFileSync
-} from 'node:fs';
-import { isAbsolute, join, relative } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
 import {
+    carriedOf,
     handleWrite,
+    target as serverTarget,
     type PrimaryTarget,
     type WriteTarget
 } from '../../../src/lib/server/edit/writes.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { it, test } from '../../fixtures/scratch.ts';
+import { contextFixture } from '../../server/root/context-fixture.ts';
 import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
-import {
-    DECK_ORDER,
-    DECK_PATH,
-    TOKEN,
-    changesOf,
-    deckOf,
-    deckTarget,
-    request,
-    target,
-    undone,
-    warmConfig
-} from '../edit/write-fixture.ts';
+import { TOKEN, changesOf, request, target, undone, warmConfig } from '../edit/write-fixture.ts';
+import { differing, filesOf, heldBy } from './hub-files-fixture.ts';
 
 test.beforeAll(warmConfig);
-
-/** The log, the overrides and the bookmarks are beside the hub's files and are not its content. */
-const BESIDE = new Set(['changes.jsonl', 'sessions.json', 'bookmarks.yml']);
-
-/** Every file under a hub by its path inside it, with its text. */
-function filesOf(dir: string, at = ''): Map<string, string> {
-    const held = new Map<string, string>();
-    for (const name of readdirSync(join(dir, at))) {
-        const path = join(at, name);
-        if (at === '' && BESIDE.has(name)) continue;
-        if (statSync(join(dir, path)).isDirectory()) {
-            for (const [key, text] of filesOf(dir, path)) held.set(key, text);
-        } else {
-            held.set(path, readFileSync(join(dir, path), 'utf8'));
-        }
-    }
-    return held;
-}
-
-/** The paths whose text differs between two readings, or that only one of them holds. */
-function differing(before: Map<string, string>, after: Map<string, string>): string[] {
-    const paths = new Set([...before.keys(), ...after.keys()]);
-    return [...paths].filter((path) => before.get(path) !== after.get(path)).sort();
-}
-
-/** Whether a file lies inside a hub's folder, the folder named by either of its two spellings. */
-function heldBy(dir: string, file: string): boolean {
-    return [dir, realpathSync(dir)].some((one) => !relative(one, file).startsWith('..'));
-}
 
 /** A collection file whose `person` field takes a key of the people registry. */
 const PERSON_FIELD_FILE = `title: Statements
@@ -256,6 +213,33 @@ const ROWS: {
         unrecoverable: true
     }
 ];
+
+describe('the build a delete-entry answer names', () => {
+    it.each([
+        { name: 'an entry of the primary hub', id: 'hub:Another task' },
+        { name: 'an entry of the second hub', id: 'lab:Another task' }
+    ])('is the version of the next portfolio message: $name', async ({ id }) => {
+        const context = contextFixture({ engine: engineDir() });
+        const { nextBuild } = serverTarget(
+            context.engine,
+            context.configCache.read().config,
+            carriedOf(context),
+            context
+        );
+        context.hub.publish('portfolio', { built: 'before the write' });
+        const { into } = twoHubs();
+        const response = await handleWrite(
+            request({ kind: 'delete-entry', collection: 'tasks', id }),
+            TOKEN,
+            { ...into, nextBuild }
+        );
+        expect(response.status).toBe(200);
+        const { build } = (await response.json()) as { build?: number };
+        expect(build).toBe(2);
+        expect(context.hub.publish('portfolio', { built: 'after the write' })).toBe(build);
+        context.close();
+    });
+});
 
 describe('a write to a record of the second hub', () => {
     it.each(ROWS)(
@@ -768,92 +752,5 @@ describe('a write from an app', () => {
         });
         expect(differing(before.first, filesOf(first))).toEqual([]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
-    });
-});
-
-/** Two deck hubs: each holds the portfolio deck and the decks of its three projects. */
-function twoDeckHubs(): { into: PrimaryTarget; first: string; lab: string } {
-    const first = deckTarget();
-    const second = deckTarget();
-    const labProjects = second.projects().map((project) => ({
-        ...project,
-        id: `lab:${project.id}`,
-        root: 'lab'
-    }));
-    const into: PrimaryTarget = {
-        ...first,
-        projects: () => [...first.projects(), ...labProjects],
-        files: {
-            roots: () => [
-                { key: 'hub', dir: first.hub },
-                { key: 'lab', dir: second.hub }
-            ]
-        },
-        hubs: [{ key: 'lab', hub: second.hub, config: second.config }]
-    };
-    return { into, first: first.hub, lab: second.hub };
-}
-
-describe('a deck write to the second hub', () => {
-    const MOVE = [
-        { group: 'pillars', base: ['alpha'], slides: ['beta'] },
-        { group: 'more', base: [], slides: ['alpha'] }
-    ];
-    const send = (groups: unknown, over: Record<string, unknown> = {}): unknown => ({
-        kind: 'deck-slides',
-        root: 'lab',
-        path: DECK_PATH,
-        groups,
-        ...over
-    });
-
-    it('writes the deck file of the second hub, logs its path and undoes it', async () => {
-        const { into, first, lab } = twoDeckHubs();
-        const before = { first: filesOf(first), lab: filesOf(lab) };
-        const response = await handleWrite(request(send(MOVE)), TOKEN, into);
-        expect(response.status).toBe(200);
-        expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]);
-        const records = changesOf(into);
-        expect(records).toHaveLength(2);
-        for (const record of records) {
-            expect(heldBy(lab, record.file)).toBe(true);
-            expect(record.file.endsWith(DECK_PATH)).toBe(true);
-            expect((await undone(into, record)).status).toBe(200);
-        }
-        expect(differing(before.lab, filesOf(lab))).toEqual([]);
-        expect(deckOf({ ...into, hub: lab })).toBe(before.lab.get(DECK_PATH));
-    });
-
-    it('refuses a base the file of the second hub does not hold, and writes nothing', async () => {
-        const { into, first, lab } = twoDeckHubs();
-        const before = { first: filesOf(first), lab: filesOf(lab) };
-        const response = await handleWrite(
-            request(send([{ group: 'pillars', base: ['beta'], slides: ['alpha'] }])),
-            TOKEN,
-            into
-        );
-        expect(response.status).toBe(200);
-        const answer = (await response.json()) as {
-            changed: string[];
-            refused: { reason: string }[];
-        };
-        expect(answer.changed).toEqual([]);
-        expect(answer.refused.map((one) => one.reason)).toEqual([
-            "The group's slides list changed on disk while you were working. Read the deck again and make the change again."
-        ]);
-        expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual([]);
-        expect(changesOf(into)).toEqual([]);
-    });
-
-    it('writes the order list of the second hub', async () => {
-        const { into, first, lab } = twoDeckHubs();
-        const before = { first: filesOf(first), lab: filesOf(lab) };
-        const order = { base: DECK_ORDER, entries: ['slides:more', 'intro.md', 'slides:pillars'] };
-        const response = await handleWrite(request(send([], { order })), TOKEN, into);
-        expect(response.status).toBe(200);
-        expect(differing(before.first, filesOf(first))).toEqual([]);
-        expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]);
     });
 });

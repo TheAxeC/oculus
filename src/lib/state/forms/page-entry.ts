@@ -374,10 +374,10 @@ export type Settle = {
     /** An entry added to a collection file. */
     added: (collection: string, id: string, saved: Record<string, unknown>, seq: number) => void;
     /**
-     * An entry removed from a collection file, by its id in the portfolio, held while the snapshot
-     * holds it.
+     * An entry removed from a collection file, by its id in the portfolio, held until the portfolio
+     * build the answer names (`build`, undefined for an answer that names none).
      */
-    removed: (collection: string, id: string, seq: number) => void;
+    removed: (collection: string, id: string, seq: number, build: number | undefined) => void;
     /** Fields set on an entry of a feed, found by its internal id. */
     feed: (kind: FeedKind, id: string, saved: Record<string, unknown>, seq: number) => void;
     /** Sections set on the career file. */
@@ -391,8 +391,8 @@ export type Pages = {
     settle: Settle;
     /**
      * Whether a write removed the entry `id` (its id in the portfolio, so the hub is named) of a
-     * collection and the snapshot still shows it, which a list leaves out: until a snapshot that
-     * no longer holds the entry arrives (state/forms/settled.svelte.ts).
+     * collection, which a list leaves out: until the portfolio build its answer named or later
+     * arrives, whether or not that snapshot holds the entry (state/forms/settled.svelte.ts).
      */
     removed: (collection: string, id: string) => boolean;
 };
@@ -484,11 +484,8 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         added(collection, id, saved, seq) {
             settled.record(entryKey(collection, id), saved, null, seq, { created: true });
         },
-        removed(collection, id, seq) {
-            settled.remove(entryKey(collection, id), seq, () => {
-                const snapshot = sources.snapshot();
-                return snapshot !== null && find(snapshot, collection, [id]) !== null;
-            });
+        removed(collection, id, seq, build) {
+            settled.remove(entryKey(collection, id), seq, build);
         },
         feed(kind, id, saved, seq) {
             const entries = sources.feeds()?.[kind].entries ?? [];

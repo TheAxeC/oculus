@@ -26,7 +26,7 @@ describe('POST /api/schedules', () => {
         writeFileSync(w.files.schedules, held);
         const reload = vi.fn();
         const runNow = vi.fn(() => Promise.resolve({ refused: 'record-unread', names: [] }));
-        const schedules: SchedulesWatcher = { reload, runNow, close: vi.fn() };
+        const schedules: SchedulesWatcher = { reload, runNow, nextRead: () => 1, close: vi.fn() };
         const entry = {
             name: 'Daily radar',
             runs: { task: 'scout' },
@@ -64,6 +64,7 @@ describe('POST /api/schedules', () => {
         const schedules: SchedulesWatcher = {
             reload,
             runNow: vi.fn(() => Promise.resolve({ refused: 'no-primary', names: [] })),
+            nextRead: () => 1,
             close: vi.fn()
         };
         const options = {
@@ -95,5 +96,34 @@ describe('POST /api/schedules', () => {
         }
         expect(existsSync(w.files.schedules)).toBe(false);
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { name: 'a delete names the read taken right after its commit', action: 'delete', read: 7 },
+        { name: 'a pause names none', action: 'pause', read: undefined }
+    ])('$name', async ({ action, read }) => {
+        const w = world();
+        const held = entryText(w, 'task');
+        writeFileSync(w.files.schedules, held);
+        const holdsAtTheCall: boolean[] = [];
+        const schedules: SchedulesWatcher = {
+            reload: vi.fn(),
+            runNow: vi.fn(),
+            nextRead: () => {
+                holdsAtTheCall.push(readFileSync(w.files.schedules, 'utf8') === held);
+                return 7;
+            },
+            close: vi.fn()
+        };
+        const response = await handleSchedules(
+            pagePost(`${HOST}/api/schedules`, { action, at: 0, name: 'Weekly radar' }, TOKEN),
+            TOKEN,
+            routeOptions(w, schedules)
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual(
+            read === undefined ? { ok: true } : { ok: true, read }
+        );
+        expect(holdsAtTheCall).toEqual(read === undefined ? [] : [false]);
     });
 });

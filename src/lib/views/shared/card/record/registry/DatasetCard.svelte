@@ -40,7 +40,7 @@
         unreadWords,
         type Dataset
     } from '$lib/state/sources/registries/datasets';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, shared view. One long field of a hub's data (a note, a description, a next action)
     // as its Markdown, on a card and on a record's page: its paragraphs, lists and quotes, written
-    // once here rather than at every site that draws a field. The HTML is ui/html.ts's
+    // once here rather than at every site that draws a field. The HTML is ui/html/html.ts's
     // fieldMarkdown, which sanitises it, and its formulas are typeset once KaTeX is in
     // (views/shared/latex/card-math.svelte.ts).
     //
@@ -19,7 +19,7 @@
     // read the address against. It is listened for here, since the link is the sanitiser's markup
     // and carries no handler of its own.
 
-    import { fieldMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { fieldMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
 
     type Props = {

@@ -54,9 +54,25 @@ export type Acts = {
     dropped: (event: DragEvent) => void;
 };
 
+/** The status line with nothing on it. */
+const SAID_NOTHING: Readonly<{ line: string }> = Object.freeze({ line: '' });
+
 export function createActs(reads: Reads): Acts {
-    let said = $state('');
+    // Held as an object, so two sayings of the same words are told apart when one is cleared.
+    let said = $state.raw(SAID_NOTHING);
     let asking = $state<Ask | null>(null);
+
+    function say(line: string): void {
+        said = { line };
+    }
+
+    function sayFor(line: string): () => void {
+        const mine = { line };
+        said = mine;
+        return () => {
+            if (said === mine) said = SAID_NOTHING;
+        };
+    }
 
     function deps(): ActDeps | null {
         const ref = reads.ref();
@@ -68,7 +84,7 @@ export function createActs(reads: Reads): Acts {
             write: reads.write,
             openBeside: reads.openBeside,
             show: reads.show,
-            say: (line) => (said = line),
+            say,
             ask: (question) => (asking = question),
             reread: () => reads.reread(ref)
         };
@@ -93,7 +109,8 @@ export function createActs(reads: Reads): Acts {
             bridge: reads.bridge,
             upload: reads.upload,
             openTab: reads.openTab,
-            say: (line) => (said = line),
+            say,
+            sayFor,
             ask: (question) => (asking = question)
         });
     }
@@ -131,8 +148,8 @@ export function createActs(reads: Reads): Acts {
     }
 
     return {
-        said: () => said,
-        say: (line) => (said = line),
+        said: () => said.line,
+        say,
         asking: () => asking,
         closeQuestion: () => (asking = null),
         act,

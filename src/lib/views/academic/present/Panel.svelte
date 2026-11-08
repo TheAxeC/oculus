@@ -15,12 +15,12 @@
     // wrote the slide; that name, like a diagram, is drawn with the slide's text.
     //
     // A diagram is a grid of labelled boxes, and a slide writes its columns and its per-box colour
-    // on the elements themselves, so it goes through the diagram profile of ui/html.ts, which is
-    // the ordinary profile plus `style`. The classes the deck's diagrams are written with are laid
-    // out below, so a diagram is drawn in the app's own surfaces and type rather than in the
+    // on the elements themselves, so it goes through the diagram profile of ui/html/html.ts, which
+    // is the ordinary profile plus `style`. The classes the deck's diagrams are written with are
+    // laid out below, so a diagram is drawn in the app's own surfaces and type rather than in the
     // deck's.
 
-    import { sanitiseDiagram } from '$lib/ui/html';
+    import { sanitiseDiagram } from '$lib/ui/html/html';
     import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
     import type { PresentPanel } from '$lib/state/life/present';

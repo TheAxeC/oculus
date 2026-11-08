@@ -26,6 +26,7 @@ import { tick } from 'svelte';
 import { fields } from '../../data/helpers/guards.ts';
 import { addressOfId, keyOf } from '../../data/helpers/hub-names.ts';
 import { readJson } from '../../data/shapes/shapes.ts';
+import { createUnwritten, type Exchange } from './shapes/unwritten.ts';
 import { answerShape, refusalsShape, writeTimeout } from './shapes/write-answer.ts';
 import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps/apps.ts';
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
@@ -68,12 +69,6 @@ export const DEPOSIT_PATH = '/api/deposit';
 /** The endpoint of the Memories wall: one picture added to the folder, behind the same token. */
 export const MEMORIES_PATH = '/api/memories';
 
-/**
- * One write's answer, whether the server gave it or the write got none, and whether its `error` is
- * the one the server's answer named (`coded`), which a caller's `words` say as a sentence.
- */
-type Exchange = { answer: WriteAnswer; answered: boolean; coded?: boolean };
-
 /** The sink that holds nothing, for a store built with none. Frozen, since such stores share it. */
 const NO_SETTLE: Readonly<Settle> = Object.freeze({
     begin: () => 0,
@@ -108,39 +103,7 @@ export function createWrites(
 
     let token = '';
 
-    /** What registered to hear a write that did not land. */
-    const unwrittenListeners: ((reason: string, refused: boolean) => void)[] = [];
-
-    function onUnwritten(listener: (reason: string, refused: boolean) => void): void {
-        unwrittenListeners.push(listener);
-    }
-
-    /**
-     * Say a write that did not land to every listener: one the server refused, in whole or a field
-     * of it, or one that got no answer, a refusal the server named by a code in the caller's
-     * `words` for it. A listener that fails leaves the caller the answer it already has, which is
-     * what the caller acts on.
-     */
-    function tell(sent: Exchange, options: SendOptions): WriteAnswer {
-        const { answer, answered } = sent;
-        if (options.said === true || (answer.ok && answer.refused.length === 0)) return answer;
-        if (answer.code !== undefined && options.asked?.includes(answer.code) === true) {
-            return answer;
-        }
-        const fields = answer.refused.map((one) => one.reason).filter((one) => one !== '');
-        const { words } = options;
-        const named = sent.coded === true && words !== undefined && answer.error !== undefined;
-        const error = named ? words(answer.error ?? '', answer.reason) : (answer.error ?? '');
-        const reason = fields.length > 0 ? fields.join('; ') : error;
-        for (const listener of unwrittenListeners) {
-            try {
-                listener(reason, answered);
-            } catch {
-                continue;
-            }
-        }
-        return answer;
-    }
+    const { onUnwritten, tell } = createUnwritten();
 
     /** What registered to hear the token change: the socket, which carries it to the server. */
     const tokenListeners: (() => void)[] = [];
@@ -412,7 +375,9 @@ export function createWrites(
     async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
         const seq = settle.begin();
         const answer = await send({ kind: 'delete-entry', collection, id });
-        if (answer.ok && answer.refused.length === 0) settle.removed(collection, id, seq);
+        if (answer.ok && answer.refused.length === 0) {
+            settle.removed(collection, id, seq, answer.build);
+        }
         return answer;
     }
 
@@ -670,6 +635,7 @@ export function createWrites(
      * above all, is the same. An action that can lose work carries `confirm: true`, which the panel
      * sets only from its dialog. The answer is waited for with no limit of the page's, since the
      * server's limits and Cancel govern a git command; `cancel` itself keeps the configured wait.
+     * The action goes to the listeners with the refusal, so a toast can name it.
      */
     async function writeGit(
         action: string,
@@ -677,7 +643,8 @@ export function createWrites(
         fields: Record<string, unknown> = {},
         options: SendOptions = {}
     ): Promise<WriteAnswer> {
-        return send({ action, root, ...fields }, GIT_PATH, options, action === 'cancel');
+        const told = { ...options, action };
+        return send({ action, root, ...fields }, GIT_PATH, told, action === 'cancel');
     }
 
     /**
@@ -809,7 +776,8 @@ export function createWrites(
                     branches: held.branches,
                     id: held.id,
                     hash: held.hash,
-                    file: held.file
+                    file: held.file,
+                    build: held.build
                 }
             };
         } catch (error) {

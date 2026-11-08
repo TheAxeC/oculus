@@ -6,7 +6,7 @@
 // component makes its own `cardMath` in its script, so the drawing is that component's state and
 // nothing is held at module level.
 
-import type { MathDrawing } from '$lib/ui/html';
+import type { MathDrawing } from '$lib/ui/html/html';
 import { t } from '$lib/state/shared/words/text';
 import { MATH_OPTIONS, holdsMath, loadMarkdownMath } from './math.ts';
 

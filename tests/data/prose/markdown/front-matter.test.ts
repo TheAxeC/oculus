@@ -2,10 +2,10 @@
 // scan's tags and headings (data/prose/markdown/note-links.ts), the Outline section's headings
 // (state/sources/explorer/sections/outline.ts), the docs split (data/sources/documents/docs.ts),
 // the preview a source tab draws (views/shared/prose/RenderedMarkdown.svelte, rendered on the
-// server), a note embedded in another (ui/html.ts's blockMarkdownParts) and the Markdown server's
-// hidden token (server/machine/lsp/adapters/markdown/requests.ts). Each row is one text, and every
-// reader of it takes the same lines as the header, or none, but for a byte-order mark before the
-// opening line, which the note scan and the Outline alone skip.
+// server), a note embedded in another (ui/html/html.ts's blockMarkdownParts) and the Markdown
+// server's hidden token (server/machine/lsp/adapters/markdown/requests.ts). Each row is one text,
+// and every reader of it takes the same lines as the header, or none, but for a byte-order mark
+// before the opening line, which the note scan and the Outline alone skip.
 //
 // The test reaches the header only through the readers, so it names no pattern. A drawn document
 // is read as the list of its blocks, each a tag and its text with the markup taken out, so a line
@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import { scanNote, type NoteScan } from '../../../../src/lib/data/prose/markdown/note-links.ts';
 import { splitFrontmatter } from '../../../../src/lib/data/sources/documents/docs.ts';
 import { markdownOutline } from '../../../../src/lib/state/sources/explorer/sections/outline.ts';
-import { blockMarkdownParts } from '../../../../src/lib/ui/html.ts';
+import { blockMarkdownParts } from '../../../../src/lib/ui/html/html.ts';
 import { markdownRequests } from '../../../../src/lib/server/machine/lsp/adapters/markdown/requests.ts';
 import RenderedMarkdown from '../../../../src/lib/views/shared/prose/RenderedMarkdown.svelte';
 import { installRealText } from '../../../views/shared/real-text.ts';

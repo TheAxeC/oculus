@@ -47,6 +47,7 @@ import { gateWrite, storeWrite } from './writes/apps/gate.ts';
 import { defaultAppData } from '../machine/apps/store/store.ts';
 import type { AppsHeld, HeldApp } from '../machine/apps/read/held.ts';
 import { entities as entitiesOf, projects as projectsOf } from '../sessions/stores/hooks.ts';
+import type { Hub } from '../core/channels.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
 import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
@@ -129,6 +130,11 @@ export type WriteTarget = {
     /** The career file, out of the request's configuration. */
     career: CareerRules;
     overrides?: string;
+    /**
+     * The version the next portfolio build will have, which a removal's answer names so the page
+     * knows where its change will be; absent for a caller with no server in hand.
+     */
+    nextBuild?: () => number;
     /**
      * The projects of the portfolio this server last published, which the deck write reads a
      * group's decks from. It is required rather than optional so that a route reaching for a target
@@ -309,7 +315,7 @@ export function target(
     merged: Record<string, unknown>,
     carried: Carried,
     server?: {
-        hub: HubLike;
+        hub: HubLike & Pick<Hub, 'nextVersion'>;
         fsWrites: FsWrites;
         deckGlobs: FolderGlobs;
         opsWrites?: FsWrites;
@@ -330,6 +336,7 @@ export function target(
         engineConfig: () => defaults().config,
         career: careerRules(merged),
         overrides: local.sessionsOverrides,
+        nextBuild: server === undefined ? undefined : () => server.hub.nextVersion('portfolio'),
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
         deckGlobs: server?.deckGlobs ?? folderGlobs(),
@@ -642,7 +649,9 @@ export async function handleWrite(
             );
             return json({ error }, { status: 404 });
         }
-        return answer(outcome, 'delete-entry', into, undefined, app ?? undefined);
+        // Taken with no await since the file was written, so no build can come between.
+        const build = into.nextBuild?.();
+        return answer(outcome, 'delete-entry', into, undefined, app ?? undefined, build);
     }
 
     const fed = feedRoute(body, into, app);
@@ -745,21 +754,23 @@ export async function recordWrite(
 /**
  * What every write answers with when it was asked something this route knows: the records are in
  * the change log before the page is answered, so a page that has seen its own write can read the
- * log and find it.
+ * log and find it. A removal carries `build`, the portfolio build its change will be in.
  */
 async function answer(
     outcome: WriteOutcome,
     kind: string,
     into: WriteTarget,
     undoes?: string,
-    app?: HeldApp
+    app?: HeldApp,
+    build?: number
 ): Promise<Response> {
     await recordWrite(outcome, kind, into, undoes, app);
     return json({
         ok: true,
         changed: outcome.changed,
         refused: outcome.refused,
-        id: outcome.id
+        id: outcome.id,
+        build
     });
 }
 

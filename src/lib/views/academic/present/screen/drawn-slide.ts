@@ -1,11 +1,11 @@
 // Layer 3, view helper. What the slide's layout (Slide.svelte) reads off a slide as drawn: the
 // figures whose image is drawn and the box each is drawn in, what an image's padding adds to it,
-// the gap between two figures of a block, where the room for a Markdown image starts under the
-// heading, and every formula fitted to its box. Each is a read of the document the layout calls
-// between two of its own draws, at each factor it tries; they live apart from the component so
-// the component holds the search and the state, and these the measures. A length is answered as a
-// fraction of the frame's width (`across`, the frame's drawn width), the unit the layout works in
-// (screen/slide-layout.ts).
+// the least width of a figure's box its words need, the gap between two figures of a block, where
+// the room for a Markdown image starts under the heading, and every formula fitted to its box.
+// Each is a read of the document the layout calls between two of its own draws, at each factor it
+// tries; they live apart from the component so the component holds the search and the state, and
+// these the measures. A length is answered as a fraction of the frame's width (`across`, the
+// frame's drawn width), the unit the layout works in (screen/slide-layout.ts).
 
 import { fitFormula } from './formula';
 
@@ -37,6 +37,23 @@ export function frameOf(image: HTMLImageElement, across: number): number {
     const wide = sum(style.paddingLeft, style.paddingRight);
     const high = sum(style.paddingTop, style.paddingBottom);
     return Math.max(wide, high) / across;
+}
+
+/**
+ * The least width a figure's box may have, as a fraction of the frame's width (`across`): the
+ * widest unbreakable run of its caption and explanation with the explanation's padding, 0 for a
+ * figure with neither. The box is read at `min-content`, to which the image's percentage width adds
+ * nothing, and its width is restored in the same read, so nothing is drawn between.
+ */
+export function leastOf(image: HTMLImageElement, across: number): number {
+    const holder = holderOf(image);
+    if (holder === image || holder.children.length < 2) return 0;
+    if (!(holder instanceof HTMLElement)) return 0;
+    const width = holder.style.width;
+    holder.style.width = 'min-content';
+    const least = holder.getBoundingClientRect().width / across;
+    holder.style.width = width;
+    return least;
 }
 
 /**

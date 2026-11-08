@@ -5,7 +5,7 @@
     // fragment link in a narrative (a `[TOC]` entry among them) is handled by the prose partial's
     // jump.ts, so a slide answers it as every other drawn document does.
 
-    import { useHtmlMemo } from '$lib/ui/html';
+    import { useHtmlMemo } from '$lib/ui/html/html';
     import { jump } from '$lib/views/shared/prose/jump';
     import { body, words } from '../markup';
 

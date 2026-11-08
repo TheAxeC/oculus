@@ -33,7 +33,7 @@
 // component, so nothing is shared between tabs, and it is emptied with the view's target, so it
 // goes with the turns it served.
 
-import { OUTWARD_SCHEME } from '$lib/ui/html';
+import { OUTWARD_SCHEME } from '$lib/ui/html/html';
 import { docOfHtml, type DocState } from '$lib/state/system/docs.svelte';
 import type { Turn } from '$lib/state/sessions/transcript.svelte';
 

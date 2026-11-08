@@ -15,7 +15,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html';
+    import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html/html';
     import { drawConfiguredTheme } from '$lib/ui/theme/app-theme';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import type { PageData } from './$types';

@@ -1,6 +1,6 @@
 // Layer 2, client state. The shapes a write's answer is read through (writes.svelte.ts): the parts
 // of the answer the page reads, the refusals it lists, and the configured wait a write is given up
-// after. A file of its own so the store holds only the sending and the telling.
+// after. A file of its own so the store holds only the sending.
 
 import { z } from 'zod';
 import { optionalTextShape, survivorsShape, unchanged } from '../../../data/shapes/shapes.ts';
@@ -29,7 +29,8 @@ export const answerShape = z.object({
     branches: survivorsShape(branchShape).optional().catch(undefined),
     id: optionalTextShape,
     hash: optionalTextShape,
-    file: optionalTextShape
+    file: optionalTextShape,
+    build: z.number().optional().catch(undefined)
 }) satisfies z.ZodType<
     Pick<
         WriteAnswer,
@@ -43,6 +44,7 @@ export const answerShape = z.object({
         | 'id'
         | 'hash'
         | 'file'
+        | 'build'
     >
 >;
 

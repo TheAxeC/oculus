@@ -1,7 +1,7 @@
 // Layer 1, data. The leading YAML header of a Markdown file, one pattern for every reader of one:
 // the note scan's tags and headings (note-links.ts), the Outline section's headings
 // (state/sources/explorer/sections/outline.ts), the preview a source tab draws
-// (views/shared/prose/RenderedMarkdown.svelte), a note embedded in another (ui/html.ts), the
+// (views/shared/prose/RenderedMarkdown.svelte), a note embedded in another (ui/html/html.ts), the
 // Markdown server's hidden token (server/machine/lsp/adapters/markdown/requests.ts) and the docs
 // split the document route, the deck, the feeds writes and the writing lint read through
 // (data/sources/documents/docs.ts's splitFrontmatter). So a line is header to all of them or to

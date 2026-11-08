@@ -8,8 +8,8 @@
 // the pages before it and keeps its `More`, with the state of the page that failed on its chip.
 //
 // The run holds no saved state: the tab's form is its instance state (form.ts), and a tab drawn
-// again runs its held query once more, which the server's cache answers within `cache_min`. The run
-// is made by the view that draws it and is dropped with it, so nothing here outlives the tab.
+// again shows its held query and sends nothing until the reader presses Search or Enter. The run is
+// made by the view that draws it and is dropped with it, so nothing here outlives the tab.
 
 import type {
     LiteratureHit,

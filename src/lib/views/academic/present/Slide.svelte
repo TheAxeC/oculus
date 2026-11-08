@@ -17,8 +17,9 @@
     // panels, an image slide's image) draws them in a room under its title, at the boxes
     // screen/slide-layout.ts gives from the room this measures, each figure's ratio, read from its
     // image once it has loaded, the padding of its drawn image, the gap under its drawn panel, the
-    // height of its caption and explanation at the width the figure is drawn at, and the height of
-    // the text at the least factor. The factor is found by a bounded search, each size drawn and
+    // height of its caption and explanation at the width the figure is drawn at, the least width
+    // those words need, and the height of the text at the least factor, so figures side by side are
+    // never narrower than their words. The factor is found by a bounded search, each size drawn and
     // measured in turn, run from the start each time the slide, the strip, the text size or the
     // theme changes, an image of the slide loads or fails, or a font loads; the search's own
     // changes start no search, so a slide settles on one factor. A factor fits when the content
@@ -29,9 +30,9 @@
     // the missing-figure words, as text. The content is hidden until it has been laid out once. A
     // slide whose content does not fit at the least factor is drawn at it and runs past its frame,
     // its room as tall as its lowest figure, which a measuring Stage reports as too tall. What the
-    // layout reads off the drawn slide (its figures, their frames and gaps, the room under a
-    // heading, the formulas' fit) is screen/drawn-slide.ts's; the search and the state it sets are
-    // here.
+    // layout reads off the drawn slide (its figures, their frames and gaps, the least width of
+    // their words, the room under a heading, the formulas' fit) is screen/drawn-slide.ts's; the
+    // search and the state it sets are here.
     //
     // The slide's foot, under its content, holds the strip of a project's facts at the frame's own
     // type scale, across the frame's whole inner width, which is wider than the reading column (90
@@ -58,7 +59,8 @@
         fitFormulas,
         frameOf,
         gapOf,
-        holderOf
+        holderOf,
+        leastOf
     } from './screen/drawn-slide';
     import {
         FIT_LEAST,
@@ -251,14 +253,18 @@
                 show(layOut({ room: size, figures: asked, text: least, between: gap }));
                 // What is drawn under each figure is measured at the width the layout gave it and
                 // the figures laid out again with those heights, until no height grows. A height
-                // is kept at the largest measured, so the passes end.
+                // is kept at the largest measured, so the passes end. The first pass also reads
+                // the least width each figure's words need, once its box is drawn, and lays out
+                // once more with it.
                 for (let pass = 0; pass < UNDER_PASSES; pass += 1) {
                     const under = known.map((one) => tall(holderOf(one.image)) - tall(one.image));
                     const grown = asked.some((one, at) => under[at] > (one.under ?? 0) + SLACK);
-                    if (!grown) break;
+                    const words = pass === 0 ? known.map((one) => leastOf(one.image, across)) : [];
+                    if (!grown && !words.some((width) => width > 0)) break;
                     asked = asked.map((one, at) => ({
                         ...one,
-                        under: Math.max(one.under ?? 0, under[at])
+                        under: Math.max(one.under ?? 0, under[at]),
+                        least: words[at] ?? one.least
                     }));
                     show(layOut({ room: size, figures: asked, text: least, between: gap }));
                 }

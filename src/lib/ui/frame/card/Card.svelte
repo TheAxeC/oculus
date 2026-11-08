@@ -27,7 +27,7 @@
     // it tells the room from the card's first draw and the title does not move when it appears.
 
     import type { Snippet } from 'svelte';
-    import { sanitise } from '../../html';
+    import { sanitise } from '../../html/html.ts';
     import { provideCardRoom } from './card-room';
 
     type Props = {

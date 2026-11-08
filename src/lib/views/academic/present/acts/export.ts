@@ -11,10 +11,13 @@
 // asked for them and been answered, or for `EXPORT_HOLD_MS`, the pane holds the deck's export under
 // a Web Lock named for it (`exportName`) and answers the page's `keep-asked` with its kept list and
 // its toggle as they were at the press, and the moment of the press. This holds on both paths,
-// the browser tab's too, where the export returns once the tab is open. A press of Export on the
-// same deck while the lock is held, from any pane of any window, says an export is in progress
-// and prints nothing. In a browser tab the print tab opens inside the press, before the lock is
-// asked for, so a press while the lock is held opens a tab and closes it again.
+// the browser tab's too, where the export returns once the print page has been answered or the
+// hold has ended. A press of Export on the same deck while the lock is held, from any pane of any
+// window, says an export is in progress and prints nothing. In a browser tab the print tab opens
+// inside the press, before the lock is asked for, so a press while the lock is held opens a tab
+// and closes it again. The browser path says it is opening the print tab from the press, and that
+// line goes once the print page has been answered or the hold has ended, when it is still the line
+// on show, so a later act's is kept.
 //
 // `<name>` is the deck folder's name, the project's name for a project's `present/` folder, and
 // the root's folder name for a deck at the top of a root (the deck's own `name`).
@@ -49,6 +52,8 @@ export type ExportDeps = {
     /** Open the print route's address in a new browser tab, giving the tab's window when opened. */
     openTab: (address: string) => Window | null;
     say: (line: string) => void;
+    /** Say a line and answer the call that clears it, while it is still this line on show. */
+    sayFor: (line: string) => () => void;
     ask: (question: Ask) => void;
 };
 
@@ -181,9 +186,12 @@ function holdExport(ref: DeckRef, answer: () => Promise<void>): Promise<boolean>
  * already listening; the export lock is taken after, and the tab is closed again when another
  * export of the deck holds it. The tab is opened with its handle kept and its `opener` cut; a tab
  * the browser blocks takes no lock and says so. The channel answers the print page only once the
- * lock is granted, so a press the lock refuses never answers another export's print page.
+ * lock is granted, so a press the lock refuses never answers another export's print page. The
+ * opening line is said from the press and goes when the print page has been answered or the hold
+ * has ended.
  */
 async function exportTab(deps: ExportDeps, address: string): Promise<void> {
+    const clear = deps.sayFor(t('present.export_opening'));
     const print = answerPrint(deps.ref, deps.keep, deps.facts, Date.now());
     const tab = deps.openTab(address);
     if (tab === null) {
@@ -202,7 +210,8 @@ async function exportTab(deps: ExportDeps, address: string): Promise<void> {
         deps.say(t('present.export_running'));
         return;
     }
-    deps.say(t('present.export_opened'));
+    await print.answered;
+    clear();
 }
 
 /** Export the deck to a PDF beside it. */

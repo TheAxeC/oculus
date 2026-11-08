@@ -7,9 +7,9 @@
     // of a session (views/sessions/terminal/transcript/TurnList.svelte).
     //
     // The HTML is somebody's Markdown turned into markup by marked, so it is sanitised by
-    // ui/html.ts and holds only what its profiles allow. The words for the two states the document
-    // is not in come from the view that owns the document, since each of them names what it is
-    // reading; the pending line is an Empty state and the failure its error box.
+    // ui/html/html.ts and holds only what its profiles allow. The words for the two states the
+    // document is not in come from the view that owns the document, since each of them names what
+    // it is reading; the pending line is an Empty state and the failure its error box.
     //
     // A view that hands `onlink` answers a press on its own links first (a note's links and tags),
     // and one that hands `slots` hands the formulas its renderer held apart (RenderedMarkdown's),
@@ -42,7 +42,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { sanitise, type MathSlots } from '$lib/ui/html';
+    import { sanitise, type MathSlots } from '$lib/ui/html/html';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';

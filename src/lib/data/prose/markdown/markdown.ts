@@ -4,8 +4,8 @@
 //
 // One rule, imported by both sides: the document route renders a file on disk with it
 // (server/content/docs.ts), and the page renders the Markdown it already holds with it
-// (ui/html.ts, for the source tab's preview and a slide's narrative), so a document reads the same
-// wherever it is drawn. A copy on each side would let the two disagree about an id or a list.
+// (ui/html/html.ts, for the source tab's preview and a slide's narrative), so a document reads the
+// same wherever it is drawn. A copy on each side would let the two disagree about an id or a list.
 //
 // Every heading id is the GitHub-style slug marked-gfm-heading-id makes, unique within the
 // document, with HEADING_PREFIX before it as GitHub puts it. The prefix is what keeps an id off the

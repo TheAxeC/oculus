@@ -7,7 +7,7 @@
 
     import type { Snippet } from 'svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import { sanitise } from '$lib/ui/html';
+    import { sanitise } from '$lib/ui/html/html';
 
     type Props = {
         html?: string;

@@ -1,9 +1,9 @@
 // Layer 4, tree check. Every place the app writes raw HTML into the page draws one of three things:
-// the output of ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown or
-// one long field of block Markdown (inlineMarkdown and fieldMarkdown sanitise what they render), or
-// a string from config/text/, which oculus wrote for itself. A site that draws anything else is
-// listed below by file and expression with the reason it is safe, or this test fails. Adding a
-// {@html} to a view is therefore a choice a reader of this file can see.
+// the output of ui/html/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline
+// Markdown or one long field of block Markdown (inlineMarkdown and fieldMarkdown sanitise what they
+// render), or a string from config/text/, which oculus wrote for itself. A site that draws anything
+// else is listed below by file and expression with the reason it is safe, or this test fails.
+// Adding a {@html} to a view is therefore a choice a reader of this file can see.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
@@ -37,7 +37,7 @@ const ALLOWED: Record<string, string> = {
     'views/shared/prose/Code.svelte:painted':
         'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the code window holds no markup the file could put there.',
     'views/academic/present/parts/Words.svelte:html':
-        "words() and body() render the slide field through ui/html.ts, which sanitises what it renders; only the KaTeX markup they put back is unfiltered, and that is KaTeX's own output over escaped source with trust off.",
+        "words() and body() render the slide field through ui/html/html.ts, which sanitises what it renders; only the KaTeX markup they put back is unfiltered, and that is KaTeX's own output over escaped source with trust off.",
     'views/academic/present/parts/Equation.svelte:tex(slide.equation, true)':
         "tex() is KaTeX's own markup over escaped source with trust off, so the slide's LaTeX reaches the page as text nodes and the elements around them are KaTeX's; the sanitiser would drop the style attributes that position them.",
     'views/academic/present/Panel.svelte:diagram':

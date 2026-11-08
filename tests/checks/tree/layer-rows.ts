@@ -140,25 +140,24 @@
 // cannot disagree.
 //
 // `data/prose/markdown/**` is in the primitives' row, the one folder of layer 1 there: a Markdown
-// document is rendered by the document route on the server and by ui/html.ts on the page, and the
-// heading ids and the table of contents are one rule for both, so a document reads the same in the
-// doc view and in the source tab's preview; a note's links, embeds and tags are drawn by its
+// document is rendered by the document route on the server and by ui/html/html.ts on the page, and
+// the heading ids and the table of contents are one rule for both, so a document reads the same in
+// the doc view and in the source tab's preview; a note's links, embeds and tags are drawn by its
 // note-render.ts on the page. It is in the state row too, because the Notes section, the notes'
-// moves and the language servers' edits take the rule of a note's name and the reading of its
-// links from note-names.ts and note-links.ts, the rules the server's notes reader takes. It holds
-// no reader and no I/O. `data/prose/languages`,
-// the highlighter, is in the state row for the same reason: the server paints a document's and a
-// transcript turn's code with it, and the page reaches it through state/shared/words/languages.ts.
-// `data/prose/latex`, the reader of a LaTeX text (magic comments, sections, includes), is in the
-// state row because the server's outline and the Files Outline read the same sections through it,
-// the LaTeX store takes the list of programs from it, and the answers module takes the words a
-// LaTeX request is refused with; it takes a string and a parser and does no I/O, and imports no
-// parser of its own. `data/prose/bib` is there for the same reason: the server lists the citations
-// of a bibliography through it and the page aligns and sorts a `.bib` file through it, over a
-// parser it is handed. `data/sources/config/catalog/latex-tables` reads the tables of
-// config/catalogs/latex.yml: the editor's commands and the TeX view read them, and the server words
-// one finding for each list that lost a row from the same read. The same module reads the symbols
-// of config/catalogs/unimath.yml the same way for the editor's completion.
+// moves and the language servers' edits take the rule of a note's name and the reading of its links
+// from note-names.ts and note-links.ts, the rules the server's notes reader takes. It holds no
+// reader and no I/O. `data/prose/languages`, the highlighter, is in the state row for the same
+// reason: the server paints a document's and a transcript turn's code with it, and the page reaches
+// it through state/shared/words/languages.ts. `data/prose/latex`, the reader of a LaTeX text (magic
+// comments, sections, includes), is in the state row because the server's outline and the Files
+// Outline read the same sections through it, the LaTeX store takes the list of programs from it,
+// and the answers module takes the words a LaTeX request is refused with; it takes a string and a
+// parser and does no I/O, and imports no parser of its own. `data/prose/bib` is there for the same
+// reason: the server lists the citations of a bibliography through it and the page aligns and sorts
+// a `.bib` file through it, over a parser it is handed. `data/sources/config/catalog/latex-tables`
+// reads the tables of config/catalogs/latex.yml: the editor's commands and the TeX view read them,
+// and the server words one finding for each list that lost a row from the same read. The same
+// module reads the symbols of config/catalogs/unimath.yml the same way for the editor's completion.
 //
 // `state/shared/words/appearance` is in the primitives' row because the theme list it holds names
 // the body class of an app's colour theme, which ui/theme converts a theme file into a block for

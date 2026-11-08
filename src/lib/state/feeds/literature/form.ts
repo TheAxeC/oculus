@@ -1,7 +1,8 @@
-// Layer 2, client state. What a Literature search tab keeps of what the reader typed: the query,
-// the filters, the sort and the source toggles. It is the tab's instance state, saved with the
-// layout, and a value of the wrong type is read as the default of its field, so a layout saved
-// without it or with a damaged copy draws an empty form and refuses nothing.
+// Layer 2, client state. What a Literature search tab keeps of what the reader typed and what the
+// server last listed: the query, the filters, the sort, the source toggles and the listing of the
+// sources. It is the tab's instance state, saved with the layout, and a value of the wrong type is
+// read as the default of its field, so a layout saved without it or with a damaged copy draws an
+// empty form and refuses nothing.
 //
 // The year and citation fields are kept as typed, so a half-typed year is not rewritten under the
 // reader's hands; the request is made from them only when the search runs, and a value the route
@@ -10,6 +11,12 @@
 // on when the server lists it as one it can ask (a row of `literature.sources` whose required
 // `downloads` row the machine holds). The sources are the rows the server lists, in their order,
 // so a toggle of a row the hub does not name is kept and draws nothing.
+//
+// The listing is kept because the page's config is not there at a reload's first paint and the
+// tab's instance state is: a tab that has listed once draws its source buttons in the first frame,
+// each with the `available` last answered. A tab that has not listed draws one per row of
+// `literature.sources` of the page's config, each pressable, since no page data says which sources
+// the machine can ask. No key or secret is read for either.
 
 import { z } from 'zod';
 import {
@@ -22,6 +29,8 @@ import {
 } from '../../../data/model/index.ts';
 import { boundsRefusal } from '../../../data/prose/literature.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
+import { literatureRows } from '../../../data/sources/config/settings/rows/read.ts';
+import { sourceList } from './answers.ts';
 
 // The vocabulary the view draws its lists from, handed on from the data layer which a view does
 // not import.
@@ -49,6 +58,8 @@ export type LiteratureForm = {
     sort: LiteratureSort;
     /** The toggles the reader pressed, by source; a source not named here is on by its default. */
     toggled: Record<LiteratureSource, boolean>;
+    /** The last listing of the sources the tab was answered with, null before its first. */
+    listed: SourceInfo[] | null;
 };
 
 const formShape = z.object({
@@ -61,7 +72,11 @@ const formShape = z.object({
     author: z.string().catch(''),
     minCites: z.string().catch(''),
     sort: z.enum(SORTS).catch('relevance'),
-    toggled: z.record(z.string(), z.boolean()).catch({})
+    toggled: z.record(z.string(), z.boolean()).catch({}),
+    listed: z
+        .unknown()
+        .optional()
+        .transform((held) => sourceList({ sources: held }))
 });
 
 /** The tab's saved state as a form; any field of the wrong type takes its default. */
@@ -69,6 +84,22 @@ export function parseForm(raw: unknown): LiteratureForm {
     const held = readAs(formShape, raw);
     if (held !== null) return held;
     return formShape.parse({});
+}
+
+/**
+ * The source buttons a tab draws before any listing: one per row of `literature.sources` of the
+ * page's config, in the rows' order, each pressable, and a listing's words for its key absent.
+ */
+export function configuredSources(config: Record<string, unknown>): SourceInfo[] {
+    return literatureRows(config).map((row) => ({
+        id: row.key,
+        name: row.name,
+        keyed: (row.auth ?? []).some((entry) => entry.required === true),
+        available: true,
+        key: null,
+        help: null,
+        bibtex: null
+    }));
 }
 
 /** Whether a listed source is on: the reader's toggle, else on when the machine can ask it. */

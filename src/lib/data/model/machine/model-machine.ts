@@ -235,6 +235,8 @@ export type SchedulePayload = {
      * due time is decided; null otherwise.
      */
     waiting: string | null;
+    /** The number of the read of the schedules file this payload shows, counted by the watcher. */
+    read: number;
 };
 
 // ------------------------------------------------------------------ terminals

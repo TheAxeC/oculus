@@ -47,9 +47,9 @@
 // the document, else the first hub of the workspace that holds the folder), so the page can tell a
 // hub path that lies in the engine folder from one that does not.
 //
-// The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
-// this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
-// one place the markup becomes a document, so this route stays the reader of a file and nothing
+// The HTML is rendered here and filtered on the page: ui/html/html.ts's sanitise runs over every
+// body this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at
+// the one place the markup becomes a document, so this route stays the reader of a file and nothing
 // else.
 //
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts

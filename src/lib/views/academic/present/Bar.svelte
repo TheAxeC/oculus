@@ -1,15 +1,16 @@
 <script lang="ts">
     // Layer 3, Present partial. The toolbar of the Present pane: the deck menu, the two step
-    // buttons, the overview control, the Project facts toggle while the slide on screen comes from
-    // a project's deck, the full-screen and presenter controls, the Export to PDF button, the
-    // status line of the last act on a slide or on the deck's arrangement, and the place in the
-    // deck, drawn only once the deck has loaded ("0 / 0" for a loaded deck of no slide). Under it,
-    // for a deck whose groups hold project decks, the Projects board's bar over the projects whose
-    // decks those groups hold (views/shared/forms/bar/BoardBar.svelte): the search, the stale,
-    // deadline and waiting toggles, Mine only, the groups and More, then the slices, the shown
-    // count and Clear all; a deck with no such group draws no bar and keeps no room for one.
-    // It holds no state of its own; Present.svelte owns the deck and the position, and
-    // acts/filter.svelte.ts the filter, and each action is handed in.
+    // buttons, the overview control, the full-screen and presenter controls, the Export to PDF
+    // button, the Project facts toggle while the slide on screen comes from a project's deck, drawn
+    // last of the buttons so none of them moves when it comes and goes, the status line of the last
+    // act on a slide or on the deck's arrangement, and the place in the deck, drawn only once the
+    // deck has loaded ("0 / 0" for a loaded deck of no slide). Under it, for a deck whose groups
+    // hold project decks, the Projects board's bar over the projects whose decks those groups hold
+    // (views/shared/forms/bar/BoardBar.svelte): the search, the stale, deadline and waiting
+    // toggles, Mine only, the groups and More, then the slices, the shown count and Clear all; a
+    // deck with no such group draws no bar and keeps no room for one. It holds no state of its own;
+    // Present.svelte owns the deck and the position, and acts/filter.svelte.ts the filter, and each
+    // action is handed in.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -86,14 +87,6 @@
         pressed={overview}
         onclick={onoverview}
     />
-    {#if facts !== null}
-        <Chip
-            label={t('present.facts')}
-            title={t('present.facts_tip')}
-            pressed={facts}
-            onclick={onfacts}
-        />
-    {/if}
     <ToolButton
         label={t('present.present')}
         title={t('present.present_tip')}
@@ -116,6 +109,14 @@
         onclick={onexport}
         disabled={slideless}
     />
+    {#if facts !== null}
+        <Chip
+            label={t('present.facts')}
+            title={t('present.facts_tip')}
+            pressed={facts}
+            onclick={onfacts}
+        />
+    {/if}
     <span class="said" role="status">{said}</span>
     {#if count !== null}
         <span class="counter">{t('present.counter', String(at), String(count))}</span>
@@ -131,9 +132,12 @@
 {/if}
 
 <style>
-    /* The status line takes the room between the controls and the place in the deck. */
+    /* The status line takes the room between the controls and the place in the deck. A line that
+       does not fit there goes to its own row of the toolbar, whole, and is cut with an ellipsis
+       only where it is wider than the pane. */
     .said {
-        flex: 1 1 0;
+        flex: 1 1 auto;
+        max-width: 100%;
         min-width: 0;
         overflow: hidden;
         color: var(--muted-txt, var(--muted));

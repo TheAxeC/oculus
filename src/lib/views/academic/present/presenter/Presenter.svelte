@@ -1,18 +1,25 @@
 <script lang="ts">
     // Layer 3, Present partial. The presenter screen: what the reader sees while the audience sees
     // the slide alone in a window of its own. The slide on show is large, with the next slide
-    // smaller beside it, or a sentence after the last, and under the next slide the notes of the
-    // slide on show as plain text, scrolling when long. Above them sit the place in the deck, the
-    // time of day, a timer that counts from the press that started the presentation, with Pause,
-    // Resume and Reset, and the End control.
+    // smaller, or a sentence after the last, and the notes of the slide on show as plain text,
+    // scrolling when long. Above them sit the place in the deck, the time of day, a timer that
+    // counts from the press that started the presentation, with Pause, Resume and Reset, and the
+    // End control.
+    //
+    // Under the meters one grid holds the slide on show and the side, so the next slide's room is
+    // no wider and no taller than the current slide's at every pane size. In a pane of 596 px or
+    // more (the screen's content width of 572 px, the size container being the screen) the slide
+    // and the side are columns of 3fr and 1fr in one row, and the side holds the next slide and the
+    // notes in rows of 3fr and 2fr. Below it the slide and the side are rows of 3fr and 2fr, and
+    // the side's row holds the next slide and the notes as two equal columns. The notes keep their
+    // share and their scrolling at every size.
     //
     // The component holds no state of the deck or the presentation: Present.svelte hands in the
     // slides, the timer and what each control does. A click on the slide on show moves to the next
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
     // are read again on a tick of their own. Both slides are drawn in the slide's shape, each at
-    // the largest box of it its room holds, and measured (screen/Framed.svelte), and the next
-    // slide's room takes the slide's shape; both draw the strip of a project's facts by the pane's
-    // Project facts toggle (`facts`).
+    // the largest box of it its room holds, and measured (screen/Framed.svelte); both draw the
+    // strip of a project's facts by the pane's Project facts toggle (`facts`).
     //
     // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
     // end-of-deck line and the notes are read off a `Surface`.
@@ -20,7 +27,6 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
-        SLIDE_SHAPE,
         clockText,
         timerElapsed,
         timerText,
@@ -106,62 +112,61 @@
             onclick={onend}
         />
     </div>
-    <!-- A click on the slide is the reader's way to the next one; the keys are the pane's own. -->
-    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <div class="current" data-current onclick={onadvance}>
-        <Framed {row} {deck} {facts} />
-    </div>
-    <div class="side">
-        <section class="next" data-next aria-label={t('present.presenter_next')}>
-            <Surface>
-                <h3 class="caption">{t('present.presenter_next')}</h3>
-                {#if next === null}
-                    <p class="done">{t('present.presenter_end_of_deck')}</p>
-                {/if}
-            </Surface>
-            {#if next !== null}
-                <div
-                    class="preview"
-                    style:aspect-ratio="{SLIDE_SHAPE.width} / {SLIDE_SHAPE.height}"
-                >
-                    <Framed row={next} {deck} {facts} />
-                </div>
-            {/if}
-        </section>
-        <section class="notes" aria-label={t('present.presenter_notes')}>
-            <Surface>
-                <h3 class="caption">{t('present.presenter_notes')}</h3>
-            </Surface>
-            <div class="text" data-notes>
+    <div class="slides">
+        <!-- A click on the slide is the way to the next one; the keys are the pane's own. -->
+        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+        <div class="current" data-current onclick={onadvance}>
+            <Framed {row} {deck} {facts} />
+        </div>
+        <div class="side">
+            <section class="next" data-next aria-label={t('present.presenter_next')}>
                 <Surface>
-                    {#if notes === ''}
-                        <p class="none">{t('present.presenter_no_notes')}</p>
-                    {:else}
-                        <p class="words">{notes}</p>
+                    <h3 class="caption">{t('present.presenter_next')}</h3>
+                    {#if next === null}
+                        <p class="done">{t('present.presenter_end_of_deck')}</p>
                     {/if}
                 </Surface>
-            </div>
-        </section>
+                {#if next !== null}
+                    <div class="preview">
+                        <Framed row={next} {deck} {facts} />
+                    </div>
+                {/if}
+            </section>
+            <section class="notes" aria-label={t('present.presenter_notes')}>
+                <Surface>
+                    <h3 class="caption">{t('present.presenter_notes')}</h3>
+                </Surface>
+                <div class="text" data-notes>
+                    <Surface>
+                        {#if notes === ''}
+                            <p class="none">{t('present.presenter_no_notes')}</p>
+                        {:else}
+                            <p class="words">{notes}</p>
+                        {/if}
+                    </Surface>
+                </div>
+            </section>
+        </div>
     </div>
 </div>
 
 <style>
-    /* The current slide and the side column share a row, and the side column wraps under the
-       slide when the pane is too narrow for both, so the slide is never squeezed to nothing. */
+    /* The screen is the size container of the switch below, and the meters stand over the grid of
+       the slides. */
     .presenter {
         display: flex;
-        flex-wrap: wrap;
-        align-content: stretch;
+        flex-direction: column;
         gap: 12px;
         box-sizing: border-box;
         width: 100%;
         height: 100%;
         padding: 12px;
+        container-type: size;
     }
 
     .meters {
         display: flex;
-        flex: 1 0 100%;
+        flex: 0 0 auto;
         flex-wrap: wrap;
         align-items: center;
         gap: 12px;
@@ -178,30 +183,58 @@
         flex: 1 1 0;
     }
 
+    /* A narrow pane: the slide over the side, the side's cells two equal columns. */
+    .slides {
+        display: grid;
+        flex: 1 1 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+        gap: 12px;
+        min-height: 0;
+    }
+
     .current {
-        flex: 3 1 320px;
         min-width: 0;
         min-height: 0;
         cursor: pointer;
     }
 
     .side {
-        display: flex;
-        flex: 1 1 240px;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: minmax(0, 1fr);
         gap: 12px;
         min-width: 0;
         min-height: 0;
     }
 
-    .next {
-        flex: 0 0 auto;
+    /* A pane of 596 px or more, 572 px of content: the side a column beside the slide, its cells
+       the next slide over the notes. */
+    @container (min-width: 572px) {
+        .slides {
+            grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+        }
+
+        .side {
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+        }
     }
 
-    /* The next slide is a room of the slide's shape, set on the element, which its stage fills
-       with the frame drawn at the room's size. */
+    /* The caption over a room for the next slide, which draws the largest box of the slide's shape
+       its cell holds. */
+    .next {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        min-width: 0;
+        min-height: 0;
+    }
+
     .preview {
-        width: 100%;
+        min-width: 0;
+        min-height: 0;
     }
 
     .caption {
@@ -226,11 +259,11 @@
         white-space: pre-wrap;
     }
 
-    /* The notes take what the next slide leaves, and scroll inside it when they are long. */
+    /* The notes fill their cell, and scroll inside it when they are long. */
     .notes {
         display: flex;
-        flex: 1 1 0;
         flex-direction: column;
+        min-width: 0;
         min-height: 0;
     }
 

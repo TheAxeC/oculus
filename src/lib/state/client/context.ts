@@ -168,7 +168,7 @@ export function createClientState(
     const { queries, withQueries, tabScope } = createQueryScope();
     const entities = createEntities();
     // What a write took is shown by the pages until the snapshot catches up: a held value is dated
-    // by its record's channel version, and a removal ends at the first snapshot kept without it.
+    // by its record's channel version, and a removal ends at the build its answer names or later.
     const settled = createSettled(
         (key) =>
             entities.message(

@@ -2,10 +2,10 @@
 // Math Preview view and every drawn Markdown document: one function that typesets a formula into a
 // node, with the macros the document defines so the preview draws what the document's own commands
 // mean, and the modules a Markdown document's formulas are typeset with (`loadMarkdownMath`, drawn
-// by ui/html.ts). KaTeX and its stylesheet load on the first formula, as a chunk of their own, and
-// `marked-katex-extension` with them, since it brings KaTeX in.
+// by ui/html/html.ts). KaTeX and its stylesheet load on the first formula, as a chunk of their own,
+// and `marked-katex-extension` with them, since it brings KaTeX in.
 
-import type { MathModules } from '$lib/ui/html';
+import type { MathModules } from '$lib/ui/html/html';
 
 /**
  * The options every formula is typeset with: no trust, KaTeX's own limits, no error for a command

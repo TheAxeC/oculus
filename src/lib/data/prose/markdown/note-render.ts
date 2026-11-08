@@ -1,7 +1,7 @@
 // Layer 1, data. How a note's links, embeds and tags are drawn in its rendered half and the
 // Markdown Preview: a marked extension over note-links.ts's tokenizers, given what the page knows
-// of the note's hub (`NoteContext`). It writes markup only; ui/html.ts renders the document with
-// it, puts the embedded notes in, and sanitises the whole.
+// of the note's hub (`NoteContext`). It writes markup only; ui/html/html.ts renders the document
+// with it, puts the embedded notes in, and sanitises the whole.
 //
 // A link is an `a` of the class `wikilink`, its address `#note=` and the link's name and heading
 // encoded once, which the press on it reads back (`pressedNote`), so the press opens the note at

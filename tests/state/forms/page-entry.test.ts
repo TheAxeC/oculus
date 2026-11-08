@@ -1,10 +1,11 @@
 // Layer 2, client-state tests. The page of an entry: which view opens it and with what state, how a
 // page is found again from its name in the snapshot and the feeds as they stand now, and how the
 // draft of a page is judged against it, and how long a collection entry a write removed is left
-// out of its list: until a snapshot that no longer holds it arrives, and no longer. The snapshot
-// and the feeds are synthetic and hold only what the page reads.
+// out of its list: until the first snapshot numbered at the build its answer named or later, or
+// below what was seen at the answer. The snapshot and the feeds are synthetic and hold only what
+// the page reads.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { RegistryWord } from '../../../src/lib/data/helpers/hub-names.ts';
 import type {
     Career,
@@ -419,40 +420,75 @@ function tasksOf(keys: string[]): Snapshot {
 }
 
 describe('an entry of a collection a write removed', () => {
-    /** A delete of `hub:a` answered with success, or a snapshot arriving holding the keys given. */
-    type Step = 'delete' | string[];
-    /** The steps, and after each whether the Tasks list leaves `hub:a` out. */
+    /**
+     * A delete of `hub:a` answered with the build given (undefined for an answer that names none),
+     * or a snapshot of the version given arriving, holding the keys given.
+     */
+    type Step = { build: number | undefined } | { version: number; keys: string[] };
+    /** The steps, the channel starting at version 1, and after each whether `hub:a` is left out. */
     type Row = { name: string; steps: Step[]; left: boolean[] };
+
+    const AB = ['a', 'b'];
 
     const ROWS: Row[] = [
         {
-            name: 'a delete answered before the snapshot without the entry arrives',
-            steps: ['delete', ['a', 'b'], ['a', 'b'], ['b'], ['b']],
-            left: [true, true, true, false, false]
+            name: 'a snapshot below the build holds it and the one at the build ends it',
+            steps: [
+                { build: 3 },
+                { version: 2, keys: AB },
+                { version: 3, keys: ['b'] },
+                { version: 4, keys: ['b'] }
+            ],
+            left: [true, true, false, false]
         },
         {
-            name: 'a delete answered after the snapshot without the entry arrived',
-            steps: [['b'], 'delete', ['b']],
-            left: [false, false, false]
+            name: 'a snapshot at the build that still holds the entry ends it',
+            steps: [{ build: 2 }, { version: 2, keys: AB }],
+            left: [true, false]
         },
         {
-            name: 'an entry put back by another hand in the next snapshot',
-            steps: ['delete', ['b'], ['a', 'b']],
+            name: 'a removal answered with the channel already at the build holds nothing',
+            steps: [{ version: 2, keys: ['b'] }, { build: 2 }],
+            left: [false, false]
+        },
+        {
+            name: 'an answer that names no build holds nothing',
+            steps: [{ build: undefined }],
+            left: [false]
+        },
+        {
+            name: 'a snapshot below what was seen at the answer, a restarted server, ends it',
+            steps: [{ version: 3, keys: AB }, { build: 5 }, { version: 1, keys: AB }],
+            left: [false, true, false]
+        },
+        {
+            name: 'a snapshot between what was seen and the build holds it until the build',
+            steps: [
+                { version: 3, keys: AB },
+                { build: 5 },
+                { version: 4, keys: AB },
+                { version: 5, keys: AB }
+            ],
+            left: [false, true, true, false]
+        },
+        {
+            name: 'an entry put back by another hand after the build is shown',
+            steps: [{ build: 2 }, { version: 2, keys: ['b'] }, { version: 3, keys: AB }],
             left: [true, false, false]
         }
     ];
 
-    it.each(ROWS)('is left out only until a snapshot without it: $name', ({ steps, left }) => {
-        let held = tasksOf(['a', 'b']);
+    it.each(ROWS)('is left out until its build: $name', ({ steps, left }) => {
+        let held = tasksOf(AB);
         let version = 1;
         const settled = createSettled(() => version);
         const pages = createPages({ snapshot: () => held, feeds: () => null }, settled);
         const seen = steps.map((step) => {
-            if (step === 'delete') {
-                pages.settle.removed('tasks', 'hub:a', settled.begin());
+            if ('build' in step) {
+                pages.settle.removed('tasks', 'hub:a', settled.begin(), step.build);
             } else {
-                held = tasksOf(step);
-                version += 1;
+                held = tasksOf(step.keys);
+                version = step.version;
                 settled.heard();
             }
             return pages.removed('tasks', 'hub:a');
@@ -460,18 +496,75 @@ describe('an entry of a collection a write removed', () => {
         expect(seen).toEqual(left);
     });
 
-    it("is left out until a snapshot without it arrives through the client's own wiring", () => {
-        const client = createClientState();
+    it('ends two removals each at its own build', () => {
         let version = 1;
-        const arrive = (keys: string[]): boolean => {
-            client.entities.receive({ channel: 'portfolio', version, payload: tasksOf(keys) });
-            version += 1;
+        const settled = createSettled(() => version);
+        const pages = createPages({ snapshot: () => tasksOf(AB), feeds: () => null }, settled);
+        pages.settle.removed('tasks', 'hub:a', settled.begin(), 2);
+        pages.settle.removed('tasks', 'hub:b', settled.begin(), 3);
+        const left = (): boolean[] => [
+            pages.removed('tasks', 'hub:a'),
+            pages.removed('tasks', 'hub:b')
+        ];
+        const seen = [left()];
+        for (const next of [2, 3]) {
+            version = next;
+            settled.heard();
+            seen.push(left());
+        }
+        expect(seen).toEqual([
+            [true, true],
+            [false, true],
+            [false, false]
+        ]);
+    });
+
+    it("is left out until its build through the client's own wiring, a reconnect included", () => {
+        const client = createClientState();
+        const arrive = (version: number): boolean => {
+            client.entities.receive({ channel: 'portfolio', version, payload: tasksOf(AB) });
             return client.pages.removed('tasks', 'hub:a');
         };
-        arrive(['a', 'b']);
-        client.pages.settle.removed('tasks', 'hub:a', client.settled.begin());
-        const seen = [client.pages.removed('tasks', 'hub:a')];
-        for (const keys of [['a', 'b'], ['b'], ['a', 'b']]) seen.push(arrive(keys));
-        expect(seen).toEqual([true, true, false, false]);
+        arrive(4);
+        client.pages.settle.removed('tasks', 'hub:a', client.settled.begin(), 6);
+        const seen = [client.pages.removed('tasks', 'hub:a'), arrive(5), arrive(6)];
+        client.pages.settle.removed('tasks', 'hub:a', client.settled.begin(), 8);
+        seen.push(client.pages.removed('tasks', 'hub:a'));
+        client.entities.reconnected();
+        seen.push(arrive(1));
+        expect(seen).toEqual([true, true, false, true, false]);
+    });
+
+    it.each([
+        { name: 'refused', status: 404, body: { error: 'no entry' }, left: false },
+        {
+            name: 'taken, its answer naming a build',
+            status: 200,
+            body: { ok: true, changed: [], refused: [], build: 6 },
+            left: true
+        },
+        {
+            name: 'taken, its answer naming no build',
+            status: 200,
+            body: { ok: true, changed: [], refused: [] },
+            left: false
+        }
+    ])('is held by the answer of the delete: $name', async ({ status, body, left }) => {
+        const client = createClientState();
+        client.entities.receive({ channel: 'portfolio', version: 5, payload: tasksOf(AB) });
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() =>
+                Promise.resolve(
+                    new Response(JSON.stringify(body), {
+                        status,
+                        headers: { 'content-type': 'application/json' }
+                    })
+                )
+            )
+        );
+        await client.writes.deleteEntry('tasks', 'hub:a');
+        vi.unstubAllGlobals();
+        expect(client.pages.removed('tasks', 'hub:a')).toBe(left);
     });
 });

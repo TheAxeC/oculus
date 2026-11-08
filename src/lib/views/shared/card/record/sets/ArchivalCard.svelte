@@ -15,7 +15,7 @@
     import { archivedCount, type ArchiveGroup } from '$lib/state/boards/structure/lines';
     import { stageGroup } from '$lib/state/boards/structure/cross-links';
     import { chipGlyphName, chipLabel } from '$lib/state/shared/words/tones';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
+    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html/html';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

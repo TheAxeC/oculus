@@ -49,7 +49,7 @@ text:
         export_blocked: The browser blocked the print tab; allow pop-ups for this page and press Export again.
         export_busy: Making the PDF...
         export_done: 'Wrote {0} beside the deck.'
-        export_opened: The deck opened in a new tab; the browser's print dialog saves it as a PDF.
+        export_opening: Opening the print tab...
         export_running: An export of this deck is already in progress.
         export_tip: Write the deck to a PDF beside it, one slide to a page
         export_too_large: 'The PDF is larger than the {0} MB a file may be.'

@@ -91,14 +91,17 @@ describe('the committed diagrams', () => {
         expect([...parses.sets].sort()).toEqual(files);
         expect(engineParsed).toEqual([files, files]);
         const dir = copyOfTree();
-        appendFileSync(join(dir, 'src/lib/ui/html.ts'), "import '../server/core/auth.ts';\n");
+        appendFileSync(
+            join(dir, 'src/lib/ui/html/html.ts'),
+            "import '../../server/core/auth.ts';\n"
+        );
         appendFileSync(
             join(dir, 'src/lib/server/root/watch/git.ts'),
             "hub.publish('brandnew', {});\n"
         );
         const [sets, from] = [parses.sets.length, PARSERS.map((one) => parsedSince(one, 0).length)];
         const stale = await staleFiles(dir, undefined, parses);
-        const changed = ['lib/server/root/watch/git.ts', 'lib/ui/html.ts'];
+        const changed = ['lib/server/root/watch/git.ts', 'lib/ui/html/html.ts'];
         expect(parses.sets.slice(sets).sort()).toEqual(changed);
         expect(PARSERS.map((one, at) => parsedSince(one, from[at]))).toEqual([changed, changed]);
         expect(stale).toEqual([
