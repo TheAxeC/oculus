@@ -38,6 +38,7 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
 - step: O171
+  brief_check: "running: a8c7afd700e04bb47"
   landing: preparing
 ```
 
