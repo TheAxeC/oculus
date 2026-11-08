@@ -49,6 +49,9 @@ dispatch:           # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O173-report.md
   round: 0
   landing: not-started
+- step: O174
+  landing: preparing
+  brief_check: agents/reviews/O174-brief-check.md (adbccfd2456711e7e, claude-opus-5-5, 149974 tokens, 15 tool uses, 7.0 min)
 ```
 
 ## The standing demands (from Axel, in force)
