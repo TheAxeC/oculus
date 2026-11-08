@@ -308,14 +308,32 @@ export type DeckKeys = {
  */
 export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing' | 'unnamed';
 
-/** The size in px a deck's slides are laid out in, each side a whole number above zero. */
-export type DeckFrame = { width: number; height: number };
+/**
+ * The shape of every slide, its width to its height. A slide has no size of its own: each surface
+ * draws it at the largest box of this shape its room holds, and every size inside it is a fraction
+ * of that box. The Present view, the print route and the desktop host's print and audience windows
+ * all read it here.
+ */
+export const SLIDE_SHAPE = { width: 16, height: 9 } as const;
+
+/** The height of a slide of the given width, in the width's unit. */
+export function slideHeight(width: number): number {
+    return (width * SLIDE_SHAPE.height) / SLIDE_SHAPE.width;
+}
+
+/** The width of the page a slide prints on, in points: 13.33 inches. */
+const PAGE_WIDTH_PT = 960;
+
+/** The page a slide prints on, in points, of the slide's shape: 960 by 540, 13.33 by 7.5 inches. */
+export const SLIDE_PAGE_PT = { width: PAGE_WIDTH_PT, height: slideHeight(PAGE_WIDTH_PT) } as const;
+
+/** CSS pixels to a point: 96 px and 72 pt to the inch. */
+export const PX_PER_PT = 96 / 72;
 
 /**
  * One deck as the deck route answers it: the slides in order, the groups with their members, and
  * what was wrong with the files. `tagTones` is a hue name per `tag.class`, the engine's defaults
- * under the deck's own. `frame` is the deck's own `deck.frame` when it is a valid frame, else the
- * frame of the setting `defaults.frame`.
+ * under the deck's own.
  */
 export type Deck = {
     root: string;
@@ -331,7 +349,6 @@ export type Deck = {
     order: DeckOrderEntry[];
     groups: DeckGroup[];
     tagTones: Record<string, string>;
-    frame: DeckFrame;
     /** The keys the Overview sets, as the file holds them; null for a file that was not read. */
     keys: DeckKeys | null;
     /** The facts of each project a slide names (`project`), by the project's key. */

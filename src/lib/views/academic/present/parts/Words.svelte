@@ -52,21 +52,41 @@
 
     .inline :global(.gap),
     .block :global(.gap) {
-        padding: 2px 8px;
-        border: 1px dashed var(--line);
+        padding: 0.15625cqw 0.625cqw;
+        outline: 1px dashed var(--line);
+        outline-offset: -1px;
         border-radius: var(--radius-sm);
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
     }
 
+    /* A table's lines take no room: each cell draws its right and bottom edges and the table its
+       top and left, so two cells share one line. */
     .block :global(table) {
         border-collapse: collapse;
         font-size: var(--slide-fs-small);
+        box-shadow: inset 1px 1px 0 0 var(--line);
     }
 
     .block :global(th),
     .block :global(td) {
-        padding: 4px 9px;
-        border: 1px solid var(--line);
+        padding: 0.3125cqw 0.703125cqw;
+        box-shadow: inset -1px -1px 0 0 var(--line);
+    }
+
+    /* A rule in the Markdown is a line with no height, so it takes no room beyond its margins. */
+    .block :global(hr) {
+        height: 0;
+        border: 0;
+        box-shadow: 0 0 0 0.5px var(--line);
+    }
+
+    /* A task list's checkbox follows the type of the line it stands on. */
+    .inline :global(input[type='checkbox']),
+    .block :global(input[type='checkbox']) {
+        width: 1em;
+        height: 1em;
+        margin: 0 0.4em 0 0;
+        font-size: inherit;
     }
 </style>

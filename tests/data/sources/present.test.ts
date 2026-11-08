@@ -7,12 +7,7 @@ import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import { deckOrderOf } from '../../../src/lib/data/shapes/boards/order.ts';
-import {
-    engineDir,
-    frameSetting,
-    loadConfig,
-    textCatalog
-} from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { outlineOf } from '../../../src/lib/data/sources/deck/outline.ts';
@@ -153,7 +148,7 @@ describe('the deck reader', () => {
             'projects/manuscripts/beta/present/one.md': '# One\n\nFirst.\n',
             'projects/manuscripts/beta/present/two.md': '# Two\n\nSecond.\n\n---\n\n# Three\n',
             'deck/present.yml': [
-                'deck: { title: Portfolio }',
+                'deck: { title: Portfolio, frame: { width: 1000, height: 1000 } }',
                 'groups:',
                 '    pillars:',
                 '        find: { folders: projects/*/*/present, tiers: [research] }',
@@ -185,7 +180,6 @@ describe('the deck reader', () => {
                 project('beta', 'research', { domain: 'heart', short: 'Beta' })
             ],
             tagTones: { measured: 'green' },
-            frame: frameSetting(VOCAB),
             catalog: CATALOG,
             order: deckOrderOf(VOCAB),
             globs: folderGlobs()
@@ -196,6 +190,9 @@ describe('the deck reader', () => {
     it('places the member decks of a group with every slide of their files, counts them and reads their summary rows', () => {
         const deck = readHub(hub());
         expect(deck.findings).toEqual([]);
+        // The portfolio's `deck:` holds a `frame:`, a key the reader does not read: the deck
+        // answers no frame and the key raises no finding.
+        expect(Object.hasOwn(deck, 'frame')).toBe(false);
         expect(deck.state).toBe('ok');
         expect(kindsOf(deck.slides)).toEqual([
             'title',
@@ -297,7 +294,6 @@ describe('the deck reader', () => {
                     project('gamma', 'research', { domain: 'brain', short: 'Gamma' })
                 ],
                 tagTones: {},
-                frame: frameSetting(VOCAB),
                 catalog: CATALOG,
                 order: deckOrderOf(VOCAB),
                 globs: folderGlobs(),
@@ -522,7 +518,6 @@ describe('the deck reader', () => {
                 project('gamma', 'research')
             ],
             tagTones: {},
-            frame: frameSetting(VOCAB),
             catalog: CATALOG,
             order: deckOrderOf(VOCAB),
             globs: folderGlobs()
@@ -800,7 +795,6 @@ describe('the order of the decks a group discovers', () => {
             hub: { key: 'hub', dir },
             projects,
             tagTones: {},
-            frame: frameSetting(VOCAB),
             catalog: CATALOG,
             order: deckOrderOf(vocab),
             globs: folderGlobs(),

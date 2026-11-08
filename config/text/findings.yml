@@ -134,12 +134,8 @@ text:
             order_group_unknown: order names group {0}, which the deck does not define
             cycle: deck {0} holds itself through its groups; the repeat is not placed
             folder_missing: deck folder {0} is not in {1}
-            frame_not_a_map: 'deck.frame is not a map of a width and a height in px; the frame of the setting defaults.frame, {0} by {1} px, is used'
-            frame_key_unknown: 'deck.frame holds {0}, which is neither width nor height; the frame of the setting defaults.frame, {1} by {2} px, is used'
-            frame_side_missing: 'deck.frame has no {0}; the frame of the setting defaults.frame, {1} by {2} px, is used'
-            frame_side: 'deck.frame.{0} must be {1}; the frame of the setting defaults.frame, {2} by {3} px, is used'
             untitled: 'slide {1} of {0} has no title of its own; give it a level-1 heading, or a title: in its front matter for a project or an idea slide'
-            too_tall: 'slide too tall: {0} runs {1} px past its frame of {2} by {3} px'
+            too_tall: "slide too tall: {0} runs past its frame by {1}% of the frame's height"
         config:
             directory_missing: config directory does not exist
             hub_key_unknown: "key {0} is not one the hub's settings file takes; it is not applied"

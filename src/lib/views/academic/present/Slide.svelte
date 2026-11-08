@@ -3,43 +3,46 @@
     // that knows which component each kind is, so the pane draws a slide by handing this the slide
     // and the deck and nothing else. The slide takes the frame's inner box, and its content sits
     // in a reading column, centred in that box, as wide as it and at most `--slide-reading`
-    // (1040 px, themes/slide.css), as tall as the box less the foot, and a part that centres its
-    // content takes the column's height.
+    // (81.25 hundredths of the frame's width, themes/slide.css), as tall as the box less the foot,
+    // and a part that centres its content takes the column's height.
     //
-    // The slide lays itself out from what it holds, in the frame's own px, so it is laid out the
-    // same on every surface that draws it at the same frame: the pane, the presenter screen, the
-    // Overview's tiles, the audience window and the print page. Its content is drawn at one factor
+    // The slide lays itself out from what it holds, every length a fraction of the frame's width:
+    // each length it measures on the drawn slide is divided once by the frame's drawn width, and
+    // the boxes and the room height it sets are written in container units of the frame. So it is
+    // laid out the same on every surface that draws it, at any size: the pane, the presenter
+    // screen, the Overview's tiles, the audience window and the print page, and a frame resized
+    // after the layout draws the same boxes with no new layout. Its content is drawn at one factor
     // on the slide type scale (`--slide-fit` on the content's box), between 0.75 and 1.25: the
     // largest at which the content fits above the foot. A part with figures (a project slide's
     // panels, an image slide's image) draws them in a room under its title, at the boxes
     // screen/slide-layout.ts gives from the room this measures, each figure's ratio, read from its
-    // image once it has loaded, the padding and border of its drawn image, the gap under its drawn
-    // panel, the height of its caption and explanation at the width the figure is drawn at, and
-    // the height of the text at the least factor. The factor is found by a bounded search, each
-    // size drawn and measured in turn, run from the start each time the slide, its deck's frame,
-    // the strip, the text size or the theme changes, an image of the slide loads or fails, or a
-    // font loads; the search's own changes start no search, so a slide settles on one factor. A
-    // factor fits when the content ends above the foot, the text inside its box and every figure's
-    // box, caption included, inside the room. An image in a slide's Markdown is drawn no taller
-    // than the room under the slide's heading at the factor tried, less what the rest of the
-    // slide's Markdown takes of that room. A figure whose image has not loaded is not drawn until
-    // it has, and one that fails is drawn as the missing-figure words, as text. The content is
-    // hidden until it has been laid out once. A slide whose content does not fit at the least
-    // factor is drawn at it and runs past its frame, its room as tall as its lowest figure, which
-    // a measuring Stage reports as too tall. What the layout reads off the drawn slide (its
-    // figures, their frames and gaps, the room under a heading, the formulas' fit) is
-    // screen/drawn-slide.ts's; the search and the state it sets are here.
+    // image once it has loaded, the padding of its drawn image, the gap under its drawn panel, the
+    // height of its caption and explanation at the width the figure is drawn at, and the height of
+    // the text at the least factor. The factor is found by a bounded search, each size drawn and
+    // measured in turn, run from the start each time the slide, the strip, the text size or the
+    // theme changes, an image of the slide loads or fails, or a font loads; the search's own
+    // changes start no search, so a slide settles on one factor. A factor fits when the content
+    // ends above the foot, the text inside its box and every figure's box, caption included, inside
+    // the room. An image in a slide's Markdown is drawn no taller than the room under the slide's
+    // heading at the factor tried, less what the rest of the slide's Markdown takes of that room. A
+    // figure whose image has not loaded is not drawn until it has, and one that fails is drawn as
+    // the missing-figure words, as text. The content is hidden until it has been laid out once. A
+    // slide whose content does not fit at the least factor is drawn at it and runs past its frame,
+    // its room as tall as its lowest figure, which a measuring Stage reports as too tall. What the
+    // layout reads off the drawn slide (its figures, their frames and gaps, the room under a
+    // heading, the formulas' fit) is screen/drawn-slide.ts's; the search and the state it sets are
+    // here.
     //
     // The slide's foot, under its content, holds the strip of a project's facts at the frame's own
-    // type scale, across the frame's whole inner width, which is wider than the reading column
-    // where that width passes 1040 px (1150 px in a 1280 px frame). A slide that comes from a
-    // project's deck (`row.project`) carries the strip of that project's facts (`deck.projects`,
-    // read by `slideFacts`, no strip for a project with none), on every surface that draws a
-    // slide, its words shown by the pane's Project facts toggle (`facts`) and hidden, their room
-    // kept, when it is off. The strip wraps to as many lines as its facts need, so its height
-    // differs from one project to the next; the layout measures the foot as drawn each time it
-    // runs and takes the content's room above it, so a taller strip leaves the content less room
-    // and never lies over it.
+    // type scale, across the frame's whole inner width, which is wider than the reading column (90
+    // hundredths of the frame's width against 81.25). A slide that comes from a project's deck
+    // (`row.project`) carries the strip of that project's facts (`deck.projects`, read by
+    // `slideFacts`, no strip for a project with none), on every surface that draws a slide, its
+    // words shown by the pane's Project facts toggle (`facts`) and hidden, their room kept, when it
+    // is off. The strip wraps to as many lines as its facts need, so its height differs from one
+    // project to the next; the layout measures the foot as drawn each time it runs and takes the
+    // content's room above it, so a taller strip leaves the content less room and never lies over
+    // it.
 
     import { flushSync, untrack } from 'svelte';
     import Grid from './parts/Grid.svelte';
@@ -60,6 +63,7 @@
     import {
         FIT_LEAST,
         FIT_MOST,
+        cqw,
         layOut,
         type Box,
         type Figure,
@@ -89,8 +93,24 @@
     /** How many times the search halves the span of factors left once both ends are tried. */
     const HALVINGS = 6;
 
-    /** How many px a measured height may pass its room by and count as fitting, for rounding. */
-    const SLACK = 0.5;
+    /**
+     * How far a measured height may pass its room and count as fitting, for rounding, as a fraction
+     * of the frame's width: one 2560th of it, half of one 720th of the frame's height.
+     */
+    const SLACK = 1 / 2560;
+
+    /**
+     * The least height a Markdown image is held to, so its cap stays above nothing, as a fraction
+     * of the frame's width: one 1280th of it.
+     */
+    const LEAST_ROOM = 1 / 1280;
+
+    /**
+     * How far the probe's size, as a fraction of the frame's width, may move, as a part of itself,
+     * before the slide is laid out again: a resize of the frame moves it by rounding alone, and a
+     * text size, a theme or a font moves it further.
+     */
+    const PROBE_DRIFT = 0.01;
 
     /** The facts the slide's strip draws, null for a slide that has no strip. */
     const held = $derived(slideFacts(deck, row));
@@ -103,9 +123,15 @@
     let boxes = $state<Record<number, Box>>({});
     /** The indexes of the figures whose image failed to load. */
     let failed = $state<number[]>([]);
-    /** The bottom of the lowest figure's box as drawn, from the room's top, in px; 0 for none. */
+    /**
+     * The bottom of the lowest figure's box as drawn, from the room's top, as a fraction of the
+     * frame's width; 0 for none.
+     */
     let depth = $state(0);
-    /** The height a Markdown image may take: the room under the heading, 0 until measured. */
+    /**
+     * The height a Markdown image may take: the room under the heading, as a fraction of the
+     * frame's width, 0 until measured.
+     */
     let room = $state(0);
     /** Whether the slide has been laid out once. */
     let laid = $state(false);
@@ -118,6 +144,14 @@
     let probe = $state<HTMLElement | null>(null);
 
     /**
+     * The frame's drawn width (Stage's frame, or the print page's), the unit every length of the
+     * layout is a fraction of; 0 while it is not drawn.
+     */
+    function frameWidth(): number {
+        return slide?.closest('[data-frame]')?.getBoundingClientRect().width ?? 0;
+    }
+
+    /**
      * Lay the slide out: measure the room and the figures, then search the largest factor at
      * which the content fits above the foot, drawing each factor it tries. A slide that is not
      * drawn (a hidden tab) is left until it is.
@@ -126,20 +160,19 @@
         const whole = slide;
         const box = content;
         const parent = whole?.parentElement ?? null;
-        if (whole === null || box === null || parent === null || whole.offsetWidth === 0) {
-            return;
-        }
-        // The slide is drawn scaled; a rect divided by the scale is in the frame's own px.
-        const scale = whole.getBoundingClientRect().width / whole.offsetWidth;
-        const tall = (element: Element): number => element.getBoundingClientRect().height / scale;
-        const frame = getComputedStyle(parent);
-        const inner =
-            parent.clientHeight - parseFloat(frame.paddingTop) - parseFloat(frame.paddingBottom);
+        const across = frameWidth();
+        if (whole === null || box === null || parent === null || whole.offsetWidth === 0) return;
+        if (across === 0) return;
+        /** An element's drawn height, as a fraction of the frame's width. */
+        const tall = (element: Element): number => element.getBoundingClientRect().height / across;
+        const style = getComputedStyle(parent);
+        const sides = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+        const inner = tall(parent) - sides / across;
         const kept = foot === null ? 0 : tall(foot);
         const above = inner - kept;
-        /** An element's top from the content's top, in the frame's own px. */
+        /** An element's top from the content's top, as a fraction of the frame's width. */
         const top = (element: Element): number =>
-            (element.getBoundingClientRect().top - box.getBoundingClientRect().top) / scale;
+            (element.getBoundingClientRect().top - box.getBoundingClientRect().top) / across;
 
         const broken = figuresIn(box)
             .filter((one) => one.image.complete && one.image.naturalWidth === 0)
@@ -150,8 +183,8 @@
         const known = figuresIn(box).filter(
             (one) => one.image.complete && one.image.naturalWidth > 0 && one.image.naturalHeight > 0
         );
-        const frames = known.map((one) => frameOf(one.image));
-        const gap = gapOf(known);
+        const frames = known.map((one) => frameOf(one.image, across));
+        const gap = gapOf(known, across);
 
         /** Put a layout on the slide, each of its boxes under the index of its figure. */
         const show = (next: Layout | null): void => {
@@ -191,7 +224,7 @@
             fit = factor;
             flushSync();
             const space = box.querySelector('[data-room]');
-            const cap = Math.max(0, above - capTopOf(space, top, tall));
+            const cap = Math.max(0, above - capTopOf(space, top, tall, across));
             if (cap !== room) {
                 room = cap;
                 flushSync();
@@ -203,12 +236,12 @@
             const images = [...box.querySelectorAll('.block img')];
             if (known.length === 0 && overrun > SLACK && images.length > 0) {
                 const drawn = Math.max(...images.map((image) => tall(image)));
-                room = Math.max(1, Math.min(room, drawn) - overrun);
+                room = Math.max(LEAST_ROOM, Math.min(room, drawn) - overrun);
                 flushSync();
             }
             if (known.length > 0 && space !== null) {
                 const size = {
-                    width: space.getBoundingClientRect().width / scale,
+                    width: space.getBoundingClientRect().width / across,
                     height: above - top(space)
                 };
                 let asked: Figure[] = known.map((one, at) => ({
@@ -280,9 +313,9 @@
     }
 
     $effect(() => {
-        // What is drawn is read so that a change of the slide, its deck's frame or its strip runs
-        // the effect again; the layout runs once the effect's flush is done, since it flushes.
-        $state.snapshot([row, deck.frame, held]);
+        // What is drawn is read so that a change of the slide or its strip runs the effect again;
+        // the layout runs once the effect's flush is done, since it flushes.
+        $state.snapshot([row, held]);
         untrack(() => {
             failed = [];
         });
@@ -297,15 +330,31 @@
 
     $effect(() => {
         // The probe is a line of the frame's body type outside the content, two fixed letters that
-        // are hidden and never read: its size changes with the text size, the theme and the slide
-        // being shown, and the factor the layout sets is outside it.
+        // are hidden and never read: its size, as a fraction of the frame's width, changes with the
+        // text size, the theme and the slide being shown, and the factor the layout sets is outside
+        // it. A resize of the frame changes the probe's drawn size and leaves its fraction of the
+        // frame but for rounding, which `PROBE_DRIFT` holds back, so it starts no layout.
         const element = probe;
         if (element === null) return;
-        const sizeOf = (): string => `${element.offsetWidth} ${element.offsetHeight}`;
+        /** The probe's width and height as fractions of the frame's width; null while undrawn. */
+        const sizeOf = (): readonly [number, number] | null => {
+            const across = frameWidth();
+            const box = element.getBoundingClientRect();
+            return across === 0 || box.width === 0
+                ? null
+                : [box.width / across, box.height / across];
+        };
+        /** Whether a probe's size has moved past the drift from the size last laid out at. */
+        const moved = (now: readonly [number, number], then: readonly [number, number]): boolean =>
+            now.some((side, at) => Math.abs(side - then[at]) > then[at] * PROBE_DRIFT);
         let seen = sizeOf();
         const observer = new ResizeObserver(() => {
             const now = sizeOf();
-            if (now === seen) return;
+            if (now === null) {
+                seen = null;
+                return;
+            }
+            if (seen !== null && !moved(now, seen)) return;
             seen = now;
             layOutSlide();
         });
@@ -324,7 +373,7 @@
         class="content slide-fit"
         class:waiting={!laid}
         style:--slide-fit={fit}
-        style:--slide-room-height={room > 0 ? `${room}px` : undefined}
+        style:--slide-room-height={room > 0 ? cqw(room) : undefined}
         bind:this={content}
         onloadcapture={imageSettled}
         onerrorcapture={imageSettled}

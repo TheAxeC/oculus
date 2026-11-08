@@ -5,9 +5,9 @@
 // with their words, the groups with their members, the facts of each project a slide comes from.
 // What is here is the pane's own state (the slide it is on, whether its grid is open, the decks it
 // has shown, the controls of its filter and its Project facts toggle), the deck a tab's layout
-// state names, the moves over a deck's slides, the frame the slides are laid out in, and the one
-// hue a slide's status tag wears. A presentation adds the names its two windows share (the audience
-// address, and the window, channel and lock name), the messages they send each other, and the
+// state names, the moves over a deck's slides, and the one hue a slide's status tag wears. A
+// presentation adds the names its two windows share (the audience address, and the window, channel
+// and lock name), the size of the audience window, the messages they send each other, and the
 // presenter screen's timer and clock text.
 //
 // A pane's filter is the Projects board's filter over the member projects of the deck's groups of
@@ -33,22 +33,22 @@ import {
 } from '../boards/board/index.ts';
 import { domainTone } from '../shared/words/tones.ts';
 import { t } from '../shared/words/text.ts';
+import { slideHeight } from '../../data/model/index.ts';
 import type {
     Deck,
-    DeckFrame,
     DeckGroup,
     DeckSlide,
     PresentSlide,
     ProjectFact
 } from '../../data/model/index.ts';
 
-export { DECK_GAP } from '../../data/model/index.ts';
+/** The model's values a Present component needs, re-exported so no view imports the data layer. */
+export { DECK_GAP, SLIDE_PAGE_PT, SLIDE_SHAPE } from '../../data/model/index.ts';
 
 /** The model types a Present component needs, re-exported so no view imports the data layer. */
 export type {
     Deck,
     DeckCard,
-    DeckFrame,
     DeckIdeaCard,
     DeckSlide,
     DeckSummaryRow,
@@ -279,21 +279,15 @@ export function pageDrafts(
 }
 
 /**
- * The uniform scale that fits a deck's frame, the size in px its slides are laid out at, inside a
- * box of the given size, or 0 for a box with no size, a negative one or one that is not a number (a
- * hidden tab, the first paint).
+ * The features the browser's audience window is opened with: a window of its own in the slide's
+ * shape, half as wide as the available width of the screen the page is on (`availWidth`), and of
+ * the browser's own size for a width that is no number above zero. A slide has no size, so the
+ * window takes one from the screen.
  */
-export function fit(width: number, height: number, frame: DeckFrame): number {
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 0;
-    return Math.min(width / frame.width, height / frame.height);
-}
-
-/**
- * The features the browser's audience window is opened with: a window of its own at the deck's
- * frame, and of the browser's own size while the deck's answer is not held.
- */
-export function audienceFeatures(frame: DeckFrame | null): string {
-    return frame === null ? 'popup' : `popup,width=${frame.width},height=${frame.height}`;
+export function audienceFeatures(availWidth: number): string {
+    if (!Number.isFinite(availWidth) || availWidth <= 0) return 'popup';
+    const width = Math.round(availWidth / 2);
+    return `popup,width=${width},height=${Math.round(slideHeight(width))}`;
 }
 
 /**
@@ -599,10 +593,6 @@ export const deckShape = unchangedAs<Deck>(
         ),
         groups: z.array(z.object({ name: z.string() })),
         tagTones: z.record(z.string(), z.string()),
-        frame: z.strictObject({
-            width: z.number().int().positive(),
-            height: z.number().int().positive()
-        }),
         projects: z.record(
             z.string(),
             z.array(z.object({ field: z.string(), words: z.array(z.string()) }))

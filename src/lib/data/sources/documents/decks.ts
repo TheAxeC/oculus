@@ -36,7 +36,6 @@ import type {
 import { deckOrderOf } from '../../shapes/boards/order.ts';
 import { projectFacts, type FactWords } from '../../shapes/project-facts.ts';
 import { hubProjects, type HubRecords } from '../../snapshot/hubs/deck-facts.ts';
-import { frameSetting } from '../config.ts';
 import type { DeckProject } from '../deck/kinds.ts';
 import { createReader, type DeckReader } from '../deck/read.ts';
 import type { FolderGlobs } from './folder-globs.ts';
@@ -91,7 +90,6 @@ export function deckReader(input: DeckInput): DeckReader {
         hub: { key: hub.key, dir: hub.dir },
         projects: ofHub(input.projects, hub.key).map((project) => deckProject(project, words)),
         tagTones: hub.config.tagTones,
-        frame: frameSetting(hub.config.merged),
         catalog: hub.config.text,
         order: deckOrderOf(hub.config.merged),
         globs: input.globs,

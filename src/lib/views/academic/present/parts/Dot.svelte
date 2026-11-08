@@ -2,7 +2,8 @@
     // Layer 3, Present partial. The hue dot beside a summary row's field, an idea card's title and
     // a hued fact of a project's facts strip (parts/project/Facts.svelte). The hue reaches the CSS
     // as a custom property, as it does on a chip, so the rule below names a token and not a
-    // colour. The dot is 9 px across unless an element around it sets `--dot-size`, which the
+    // colour. The dot is 0.703125 hundredths of the frame's width across (`cqw`, as every size
+    // inside a slide is, themes/slide.css) unless an element around it sets `--dot-size`, which the
     // strip sets to follow its own type.
 
     type Props = {
@@ -24,8 +25,8 @@
     .dot {
         display: inline-block;
         flex: 0 0 auto;
-        width: var(--dot-size, 9px);
-        height: var(--dot-size, 9px);
+        width: var(--dot-size, 0.703125cqw);
+        height: var(--dot-size, 0.703125cqw);
         border-radius: var(--radius-pill);
         background: var(--line);
     }

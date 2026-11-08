@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial. One slide of a deck as the workbench draws it: in a Stage at the
-    // deck's frame, measured, the measure going to the Present store
+    // Layer 3, view partial. One slide of a deck as the workbench draws it: in a Stage, in the
+    // slide's shape, measured, the measure going to the Present store
     // (state/life/present.svelte.ts), which makes a slide too tall a finding of the Findings view
     // and a mark on its Overview tile. A slide lays its figures out inside its frame and draws its
     // text as large as fits (Slide.svelte), so it is too tall only when its text, or a figure with
@@ -22,7 +22,7 @@
     type Props = {
         row: DeckSlide;
         deck: Deck;
-        /** Whether the frame goes edge to edge with no border and no corner, as on the monitor. */
+        /** Whether the frame goes edge to edge with no line and no corner, as on the monitor. */
         bare?: boolean;
         /** Whether the strip of a project's facts shows its words: the pane's toggle. */
         facts: boolean;
@@ -46,6 +46,6 @@
     );
 </script>
 
-<Stage frame={deck.frame} {bare} {drawing} onmeasure={(over: number) => measured(deck, row, over)}>
+<Stage {bare} {drawing} onmeasure={(over: number) => measured(deck, row, over)}>
     <Slide {row} {deck} {facts} />
 </Stage>

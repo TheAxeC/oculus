@@ -9,12 +9,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import type { Deck } from '../../../src/lib/data/model/index.ts';
 import { deckOrderOf } from '../../../src/lib/data/shapes/boards/order.ts';
-import {
-    engineDir,
-    frameSetting,
-    loadConfig,
-    textCatalog
-} from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import {
@@ -89,7 +84,6 @@ function read(
         hub: { key: 'hub', dir },
         projects: ids.map(project),
         tagTones: {},
-        frame: frameSetting(VOCAB),
         catalog: textCatalog(VOCAB),
         order: deckOrderOf(VOCAB),
         globs,

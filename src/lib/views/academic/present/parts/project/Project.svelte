@@ -6,21 +6,24 @@
     // alone, and that Markdown is what the slide draws.
     //
     // A slide with a figure draws its text and its figures in a room under the headline, at the
-    // boxes the slide's layout gives (`place`, Slide.svelte and screen/slide-layout.ts): the
-    // figures as one block, a column at the room's right with the text beside it, or across the
-    // room's width under the text, or centred in the room when the slide has no text. While the
-    // room is measured the text takes the room's width and no figure is drawn. The room is as tall
-    // as the layout, or as the lowest figure's box where that ends lower (`place.depth`), so a
-    // slide whose figures run past its frame is measured too tall. A slide with no figure draws
-    // its text as it is, the lists and the equation in two columns; one that draws its Markdown
-    // alone marks the body as its room (`data-room`), the room a Markdown image is held to.
+    // boxes the slide's layout gives (`place`, Slide.svelte and screen/slide-layout.ts), in
+    // container units of the frame: the figures as one block, a column at the room's right with
+    // the text beside it, or across the room's width under the text, or centred in the room when
+    // the slide has no text. While the room is measured the text takes the room's width and no
+    // figure is drawn. The room is as tall as the layout, or as the lowest figure's box where that
+    // ends lower (`place.depth`), so a slide whose figures run past its frame is measured too tall.
+    // A slide with no figure draws its text as it is, the lists and the equation in two columns;
+    // one that draws its Markdown alone marks the body as its room (`data-room`), the room a
+    // Markdown image is held to. Every size here is a fraction of the frame's width (`cqw`), as
+    // every size inside a slide is (themes/slide.css), and a hairline is a shadow, an outline or a
+    // rule laid over the element's edge, one pixel wide, which takes no room.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Equation from '../Equation.svelte';
     import Panel from '../../Panel.svelte';
     import Words from '../Words.svelte';
-    import { TEXT_GAP, type SlidePlace } from '../../screen/slide-layout';
+    import { TEXT_GAP, cqw, type SlidePlace } from '../../screen/slide-layout';
     import { hasSlideContent } from '$lib/state/life/present';
     import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -173,13 +176,13 @@
     </div>
     <h3 class="headline"><Words text={slide.title ?? title} /></h3>
     {#if pictured}
-        <div class="room" data-room style:min-height={height === null ? undefined : `${height}px`}>
+        <div class="room" data-room style:min-height={height === null ? undefined : cqw(height)}>
             {#if worded}
                 <div
                     class="text"
                     data-text
-                    style:width={given === null ? undefined : `${given.width}px`}
-                    style:padding-bottom={shape === 'tall' ? undefined : `${TEXT_GAP}px`}
+                    style:width={given === null ? undefined : cqw(given.width)}
+                    style:padding-bottom={shape === 'tall' ? undefined : cqw(TEXT_GAP)}
                 >
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render words()}
@@ -199,16 +202,16 @@
 
 <style>
     .slide {
-        padding-left: 13px;
-        border-left: 4px solid var(--tone, var(--line));
+        padding-left: 1.015625cqw;
+        border-left: 0.3125cqw solid var(--tone, var(--line));
     }
 
     .top {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 5px;
+        gap: 0.78125cqw;
+        margin-bottom: 0.390625cqw;
     }
 
     .headline {
@@ -218,16 +221,16 @@
     }
 
     .sub {
-        margin: 2px 0 9px;
+        margin: 0.15625cqw 0 0.703125cqw;
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-body);
         font-weight: 600;
     }
 
     .hook {
-        margin: 0 0 12px;
-        padding: 2px 0 2px 13px;
-        border-left: 3px solid var(--tone, var(--line));
+        margin: 0 0 0.9375cqw;
+        padding: 0.15625cqw 0 0.15625cqw 1.015625cqw;
+        border-left: 0.234375cqw solid var(--tone, var(--line));
         font-size: var(--slide-fs-body);
         line-height: 1.45;
     }
@@ -235,13 +238,13 @@
     .specs {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 14px;
+        gap: 0.625cqw;
+        margin-bottom: 1.09375cqw;
     }
 
     .spec {
-        padding: 5px 9px;
-        border: 1px solid var(--line);
+        padding: 0.390625cqw 0.703125cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius-sm);
         font-size: var(--slide-fs-small);
         line-height: 1.3;
@@ -249,7 +252,7 @@
 
     .spec b {
         display: block;
-        margin-bottom: 1px;
+        margin-bottom: 0.078125cqw;
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
         font-weight: 700;
@@ -270,12 +273,12 @@
     }
 
     /* The method and the results side by side wherever the text's box holds two columns of at
-       least 300 px, as the reading width does; the narrower text beside a column of figures holds
-       one. */
+       least 23.4375 hundredths of the frame's width, as the reading width does; the narrower text
+       beside a column of figures holds one. */
     .cols {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-        gap: 26px;
+        grid-template-columns: repeat(auto-fit, minmax(min(23.4375cqw, 100%), 1fr));
+        gap: 2.03125cqw;
         align-items: start;
     }
 
@@ -285,7 +288,7 @@
     }
 
     .lbl {
-        margin: 0 0 5px;
+        margin: 0 0 0.390625cqw;
         color: var(--accent-txt, var(--accent));
         font-size: var(--slide-fs-small);
         font-weight: 800;
@@ -294,20 +297,20 @@
     }
 
     ul {
-        margin: 0 0 14px;
-        padding-left: 17px;
+        margin: 0 0 1.09375cqw;
+        padding-left: 1.328125cqw;
     }
 
     li {
-        margin-bottom: 7px;
+        margin-bottom: 0.546875cqw;
         font-size: var(--slide-fs-small);
         line-height: 1.46;
     }
 
     .eli5 {
-        margin-bottom: 13px;
-        padding: 11px 13px;
-        border: 1px solid var(--tone, var(--line));
+        margin-bottom: 1.015625cqw;
+        padding: 0.859375cqw 1.015625cqw;
+        box-shadow: inset 0 0 0 1px var(--tone, var(--line));
         border-radius: var(--radius);
         background: var(--card);
     }
@@ -315,17 +318,27 @@
     .e5 {
         display: flex;
         align-items: baseline;
-        gap: 9px;
+        gap: 0.703125cqw;
     }
 
     .e5 + .e5 {
-        margin-top: 6px;
-        padding-top: 6px;
+        position: relative;
+        margin-top: 0.46875cqw;
+        padding-top: 0.46875cqw;
+    }
+
+    /* The dashed line between two rows lies over the row's top edge, so it takes no room. */
+    .e5 + .e5::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
         border-top: 1px dashed var(--line);
     }
 
     .e5 span {
-        flex: 0 0 92px;
+        flex: 0 0 7.1875cqw;
         color: var(--accent-txt, var(--accent));
         font-size: var(--slide-fs-small);
         font-weight: 800;

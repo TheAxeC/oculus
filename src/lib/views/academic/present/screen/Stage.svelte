@@ -1,38 +1,44 @@
 <script lang="ts">
-    // Layer 3, view partial. A slide in its deck's frame, the size in px its parts are laid out
-    // for, scaled uniformly to the room the parent gives it and centred in that room. The Present
-    // pane, its presenter screen, the Overview's tiles and the audience window draw a slide through
-    // this one component, so a slide keeps its proportions and its words shrink or grow with the
-    // room as a slide program's do; the slide lays itself out inside the frame at the frame's own
-    // px (Slide.svelte), so the scale changes nothing of its layout. The frame draws its own
-    // surface (the card colour, translucent over a wallpaper) and carries the slide type scale
-    // (themes/slide.css). A bare frame keeps its border, transparent, so the slide has the same
-    // inner box as in a framed one and on the print page. A slide taller than the frame, one whose
-    // text or whose figures with their captions do not fit at its least size, scrolls inside it.
-    // The room is measured here, and the frame stays hidden until it has a size.
+    // Layer 3, view partial. A slide in its frame, drawn at the largest box of the slide's shape
+    // (`SLIDE_SHAPE`, 16:9) the room the parent gives it holds, at that box's own size, centred in
+    // the room. The Present pane, its presenter screen, the Overview's tiles and the audience
+    // window draw a slide through this one component. The box that holds the frame is a size
+    // container, and every size inside the slide is a fraction of its width (themes/slide.css), so
+    // a slide keeps its proportions and its words shrink or grow with the room as a slide
+    // program's do, and the slide's layout, made in fractions of the frame (Slide.svelte), draws
+    // the same boxes at any size. The box is sized by CSS from the room, itself a size container,
+    // so a room resized after the slide was laid out draws the frame at its new size with no new
+    // layout. The frame draws its own surface (the card colour, translucent over a wallpaper) and
+    // carries the slide type scale. Its line is a shadow, which takes no room, and a bare frame
+    // draws none, so the slide has the same inner box in a framed one, a bare one and on the print
+    // page. A slide taller than the frame, one whose text or whose figures with their captions do
+    // not fit at its least size, scrolls inside it. The room is measured here, and the frame stays
+    // hidden until it has a size.
     //
-    // Given `onmeasure`, the Stage measures the slide it draws: how many px the frame's content
-    // runs past the frame's height, 0 when it fits, taken at the frame's own size, so a tile
-    // measures what the pane does; the content's height is taken unrounded, in the frame's own px,
-    // and rounded once. The strip of a project's facts at the slide's foot is counted: it keeps its
-    // room whether its words are shown or not, so the measure is the same with the pane's Project
-    // facts toggle on and off. The slide is measured each time `drawing` changes, so a Stage moved
-    // to another slide or shown a retitled one measures it, and a ResizeObserver on the frame and
-    // on its content measures again when either changes size (an image or a formula that loads
-    // late, the text size, the deck's frame). The observer is disconnected when the Stage goes away
-    // or measures anew. A frame with no height (a hidden tab) is not measured.
+    // Given `onmeasure`, the Stage measures the slide it draws: how far the frame's content runs
+    // past the frame's height, as a fraction of that height, 0 when it fits, so a tile measures
+    // what the pane does. The heights are taken from the drawn boxes unrounded, so a frame drawn
+    // small rounds no pixel of its own into the measure. The strip of a project's facts at the
+    // slide's foot is counted: it keeps its room whether its words are shown or not, so the measure
+    // is the same with the pane's Project facts toggle on and off. The slide is measured each time
+    // `drawing` changes, so a Stage moved to another slide or shown a retitled one measures it, and
+    // a ResizeObserver on the frame and on its content measures again when either changes size (an
+    // image or a formula that loads late, the text size, the room). The observer is disconnected
+    // when the Stage goes away or measures anew. A frame with no height (a hidden tab) is not
+    // measured.
     //
     // The parent gives the room a height: this fills its parent's width and height.
 
     import type { Snippet } from 'svelte';
-    import { fit, type DeckFrame } from '$lib/state/life/present';
+    import { SLIDE_SHAPE } from '$lib/state/life/present';
 
     type Props = {
-        /** The deck's frame, in px. */
-        frame: DeckFrame;
-        /** Whether the frame goes edge to edge with no border and no corner, as on the monitor. */
+        /** Whether the frame goes edge to edge with no line and no corner, as on the monitor. */
         bare?: boolean;
-        /** Told how many px the slide runs past the frame, 0 when it fits; none: no measure. */
+        /**
+         * Told how far the slide runs past the frame, as a fraction of the frame's height, 0 when
+         * it fits; none: no measure.
+         */
         onmeasure?: (over: number) => void;
         /** What the Stage draws, named in a text that changes with it; a change measures again. */
         drawing?: string;
@@ -40,12 +46,15 @@
         children: Snippet;
     };
 
-    let { frame, bare = false, onmeasure, drawing = '', children }: Props = $props();
+    let { bare = false, onmeasure, drawing = '', children }: Props = $props();
 
     /** The room's measured size, 0 until it has been laid out and while its tab is hidden. */
     let width = $state(0);
     let height = $state(0);
-    const scale = $derived(fit(width, height, frame));
+
+    /** The box of the slide's shape the room holds, its sides in container units of the room. */
+    const across = `min(100cqw, 100cqh * ${SLIDE_SHAPE.width} / ${SLIDE_SHAPE.height})`;
+    const down = `min(100cqh, 100cqw * ${SLIDE_SHAPE.height} / ${SLIDE_SHAPE.width})`;
 
     let drawn = $state<HTMLElement | null>(null);
 
@@ -56,19 +65,16 @@
         $state.snapshot(drawing);
         if (element === null || report === undefined) return;
         const measure = (): void => {
-            if (element.clientHeight === 0) return;
-            // The frame is drawn scaled; a rect divided by the scale is in the frame's own px.
+            // The drawn height, unrounded, which `clientHeight` would round.
             const box = element.getBoundingClientRect();
-            const scaled = box.height / element.offsetHeight;
-            if (scaled === 0) return;
+            if (box.height === 0) return;
             let bottom = 0;
             for (const child of element.children) {
                 bottom = Math.max(bottom, child.getBoundingClientRect().bottom - box.top);
             }
-            const padding = parseFloat(getComputedStyle(element).paddingBottom);
-            const content = bottom / scaled + element.scrollTop - element.clientTop + padding;
-            const over = Math.round(content) - element.clientHeight;
-            report(Math.max(0, over));
+            const padding = parseFloat(getComputedStyle(element).paddingBottom) || 0;
+            const content = bottom + element.scrollTop + padding;
+            report(Math.max(0, (content - box.height) / box.height));
         };
         const observer = new ResizeObserver(measure);
         observer.observe(element);
@@ -78,11 +84,7 @@
 </script>
 
 <div class="room" bind:clientWidth={width} bind:clientHeight={height}>
-    <div
-        class="stage"
-        style:width="{frame.width * scale}px"
-        style:height="{frame.height * scale}px"
-    >
+    <div class="stage" style:width={across} style:height={down}>
         <div
             class="frame slide-frame"
             class:bare
@@ -90,10 +92,7 @@
             data-scroll
             data-surface
             bind:this={drawn}
-            style:width="{frame.width}px"
-            style:height="{frame.height}px"
-            style:transform="scale({scale})"
-            style:visibility={scale === 0 ? 'hidden' : undefined}
+            style:visibility={width === 0 || height === 0 ? 'hidden' : undefined}
         >
             {@render children()}
         </div>
@@ -101,7 +100,8 @@
 </div>
 
 <style>
-    /* The room is what the parent leaves; what is not the frame's is letterbox. */
+    /* The room is what the parent leaves, a size container the stage's box is measured against;
+       what is not the frame's is letterbox. */
     .room {
         display: flex;
         align-items: center;
@@ -111,23 +111,26 @@
         min-width: 0;
         min-height: 0;
         overflow: hidden;
+        container-type: size;
     }
 
-    /* The box the scaled frame occupies on screen: the frame's transform does not change its layout
-       size, so this box is the one that takes room. */
+    /* The box the frame is drawn in, the largest of the slide's shape the room holds, which the
+       element's style sets; a size container, so every size inside the slide is a fraction of
+       its width. */
     .stage {
         flex: 0 0 auto;
+        container-type: size;
     }
 
-    /* The frame is laid out at the deck's frame (themes/slide.css) and scaled from its top left
-       corner. */
+    /* The frame fills the stage's box. */
     .frame {
+        width: 100%;
+        height: 100%;
         overflow-y: auto;
-        transform-origin: 0 0;
     }
 
     .frame.bare {
-        border-color: transparent;
+        box-shadow: none;
         border-radius: 0;
     }
 

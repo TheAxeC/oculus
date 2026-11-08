@@ -6,9 +6,12 @@
     //
     // An image slide's image is its one figure (index 0): it is drawn in the room under the
     // heading at the box the slide's layout gives it (`place`, Slide.svelte and
-    // screen/slide-layout.ts), the whole room for its proportions and centred, its padding and
-    // border inside the box. It is not drawn until its image has loaded, and an image that fails to
-    // load is drawn as the missing-figure words, as an image the folder lacks is.
+    // screen/slide-layout.ts), in container units of the frame, the whole room for its proportions
+    // and centred, its padding inside the box. It is not drawn until its image has loaded, and an
+    // image that fails to load is drawn as the missing-figure words, as an image the folder lacks
+    // is. Every size here is a fraction of the frame's width (`cqw`), as every size inside a slide
+    // is (themes/slide.css), and a hairline is a shadow or an outline one pixel wide, which takes
+    // no room.
     //
     // Every other kind marks the box of its Markdown as its room (`data-room`), so an image in the
     // Markdown is held to the room under the slide's heading: under the heading drawn above the
@@ -18,7 +21,7 @@
     import Words from './Words.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { DECK_GAP, type DeckSlide } from '$lib/state/life/present';
-    import type { Box, SlidePlace } from '../screen/slide-layout';
+    import { cqw, type Box, type SlidePlace } from '../screen/slide-layout';
 
     type Props = {
         row: Extract<DeckSlide, { kind: 'text' | 'image' | 'columns' | 'equation' | 'code' }>;
@@ -47,7 +50,7 @@
                 data-room
                 style:min-height={place.layout === null
                     ? undefined
-                    : `${Math.max(place.layout.height, place.depth)}px`}
+                    : cqw(Math.max(place.layout.height, place.depth))}
             >
                 <img
                     class="figure"
@@ -55,10 +58,10 @@
                     data-figure="0"
                     src={row.src}
                     alt={row.alt}
-                    style:left={box === undefined ? undefined : `${box.x}px`}
-                    style:top={box === undefined ? undefined : `${box.y}px`}
-                    style:width={box === undefined ? undefined : `${box.width}px`}
-                    style:height={box === undefined ? undefined : `${box.height}px`}
+                    style:left={box === undefined ? undefined : cqw(box.x)}
+                    style:top={box === undefined ? undefined : cqw(box.y)}
+                    style:width={box === undefined ? undefined : cqw(box.width)}
+                    style:height={box === undefined ? undefined : cqw(box.height)}
                 />
             </div>
         {/if}
@@ -93,14 +96,14 @@
         position: relative;
     }
 
-    /* The image stands at its box in the room, its padding and border inside the box. */
+    /* The image stands at its box in the room, its padding inside the box. */
     .figure {
         position: absolute;
         display: block;
         box-sizing: border-box;
         object-fit: contain;
-        padding: 6px;
-        border: 1px solid var(--line);
+        padding: 0.46875cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
     }
@@ -111,9 +114,10 @@
     }
 
     .gap {
-        margin: 8px 0;
-        padding: 9px 11px;
-        border: 1px dashed var(--line);
+        margin: 0.625cqw 0;
+        padding: 0.703125cqw 0.859375cqw;
+        outline: 1px dashed var(--line);
+        outline-offset: -1px;
         border-radius: var(--radius-sm);
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
@@ -121,8 +125,8 @@
 
     .columns {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
-        gap: 26px;
+        grid-template-columns: repeat(auto-fit, minmax(min(23.4375cqw, 100%), 1fr));
+        gap: 2.03125cqw;
         font-size: var(--slide-fs-body);
         line-height: 1.45;
     }

@@ -1926,7 +1926,6 @@ A deck: this file and Markdown slides in one folder. The [Decks guide](decks.md)
 ```yaml
 deck:
   title: "My deck"
-  # frame: { width: 1280, height: 720 }   # the size in px every slide is laid out in; the setting defaults.frame when absent
 
 # defaults:
 #   tag_tones: {}            # a slide tag to the hue its chip wears

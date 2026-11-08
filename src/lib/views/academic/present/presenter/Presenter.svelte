@@ -9,9 +9,10 @@
     // The component holds no state of the deck or the presentation: Present.svelte hands in the
     // slides, the timer and what each control does. A click on the slide on show moves to the next
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
-    // are read again on a tick of their own. Both slides are drawn at the deck's frame and measured
-    // (screen/Framed.svelte), and the next slide's room takes the frame's proportions; both draw
-    // the strip of a project's facts by the pane's Project facts toggle (`facts`).
+    // are read again on a tick of their own. Both slides are drawn in the slide's shape, each at
+    // the largest box of it its room holds, and measured (screen/Framed.svelte), and the next
+    // slide's room takes the slide's shape; both draw the strip of a project's facts by the pane's
+    // Project facts toggle (`facts`).
     //
     // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
     // end-of-deck line and the notes are read off a `Surface`.
@@ -19,6 +20,7 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
+        SLIDE_SHAPE,
         clockText,
         timerElapsed,
         timerText,
@@ -118,7 +120,10 @@
                 {/if}
             </Surface>
             {#if next !== null}
-                <div class="preview" style:aspect-ratio="{deck.frame.width} / {deck.frame.height}">
+                <div
+                    class="preview"
+                    style:aspect-ratio="{SLIDE_SHAPE.width} / {SLIDE_SHAPE.height}"
+                >
                     <Framed row={next} {deck} {facts} />
                 </div>
             {/if}
@@ -193,8 +198,8 @@
         flex: 0 0 auto;
     }
 
-    /* The next slide is a room of the deck's frame's proportions, set on the element, which its
-       stage fills and scales its frame to. */
+    /* The next slide is a room of the slide's shape, set on the element, which its stage fills
+       with the frame drawn at the room's size. */
     .preview {
         width: 100%;
     }

@@ -4,22 +4,6 @@
 # ===========================================================================
 
 options:
-    defaults.frame.width:
-        heading: presentation
-        section: Slides
-        help: "The width in px every slide is laid out in and printed at; the Present view scales the frame to its pane as a whole. A deck's own present.yml sets another with deck.frame."
-        control: number
-        min: 320
-        max: 3840
-        whole: true
-    defaults.frame.height:
-        heading: presentation
-        section: Slides
-        help: "The height in px every slide is laid out in and printed at. A slide whose words run past it is a Slide too tall finding. A deck's own present.yml sets another with deck.frame."
-        control: number
-        min: 240
-        max: 2160
-        whole: true
     defaults.tag_tones:
         heading: presentation
         section: Status chips
@@ -33,5 +17,4 @@ options:
                 help: a palette hue name
                 control: hue
 groups:
-    defaults: "What oculus carries for every deck the Present view draws. A deck's own present.yml changes defaults.tag_tones in its own defaults: block, and the frame in deck.frame."
-    defaults.frame: The size in px every slide is laid out in, which a deck's own deck.frame overrides.
+    defaults: "What oculus carries for every deck the Present view draws. A deck's own present.yml changes defaults.tag_tones in its own defaults: block."

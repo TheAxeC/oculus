@@ -151,3 +151,206 @@ none
 - `docs/adr`: `ls docs/adr` prints "No such file or directory", so no ADR governs the diff.
 
 Reviewer usage: aba64b2bce2589a15, claude-opus-5-5, 305201 tokens, 39 tool uses, 20.6 min.
+
+## Repair round 1, refuted
+
+Run from `.agents/worktrees/migration-O171` with Node v24.21.0. The harness moved `test:quick` to the background after 180 s, and I waited on its exit notice.
+
+```
+Verify 1: `npm run diagrams` not run (the task forbids it; see Declined to judge).
+unset TMPDIR; npm run test:quick -- --base 00adcfa54   (ANSI codes and non-ASCII stripped, tail -60)
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (2.7 s)
+ok      svelte-check (11.5 s): 1794160489575 COMPLETED 590 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (209.2 s): Duration  193.42s (transform 117.06s, setup 0ms, import 231.95s, tests 402.61s, environment 5ms)
+ok      vitest (275.9 s): Duration  261.79s (transform 103.84s, setup 0ms, import 350.74s, tests 656.88s, environment 18.82s)
+ok      vitest slow (443.8 s): Duration  429.90s (transform 29.18s, setup 0ms, import 192.38s, tests 1511.35s, environment 22ms)
+test:quick: 446.5 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+exit code 0
+
+Verify 2: git status --short | awk '$1=="M"{print $2}' | LC_ALL=C xargs perl -ne '<the gate>'
+(prints nothing) exit 0
+LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O171-report.md: prints nothing, exit 1
+
+Verify 3: grep -rnE 'deck\.frame|defaults\.frame|frameSetting|deckFrame|DeckFrame|FrameSetting|wholeFrame|featuresFrame' src docs tests config --exclude=local.yml
+(prints nothing) exit 1
+
+Verify 4: grep -rnE "frame's own px|1150 px|1040 px|1280 by 720|in px" <Present files, slide.css, print and show routes, docs/decks.md>
+src/routes/present/show/+page.svelte:68:    /** How far the window may fall short of the screen and still fill it, in px. */
+(ruling 2 of O171-cases.md)
+
+Verify 5: sh utils/unused-exports.sh, diff against ../O171-base/unused-exports.txt
+334 lines each; diff exit 0
+
+Verify 6 (C7): grep -rnE '[0-9]px|px`|px'"'"'|}px' <slide.css, Slide.svelte, Panel.svelte, parts, screen, print route>
+26 lines: inset shadows at Panel.svelte:112,130,146; slide.css:45; Equation.svelte:48; Words.svelte:68,74; Plain.svelte:106; Section.svelte:76; Grid.svelte:86,113; Project.svelte:247,313; Facts.svelte:164
+outlines with their offset at Panel.svelte:120-121,188-189; Words.svelte:56-57; Plain.svelte:119-120
+Project.svelte:337 (the `::before` rule); Facts.svelte:197-198 (the screen-reader copy, ruled in round 0); print/+page.svelte:234 (`.failed`, ruled in round 0)
+These are the kinds and places the round's report lists.
+
+Verify 7: `diff -q` of the three changed test files against the round's snapshot prints nothing, so this round changes no test.
+Verify 8: grep -n -iE "sentence|list item" .scratch/migration/agents/spec.md: lines 13, 45, 72.
+
+C16: grep -rnE "border(-top|-bottom)?: *1px" <the case's paths>
+src/lib/views/academic/present/parts/project/Project.svelte:337:        border-top: 1px dashed var(--line);
+exit 0
+
+Commands the round's section quotes:
+grep -rnE "(border[a-z-]*|outline[a-z-]*|box-shadow): *.*[0-9]px" <C16 paths>: 23 lines, each one the report lists.
+grep -rnE "padding and border|deck's frame|borderTop|borderBottom|borderLeftWidth|borderRightWidth|hairline border|border transparent|no border and no corner|keeps its border" src docs tests: eight lines, at the eight places the report names, all outside the slide code.
+grep -rnE "print-color-adjust|printBackground" src
+src/desktop/windows/print.ts:76:        const bytes = await contents.printToPDF({ preferCSSPageSize: true, printBackground: true });
+print/+page.svelte:167 holds `if (desktopOf(window, '') === undefined) window.print();`.
+History words over `git diff -U0 00adcfa54 -- src tests config docs ':!docs/diagrams'`: the report's six comment hits, plus one code line (`now.some(...)` in Slide.svelte).
+wc -l: Slide.svelte 487, Present.svelte 472, status.ts 684.
+ls -a .agents: `.`, `..`, plan.yaml (no scratch folder).
+
+C2's case-run program, rerun with its source fed on stdin and the deck planted under the session scratchpad:
+base:     C2 deck.frame: {"width":1000,"height":1000} | has frame key: true
+          C2 findings: []
+worktree: C2 deck.frame: undefined | has frame key: false
+          C2 findings: []
+
+Reading checks the task asks for (each read and grepped over the whole of src):
+Borders with a width under `.slide-frame`:
+  Panel.svelte:165 `.dnode` (0.15625cqw, takes room, Spec 1).
+  Project.svelte:206 and :233 (`border-left` in cqw, width axis only).
+  Project.svelte:337 and Table.svelte:232 (absolute `::before`, no room).
+  Chip: `border-width: 0` in a slide. Table `th` and `td`: `border-bottom-width: 0`. Tag: no border.
+  KaTeX (katex.min.css): widths in em or inline; no px border in the stylesheet.
+  `<hr>`: UA border, no rule anywhere in src (Behaviour 1).
+Other box-shadow on those elements: none. The grep over Chip, Tag, Table and the slide paths shows only the new lines and Chip's rice `box-shadow: none`. No state or focus rule sets one. The themes set only `--shadow` as a variable.
+Outline against focus outline: the outlined elements are `p.gap`, a diagram's `.dbar` and a Markdown `.gap`, none focusable. The focus outlines at Chip.svelte:221,248 and Table.svelte:172 are on other elements.
+`position: relative`: `.e5` holds a `span` and a `p`, no absolute child. Facts.svelte gained no position. Table.svelte has no absolute child, and `th` stays sticky.
+Measuring code: Stage `measure`, Slide `sides` (parent is the frame) and drawn-slide `frameOf` carry no border read, and the frame and figures have none. print route `frame.clientHeight` and formula.ts:16 `card.clientWidth` exclude a border in any case.
+Selectors: `slide-frame` occurs in Stage.svelte:89, print/+page.svelte:193, slide.css, and the new Chip and Table rules. `[data-frame]` occurs in Stage.svelte:91, Slide.svelte:151 and print/+page.svelte:193. `.frame` rules are in Stage and the print route only. The wallpaper rules on the frame and parts set background and backdrop-filter only. None assumes a border.
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. `settings/present.ts` is absent (`ls`), `section: Slides` greps to nothing, verify 3 prints nothing, and C2's program shows no `frame` key.
+- 2: holds. `SLIDE_SHAPE`, `slideHeight` and `SLIDE_PAGE_PT` are read by Stage, Tile, Presenter, the print route, `present.ts`, `place.ts` and `print.ts`. The literal grep shows only `place.ts:21` (the main window) and `Slide.svelte:106` (a fraction).
+- 3: holds. Stage has no transform and has `container-type` at :114 and :122. The C7 grep prints only the ruled lines. `cqw()` is used for the boxes in Panel and Plain.
+- 4: holds. `TEXT_LEAST = 0.28125`, `TEXT_GAP = 0.0203125`, and `slide-layout.ts` says fractions of the frame's width.
+- 5: violated in one clause, Spec 1 and Behaviour 1 ("one verdict on every surface"). The rest holds: `TOO_TALL = 1 / 720`, `SLACK = 1 / 2560`, and the measure reports `(content - box.height) / box.height`.
+- 6: holds. `findings.yml:138` is the dictated line, and `percent = Math.max(1, Math.round(over * 100))` at `present.svelte.ts:501`.
+- 7: holds. `printPdf(address)` through all layers, `@page` from `SLIDE_PAGE_PT` (print/+page.svelte:69), and the window from `SLIDE_PAGE_PT * PX_PER_PT` (print.ts:51-52).
+- 8: holds. `audienceFeatures(availWidth)` at `present.ts:287`, `createPresenting()` takes no frame, and `AUDIENCE_SIZE` height comes from `slideHeight`.
+- 9: holds. `docs/decks.md:103`, no `frame:` line in `docs/decks.md` or `docs/templates.md`, and verify 4 prints only the ruled line.
+- 10: holds. `frameSetting` occurs 0 times in `settings.test.ts`, and G13's replacement is under "Doc text" (report line 294) for the orchestrator.
+
+Items of the round's brief:
+
+- Round 1: violated in one clause, Spec 1. A departure from "one rule in each file" is Spec 2. The rest holds, as C16 and the reading checks above show.
+- Round 2: holds. Both comments say "its frame" and "their frame" and are rewrapped; `tests/checks/source/comment-width.test.ts` passes in vitest checks.
+- Round 3: holds. The paragraph is rewrapped.
+- Round 4: holds. The count of runs is stated, C2's source and output are quoted and reproduced above, and `.agents/scratch` is gone.
+
+Cases:
+
+- C1: met for the catalog (the grep prints nothing); the view is seen at the look.
+- C2: partial. The reader half is met by `tests/data/sources/present.test.ts:195` (vitest passes) and by the program above. The drawing and the editor's mark are settled at the look.
+- C3: met by reading. `workspace-layer.ts:338` gives `settings_unknown`, and `config/options/present.yml` has no `defaults.frame.*` key.
+- C4: not verifiable. Settled by the factor, boxes and verdict at two pane widths and the tile at the look. Behaviour 1 and Spec 1 predict a difference on a slide with `<hr>` or diagram nodes only.
+- C5: not verifiable. Settled by before and after verdicts at the look.
+- C6: met by reading `findings.yml:138` and `present.svelte.ts:501-502`.
+- C7: met. The grep prints only the kinds ruled in round 0 and hairlines drawn as shadows or outlines.
+- C8: not verifiable. Settled by `pdfinfo` at the look.
+- C9: met by reading `present.ts:287-290` and `present.svelte.ts:649`.
+- C10: met by reading the `body.rice .slide-frame` rule in `slide.css`.
+- C11: met by reading Stage.svelte:56-57 and the presenter's `aspect-ratio`.
+- C12: not verifiable. Settled at text size 1.5 at the look.
+- C13: met by reading Stage's `min()` box in the centring `.room`.
+- C14: met by reading Stage's `box.height === 0` return and the hidden frame while the room has no size.
+- C15: not verifiable. The boxes are in `cqw` (read). "No new layout run" is settled by counting layouts at the look.
+- C16: met. It prints the one line quoted above. The first run's 18 lines are in the report.
+
+### Findings
+
+#### Spec
+
+1. `src/lib/views/academic/present/Panel.svelte:165`: "border: 0.15625cqw solid var(--line);", with the report's section "Repair round 1", Item 1: "The `border-left` bars in `cqw` of `Project.svelte` and the `.dnode` border in `cqw` of `Panel.svelte` are fractions and stay."
+
+   What is wrong: the round exempted only the `border-left` bars of `Project.svelte` ("Any other element under `.slide-frame` a read of `grep -rn "border"` ... with a line that takes room is held to the same shapes"). The `.dnode` border stands in those folders and takes height on both edges, and the report widened the exemption to it.
+
+   Failure scenario, computed and not run: a used border width is snapped to at least one device pixel. In a 220 px wide tile (`Overview.svelte:246`), 124 px high, 0.15625cqw is 0.34 px and is drawn as 1 px at device ratio 1, or 0.5 px at ratio 2. A row of nodes is then 1.3 px (0.3 px) higher than its fraction, 1.07% (0.25%) of the tile's height, against `TOO_TALL` of 0.14%. So a diagram slide near the edge of fitting can get a different verdict in the tile than in the pane. No hub deck uses `.dnode` today (the grep of `deck` and `projects/active` prints nothing).
+
+   Verdict: round item 1's last clause and item 5 violated; C4 predicted to differ on such a slide.
+
+2. `src/lib/ui/display/table/Table.svelte:219-233`: "`:global(body.rice .slide-frame) td { position: relative; box-shadow: none; }`" and its `::before` with "border-top: 1px dotted var(--line);".
+
+   What is wrong: the round asked for "one rule in each file" and named the table's shape as `box-shadow: inset 0 -1px 0 0 var(--line)` on `th` and `td`. Under rice the builder substitutes a second mechanism and adds two rules, to keep the dotted line. The report names it under "Judgment call".
+
+   Failure scenario: a rice slide's summary table draws its row lines as a dotted `::before` where the round's shape draws a solid line. A reader of C16 ("only the `border-top` of the one `::before`") also meets a second 1px `border-top` under a slide, because Table.svelte is outside C16's paths. Which one stands is the orchestrator's to rule.
+
+   Verdict: round item 1, departure from the named shape.
+
+#### Proof
+
+1. `.scratch/migration/agents/reviews/O171-report.md:316`: "Handed back, by the round's rule that a place where a named shape does not hold is changed no further and named:".
+
+   What is wrong: no such rule exists in the round's brief, the step's brief, the cases rulings or the rules file (`grep -n "changed no further\|does not hold"` over the four files prints nothing, exit 1). If the launch message carried it, that message is not in the ledger.
+
+   Failure scenario: the reader takes the print-from-a-tab case as a hand-back the round authorised. The case itself stays open and unverified. `print/+page.svelte:167` calls `window.print()` with no `print-color-adjust`, and the app's only `printBackground` is in the desktop export (`print.ts:76`), so a tab print with "Background graphics" off may lose the slide's solid hairlines, which a `border` kept.
+
+   Verdict: none; round item 1's "still drawn one pixel wide" is unconfirmed for that path.
+
+#### Standards
+
+1. `src/lib/themes/slide.css:10-11`: "A hairline inside a slide, the frame's own line among them, is a shadow or an outline one pixel wide".
+
+   What is wrong: two hairlines under a slide are a `::before` rule, `Project.svelte:337` and `Table.svelte:232`; `Project.svelte`'s own head comment says "a shadow, an outline or a rule laid over the element's edge". `spec.md`, "What every package obeys": a sentence in a head comment that the change makes false is a defect of the change.
+
+   Failure scenario: a reader of the theme's head comment looks for only two forms of line and misses the rule form when changing line colours or widths.
+
+   Verdict: none.
+
+#### Behaviour
+
+1. `src/lib/ui/html.ts:96`, `ALLOWED_TAGS` keeps `'hr'` and `'input'`, drawn through `Words.svelte`. `hr` has no rule anywhere in src (`grep` over `src/lib/themes` and `Words.svelte` prints nothing), so its UA border stands.
+
+   What is wrong: a `<hr>` from `***` or `___` in a slide's Markdown (`---` is the deck's separator, `split.ts:51`) keeps a 1px UA border on all sides and takes 2 px of height at every drawn size. A task-list checkbox keeps its fixed UA size. Neither is in the report's before and after, and C16 cannot see a UA rule.
+
+   Failure scenario, computed and not run: at 124 px high the `<hr>`'s border is 1.6% of the tile against 0.28% of a 720 px pane, more than `TOO_TALL` of 0.14%. A slide with `***` near the edge of fitting gets a different verdict in the tile. A checkbox line in a tile is taller than its text. No hub deck holds either (the find and grep over deck Markdown print nothing).
+
+   Verdict: item 5 violated in that clause.
+
+2. `src/lib/views/academic/present/screen/Stage.svelte:129` "overflow-y: auto;" with `src/lib/themes/slide.css:45` "box-shadow: inset 0 0 0 1px var(--line);".
+
+   What is wrong: the report's Risks list names content scrolled over the inset line only for `.diagram` and `parts/Equation.svelte`. The frame itself is a scroller and its line is now an inset shadow that scrolled content paints over, whereas the border lay outside the scrolled area.
+
+   Failure scenario, by reading and not run: a too-tall slide scrolled in the pane has a figure with its card background cross the frame's top or bottom line, and the line is covered there.
+
+   Verdict: none.
+
+### Declined to judge
+
+- Every quoted `git grep`, which my git rule excludes: I ran `grep -rn` over the same paths, which also reads untracked files. Settled at landing by the report's `git grep` lines.
+- `npm run diagrams` of verify 1: it writes tracked files. Settled by the landing list.
+- "The filter the rules file names": `grep -n -i filter .scratch/migration/agents/spec.md` prints nothing, so I stripped ANSI codes and non-ASCII from the output.
+- How many times `npm run test:quick` ran before this round (four, per the report): it comes from the builder's transcript, which I may not reach.
+- Whether Chromium drops an inset shadow in a tab print with "Background graphics" off, whether border snapping gives the figures of Spec 1, and whether `.dnode` matters on any future deck: no page may be run here. Settled at the look.
+- Whether an inset shadow on a collapsed `<table>` and its cells paints as the round's shape expects (`Words.svelte:68,74`): settled at the look.
+- Every drawn result of the round (C2's drawing, C4, C5, C8, C12, C15): settled at the look.
+
+Reviewer usage: a8a448d5253a312b8, claude-opus-5-5, 227400 tokens, 33 tool uses, 13.7 min.
+
+### Closed
+
+The findings of the run over repair round 1, each closed at landing on main.
+
+- Spec 1: fixed at landing. `.dnode` in `Panel.svelte` draws its line as `box-shadow: inset 0 0 0 0.15625cqw var(--line)`, which takes no room.
+- Spec 2: closed as it stands, a judgment. Table's dotted `::before` under rice keeps rice's dotted row line, which an inset shadow cannot draw, and takes no room. C16's paths exclude `Table.svelte`. Named in the booking.
+- Proof 1: fixed at landing. The report's line says the hand-back rule was in the round's launch message.
+- Standards 1: fixed at landing. The head comment of `slide.css` says a shadow, an outline or a rule laid over the element's edge.
+- Behaviour 1: fixed at landing. `Words.svelte` gives a Markdown `<hr>` no height with its line as a shadow, and a task list's checkbox a size in em of its line.
+- Behaviour 2: closed at the look, as the booking states: the frame's inset line can be covered only while a too-tall slide is scrolled.
+- The round's hand-back (a tab print and box shadows): fixed at landing. The print route's `.frame` sets `print-color-adjust: exact`.

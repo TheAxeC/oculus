@@ -43,9 +43,9 @@
 
 <style>
     .eqcard {
-        margin-bottom: 12px;
-        padding: 14px 12px;
-        border: 1px solid var(--line);
+        margin-bottom: 0.9375cqw;
+        padding: 1.09375cqw 0.9375cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
         text-align: center;

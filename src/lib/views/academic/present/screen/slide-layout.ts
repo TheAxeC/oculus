@@ -1,35 +1,48 @@
 // Layer 3, view helper. Where a slide's figures and its text go in the room under the slide's
-// title, in the frame's own px. Slide.svelte measures the drawn slide (the room, each figure's
-// width over its height, the height of its caption and explanation, the text's height at its least
-// size) and hands the numbers here; the parts draw the boxes this answers. It is arithmetic alone,
-// with no DOM and no import, so the same numbers give the same boxes on every surface, and it can
-// be run as it is under Node.
+// title, every length a fraction of the frame's width. Slide.svelte measures the drawn slide (the
+// room, each figure's width over its height, the height of its caption and explanation, the text's
+// height at its least size), divides each length by the frame's drawn width and hands the numbers
+// here; the parts draw the boxes this answers in container units of the frame, so a box is the
+// same part of the slide at any size the slide is drawn at. It is arithmetic alone, with no DOM
+// and no import, so the same numbers give the same boxes on every surface, and it can be run as
+// it is under Node.
 //
 // The figures of a slide are placed as one block: one figure alone, or every figure side by side
 // (one image height) or stacked (one image width), whichever draws the figures larger in the room.
 // A block that the room's full height leaves narrower than the room is tall: a column at the
-// room's right, centred in the room's height, the text beside it keeping at least `TEXT_LEAST` px
-// and the gap. Any other block, and a tall one in a room too narrow to keep the text that width,
-// is wide: the room's full width under the text, centred, no taller than the room leaves under
-// the text at its least size. A slide with no text gives the block the whole room, centred. No
-// box is larger than the room, and a figure may be drawn larger than its pixels. Where the text
-// at its least size leaves a wide block no height at all, the block is drawn whole under the
-// text, at the size the room's full width and height allow, and the layout is taller than the
+// room's right, centred in the room's height, the text beside it keeping at least `TEXT_LEAST` of
+// the frame's width and the gap. Any other block, and a tall one in a room too narrow to keep the
+// text that width, is wide: the room's full width under the text, centred, no taller than the room
+// leaves under the text at its least size. A slide with no text gives the block the whole room,
+// centred. No box is larger than the room, and a figure may be drawn larger than its pixels. Where
+// the text at its least size leaves a wide block no height at all, the block is drawn whole under
+// the text, at the size the room's full width and height allow, and the layout is taller than the
 // room, so the slide is measured too tall with its figures drawn. A block whose captions and
 // explanations are themselves taller than the room is never a column of no width: it is drawn
 // under the text, its images as large as the room allows them alone.
 
-/** The least width the text keeps beside a column of figures, in px. */
-const TEXT_LEAST = 360;
+/** The least width the text keeps beside a column of figures, a fraction of the frame's width. */
+const TEXT_LEAST = 0.28125;
 
-/** The gap between the text and the figures, in px, the gap of a project slide's two columns. */
-export const TEXT_GAP = 26;
+/**
+ * The gap between the text and the figures, as a fraction of the frame's width, the gap of a
+ * project slide's two columns.
+ */
+export const TEXT_GAP = 0.0203125;
 
 /** The least factor on the slide type scale the text is drawn at. */
 export const FIT_LEAST = 0.75;
 
 /** The greatest factor on the slide type scale the text is drawn at. */
 export const FIT_MOST = 1.25;
+
+/**
+ * A length of the layout, a fraction of the frame's width, as the CSS length a part draws it at:
+ * in container units of the frame (`cqw`, a hundredth of its width).
+ */
+export function cqw(length: number): string {
+    return `${length * 100}cqw`;
+}
 
 type Size = { width: number; height: number };
 
@@ -40,7 +53,7 @@ export type Box = Size & { x: number; y: number };
 export type Figure = {
     /** The image's width over its height. */
     ratio: number;
-    /** The px the figure's box adds to the image on each axis: its padding and border. */
+    /** What the figure's box adds to the image on each axis: its padding. */
     frame?: number;
     /** The height drawn under the figure's box: its caption and its explanation. */
     under?: number;
@@ -89,7 +102,7 @@ type LayoutAsk = {
     figures: Figure[];
     /** The text's height at its least size across the room's width; null for a slide with none. */
     text: number | null;
-    /** The gap between two figures of the block, in px. */
+    /** The gap between two figures of the block. */
     between?: number;
 };
 

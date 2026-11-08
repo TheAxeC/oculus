@@ -1,11 +1,16 @@
-/* The frame a slide is laid out in, at its deck's frame: the slide type scale in px, which follows
-   the text size, the reading width, the padding and the surface. Where the frame is drawn
-   (screen/Stage.svelte, the print route's page) sizes it to the deck's frame; a frame drawn with
-   no visible border keeps its border transparent, so every surface gives the slide the same
-   inner box, 1150 by 590 px in a 1280 by 720 frame. The reading column is at most 1040 px wide
-   whatever the frame, since the type sizes are in px; it takes the frame's inner width, less the
-   padding and the border, where that is narrower, 894 px in a 1024 frame. The Present pane scales
-   the frame to its box and the print route prints it at scale 1, both through this one class.
+/* The frame a slide is drawn in. A slide has no size of its own, only the shape 16:9
+   (`SLIDE_SHAPE` of the deck model): each surface draws the frame at the largest box of that shape
+   its room holds, and the element that holds the frame at that size is a size container
+   (screen/Stage.svelte's stage, the print route's page). Every size inside a slide is in container
+   units of it, a fraction of the frame's width (`cqw`, a hundredth of it), so a slide drawn at any
+   size looks the same, only larger or smaller: the slide type scale, the reading width, the
+   padding, the corners, and the type steps and measures of the chips, tags and table a slide
+   draws. The reading column is at most 81.25 hundredths of the frame's width, and the inner box,
+   less the padding of 5 hundredths on each side, is wider than that, so the column takes the full
+   reading width on every surface. A hairline inside a slide, the frame's own line among them, is
+   a shadow, an outline or a rule laid over the element's edge, one pixel wide, which takes no
+   room in the layout, so it sizes nothing and the frame's inner box is the same with the line
+   drawn or not.
 
    A slide's content is drawn at one factor on the type scale (`--slide-fit`, between 0.75 and 1.25,
    which Slide.svelte finds by measuring the drawn slide and sets on its `.slide-fit` box): the
@@ -14,18 +19,34 @@
    (the strip of a project's facts) keep the factor 1. The design sizes are the sizes at the factor
    1, each times the app's text size (`--text-scale`). */
 .slide-frame {
-    --slide-design-title: 56px;
-    --slide-design-h: 36px;
-    --slide-design-sub: 28px;
-    --slide-design-body: 24px;
-    --slide-design-small: 18px;
-    --slide-ui-xs: var(--fs-xs);
-    --slide-ui-sm: var(--fs-sm);
-    --slide-ui-md: var(--fs-md);
-    --slide-reading: 1040px;
+    --slide-design-title: 4.375cqw;
+    --slide-design-h: 2.8125cqw;
+    --slide-design-sub: 2.1875cqw;
+    --slide-design-body: 1.875cqw;
+    --slide-design-small: 1.40625cqw;
+    --slide-ui-xs: calc(0.859375cqw * var(--text-scale, 1));
+    --slide-ui-sm: calc(0.9375cqw * var(--text-scale, 1));
+    --slide-ui-md: calc(1.015625cqw * var(--text-scale, 1));
+    --slide-reading: 81.25cqw;
+    /* The corners of the frame and of every card on a slide, and the line of a table's rows. */
+    --radius: 0.78125cqw;
+    --radius-sm: 0.46875cqw;
+    --radius-pill: 0.859375cqw;
+    --button-line: 1.25cqw;
+    /* The measures of the chips, tags and table a slide draws (ui/controls/Chip.svelte,
+       ui/controls/Tag.svelte, ui/display/table/Table.svelte), which are px outside a slide. */
+    --chip-gap: 0.3125cqw;
+    --chip-pad: 0.234375cqw 0.390625cqw;
+    --chip-rice-pad: 0.078125cqw 0;
+    --tag-gap: 0.3125cqw;
+    --tag-pad: 0.078125cqw 0;
+    --table-cell-pad: 0.234375cqw 0.625cqw 0.15625cqw;
     box-sizing: border-box;
-    padding: 64px;
-    border: 1px solid var(--line);
+    padding: 5cqw;
+    /* A font whose letter widths are the same fraction of its size at every size, so a slide wraps
+       alike at every size it is drawn at; the system font sets small text wider. */
+    font-family: Helvetica, Arial, sans-serif;
+    box-shadow: inset 0 0 0 1px var(--line);
     border-radius: var(--radius);
     background: var(--card);
     color: var(--ink-txt, var(--ink));
@@ -56,14 +77,26 @@
     color: var(--accent-txt, var(--accent));
 }
 
-/* Under a rice theme the slide sizes are the design sizes times 12/13, rounded to whole pixels (56
-   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17). The rule sits here because the
-   sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not
-   reach. */
+/* A monospace rice theme keeps its font on a slide. */
+body.rice:where(:not(.rice-sans)) .slide-frame {
+    font-family: var(--font-mono);
+}
+
+/* Under a rice theme the slide's design sizes are the default ones times 12/13, the chip and table
+   steps 0.78125, 0.859375 and 0.9375 hundredths of the frame's width, each smaller than the
+   default one as the rice steps of `themes.css` are, and the corners those of rice, square but
+   for a trace. The rule sits here because the sizes are declared on `.slide-frame` itself,
+   where a declaration on `body.rice` does not reach. */
 body.rice .slide-frame {
-    --slide-design-title: 52px;
-    --slide-design-h: 33px;
-    --slide-design-sub: 26px;
-    --slide-design-body: 22px;
-    --slide-design-small: 17px;
+    --slide-design-title: calc(4.375cqw * 12 / 13);
+    --slide-design-h: calc(2.8125cqw * 12 / 13);
+    --slide-design-sub: calc(2.1875cqw * 12 / 13);
+    --slide-design-body: calc(1.875cqw * 12 / 13);
+    --slide-design-small: calc(1.40625cqw * 12 / 13);
+    --slide-ui-xs: calc(0.78125cqw * var(--text-scale, 1));
+    --slide-ui-sm: calc(0.859375cqw * var(--text-scale, 1));
+    --slide-ui-md: calc(0.9375cqw * var(--text-scale, 1));
+    --radius: 0.234375cqw;
+    --radius-sm: 0.15625cqw;
+    --radius-pill: 0.234375cqw;
 }

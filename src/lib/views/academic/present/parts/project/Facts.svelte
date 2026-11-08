@@ -152,8 +152,8 @@
     /* The strip is set in the slide's small type, and every measure below is in that type: the
        rule above it and the room between the rule and the first line of facts, the gap between
        two facts on a line and between two lines, the gap between a label and its value and the
-       label's size. The dot before a hued value is as wide as half the strip's type, 9 px at the
-       design size. */
+       label's size. The dot before a hued value is as wide as half the strip's type, 0.703125
+       hundredths of the frame's width at the design size. */
     .facts {
         --fact-label: 0.72em;
         --fact-gap: 1em;
@@ -161,7 +161,8 @@
         --dot-size: 0.5em;
 
         padding-top: 0.6em;
-        border-top: 1px solid color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
+        box-shadow: inset 0 1px 0 0
+            color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
         font-size: var(--slide-fs-small);
         line-height: 1.3;
     }

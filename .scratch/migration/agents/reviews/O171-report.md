@@ -308,3 +308,177 @@ becomes:
 ```
 in `writing.test.ts` among them; the other readers:
 ```
+
+## Repair round 1
+
+NOT done: nothing of items 1 to 4 is left undone. One place is handed back unchanged in behaviour for the orchestrator to rule on, and no page was run, so every drawn result below is by reading and belongs to the look.
+
+Handed back, by the rule of the round's launch message that a place where a named shape does not hold is changed no further and named:
+
+- The solid lines inside a slide when the print route is printed from a browser tab. Place: `src/routes/present/print/+page.svelte:167` calls `window.print()` when there is no host. Reason: the lines inside a slide are now `box-shadow: inset ...`, and a browser's print dialog can drop a box shadow when its "Background graphics" option is off, which a `border` was not subject to. `git grep -nE "print-color-adjust|printBackground" -- src` prints only `src/desktop/windows/print.ts:76`, `printToPDF({ preferCSSPageSize: true, printBackground: true })`, so the app's own PDF export asks for backgrounds and is not at this risk. The browser-tab print sets no `print-color-adjust`. Not verified: no page was run. The dashed lines are outlines and are not affected. Recommendation (a judgment): one declaration, `print-color-adjust: exact`, on the print route's `.frame`, which also prints the slide's fills in that dialog, the reason it is the orchestrator's to rule and not added here.
+
+### Item 1, a hairline inside a slide takes no room
+
+C16's first run, before any change of this round, `grep -rnE "border(-top|-bottom)?: *1px" src/lib/themes/slide.css src/lib/views/academic/present/Slide.svelte src/lib/views/academic/present/Panel.svelte src/lib/views/academic/present/parts src/lib/views/academic/present/screen src/routes/present/print`, 18 lines, exit 0:
+
+```
+src/lib/views/academic/present/Panel.svelte:112:        border: 1px solid var(--line);
+src/lib/views/academic/present/Panel.svelte:120:        border: 1px dashed var(--line);
+src/lib/views/academic/present/Panel.svelte:129:        border: 1px solid var(--line);
+src/lib/views/academic/present/Panel.svelte:145:        border: 1px solid var(--line);
+src/lib/views/academic/present/Panel.svelte:187:        border: 1px dashed var(--line);
+src/lib/views/academic/present/parts/Equation.svelte:48:        border: 1px solid var(--line);
+src/lib/themes/slide.css:45:    border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Words.svelte:56:        border: 1px dashed var(--line);
+src/lib/views/academic/present/parts/Words.svelte:70:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Section.svelte:76:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Grid.svelte:86:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Grid.svelte:113:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Plain.svelte:105:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/Plain.svelte:118:        border: 1px dashed var(--line);
+src/lib/views/academic/present/parts/project/Facts.svelte:164:        border-top: 1px solid color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
+src/lib/views/academic/present/parts/project/Project.svelte:246:        border: 1px solid var(--line);
+src/lib/views/academic/present/parts/project/Project.svelte:312:        border: 1px solid var(--tone, var(--line));
+src/lib/views/academic/present/parts/project/Project.svelte:326:        border-top: 1px dashed var(--line);
+```
+
+C16's last run, the same command, one line, the `border-top` of the one `::before` of item 1:
+
+```
+src/lib/views/academic/present/parts/project/Project.svelte:337:        border-top: 1px dashed var(--line);
+```
+
+What changed, by kind of line:
+
+- A solid line on all four sides is `box-shadow: inset 0 0 0 1px C`: `themes/slide.css:45`, `Panel.svelte` `.fig`, `.diagram`, `.explain`, `parts/Equation.svelte`, `parts/Grid.svelte` (two), `parts/Plain.svelte` `.figure`, `parts/Section.svelte`, `parts/project/Project.svelte` `.spec` and `.eli5` (the latter in `var(--tone, var(--line))`).
+- A dashed line on all four sides is `outline: 1px dashed C; outline-offset: -1px`: `Panel.svelte` `.gap` and `.dbar`, `parts/Plain.svelte`, `parts/Words.svelte`.
+- A solid line on one edge is `box-shadow: inset 0 1px 0 0 C`: `parts/project/Facts.svelte:164`.
+- A dashed line on one edge is the `::before` of `.e5 + .e5` in `parts/project/Project.svelte`, the element `position: relative`.
+- The cells of a Markdown table, `parts/Words.svelte`: each cell `inset -1px -1px 0 0 var(--line)`, the table `inset 1px 1px 0 0 var(--line)`.
+- `screen/Stage.svelte` `.frame.bare` and the print route's `.frame` draw no line (`box-shadow: none`).
+- `src/lib/ui/controls/Chip.svelte`: the states set `--chip-line`, the base rule reads it in `border: 1px solid var(--chip-line)`, and one rule `:global(.slide-frame) .chip` takes `border-width: 0` and `box-shadow: inset 0 0 0 1px var(--chip-line)`. The rice brackets rule adds `box-shadow: none`, since it has the higher specificity and a chip there draws no line.
+- `src/lib/ui/display/table/Table.svelte`: one rule `:global(.slide-frame) th, td` with `border-bottom-width: 0` and `box-shadow: inset 0 -1px 0 0 var(--line)`.
+- The `border-left` bars in `cqw` of `Project.svelte` and the `.dnode` border in `cqw` of `Panel.svelte` are fractions and stay.
+- The read over the slide folders, `grep -rnE "(border[a-z-]*|outline[a-z-]*|box-shadow): *.*[0-9]px"` on the C16 paths, prints only the lines above.
+
+The code that counted a border is gone: `measure` in `screen/Stage.svelte` (the inner height is the box's height), `sides` in `Slide.svelte` (paddings only), `frameOf` in `screen/drawn-slide.ts` (paddings only). The comments that named a border those no longer have are rewritten and rewrapped: the heads of `slide.css`, `Stage.svelte`, the print route, `Panel.svelte`, `parts/Plain.svelte` and `parts/project/Project.svelte`, the head and the doc of `frameOf` in `drawn-slide.ts`, the `frame` doc in `screen/slide-layout.ts`, and the "no border and no corner" comments of `Stage.svelte`, `screen/Framed.svelte` and `Present.svelte`, which say "no line and no corner".
+
+### Item 2
+
+`src/lib/views/system/findings/Findings.svelte:26` says "its frame" and `src/lib/state/workbench/navigation/status.ts` says "their frame"; each comment paragraph is rewrapped at 100 columns.
+
+### Item 3
+
+The head paragraph and the foot paragraph of `Slide.svelte` are rewrapped at 100 columns.
+
+### Item 4, the report
+
+`npm run test:quick` ran four times before this round, read off the Bash calls of this agent's transcript: one run printed "every command passed"; one had a file edited during it and failed `vitest checks` and `vitest slow`; one failed `vitest` and `vitest slow` on six per-test timeouts; one failed `vitest` on three per-test timeouts. It ran once in this round.
+
+C2's case-run program, `.agents/scratch/c2-first.ts`, run as `node --experimental-strip-types .agents/scratch/c2-first.ts $PWD/../O171-base $PWD/.agents/scratch` with the same arguments for the worktree (`$PWD`), the ExperimentalWarning lines filtered out:
+
+```ts
+// Case-run program of C2: prints the deck reader's answer for a deck that holds a `frame:`, on the
+// tree named by the first argument, planting the deck under the folder named by the second.
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const root = process.argv[2];
+const scratch = process.argv[3];
+const config = await import(join(root, 'src/lib/data/sources/config.ts'));
+const { createReader } = await import(join(root, 'src/lib/data/sources/deck/read.ts'));
+const { deckOrderOf } = await import(join(root, 'src/lib/data/shapes/boards/order.ts'));
+const { folderGlobs } = await import(join(root, 'src/lib/data/sources/documents/folder-globs.ts'));
+const VOCAB = config.loadConfig(config.engineDir()).config;
+const dir = mkdtempSync(join(scratch, 'c2-'));
+mkdirSync(join(dir, 'deck'));
+writeFileSync(
+    join(dir, 'deck/present.yml'),
+    'deck: { title: Square, frame: { width: 1000, height: 1000 } }\norder: [one.md]\n'
+);
+writeFileSync(join(dir, 'deck/one.md'), '# One\n\nText.\n');
+const context: Record<string, unknown> = {
+    hub: { key: 'hub', dir },
+    projects: [],
+    tagTones: {},
+    catalog: config.textCatalog(VOCAB),
+    order: deckOrderOf(VOCAB),
+    globs: folderGlobs()
+};
+if ('frameSetting' in config) context.frame = config.frameSetting(VOCAB);
+const deck = createReader(context).read({ key: 'hub', dir }, 'deck');
+console.log(
+    'C2 deck.frame:',
+    JSON.stringify(deck.frame),
+    '| has frame key:',
+    Object.hasOwn(deck, 'frame')
+);
+console.log(
+    'C2 findings:',
+    JSON.stringify(deck.findings.map((one: { key: string; message: string }) => [one.key, one.message]))
+);
+```
+
+Output on the base copy `.agents/worktrees/O171-base`:
+
+```
+C2 deck.frame: {"width":1000,"height":1000} | has frame key: true
+C2 findings: []
+```
+
+Output on the worktree:
+
+```
+C2 deck.frame: undefined | has frame key: false
+C2 findings: []
+```
+
+The program and the whole of `.agents/scratch` are deleted (`rm -rf` of its absolute path; `ls -a .agents` shows no `scratch`).
+
+### Verify
+
+| Check | Command | Result |
+| --- | --- | --- |
+| 1 | `npm run test:quick`, TMPDIR unset, once, nothing edited during it | exit 0, `test:quick: 448.4 s; every command passed`: prettier, ASCII gate, svelte-kit sync, eslint, svelte-check (0 errors, 0 warnings), vitest checks, vitest, vitest slow. Not covered, as it prints: tests that reach no changed file within the import depth, the build, the lint of unchanged files. |
+| diagrams | `npm run diagrams` | not run this round: no import changed. |
+| 2 | ASCII perl gate over the modified files with the two added paths | prints nothing. |
+| 3 | `git grep -n "deck\.frame\|defaults\.frame\|frameSetting\|deckFrame\|DeckFrame\|FrameSetting\|wholeFrame\|featuresFrame" -- src config docs tests ':!config/local.yml'` | prints nothing, exit 1. |
+| 4 | `git grep -nE "frame's own px\|1150 px\|1040 px\|1280 by 720\|in px" -- <the brief's paths>` | one line, `src/routes/present/show/+page.svelte:68`, the screen tolerance of the round 0 ruling. |
+| 5 | `sh utils/unused-exports.sh`, `diff` with `O171-base/unused-exports.txt` | no difference, exit 0. |
+| 6 | the C7 grep | below. |
+| 7 | changed tests | `find src tests config docs -type f -newer` the last log of round 0 names no test file: this round changes no test. |
+| 8 | `grep -n -iE "sentence\|list item" .scratch/migration/agents/spec.md` | no list-item or sentence-length rule; line 45 is the rewrap rule, followed. |
+| C16 | above | one line. |
+
+The C7 grep, `git grep -nE "[0-9]px|px\`|px'|}px"` over the C16 paths, prints these kinds of line and no other:
+
+- One-pixel shadows, `box-shadow: inset ... 1px ...`: `slide.css:45`, `Panel.svelte:112, :130, :146`, `parts/Equation.svelte:48`, `parts/Grid.svelte:86, :113`, `parts/Plain.svelte:106`, `parts/Section.svelte:76`, `parts/Words.svelte:68, :74`, `parts/project/Facts.svelte:164`, `parts/project/Project.svelte:247, :313`.
+- One-pixel outlines with their offset: `Panel.svelte:120-121, :188-189`, `parts/Plain.svelte:119-120`, `parts/Words.svelte:56-57`.
+- The one `::before` rule: `parts/project/Project.svelte:337`.
+- The 1px screen-reader copy: `parts/project/Facts.svelte:197-198`, ruled in round 0.
+- `src/routes/present/print/+page.svelte:234`, `.failed`, outside every slide, ruled in round 0.
+
+Other checks:
+
+- Names: `git grep -nE "padding and border|deck's frame|borderTop|borderBottom|borderLeftWidth|borderRightWidth|hairline border|border transparent|no border and no corner|keeps its border" -- src docs tests` prints eight lines, none in the step's slide code: `PaneView.svelte:506`, `themes.css:51`, `latex-widget.ts:60, :67`, `Card.svelte:199`, `Band.svelte:265`, `CardActions.svelte:112-113`, each about its own box outside a slide.
+- History words over the comments this step adds: the grep prints six lines, each a run-time sense and none a history word: "a new window", "before that answer", "with no new layout", "before the slide is laid out again", "in a new tab", "was laid out ... its new size".
+- Sizes (`wc -l`, the round's files): `Slide.svelte` 487 and `Present.svelte` 472 against 520 per component, `status.ts` 684 against 880. This round adds no file, so no folder count changes.
+
+The round's source files, from `find src tests config docs -type f -newer` the last log of round 0: `status.ts`, `themes/slide.css`, `ui/controls/Chip.svelte`, `ui/display/table/Table.svelte`, `Panel.svelte`, `Present.svelte`, `Slide.svelte`, `parts/Equation.svelte`, `parts/Grid.svelte`, `parts/Plain.svelte`, `parts/Section.svelte`, `parts/Words.svelte`, `parts/project/Facts.svelte`, `parts/project/Project.svelte`, `screen/drawn-slide.ts`, `screen/Framed.svelte`, `screen/slide-layout.ts`, `screen/Stage.svelte`, `Findings.svelte`, `routes/present/print/+page.svelte`.
+
+### Judgment call
+
+`Table.svelte` holds three rules inside a slide where the round names one. Under the rice theme a table's `td` draws a dotted bottom line (`:global(body.rice) td`), which a solid inset shadow cannot draw, and the brief's decision that the conversion keeps today's look applies. The extra rules are the round's shape for a broken line on one edge: `:global(body.rice .slide-frame) td` takes `position: relative; box-shadow: none` and its `::before` lies over the cell's bottom edge with `border-top: 1px dotted var(--line)`. This is the one 1px border under a slide besides `Project.svelte`'s, and C16 does not list it because it is in `Table.svelte`, outside C16's paths.
+
+### Before and after (what the look reads against)
+
+- The frame's inner box grows by 2 px at a 1280 px frame, and each line inside a slide gives its pixel back, so a slide gets a little more room and a slide near the edge of fitting can move a factor.
+- Lines look the same: one pixel wide in the same colour and the same dash.
+- A chip inside a slide is one pixel lower: at a 1280 px frame with its words at 11 px it was 19 px tall (11 line, 6 padding, 2 border) and is 18 px, its `min-height`. That is arithmetic from the rule in `Chip.svelte`, not a measurement. Outside a slide a chip and a table are unchanged.
+
+### Risks, not verified (no page was run; the look checks them)
+
+- The print-from-a-browser-tab case at the head of this section.
+- Content scrolled in `Panel.svelte` `.diagram` and `parts/Equation.svelte` (both `overflow-x: auto`) can paint over the inset line, which a border would have stayed outside of.
+- A figure's line on an `<img>` is an inset shadow, which lies under the image's content and shows only in the image's padding. The padding is 0.46875cqw, one pixel or more from a frame 213 px wide; on a narrower tile the image covers part of the line.
+- A Markdown table's top and left lines are an inset shadow on the `table` element: a cell with a background of its own would cover it. `parts/Words.svelte` gives its cells none.

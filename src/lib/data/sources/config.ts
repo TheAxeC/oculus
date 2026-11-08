@@ -105,7 +105,6 @@ export {
     recoverRows
 } from './config/settings/rows/read.ts';
 export { type LintSettings, lintSettings } from './config/settings/writing/lint.ts';
-export { frameSetting } from './config/settings/present.ts';
 export {
     type AppsSettings,
     type ProcessesSettings,

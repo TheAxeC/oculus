@@ -85,14 +85,14 @@
     /* The table is the one thing on a slide wider than the reading width, so it scrolls in its own
        box. */
     .scroll {
-        margin-top: 12px;
+        margin-top: 0.9375cqw;
         overflow-x: auto;
     }
 
     .field {
         display: flex;
         align-items: baseline;
-        gap: 6px;
+        gap: 0.46875cqw;
     }
 
     .hint {

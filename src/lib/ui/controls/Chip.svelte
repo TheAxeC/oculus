@@ -138,24 +138,34 @@
 <style>
     /* The chip's sizes are counted in `--chip-px`, the chip being drawn for words of 11 of them:
        1 px grown with the text scale, or an eleventh of the size a surface gives its chips' words
-       as `--chip-text`, so every size grows with those words. */
+       as `--chip-text`, so every size grows with those words. The gap and the padding are 4 px and
+       3 by 5 px unless a surface gives its own as `--chip-gap` and `--chip-pad`, as a slide does
+       in fractions of its frame (themes/slide.css). The colour of its line is `--chip-line`, which
+       each state below sets. */
     .chip {
         --chip-px: calc(var(--chip-text, calc(11px * var(--text-scale, 1))) / 11);
+        --chip-line: var(--line);
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: var(--chip-gap, 4px);
         box-sizing: border-box;
         max-width: 100%;
         min-width: 0;
         min-height: calc(18 * var(--chip-px));
-        padding: 3px 5px;
-        border: 1px solid var(--line);
+        padding: var(--chip-pad, 3px 5px);
+        border: 1px solid var(--chip-line);
         border-radius: var(--radius-pill);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
         font-size: var(--chip-text, var(--fs-xs));
         line-height: calc(11 * var(--chip-px));
         white-space: nowrap;
+    }
+
+    /* Inside a slide the line takes no room, so every size there stays a fraction of the frame. */
+    :global(.slide-frame) .chip {
+        border-width: 0;
+        box-shadow: inset 0 0 0 1px var(--chip-line);
     }
 
     /* The 16 px icon of a chip is taller than the chip's 11 px line; its margin gives the room
@@ -184,7 +194,7 @@
     /* An outlined chip that is not filled draws its border in its hue as well as its words; the
        hover's accent border below marks the one under the pointer, as on any toggle chip. */
     .chip.toned.outlined:not(.filled) {
-        border-color: var(--tone);
+        --chip-line: var(--tone);
     }
 
     /* The remove control is the chip's own icon box: no border and no fill, the 16 px icon given
@@ -220,7 +230,7 @@
     }
 
     .chip.pressable:hover:not(:disabled) {
-        border-color: var(--accent);
+        --chip-line: var(--accent);
     }
 
     .chip.pressable:disabled {
@@ -230,7 +240,7 @@
 
     /* A pressed toggle with no hue of its own is marked in the accent. */
     .chip.pressable[aria-pressed='true']:not(.toned) {
-        border-color: var(--accent);
+        --chip-line: var(--accent);
         color: var(--ink-txt, var(--ink));
     }
 
@@ -240,14 +250,14 @@
     }
 
     .chip.filled {
-        border-color: transparent;
+        --chip-line: transparent;
         background: var(--tone);
         color: var(--on-tone);
     }
 
     /* A tone is what fills a chip, so a filled chip without one stays the muted outline. */
     .chip.filled:not(.toned) {
-        border-color: var(--line);
+        --chip-line: var(--line);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
     }
@@ -255,11 +265,13 @@
     /* The terminal shape: a bracketed text tag in its own colour, no pill and no fill. It is the
        option `rice.brackets`'s (the Settings view's option, written into the workspace file's
        `settings:`): with the option off, the body carries `rice-plain` and the chip keeps its
-       capsule in the rice palette and shape. */
+       capsule in the rice palette and shape. Its padding is 1 px above and below unless a surface
+       gives its own as `--chip-rice-pad`, as a slide does. */
     :global(body.rice:where(:not(.rice-plain))) .chip {
         min-height: 0;
-        padding: 1px 0;
+        padding: var(--chip-rice-pad, 1px 0);
         border: 0;
+        box-shadow: none;
         background: none;
     }
 

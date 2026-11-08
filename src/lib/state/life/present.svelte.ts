@@ -7,12 +7,12 @@
 // the next push. The deck itself is asked of api/deck the first time it is wanted and held in the
 // client state's query client by its root, its folder and the kept list of the pane's filter (the
 // keys of the projects the filter shows, none for the whole deck), so a filtered answer and a whole
-// one are held apart, and every read of a pane's deck (its slides, the measures it keeps, the frame
-// its audience window opens at) is under the same key. A pane's filter reads the deck's members
-// from its whole answer, so a pane whose kept list cannot be worked out yet, before that answer and
-// the first snapshot are read, asks for nothing else. Each pane says which deck and list it reads
-// under (`asking`), and an answer held under a kept list no pane reads under any more is dropped,
-// so the page holds the whole deck and the lists in use, and a push marks only those.
+// one are held apart, and every read of a pane's deck (its slides, the measures it keeps) is under
+// the same key. A pane's filter reads the deck's members from its whole answer, so a pane whose
+// kept list cannot be worked out yet, before that answer and the first snapshot are read, asks for
+// nothing else. Each pane says which deck and list it reads under (`asking`), and an answer held
+// under a kept list no pane reads under any more is dropped, so the page holds the whole deck and
+// the lists in use, and a push marks only those.
 //
 // The deck is read by the server from files and from the portfolio, so three things make a held
 // answer stale: a slide file or `present.yml` written under a watched root (the `files` channel,
@@ -45,7 +45,7 @@ import { str } from '../../data/helpers/guards.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
 import { placeOf } from '../../data/snapshot/place.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
-import type { Deck, DeckFrame, DeckSlide, Finding } from '../../data/model/index.ts';
+import type { Deck, DeckSlide, Finding } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
 import type { FsRoot } from '../sources/fs.ts';
@@ -85,8 +85,8 @@ export type DeckAnswer = {
 type ProjectDeck = { ref: DeckRef; id: string; title: string };
 
 /**
- * A slide a Stage measured taller than its deck's frame: the deck by its root and folder, the
- * slide's key and the file and line it is written at, and the message its finding carries.
+ * A slide a Stage measured taller than its frame: the deck by its root and folder, the slide's key
+ * and the file and line it is written at, and the message its finding carries.
  */
 type TooTall = {
     root: string;
@@ -96,8 +96,11 @@ type TooTall = {
     message: string;
 };
 
-/** How far a slide may run past its frame and count as fitting, so a layout rounding is none. */
-const TOO_TALL_PX = 1;
+/**
+ * How far a slide may run past its frame and count as fitting, as a fraction of the frame's height,
+ * so a layout rounding is none: one 720th of it.
+ */
+const TOO_TALL = 1 / 720;
 
 /**
  * What a presentation reads of the pane that holds it. The pane's component may not be drawn (its
@@ -166,9 +169,11 @@ type Held = {
 
 export type PresentStore = {
     /**
-     * Take what a Stage measured of a slide of a deck: how many px it runs past the deck's frame,
-     * 0 when it fits. A slide more than 1 px past it is too tall until a measure finds it fitting,
-     * or until neither the saved deck nor a deck a pane draws holds it.
+     * Take what a Stage measured of a slide of a deck: how far it runs past its frame, as a
+     * fraction of the frame's height, 0 when it fits. A slide more than one 720th of that height
+     * past it is too tall until a measure finds it fitting, or until neither the saved deck nor a
+     * deck a pane draws holds it. Its finding gives the overrun in whole percent of the frame's
+     * height, at least 1.
      */
     measured: (deck: Deck, row: DeckSlide, over: number) => void;
     /**
@@ -489,17 +494,12 @@ export function createPresent(
 
     function measured(deck: Deck, row: DeckSlide, over: number): void {
         const key = tallKey(deck, row.key);
-        if (over <= TOO_TALL_PX) {
+        if (over <= TOO_TALL) {
             tall.delete(key);
             return;
         }
-        const message = t(
-            'findings.deck.too_tall',
-            row.title,
-            String(over),
-            String(deck.frame.width),
-            String(deck.frame.height)
-        );
+        const percent = Math.max(1, Math.round(over * 100));
+        const message = t('findings.deck.too_tall', row.title, String(percent));
         const next = {
             root: deck.root,
             path: deck.path,
@@ -552,18 +552,6 @@ export function createPresent(
         return ref.root === '' ? portfolio : ref;
     }
 
-    /**
-     * The frame of the deck as saved under a kept list, the answer `deck` holds for it, else the
-     * frame of any answer of the deck that is held, since a filter keeps the deck's frame; null
-     * while none is held.
-     */
-    function savedFrame(ref: DeckRef, keep: readonly string[] | null): DeckFrame | null {
-        const own = queries.peek<DeckAnswer>(keyOf(ref, keep)).data?.deck?.frame;
-        if (own !== undefined) return own;
-        const held = queries.entries<DeckAnswer>([KIND, ref.root, ref.path]);
-        return held.find((one) => (one.data?.deck ?? null) !== null)?.data?.deck?.frame ?? null;
-    }
-
     return {
         measured,
         drawing,
@@ -575,17 +563,15 @@ export function createPresent(
         deck,
         asking,
         drawn,
-        presenting: createPresenting(savedFrame)
+        presenting: createPresenting()
     };
 }
 
 /**
- * The page's presentations, one per pane that presents. `frameOf` is the frame of a deck as saved
- * under the pane's kept list, which the audience window draws and so opens at.
+ * The page's presentations, one per pane that presents. An audience window opens in the slide's
+ * shape at half the available width of the screen the page is on (`audienceFeatures`).
  */
-function createPresenting(
-    frameOf: (ref: DeckRef, keep: readonly string[] | null) => DeckFrame | null
-): Presenting {
+function createPresenting(): Presenting {
     const lives = new Map<string, Held>();
     const timers = new SvelteMap<string, Timer>();
     let listening = false;
@@ -660,7 +646,7 @@ function createPresenting(
             held.audience = window.open(
                 audienceAddress(held.ref),
                 presentName(held.ref),
-                audienceFeatures(frameOf(held.ref, held.link.keep() ?? null))
+                audienceFeatures(window.screen.availWidth)
             );
         }
     }

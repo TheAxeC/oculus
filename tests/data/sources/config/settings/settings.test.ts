@@ -2,11 +2,11 @@
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
 // view's program names, the usage refresh, the automatic fetch, the editor's paint limit, the
 // Files view's delete prompt, the apps' limits and closed folders, the Repositories view's scan
-// depth and the chat's collection keys of sources.yml, and the frame of present.yml). The writing
-// tools' readers are tested in writing.test.ts. Each reader is run over the map of synthetic.ts,
-// whose every default differs from the shipped one, so a default written in code instead of read
-// from the entry fails a row. A wrong value answers the entry's default and a problem naming the
-// key; a missing key answers the default and no problem; a catalog with no entry for a key throws.
+// depth and the chat's collection keys of sources.yml). The writing tools' readers are tested in
+// writing.test.ts. Each reader is run over the map of synthetic.ts, whose every default differs
+// from the shipped one, so a default written in code instead of read from the entry fails a row. A
+// wrong value answers the entry's default and a problem naming the key; a missing key answers the
+// default and no problem; a catalog with no entry for a key throws.
 
 import { describe, expect } from 'vitest';
 import { it, plantScratch } from '../../../../fixtures/scratch.ts';
@@ -17,7 +17,6 @@ import {
     chatContext,
     confirmDelete,
     engineDir,
-    frameSetting,
     literatureSettings,
     loadConfig,
     mailSettings,
@@ -36,7 +35,7 @@ import {
     programApps
 } from '../../../../../src/lib/data/sources/config/settings/files.ts';
 import { settingProblems } from '../../../../../src/lib/data/sources/config/settings/problems.ts';
-import { SOURCES, mapWith, outcome, type Entries } from './synthetic.ts';
+import { SOURCES, mapWith, outcome } from './synthetic.ts';
 
 /** Where the shipped config was read from: oculus's own files, no hub. */
 const SHIPPED_AT = { engine: engineDir(), hub: null, from: loadConfig(engineDir()).from };
@@ -559,57 +558,6 @@ describe('chatContext', () => {
             const map = mapOf();
             expect(outcome((p) => chatContext(map, p))).toStrictEqual({ value, problems });
             expect(settingProblems(map).some((one) => one.key === 'chat_context')).toBe(flagged);
-        }
-    );
-});
-
-describe('frameSetting', () => {
-    /** The shipped entries of present.yml, whose frame defaults are 1280 by 720. */
-    const PRESENT = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
-        'present.yml'
-    ];
-    /** A map over the frame's entries with the defaults 1600 by 900, holding `frame`. */
-    const map = (frame: unknown): Record<string, unknown> => ({
-        options: {
-            'present.yml': {
-                'defaults.frame.width': { ...PRESENT['defaults.frame.width'], default: 1600 },
-                'defaults.frame.height': { ...PRESENT['defaults.frame.height'], default: 900 }
-            }
-        },
-        defaults: { frame }
-    });
-    const read = (frame: unknown) => outcome((p) => frameSetting(map(frame), p).frame);
-
-    it('reads the frame a workspace sets', () => {
-        expect(frameSetting(loadConfig(engineDir()).config).frame).toStrictEqual({
-            width: 1280,
-            height: 720
-        });
-        expect(read(undefined)).toStrictEqual({
-            value: { width: 1600, height: 900 },
-            problems: []
-        });
-        expect(read({ width: 1920, height: 1080 })).toStrictEqual({
-            value: { width: 1920, height: 1080 },
-            problems: []
-        });
-    });
-
-    it.each([
-        ['width', { width: 10, height: 1080 }, { width: 1600, height: 1080 }, 'range'],
-        ['width', { width: 1024.5, height: 1080 }, { width: 1600, height: 1080 }, 'whole'],
-        ['height', { width: 1920, height: 'x' }, { width: 1920, height: 900 }, 'number'],
-        ['height', { width: 1920, height: 3000 }, { width: 1920, height: 900 }, 'range']
-    ])(
-        'answers the default for a wrong defaults.frame.%s and names the key',
-        (side, frame, value, kind) => {
-            expect(read(frame)).toStrictEqual({
-                value,
-                problems: [`defaults.frame.${side}: ${kind}`]
-            });
-            expect(settingProblems(map(frame)).map((one) => one.key)).toContain(
-                `defaults.frame.${side}`
-            );
         }
     );
 });

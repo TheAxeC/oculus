@@ -2,15 +2,17 @@
     // Layer 3, Present partial. One visual of a project slide: a figure the deck's folder holds, or
     // the inline diagram markup the slide wrote, with the caption and the explanation under it.
     //
-    // A figure is drawn in the slide's room at the box the slide's layout gives it
-    // (screen/slide-layout.ts), its image whole at its own proportions inside the box's padding and
-    // border, the caption and the explanation under it in the box's column. Its image names its
-    // index on the slide (`data-figure`), by which the slide reads its ratio once it has loaded and
-    // gives it its box; until then the figure is not drawn. The slide's layout reads the image's
-    // padding and border and the panel's bottom margin, the gap between two figures, from the
-    // drawn figure. A figure the folder does not hold, and one whose image fails to load, is drawn
-    // as its name in its place, the same name the finding gives the reader who wrote the slide;
-    // that name, like a diagram, is drawn with the slide's text.
+    // A figure is drawn in the slide's room at the box the slide's layout gives it, in container
+    // units of the frame (screen/slide-layout.ts), its image whole at its own proportions inside
+    // the box's padding, the caption and the explanation under it in the box's column. Every size
+    // here is a fraction of the frame's width (`cqw`), as every size inside a slide is
+    // (themes/slide.css), and a hairline is a shadow or an outline one pixel wide, which takes no
+    // room. Its image names its index on the slide (`data-figure`), by which the slide reads its
+    // ratio once it has loaded and gives it its box; until then the figure is not drawn. The
+    // slide's layout reads the image's padding and the panel's bottom margin, the gap between two
+    // figures, from the drawn figure. A figure the folder does not hold, and one whose image fails
+    // to load, is drawn as its name in its place, the same name the finding gives the reader who
+    // wrote the slide; that name, like a diagram, is drawn with the slide's text.
     //
     // A diagram is a grid of labelled boxes, and a slide writes its columns and its per-box colour
     // on the elements themselves, so it goes through the diagram profile of ui/html.ts, which is
@@ -22,7 +24,7 @@
     import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
     import type { PresentPanel } from '$lib/state/life/present';
-    import type { Box } from './screen/slide-layout';
+    import { cqw, type Box } from './screen/slide-layout';
 
     type Props = {
         panel: PresentPanel;
@@ -57,16 +59,16 @@
         class="panel placed"
         class:waiting={box === undefined}
         data-figure-box={index}
-        style:left={box === undefined ? undefined : `${box.x}px`}
-        style:top={box === undefined ? undefined : `${box.y}px`}
-        style:width={box === undefined ? undefined : `${box.width}px`}
+        style:left={box === undefined ? undefined : cqw(box.x)}
+        style:top={box === undefined ? undefined : cqw(box.y)}
+        style:width={box === undefined ? undefined : cqw(box.width)}
     >
         <img
             class="fig"
             data-figure={index}
             {src}
             alt={t('present.figure_alt')}
-            style:height={box === undefined ? undefined : `${box.height}px`}
+            style:height={box === undefined ? undefined : cqw(box.height)}
         />
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render notes()}
@@ -86,7 +88,7 @@
 
 <style>
     .panel {
-        margin-bottom: 14px;
+        margin-bottom: 1.09375cqw;
     }
 
     /* A figure stands at its box in the slide's room (parts/project/Project.svelte). It keeps the
@@ -106,16 +108,17 @@
         box-sizing: border-box;
         width: 100%;
         object-fit: contain;
-        padding: 6px;
-        border: 1px solid var(--line);
+        padding: 0.46875cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
     }
 
     .gap {
         margin: 0;
-        padding: 9px 11px;
-        border: 1px dashed var(--line);
+        padding: 0.703125cqw 0.859375cqw;
+        outline: 1px dashed var(--line);
+        outline-offset: -1px;
         border-radius: var(--radius-sm);
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
@@ -123,14 +126,14 @@
 
     .diagram {
         overflow-x: auto;
-        padding: 16px;
-        border: 1px solid var(--line);
+        padding: 1.25cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
     }
 
     .cap {
-        margin-top: 7px;
+        margin-top: 0.546875cqw;
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
         font-style: italic;
@@ -138,9 +141,9 @@
     }
 
     .explain {
-        margin-top: 6px;
-        padding: 9px 11px;
-        border: 1px solid var(--line);
+        margin-top: 0.46875cqw;
+        padding: 0.703125cqw 0.859375cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius-sm);
         background: var(--card);
         color: var(--muted-txt, var(--muted));
@@ -154,12 +157,12 @@
     .diagram :global(.dgrid) {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 9px;
+        gap: 0.703125cqw;
     }
 
     .diagram :global(.dnode) {
-        padding: 11px 7px;
-        border: 2px solid var(--line);
+        padding: 0.859375cqw 0.546875cqw;
+        box-shadow: inset 0 0 0 0.15625cqw var(--line);
         border-radius: var(--radius-sm);
         background: var(--card);
         font-size: var(--slide-fs-small);
@@ -173,7 +176,7 @@
     }
 
     .diagram :global(.darrow) {
-        margin: 11px 0;
+        margin: 0.859375cqw 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);
         font-weight: 600;
@@ -181,8 +184,9 @@
     }
 
     .diagram :global(.dbar) {
-        padding: 11px;
-        border: 1px dashed var(--line);
+        padding: 0.859375cqw;
+        outline: 1px dashed var(--line);
+        outline-offset: -1px;
         border-radius: var(--radius-sm);
         background: var(--card);
         font-size: var(--slide-fs-small);

@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, Present partial. One tile of the Overview: a slide drawn small in its deck's frame
-    // and measured (screen/Framed.svelte, scaled to the tile) with its place and its title under
+    // Layer 3, Present partial. One tile of the Overview: a slide drawn small in its frame and
+    // measured (screen/Framed.svelte, at the size of the tile) with its place and its title under
     // it, or, for a deck that draws no slide, a title tile naming the deck. The tile carries the
     // hue of the project the slide belongs to on its left edge, the hairline of the slide in force,
     // the shell's card cursor through its card, the Too tall mark beside its place while the
@@ -22,7 +22,7 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Framed from '../screen/Framed.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { slideTone, type DeckSlide } from '$lib/state/life/present';
+    import { SLIDE_SHAPE, slideTone, type DeckSlide } from '$lib/state/life/present';
     import type { TileView } from '$lib/state/life/arrange';
     import { useState } from '$lib/state/client/use';
 
@@ -107,11 +107,7 @@
         onclick={pressed}
     >
         {#if row !== null}
-            <div
-                class="shot"
-                inert
-                style:aspect-ratio="{view.deck.frame.width} / {view.deck.frame.height}"
-            >
+            <div class="shot" inert style:aspect-ratio="{SLIDE_SHAPE.width} / {SLIDE_SHAPE.height}">
                 <Framed {row} deck={view.deck} facts={view.facts} />
             </div>
         {/if}
@@ -170,8 +166,7 @@
         outline-offset: 1px;
     }
 
-    /* The shot keeps the proportions of the deck's frame the slide is laid out in, set on the
-       element. */
+    /* The shot keeps the slide's shape, set on the element. */
     .shot {
         min-width: 0;
     }

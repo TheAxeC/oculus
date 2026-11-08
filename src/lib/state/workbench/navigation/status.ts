@@ -467,9 +467,9 @@ export function fileFindingsCount(
 /**
  * Every finding the page knows of: the portfolio's, then the configuration's, then the apps', then
  * the page's own: its findings of the config it registers its views from (the registry's
- * `refused`) and the slides the Present view drew taller than their deck's frame (the Present
- * store's `findings`). The Findings view lists them and `fileFindingsCount` counts them, so both
- * read one list.
+ * `refused`) and the slides the Present view drew taller than their frame (the Present store's
+ * `findings`). The Findings view lists them and `fileFindingsCount` counts them, so both read one
+ * list.
  */
 export function allFindings<T>(
     snapshot: { findings?: readonly T[] } | null,

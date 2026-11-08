@@ -27,7 +27,6 @@ import {
     zenodoSettings
 } from './files.ts';
 import { appsSettings, changesKeep, processesSettings } from './machine.ts';
-import { frameSetting } from './present.ts';
 import type { SettingProblem } from './reader.ts';
 import { readRows } from './rows/read.ts';
 import { latexBuild, latexFormatting } from './writing/latex.ts';
@@ -64,8 +63,7 @@ const PROBLEM_READERS: ((
     latexBuild,
     lintSettings,
     websiteSettings,
-    zenodoSettings,
-    frameSetting
+    zenodoSettings
 ];
 
 /**

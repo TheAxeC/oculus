@@ -17,11 +17,11 @@
     // `F` for the slide on the whole monitor, and the Presenter control or `P` for the presenter
     // screen.
     //
-    // A slide is drawn in its deck's frame (the deck's `deck.frame`, else the setting
-    // `defaults.frame`), scaled uniformly to the pane and centred in it, and measured
-    // (screen/Framed.svelte). The overview draws every slide the same way, scaled to its tile, and
-    // is where the deck is arranged (arrange/Overview.svelte); a deck with an entry or a group and
-    // no slide draws it in place of a slide. The empty state keeps the UI's tokens.
+    // A slide is drawn in its frame, the largest box of the slide's shape (16:9) the pane holds,
+    // centred in it, and measured (screen/Framed.svelte). The overview draws every slide the same
+    // way, at the size of its tile, and is where the deck is arranged (arrange/Overview.svelte); a
+    // deck with an entry or a group and no slide draws it in place of a slide. The empty state
+    // keeps the UI's tokens.
     //
     // The deck is a folder the server reads (api/deck): `present.yml` and the Markdown slide files,
     // so a slide edited on disk is the slide on screen at the next push. A pane shows the portfolio
@@ -195,7 +195,6 @@
         instance: () => instance.id,
         ref: () => ref,
         deck: () => deck,
-        saved: () => filesDeck,
         keep: filter.keep,
         facts: () => held.facts,
         shown: () => shown,
@@ -453,7 +452,7 @@
 
     /* In full screen the box is the screen, drawn on the page's background colour, which stands in
        for the wallpaper the shell draws outside the box. What is taller than the screen scrolls,
-       and the frame goes edge to edge, centred, with no border and no corner. */
+       and the frame goes edge to edge, centred, with no line and no corner. */
     .present:fullscreen {
         background: var(--bg);
         overflow: auto;

@@ -1,13 +1,13 @@
 <script lang="ts">
     // Layer 3, route. The slide on show, alone: the audience's window while the presenter screen of
     // the Present view is on. `?root=&path=` name the deck, which the deck route answers as it does
-    // for the print route, and the slide is drawn by the same components in the deck's own frame
-    // (`deck.frame`, or the setting defaults.frame), scaled to the window, with no toolbar, rail or
-    // counter, and at the app's text size (the `text_size` option, as the shell draws it), so the
-    // slide lays itself out as the Present view lays it out. The page installs the config once,
-    // when it opens (+page.ts), and has no socket, so it draws the text size and the theme the
-    // config held then; a change of either reaches it when the window opens again. The page
-    // measures nothing: the Present view's own stages say which slides are too tall.
+    // for the print route, and the slide is drawn by the same components in its frame, the largest
+    // box of the slide's shape the window holds, with no toolbar, rail or counter, and at the app's
+    // text size (the `text_size` option, as the shell draws it), so the slide lays itself out as
+    // the Present view lays it out. The page installs the config once, when it opens (+page.ts),
+    // and has no socket, so it draws the text size and the theme the config held then; a change of
+    // either reaches it when the window opens again. The page measures nothing: the Present view's
+    // own stages say which slides are too tall.
     //
     // The page and the presenter screen keep one slide over a BroadcastChannel named for the deck
     // (state/life/present.ts): the page draws the key it is sent, says when it opened, and sends a
@@ -274,7 +274,7 @@
         <!-- A click on the slide is the reader's way to the next one; the keys are the page's. -->
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="slide" onclick={advance}>
-            <Stage bare={full} frame={deck.frame}>
+            <Stage bare={full}>
                 <Slide row={shown} {deck} {facts} />
             </Stage>
         </div>

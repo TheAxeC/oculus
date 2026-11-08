@@ -1,14 +1,16 @@
 <script lang="ts">
-    // Layer 3, route. Every slide of one deck, in order, each in the deck's frame at scale 1 and
-    // one to a printed page, for the PDF of the Present view. The deck is the one the Present view
-    // draws: `?root=&path=` name it, the deck route answers it, and the slides are drawn by the
-    // same component, in the page's theme and at the app's text size (the `text_size` option, as
-    // the shell draws it), so a slide is laid out as the Present view lays it out. The printed
-    // page and each `.page` take the size of the deck's frame (`deck.frame`, or the setting
-    // defaults.frame): the `@page` rule is written into the document's head from the deck once it
-    // is read, and the desktop host's hidden window opens at the same frame. A page keeps the
-    // frame's border, transparent, so the slide has the inner box it has in the Present view. The
-    // page installs the config once, when it opens (+page.ts), so it draws the text size the
+    // Layer 3, route. Every slide of one deck, in order, each in a slide's frame one to a printed
+    // page, for the PDF of the Present view. The deck is the one the Present view draws:
+    // `?root=&path=` name it, the deck route answers it, and the slides are drawn by the same
+    // component, in the page's theme and at the app's text size (the `text_size` option, as the
+    // shell draws it), so a slide is laid out as the Present view lays it out. The printed page
+    // and each `.page` are the page of the slide's shape (`SLIDE_PAGE_PT` of the deck model, 960
+    // by 540 pt): the `@page` rule in the document's head is written from it, and the desktop
+    // host's hidden window opens at the same page. Each `.page` is a size container and the frame
+    // fills it, so every size inside the slide, its padding included, is the same fraction of the
+    // page's width as of the frame in the Present view (themes/slide.css). The frame draws no
+    // line, and a line takes no room, so the slide has the inner box it has in the Present view.
+    // The page installs the config once, when it opens (+page.ts), so it draws the text size the
     // config held then.
     //
     // A slide whose text or figures do not fit at its least size is taller than its page; it is
@@ -33,7 +35,7 @@
 
     import { onMount, tick } from 'svelte';
     import Slide from '$lib/views/academic/present/Slide.svelte';
-    import type { Deck } from '$lib/state/life/present';
+    import { SLIDE_PAGE_PT, type Deck } from '$lib/state/life/present';
     import { exportKeep, readDeck } from '$lib/state/life/present.svelte';
     import { configuredLook } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
@@ -48,9 +50,6 @@
     provideTipIds(createTipIds());
     provideHtmlMemo(createHtmlMemo());
 
-    /** The frame's padding above and below the slide, in px (themes/slide.css). */
-    const PAGE_PADDING = 128;
-
     /**
      * The longest the page waits for the exporting pane to say which projects its filter keeps and
      * whether the strip shows its words.
@@ -64,15 +63,10 @@
     let ready = $state(false);
 
     /**
-     * The rule that sizes every printed page to the deck's frame. The frame's sides are whole
-     * numbers above zero, which the deck answer's shape checks (`deckShape`), so the rule holds
-     * nothing but two numbers.
+     * The rule that sizes every printed page to the page of the slide's shape. Its two sides are
+     * the numbers of the deck model's constant, so the rule holds nothing else.
      */
-    const pageRule = $derived(
-        deck === null
-            ? ''
-            : `<style>@page { size: ${deck.frame.width}px ${deck.frame.height}px; margin: 0; }</style>`
-    );
+    const PAGE_RULE = `<style>@page { size: ${SLIDE_PAGE_PT.width}pt ${SLIDE_PAGE_PT.height}pt; margin: 0; }</style>`;
 
     /** The keys of the slides laid out since the deck was drawn. */
     const laid: string[] = [];
@@ -111,10 +105,18 @@
         );
     }
 
-    /** Scale each slide that is taller than its page down to the page's height. */
+    /**
+     * Scale each slide that is taller than its page down to the page's height: the height inside
+     * the frame's padding, read from the drawn frame.
+     */
     function fitSlides(): void {
         for (const fit of document.querySelectorAll<HTMLElement>('[data-fit]')) {
-            const room = (fit.parentElement?.clientHeight ?? 0) - PAGE_PADDING;
+            const frame = fit.parentElement;
+            if (frame === null) continue;
+            const style = getComputedStyle(frame);
+            const padding =
+                (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+            const room = frame.clientHeight - padding;
             if (fit.scrollHeight > room && room > 0) {
                 fit.style.transform = `scale(${room / fit.scrollHeight})`;
             }
@@ -168,8 +170,8 @@
 </script>
 
 <svelte:head>
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- two numbers deckShape checked -->
-    {@html pageRule}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- the two numbers of the page constant -->
+    {@html PAGE_RULE}
 </svelte:head>
 
 <div
@@ -183,13 +185,15 @@
     {:else if deck !== null}
         {#each deck.slides as row (row.key)}
             <section
-                class="slide-frame page"
+                class="page"
                 data-slide-key={row.key}
-                style:width="{deck.frame.width}px"
-                style:height="{deck.frame.height}px"
+                style:width="{SLIDE_PAGE_PT.width}pt"
+                style:height="{SLIDE_PAGE_PT.height}pt"
             >
-                <div class="fit" data-fit>
-                    <Slide {row} {deck} {facts} onlaid={() => slideLaid(row.key)} />
+                <div class="slide-frame frame" data-frame>
+                    <div class="fit" data-fit>
+                        <Slide {row} {deck} {facts} onlaid={() => slideLaid(row.key)} />
+                    </div>
                 </div>
             </section>
         {/each}
@@ -197,16 +201,27 @@
 </div>
 
 <style>
-    /* One slide to a page, at the deck's frame, which the element and the head's `@page` rule
-       set. */
+    /* One slide to a page, at the page of the slide's shape, which the element and the head's
+       `@page` rule set; a size container, so every size inside the slide is a fraction of its
+       width. */
     .page {
         overflow: hidden;
-        border-color: transparent;
-        border-radius: 0;
         break-after: page;
+        container-type: size;
     }
 
-    /* The slide takes the page's inner height, as it takes the frame's in the Present view. */
+    /* The frame fills its page, with no line and a square corner. Its fills and lines print even
+       with a print dialog's background graphics off, since a slide's lines are shadows. */
+    .frame {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        print-color-adjust: exact;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* The slide takes the frame's inner height, as it takes it in the Present view. */
     .fit {
         height: 100%;
         transform-origin: top center;

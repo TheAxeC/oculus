@@ -19,8 +19,6 @@ type Reads = {
     instance: () => string;
     ref: () => DeckRef | null;
     deck: () => Deck | null;
-    /** The deck as saved, which the print route draws, so the PDF takes its frame. */
-    saved: () => Deck | null;
     /** The kept list of the pane's filter, which the print route is answered with. */
     keep: () => Keep;
     /** The pane's Project facts toggle, which the print route is answered with too. */
@@ -84,16 +82,14 @@ export function createActs(reads: Reads): Acts {
     function exportDeck(): void {
         const ref = reads.ref();
         const deck = reads.deck();
-        const saved = reads.saved();
         const keep = reads.keep();
-        if (ref === null || deck === null || saved === null || keep === undefined) return;
+        if (ref === null || deck === null || keep === undefined) return;
         if (deck.slides.length === 0) return;
         void exportPdf({
             ref,
             deck,
             keep,
             facts: reads.facts(),
-            frame: saved.frame,
             bridge: reads.bridge,
             upload: reads.upload,
             openTab: reads.openTab,

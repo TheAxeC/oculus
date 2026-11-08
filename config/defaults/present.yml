@@ -1,9 +1,5 @@
-# oculus's shipped values of what it carries for every deck the Present view draws. A deck is a folder with a present.yml and Markdown slide files; its own present.yml changes `defaults.tag_tones` in its own `defaults:` block, and the frame in `deck.frame`. Which deck is the portfolio deck is `portfolio_deck` in sources.yml. loadConfig() merges this file with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/present.yml describe every key.
+# oculus's shipped values of what it carries for every deck the Present view draws. A deck is a folder with a present.yml and Markdown slide files; its own present.yml changes `defaults.tag_tones` in its own `defaults:` block. Which deck is the portfolio deck is `portfolio_deck` in sources.yml. loadConfig() merges this file with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, and the options of config/options/present.yml describe every key.
 defaults:
-    # The size in px every slide is laid out in, which a deck's own `deck.frame` overrides.
-    frame:
-        width: 1280
-        height: 720
     # The hue a slide's `tag.class` wears, one palette hue name per class.
     tag_tones:
         measured: green

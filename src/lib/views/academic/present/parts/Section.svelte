@@ -66,14 +66,14 @@
 
     .cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-        gap: 14px;
-        margin: 22px 0;
+        grid-template-columns: repeat(auto-fit, minmax(min(17.1875cqw, 100%), 1fr));
+        gap: 1.09375cqw;
+        margin: 1.71875cqw 0;
     }
 
     .card {
-        padding: 16px;
-        border: 1px solid var(--line);
+        padding: 1.25cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
         font-size: var(--slide-fs-small);
@@ -85,7 +85,7 @@
     }
 
     .n {
-        margin-bottom: 8px;
+        margin-bottom: 0.625cqw;
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-h);
         font-weight: 800;

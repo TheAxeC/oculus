@@ -20,13 +20,7 @@
 // or not. A deck reached again while it is being read is a cycle: it is reported and places
 // nothing the second time.
 //
-// Each deck has a frame, the size in px its slides are laid out in: its own `deck.frame` when that
-// is a map of a width and a height in the ranges of the setting defaults.frame (the context's
-// `frame`, whose catalog entries hold the ranges), else the setting's frame, and a `deck.frame`
-// that is present and not such a map is a Finding on the key `deck.frame`. A member deck's frame
-// is read for its findings only: the deck the reader was asked for sets the frame of every slide
-// it draws. A slide with no title of its own is a Finding on its file at its line, under the key
-// `title`.
+// A slide with no title of its own is a Finding on its file at its line, under the key `title`.
 //
 // A reader may be given a filter, the keys of the projects it keeps (`keep`). Every group of
 // project decks the read meets, a member deck's own groups included, then draws the members the
@@ -54,7 +48,6 @@ import type { DeckOrder } from '../../shapes/boards/order.ts';
 import { isFactField } from '../../shapes/project-facts.ts';
 import type {
     Deck,
-    DeckFrame,
     DeckGroup,
     DeckIdeaCard,
     DeckOrderEntry,
@@ -66,8 +59,6 @@ import type {
 } from '../../model/index.ts';
 import { FACT_FIELDS } from '../../model/index.ts';
 import { fileBytesUrl } from '../../helpers/files/address.ts';
-import { mustBe } from '../config/catalog/value-words.ts';
-import { deckFrame, type FrameSetting } from '../config/settings/present.ts';
 import type { FolderGlobs } from '../documents/folder-globs.ts';
 import { realOf, resolveIn, type DeckRoot } from './files.ts';
 import { keptMembers, resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
@@ -89,8 +80,6 @@ export type DeckContext = {
     projects: DeckProject[];
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
-    /** The frame of the setting `defaults.frame`, and the rule a deck's own `deck.frame` meets. */
-    frame: FrameSetting;
     catalog: TextCatalog;
     /**
      * What the decks a group discovers are ordered by, read once (`deckOrderOf`): the categories,
@@ -227,8 +216,6 @@ export function createReader(context: DeckContext): DeckReader {
     const files = new Map<string, RawSlide[] | null>();
     /** The 1-based first line of each slide of a slide file, by the file's path. */
     const firstLines = new Map<string, number[]>();
-    /** The frame each deck is laid out in, by the deck's real folder. */
-    const frames = new Map<string, DeckFrame>();
     let cuts = 0;
 
     /** A raise of findings on `file`, at `line` of it when one is given. */
@@ -244,30 +231,6 @@ export function createReader(context: DeckContext): DeckReader {
             raised.push(finding);
         };
     const raiseFor = (file: string): Raise => raiseAt(file);
-
-    /**
-     * The frame a deck's own `deck.frame` gives, or the setting's when the file holds none, and
-     * the setting's too, with a finding saying what is wrong, when what it holds is no frame.
-     */
-    function frameOf(held: { value: unknown } | null, raise: Raise): DeckFrame {
-        const { frame, rule } = context.frame;
-        if (held === null) return frame;
-        const read = deckFrame(held.value, rule);
-        if ('frame' in read) return read.frame;
-        const fault = read.fault;
-        const size = [frame.width, frame.height] as const;
-        if (fault.kind === 'not-a-map')
-            raise('deck.frame', 'findings.deck.frame_not_a_map', ...size);
-        else if (fault.kind === 'key') {
-            raise('deck.frame', 'findings.deck.frame_key_unknown', fault.key, ...size);
-        } else if (fault.kind === 'missing') {
-            raise('deck.frame', 'findings.deck.frame_side_missing', fault.side, ...size);
-        } else {
-            const words = mustBe(context.catalog, rule[fault.side], fault.problem);
-            raise('deck.frame', 'findings.deck.frame_side', fault.side, words, ...size);
-        }
-        return frame;
-    }
 
     const drafts = context.drafts ?? new Map<string, string>();
 
@@ -333,7 +296,6 @@ export function createReader(context: DeckContext): DeckReader {
         }
         doc.spec = spec;
         doc.title = spec.title ?? name;
-        frames.set(dir, frameOf(spec.frame, raise));
         doc.state = 'empty';
         if (spec.order.length === 0) raise('order', 'findings.deck.no_order');
         return doc;
@@ -760,7 +722,6 @@ export function createReader(context: DeckContext): DeckReader {
             order: [],
             groups: [],
             tagTones: { ...context.tagTones },
-            frame: context.frame.frame,
             keys: null,
             projects: {},
             findings: [...raised]
@@ -816,7 +777,6 @@ export function createReader(context: DeckContext): DeckReader {
             order: orderOfDeck(doc),
             groups: groupsOfDeck(doc),
             tagTones: { ...context.tagTones, ...(doc.spec?.tagTones ?? {}) },
-            frame: frames.get(doc.dir) ?? context.frame.frame,
             keys: doc.spec?.keys ?? null,
             projects: factsOf(slides),
             findings: [...raised]

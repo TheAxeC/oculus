@@ -10,7 +10,7 @@ A deck is a folder holding a `present.yml` and Markdown slide files, which the P
 
 ## A deck's files
 
-- `present.yml` names the deck's title, its frame (the size its slides are laid out in), its groups (each a set of other decks it gathers) and its `order:`, the list of what the deck shows. A deck folder needs its `present.yml`, and one that lacks it is a finding: a fault oculus reports in the Findings view, with the file and the line.
+- `present.yml` names the deck's title, its groups (each a set of other decks it gathers) and its `order:`, the list of what the deck shows. A deck folder needs its `present.yml`, and one that lacks it is a finding: a fault oculus reports in the Findings view, with the file and the line.
 - A slide file is a Markdown file of the deck's folder, or of a folder below it, that `order:` names. One file holds one slide or several.
 - An image is a file named in a slide relative to the slide file's folder.
 - An image dropped on a slide of the deck's own files is copied into that folder under its own name, or `<name>-2.<ext>` and on when the name is taken. Oculus adds `![<name>](<file>)` at the end of the slide. The drop takes a PNG, JPEG, GIF, WebP or SVG of 32 MB at most, and the History view's Undo takes it back.
@@ -71,7 +71,6 @@ Oculus reads the keys below from `present.yml`. It reads the rest of the file pa
 ```yaml
 deck:
   title: "Lab update"
-  frame: { width: 1280, height: 720 }
 defaults:
   tag_tones: { measured: green }
 groups:
@@ -89,7 +88,6 @@ order:
 | Key | What it holds | When unset |
 |---|---|---|
 | `deck.title` | the title the Present view names the deck by | the deck's name |
-| `deck.frame` | `{ width, height }` in px, the size every slide of the deck is laid out in, in the pane, the presenter screen, the audience window and the PDF; the width is a whole number from 320 to 3840 and the height from 240 to 2160 | the Settings option `defaults.frame` of Present, 1280 by 720 |
 | `defaults.tag_tones` | a map from a project slide's `tag.class` to a palette hue, laid over oculus's (`measured: green`, `design: amber`, `proof: purple`, `mixed: cyan`) | oculus's map |
 | `groups` | a map from a group's name to a group, which gathers other decks | no group |
 | `groups.<name>.find` | where the group looks for decks and which it keeps (below) | the group's `slides:` name decks of the hub's projects |
@@ -102,7 +100,7 @@ order:
 | `groups.<name>.slides` | a list of deck names, the decks the group shows first, in this order | no deck named |
 | `order` | a list of the entries the deck shows, in order (below) | the deck shows nothing, and that is a finding |
 
-A frame that is anything but a map of `width` and `height`, each in its range, is a finding on `deck.frame`, and the deck takes the frame of `defaults.frame`. A deck placed inside another by a group is laid out in the frame of the deck that is shown.
+A slide has the shape 16:9 and no size of its own. The pane, the presenter screen, the audience window and the Overview each draw it at the largest 16:9 box their room holds, and every size on the slide, its type, its padding, its cards and its figures, is a fraction of the slide's width, so a slide looks the same at any size it is drawn at. The PDF prints each slide on a page of 960 by 540 pt (13.33 by 7.5 inches).
 
 Each of `tiers`, `stages`, `forms` and `status` is a list, written in brackets even for one word. A single word written bare keeps no deck. A found deck of no project is kept only while all four are unset.
 

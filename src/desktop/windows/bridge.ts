@@ -30,24 +30,21 @@ import {
     TITLE_DOUBLE_CLICK
 } from '../decide/channels.ts';
 import { windowAt } from '../decide/drop.ts';
-import { rectOf, wholeFrame, type Frame, type Rect } from '../decide/place.ts';
+import { rectOf, type Rect } from '../decide/place.ts';
 import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
 import { drawnFill, overlayColours, titleAction } from '../decide/window-options.ts';
 import type { RecentEntry } from '../../lib/data/helpers/keys/oculus/menu-commands.ts';
 import type { FindOptions, PrintAnswer } from '../../lib/state/shared/stores/desktop.ts';
 import type { Entry, Windows } from './windows.ts';
 
-/**
- * The answer to a print the bridge does not answer, for an address that is not the print route,
- * or for a frame that is not two whole numbers above zero.
- */
+/** The answer to a print the bridge does not answer, for an address that is not the print route. */
 const PRINT_REFUSED: PrintAnswer = { ok: false, error: 'refused' };
 
 /**
- * Print the deck at an address of the server to a PDF, in a window opened at the deck's frame; the
- * app's own printing (print.ts).
+ * Print the deck at an address of the server to a PDF, in a window opened at the size of the page
+ * a slide prints on; the app's own printing (print.ts).
  */
-export type Printer = (address: string, frame: Frame) => Promise<PrintAnswer>;
+export type Printer = (address: string) => Promise<PrintAnswer>;
 
 /** The window a call came from and who in it sent the call. */
 type Caller = { entry: Entry; who: Exclude<Sender, null> };
@@ -225,16 +222,13 @@ export function registerBridge(
         if (asked?.contents === event.sender) asked.settle(taken);
     });
 
-    ipcMain.handle(PRINT_PDF, (event, address: unknown, frame: unknown): Promise<PrintAnswer> => {
+    ipcMain.handle(PRINT_PDF, (event, address: unknown): Promise<PrintAnswer> => {
         const caller = callerOf(event, PRINT_PDF);
         const target =
             caller === null || typeof address !== 'string'
                 ? null
                 : printTarget(address, caller.entry.origin);
-        const size = wholeFrame(frame);
-        return target === null || size === null
-            ? Promise.resolve(PRINT_REFUSED)
-            : print(target, size);
+        return target === null ? Promise.resolve(PRINT_REFUSED) : print(target);
     });
 
     // macOS's setting is read at each press, so a change in System Settings applies at once; on

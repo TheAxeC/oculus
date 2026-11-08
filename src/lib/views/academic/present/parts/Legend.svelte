@@ -37,7 +37,7 @@
     .legend {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin: 20px 0 6px;
+        gap: 0.78125cqw;
+        margin: 1.5625cqw 0 0.46875cqw;
     }
 </style>

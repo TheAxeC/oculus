@@ -151,6 +151,8 @@
         backdrop-filter: none;
     }
 
+    /* A cell's padding is 3, 8 and 2 px unless a surface gives its own as `--table-cell-pad`, as a
+       slide does in fractions of its frame (themes/slide.css). */
     th button {
         width: 100%;
         border: none;
@@ -158,7 +160,7 @@
         color: inherit;
         font: inherit;
         text-align: inherit;
-        padding: 3px 8px 2px;
+        padding: var(--table-cell-pad, 3px 8px 2px);
         cursor: pointer;
     }
 
@@ -172,11 +174,11 @@
     }
 
     th:not(:has(button)) {
-        padding: 3px 8px 2px;
+        padding: var(--table-cell-pad, 3px 8px 2px);
     }
 
     td {
-        padding: 3px 8px 2px;
+        padding: var(--table-cell-pad, 3px 8px 2px);
         line-height: calc(var(--button-line) * var(--text-scale, 1));
         border-bottom: 1px solid var(--line);
         vertical-align: top;
@@ -204,5 +206,29 @@
 
     :global(body.rice) td {
         border-bottom-style: dotted;
+    }
+
+    /* Inside a slide a row's line takes no room, so every size there stays a fraction of the
+       frame. */
+    :global(.slide-frame) th,
+    :global(.slide-frame) td {
+        border-bottom-width: 0;
+        box-shadow: inset 0 -1px 0 0 var(--line);
+    }
+
+    /* A shadow draws no dots, so the terminal shape's dotted row line lies over the cell's bottom
+       edge, and takes no room either. */
+    :global(body.rice .slide-frame) td {
+        position: relative;
+        box-shadow: none;
+    }
+
+    :global(body.rice .slide-frame) td::before {
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-top: 1px dotted var(--line);
     }
 </style>

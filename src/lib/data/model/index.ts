@@ -459,7 +459,6 @@ export { MAC_TARGET } from './machine/model-recover.ts';
 export type {
     Deck,
     DeckCard,
-    DeckFrame,
     DeckGroup,
     DeckIdeaCard,
     DeckKeys,
@@ -609,7 +608,7 @@ export type {
 } from './machine/model-hpc.ts';
 export { queueIsCurrent } from './machine/model-hpc.ts';
 
-export { DECK_GAP, FACT_FIELDS } from './model-deck.ts';
+export { DECK_GAP, FACT_FIELDS, SLIDE_PAGE_PT, SLIDE_SHAPE, slideHeight } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export { domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';

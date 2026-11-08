@@ -148,7 +148,7 @@ export function createWindows(deps: WindowsDeps): Windows {
 
     /**
      * Send an address to where the decision says. `features` are those of the `window.open` that
-     * asked for it, which an audience window takes its deck's frame from; a navigation has none.
+     * asked for it, which an audience window takes its proportions from; a navigation has none.
      */
     function route(from: Entry, url: string, features = ''): void {
         const where = linkDecision(url, from.origin);

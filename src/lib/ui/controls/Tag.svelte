@@ -12,7 +12,10 @@
     //
     // A tag that is pressed is this inside the caller's own button: the click, the title and the
     // hover belong to the control, and what it holds is the same tag as the ones beside it. A
-    // surface that sets its tags' words in a size of its own gives that size as `--tag-text`.
+    // surface that sets its tags' words in a size of its own gives that size as `--tag-text`, and
+    // one that sets its own gap and padding, as a slide does in fractions of its frame
+    // (themes/slide.css), gives them as `--tag-gap` and `--tag-pad`; else they are 4 px and 1 px
+    // above and below.
     //
     // The glyph may carry a hue and words of its own, for a mark that says something the words
     // beside it do not, as a project card's Venue tag draws the venue's tier: the hue paints the
@@ -84,10 +87,10 @@
     .tag {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: var(--tag-gap, 4px);
         max-width: 100%;
         min-width: 0;
-        padding: 1px 0;
+        padding: var(--tag-pad, 1px 0);
         color: var(--muted-txt, var(--muted));
         font-size: var(--tag-text, var(--fs-sm));
         white-space: nowrap;

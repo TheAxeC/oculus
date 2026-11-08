@@ -14,9 +14,9 @@
 //
 // It opens on a display other than the asking window's with simple full screen, which makes no
 // Space and leaves the other displays usable, and beside the asking window when there is one
-// display, in the proportions of the deck's frame that the page's `window.open` features carry
-// (decide/place.ts). It closes with the window that asked for it, so a float's audience window
-// goes when the last main window closes the float. Its own `window.open` and its main-frame
+// display, in the proportions of the size the page's `window.open` features carry, the slide's
+// shape (decide/place.ts). It closes with the window that asked for it, so a float's audience
+// window goes when the last main window closes the float. Its own `window.open` and its main-frame
 // navigations go through the same routing as any window's, so a slide's link goes to the default
 // browser and the window stays on the slide.
 
@@ -52,7 +52,7 @@ export type Audience = {
     /**
      * Open the window of the deck `url` names for `from`, or bring forward the one already open,
      * now `from`'s, loading the address again when its page has ended. `features` are those of the
-     * page's `window.open`, which carry the deck's frame a new window is sized to.
+     * page's `window.open`, which carry the size in the slide's shape a new window is sized to.
      */
     open: (
         from: Entry,

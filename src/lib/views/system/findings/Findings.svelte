@@ -23,12 +23,12 @@
     // findings, which come from validate over the hub's YAML, the config channel's own, which come
     // from reading config/, the apps channel's, and the page's own: a project board the page left
     // out of the registry (the registry's `refused`) and a slide the Present view drew taller than
-    // its deck's frame (the Present store's `findings`). A finding is reported and never repaired,
-    // so this view is where a bad manifest edit shows up within a second of being saved. The rows
-    // are drawn straight into the pane, so the pane asks for the tint; a clear list, or a search
-    // that leaves no row, is said once with the Empty primitive. Each section is the group every
-    // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under its key in
-    // the pane's state (views/shared/card/pane-fold.ts) and headed with what the search leaves.
+    // its frame (the Present store's `findings`). A finding is reported and never repaired, so this
+    // view is where a bad manifest edit shows up within a second of being saved. The rows are drawn
+    // straight into the pane, so the pane asks for the tint; a clear list, or a search that leaves
+    // no row, is said once with the Empty primitive. Each section is the group every grouping of a
+    // view is drawn as (ui/controls/heads/GroupHead.svelte), folded under its key in the pane's
+    // state (views/shared/card/pane-fold.ts) and headed with what the search leaves.
     //
     // A row names its file relative to the folder of the root that holds it (its hub's, or a
     // repository's), as VS Code's Problems view names a file relative to the workspace, on one line

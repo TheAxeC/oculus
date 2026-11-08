@@ -70,9 +70,9 @@
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-        gap: 12px;
-        margin-top: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(min(17.96875cqw, 100%), 1fr));
+        gap: 0.9375cqw;
+        margin-top: 1.09375cqw;
     }
 
     .hint {
@@ -82,8 +82,8 @@
     }
 
     .idea {
-        padding: 13px 14px;
-        border: 1px solid var(--line);
+        padding: 1.015625cqw 1.09375cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius);
         background: var(--card);
     }
@@ -97,8 +97,8 @@
     .head {
         display: flex;
         align-items: center;
-        gap: 7px;
-        margin-bottom: 5px;
+        gap: 0.546875cqw;
+        margin-bottom: 0.390625cqw;
     }
 
     .head b {
@@ -109,8 +109,8 @@
     }
 
     .maturity {
-        padding: 2px 7px;
-        border: 1px solid var(--line);
+        padding: 0.15625cqw 0.546875cqw;
+        box-shadow: inset 0 0 0 1px var(--line);
         border-radius: var(--radius-pill);
         color: var(--muted-txt, var(--muted));
         font-size: var(--slide-fs-small);

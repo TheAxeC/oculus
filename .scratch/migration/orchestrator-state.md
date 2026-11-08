@@ -37,20 +37,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
-- step: O171
-  brief_check: .scratch/migration/agents/reviews/O171-brief-check.md (a8c7afd700e04bb47, claude-opus-5-5, 221013 tokens, 66 tool uses, 10.5 min)
-  base: 00adcfa54
-  worktree: .agents/worktrees/migration-O171
-  executor: agent
-  worker: claude:opus
-  session_id: aaf1e8ca5b7205734 (claude-opus-5-5)
-  launched: 2026-11-08
-  report: .scratch/migration/agents/reviews/O171-report.md
-  shared_paths: src/lib/themes/slide.css, src/lib/views/academic/present/Slide.svelte, parts/project/Project.svelte and parts/project/Facts.svelte with O151 (this plan), whose repair round 2 runs after O171 and O170 land and rebuilds its changes on main's head, so no merge of the two is made
-  builder_usage: first run (hand-back of C7 and verify 4): 253320 tokens, 58 tool uses, 10.9 min; build under the round-0 rulings: 288085 tokens, 393 tool uses, 66.2 min
-  reviewer_report: .scratch/migration/agents/reviews/O171-refuter.md (aba64b2bce2589a15, claude-opus-5-5, 305201 tokens, 39 tool uses, 20.6 min)
-  round: 1 (.scratch/migration/agents/briefs/O171-round-1.md; round 0: .scratch/migration/agents/briefs/O171-cases.md)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -204,6 +190,8 @@ None.
 
 ## Closed items
 
+- Open item 732 (2026-11-08), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 732" says; (b) was the lazy option. Step O172 draws the long fields as block Markdown with single newlines kept.
+- Open item 731 (2026-11-08), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 731" says; (b) was the lazy option. Slides are drawn in Helvetica with Arial as fallback, at O171's landing; a monospace rice theme keeps its font.
 - Open item 730 (2026-11-08), closed by Axel the same day, as `plan.md` Rulings "Open item 730" and "O171 frame shape" say: O151 gets one more repair round, round 2, after O171 and O170 land, its builder measuring on its own scratch server; deleting O151 was withdrawn; landing with slides too tall was the lazy option.
 - Open item 729 (2026-11-08), closed by Axel the same day, as `plan.md` Rulings "Open item 729" says: the session takes the look itself; the desktop half of item 13 was looked at on a scratch desktop app on port 8798, File > Save and a Cmd+S key event each saving with the focus on More actions.
 - Open items 720 to 727 (2026-11-08), closed by Axel the same day, each as `plan.md` Rulings "Open item 720" to "Open item 727" says: 720 (a), 721 (a), 722 (a) built in O170, 723 (a), 724 repair with the slide rule and the private README section, 725 (a), 726 (b), 727 (a) built in O170. The lazy options were: 720 none (the lazy course was to close it untold), 721 (c), 722 (d), 723 (c), 724 repairing only the listed lines without reading every deck, 725 (b), 726 (c), 727 (b).
@@ -880,6 +868,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-08 (O171 landed). O171, the slide frame a 16:9 shape with no pixel size, landed (booking in `plan.md`, `agents/reviews/O171-landing.md`), with open item 731 (a), the slide font, carried out at the landing. Open items: none. Step O172 is added by open item 732 (a). In flight: none. Next: /spec O170, correcting its `frame: { width: 400 }` case, and /spec O172, then O151's repair round 2.
 - 2026-11-08 (owed looks taken; O151 refuted over round 1). The owed looks of the 2026-11-07 run are taken (ruling 729) and recorded in `agents/reviews/owed-looks.md` under Taken: the PDF files of O147, O148, O158 and O163, O149 ruling 9, O152 C11, O155's order before, O161's find bar and menu key, O158's 400 px frame; the flaw found there (a slide's side-by-side figures overlapping in a narrow frame) is booked to O170 in `plan.md` (ruling Look flaws). The review over O151's round 1 (a79e0d6fd9a360f28, claude-opus-5-5) is appended to `agents/reviews/O151-refuter.md` under "Repair round 1, refuted" and recorded under reviewer_report: verify 1 to 5 pass; items 1 and 2 violated, item 3 holds; C9 is the orchestrator's measured fit, C10 partial. Dispositions, all at landing: R1-S1 to R1-S5 fixed on the decks inside the brief; R1-S6 under ruling 723 (a), the clinical-ai-eval-artifacts deck stating its idea in its own terms with no student study named; R1-P1 the btfno README bullet removed; R1-P2 and R1-P3 named in the landing report; R1-T1 read against the sources; R1-B1 stated in the landing report with its before and after. In flight (1 of 6): O151 (landing next, with the look C9). Queued: O170, /spec next. Open items: none.
 - 2026-11-08 (O151 measured fit). The fixes at landing from the review over round 1 are made in the hub worktree, uncommitted (R1-S1 to S6, R1-P1, R1-T1). The measured fit on the 8796 scratch server (O151's oculus worktree, the hub worktree's decks, every deck opened in the Overview) is in `agents/reviews/O151-fit.md`: 99 of 145 slides in 92 of 95 decks too tall, after the empty right-hand column of a project slide with no equation and no figure was removed in O151's oculus worktree (`src/lib/views/academic/present/parts/project/Project.svelte`, `{#if right}`, its head comment and the `.cols` comment made true). Open item 730 holds the decision; O151's dispatch entry stays at `landing: not-started`.
 - 2026-11-08 (open item 730 ruled). O151 gets one more repair round (round 2) after O171 and O170 land, its builder fitting every deck on its own scratch server running main's head; step O171, the slide frame a 16:9 shape with no pixel size, is in the plan before O170. Next: /spec O171. O151's dispatch entry stays at `landing: not-started`, its worktrees and its uncommitted hub fixes kept.
