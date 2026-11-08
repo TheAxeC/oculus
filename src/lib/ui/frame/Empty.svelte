@@ -9,7 +9,8 @@
     // narrow pane keeps the room to break between words. An error is VS Code's input message box:
     // left aligned, a red border and tint, 12px words on 17px lines, and the view's retry control
     // after the words as `action`. Under the rice theme an empty state is a shell comment: `# `
-    // and the message on one line, left aligned, and the action on the line under it.
+    // and the message on one line, left aligned, and the action on the line under it; an empty
+    // state with a glyph draws its glyph where the `# ` would stand, and an error box draws none.
     //
     // Over a wallpaper an empty state is read off a `Surface`, which paints nothing inside a card,
     // a lane or a tinted box. The error box is one layer of its own: its red tint is opaque, so it
@@ -35,7 +36,12 @@
 </script>
 
 {#snippet said()}
-    <p class="empty" class:error role={error ? 'alert' : undefined}>
+    <p
+        class="empty"
+        class:error
+        class:glyphed={glyph !== undefined}
+        role={error ? 'alert' : undefined}
+    >
         {#if glyph !== undefined}
             <Glyph name={glyph} />
         {/if}
@@ -119,7 +125,9 @@
         font-size: var(--fs-sm);
     }
 
-    :global(body.rice) .empty::before {
+    /* The shell comment's mark stands where a glyph would, so it is drawn only before an empty
+       state with none; an error box is marked by its red box and its alert role. */
+    :global(body.rice) .empty:not(.error):not(.glyphed)::before {
         content: '# ';
         opacity: 0.8;
     }

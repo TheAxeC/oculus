@@ -222,6 +222,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         heldInstance: Opening['heldInstance'];
         /** The page or float holding a unique view that openView would show (see Opening). */
         heldHost: Opening['heldHost'];
+        /** Keep a drawn pane's width on screen, which no save holds (see Opening). */
+        measurePane: Opening['measurePane'];
         paneHolds: Away['paneHolds'];
         /**
          * Say which views are opened for something, which the registry knows and this store does
@@ -843,6 +845,7 @@ export function createLayout(
         moveAway: away.moveAway,
         heldInstance: opening.heldInstance,
         heldHost: opening.heldHost,
+        measurePane: opening.measurePane,
         paneHolds: away.paneHolds,
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,

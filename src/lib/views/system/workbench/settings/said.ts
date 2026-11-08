@@ -3,12 +3,12 @@
 // partials call these so each sentence is worded in one place.
 
 import { plural, t } from '$lib/state/shared/words/text';
-import type { Message } from '$lib/state/system/config/messages';
+import { oneStop, type Message } from '$lib/state/system/config/messages';
 import { listShape, textShape, type ConfigRow } from '$lib/state/system/config/rows';
 
-/** A message of the rows module worded, its values put in. */
+/** A message of the rows module worded, its values put in, ending with one full stop. */
 export function said(message: Message): string {
-    return t(message.key, ...message.args);
+    return oneStop(t(message.key, ...message.args));
 }
 
 /** A value as the words show it: a string as it is, a number or boolean spelled, else JSON. */

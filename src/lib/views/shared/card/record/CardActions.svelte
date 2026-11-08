@@ -13,15 +13,17 @@
     // on one line. A control that stands for others (`items`, the Applied of a lead with several
     // hubs) is a menu of them, waiting while it is disabled or its action runs.
     //
-    // At rest the element is not drawn and takes no room, as the hidden actions of a tree row take
-    // none, so the chips have the card's width (ui/frame/Card.svelte, `--card-at-rest`); Tab
+    // At rest the element is not seen and takes no room, as the hidden actions of a tree row take
+    // none, so the chips have the card's width (ui/frame/card/Card.svelte, `--card-at-rest`): in
+    // the chips' line it is not drawn, and lying over the card, out of the flow, it is laid out
+    // unseen (`--card-at-rest-seen`), so it takes no press and no focus but has a width; Tab
     // reaches the controls of the card the focus or the keyboard cursor is in. The actions that do
     // not fit go, from the end, into one More menu at the strip's end, drawn at the other controls'
     // height, and the opener stays last. The element carries `data-card-control`, so a meta row
-    // holding nothing else lies over the card's top right corner (ui/frame/Card.svelte) and drawing
-    // it moves nothing; that rule places such a row, the first `measure` clears `over` from it, and
-    // on a screen that hovers the element's right margin keeps it at the visible right edge of a
-    // clipped card, so "..." stays in reach at any sliver.
+    // holding nothing else lies over the card's top right corner (ui/frame/card/Card.svelte) and
+    // drawing it moves nothing; that rule places such a row, the first `measure` clears `over` from
+    // it, and on a screen that hovers the element's right margin keeps it at the visible right edge
+    // of a clipped card, so "..." stays in reach at any sliver.
     //
     // The room is measured in fractional widths. The line is the part of the meta row that can be
     // seen, whether the row is in the flow or lies over the card: a pane narrower than its card
@@ -38,17 +40,26 @@
     // a control into the menu never changes the room it was measured against. Each control's width
     // is remembered by id, since a control inside the menu has no width on the page.
     //
+    // Lying over the card, at the title's line, the element tells the card the width it takes there
+    // (`cardRoom` of ui/frame/card/card-room.ts), measured each time it is laid out, the unseen
+    // layout at rest included, so the title keeps exactly that room on a screen that hovers from
+    // the card's first draw, whatever the number of controls, and does not move when the pointer
+    // comes; sharing the chips' line it tells the card none.
+    //
     // A measurement that lands after the component is gone, or after a newer one began, is dropped
     // (card-layout.ts's measureGate). An element that is not drawn is measured from the remembered
-    // widths once they are known, so a narrowed pane updates `over` with no draw. Until the element
-    // is first drawn no layout is read: only its own box and the line are watched, `over` says
-    // whether the row holds chips, which is all a measure says with no width known, and the
-    // element is measured when its box is first drawn. A device with no hover draws every control
-    // all the time.
+    // widths once they are known, so a narrowed pane updates `over` with no draw. Until its first
+    // measure the element lies over the card (`over` says whether the row holds chips, `alone`
+    // whether it holds nothing else), so on a device that hovers every card lays its element out,
+    // unseen, at its first draw. That first layout is measured at once, and from the next frame
+    // the element, the line, its children and every clipping ancestor are watched, so each card
+    // measures again when one of them resizes or an ancestor scrolls. A device with no hover draws
+    // every control all the time.
 
     import { tick, type Snippet } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { cardRoom } from '$lib/ui/frame/card/card-room';
     import { t } from '$lib/state/shared/words/text';
     import { actionPlace, fitActions, measureGate, stripWidth } from '../card-layout';
     import { menuItem, pickAction } from './record-menu';
@@ -74,6 +85,12 @@
 
     /** Whether the element lies over the card, for want of room beside the chips. */
     let over = $state(true);
+
+    /**
+     * Whether the element is alone in its row, which ui/frame/card/Card.svelte lays over the card;
+     * unknown, and taken as not, until the row is read.
+     */
+    let alone = $state(false);
 
     /** How much of the line a narrower pane cuts off at its right end, in px. */
     let clipped = $state(0);
@@ -137,6 +154,7 @@
         const line = node?.parentElement;
         if (node === undefined || line === null || line === undefined) return;
         const chips = line.children.length > 1;
+        alone = !chips;
         const drawn = getComputedStyle(node).display !== 'none';
         if (drawn) remember(node);
         const unknown = actions.some((action) => !(action.id in widths));
@@ -144,6 +162,7 @@
         if (measuring) fit = Number.POSITIVE_INFINITY;
         if (unknown || openerWidth === 0) {
             over = chips;
+            if (drawn) lay(node, line, chips);
             return;
         }
         const content = inner(line);
@@ -166,9 +185,33 @@
         start = chips && (place.alone || seen < content.width - 0.5);
         over = place.alone && chips;
         clipped = Math.max(0, content.width - seen);
+        if (drawn) lay(node, line, chips);
     }
 
-    /** Whether the element has been drawn since the card was made, which starts its measuring. */
+    /** The card around the element, which keeps room on its title for it. */
+    const room = cardRoom();
+
+    /**
+     * Tell the card the room the element takes over its title: its width, the visible edge it is
+     * kept at and the row's gap when it lies over the card (alone in its row, or `over` beside
+     * chips), and none when it shares the chips' line. Lying over the card it is laid out unseen
+     * at rest, so the room is told at the card's first draw and the title does not move when the
+     * controls appear.
+     */
+    function lay(node: HTMLElement, line: HTMLElement, chips: boolean): void {
+        if (room === undefined) return;
+        if (chips && !over) {
+            room.lay(0);
+            return;
+        }
+        const gap = parseFloat(getComputedStyle(line).columnGap) || 0;
+        room.lay(node.getBoundingClientRect().width + clipped + gap);
+    }
+
+    /**
+     * Whether the element has been laid out, seen or unseen, since the card was made, which starts
+     * its measuring.
+     */
     let drawnOnce = false;
 
     $effect(() => {
@@ -201,11 +244,11 @@
             }
             first.disconnect();
         }
-        // Until the element is first drawn only its own box and the line are watched, so a card at
-        // rest reads no layout: with no width known, what `measure` answers is whether the row
-        // holds chips, which is read from the row's children. The first draw is measured at once,
-        // and the rest is watched from the next frame, which starts those observations outside
-        // the frame that reported the draw.
+        // Until the element is first laid out only its own box and the line are watched, and `over`
+        // and `alone` are read from the row's children, which is what `measure` answers with no
+        // width known; they make the element lie over the card, so it is laid out at the first
+        // draw. That first layout, seen or unseen, is measured at once, and the rest is watched
+        // from the next frame, which starts those observations outside the frame that reported it.
         let frame = 0;
         const first = new ResizeObserver((entries) => {
             drawnOnce ||= entries.some(
@@ -215,6 +258,7 @@
             );
             if (!drawnOnce) {
                 over = line.children.length > 1;
+                alone = !over;
                 return;
             }
             wanted();
@@ -225,6 +269,7 @@
             watch();
         } else {
             over = line.children.length > 1;
+            alone = !over;
             first.observe(node);
             first.observe(line);
         }
@@ -246,6 +291,7 @@
     class="actions"
     class:start
     class:over
+    class:lying={over || alone}
     style:--clipped="{clipped}px"
     bind:this={strip}
     data-card-control
@@ -297,8 +343,8 @@
 </span>
 
 <style>
-    /* Drawn as the card around it says, ui/frame/Card.svelte's `--card-at-rest`, which the nearest
-       card sets, so the controls answer to their own card and not to a card around it. */
+    /* Drawn as the card around it says, ui/frame/card/Card.svelte's `--card-at-rest`, which the
+       nearest card sets, so the controls answer to their own card and not to a card around it. */
     .actions {
         display: var(--card-at-rest, flex);
         /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
@@ -311,8 +357,9 @@
         align-items: center;
         gap: 6px;
         margin-left: auto;
-        /* With no chip this is the visible right edge of a clipped card, and ui/frame/Card.svelte's
-           `flex-end` holds an element wider than what is left against it. */
+        /* With no chip this is the visible right edge of a clipped card, and
+           ui/frame/card/Card.svelte's `flex-end` holds an element wider than what is left against
+           it. */
         margin-right: var(--clipped);
     }
 
@@ -323,18 +370,25 @@
         margin-right: auto;
     }
 
-    /* Out of the flow against the face, at the place of ui/frame/Card.svelte's row of controls, so
-       the chips keep their lines and the card its height, and painted solid as that row's controls
-       are. `--clipped` keeps the element at the visible right edge of a clipped card. A wider
-       element passes the card's left edge and its right end stays in reach. A screen that does not
-       hover draws the element at rest, where lying over the title would cover its words for
-       good. */
+    /* Out of the flow against the face, at the place of ui/frame/card/Card.svelte's row of
+       controls, so the chips keep their lines and the card its height, and painted solid as that
+       row's controls are. `--clipped` keeps the element at the visible right edge of a clipped
+       card. A wider element passes the card's left edge and its right end stays in reach. A screen
+       that does not hover draws the element at rest, where lying over the title would cover its
+       words for good. */
     @media (hover: hover) {
         .actions.over {
             position: absolute;
             top: 8px;
             right: calc(12px + var(--clipped));
             background: var(--card);
+        }
+
+        /* Lying over the card, out of the flow, the element is laid out at rest too, unseen, so
+           it takes no press and no focus, and its width is told to the card from the first draw. */
+        .actions.lying {
+            display: flex;
+            visibility: var(--card-at-rest-seen, visible);
         }
     }
 

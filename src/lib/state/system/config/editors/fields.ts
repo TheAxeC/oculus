@@ -712,7 +712,10 @@ export function writtenField(
 
 /** The value to write, or why none is. */
 export type Committed =
-    { write: true; value: string | number | boolean } | { write: false; said?: Message };
+    | { write: true; value: string | number | boolean }
+    | { write: false; said?: Message }
+    /** An emptied box of a row that holds no key: the row goes back to showing it unset. */
+    | { write: false; unset: true };
 
 /**
  * The value a control's input makes for an option set one key at a time. A number's trimmed text
@@ -722,19 +725,24 @@ export type Committed =
  * choice writes `''` for an option that takes it and nothing for one that does not. A folder, file
  * or path is written once it passes the page's check. A scalar's text is written in the type of
  * the value the option holds (`held`) when it reads as one, and as a text otherwise, once it
- * passes the rule.
+ * passes the rule. Empty text for a row whose scope's file holds no key for it (`own` false) asks
+ * for the row unset, as it is, and writes nothing and says nothing, whatever the control; for an
+ * option that takes the empty value (`empty:`) the empty text is a value, written as for a row
+ * that holds the key.
  */
 export function commitValue(
     spec: CatalogEntry,
     input: string | boolean,
     lists: Lists,
-    held?: unknown
+    held: unknown,
+    own: boolean
 ): Committed {
     const control = controlOf(spec);
     if (control === 'toggle') {
         return typeof input === 'boolean' ? { write: true, value: input } : { write: false };
     }
     if (typeof input !== 'string') return { write: false };
+    if (!own && input.trim() === '' && !emptyIsValue(spec)) return { write: false, unset: true };
     switch (control) {
         case 'text':
         case 'long': {

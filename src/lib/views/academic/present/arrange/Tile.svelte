@@ -14,7 +14,7 @@
     // card cursor opens. The drag a tile takes part in is the Overview's (arrange.svelte.ts); the
     // tile is its source and its target.
 
-    import Card from '$lib/ui/frame/Card.svelte';
+    import Card from '$lib/ui/frame/card/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';

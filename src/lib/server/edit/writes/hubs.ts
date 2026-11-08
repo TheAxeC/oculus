@@ -3,9 +3,11 @@
 // write names its record by that id. The writers look a record up by the key its own hub's file
 // gives it, so a write that names a record is first given the hub of that record, with that hub's
 // settings and the key inside it. An id with no hub part, a bare key, is refused as a request that
-// lacks the hub; an id whose hub part no workspace folder carries is refused as naming no hub. A
-// write from an app reaches the primary hub's records alone, so with no primary an app writes no
-// record and makes none. A write that makes or renames a record answers with the record's id.
+// lacks the hub, except an entry of the reader's own bookmarks, whose file no hub holds
+// (`OWN_BOOKMARKS`); an id whose hub part no workspace folder carries is refused as naming no
+// hub. A write from an app reaches the primary hub's records alone, so with no primary an app
+// writes no record and makes none. A write that makes or renames a record answers with the
+// record's id.
 //
 // The target a writer is handed for a hub is the request's own target with that hub's folder,
 // settings and projects in place of the primary's, so the writers know one hub and never see the
@@ -80,6 +82,25 @@ export function routeRefusal(into: WriteTarget, ids: readonly string[]): Respons
 }
 
 /**
+ * The collection key of the reader's own bookmarks. Their file is the reader's and no hub's
+ * (`holding` gives it the primary's target), so an entry of it is named by its key alone, with no
+ * hub part, and a write to its entries goes to the target `homeOf` gives, as a new bookmark does.
+ */
+export const OWN_BOOKMARKS = 'bookmarks';
+
+/**
+ * `routeRefusal` for a write to the entries `ids` of `collection`, and none for the reader's own
+ * bookmarks, whose keys carry no hub part.
+ */
+export function entriesRefusal(
+    into: WriteTarget,
+    collection: string,
+    ids: readonly string[]
+): Response | null {
+    return collection === OWN_BOOKMARKS ? null : routeRefusal(into, ids);
+}
+
+/**
  * A writer's outcome with the id it gives, the key inside the hub of `into`, made the record's
  * internal id, which the answer carries so the page opens and settles the record of that hub.
  */
@@ -124,13 +145,19 @@ export type RoutedEntry = Routed & { collection: string };
  * The hub an entry write names and the keys of its entries inside that hub. A view names the
  * collection by its key and each entry by its id in the portfolio, whose hub is the hub of the
  * write; entries of two hubs name no one file, so the answer is null, as it is for an id that
- * names no hub.
+ * names no hub. The reader's own bookmarks are named by their keys and written through the target
+ * `homeOf` gives (`OWN_BOOKMARKS`).
  */
 function hubOfEntries(
     into: WriteTarget,
+    collection: string,
     ids: readonly string[],
     app: HeldApp | null
 ): { into: PrimaryTarget; ids: string[] } | null {
+    if (collection === OWN_BOOKMARKS) {
+        const home = homeOf(into, app);
+        return home === null ? null : { into: home, ids: [...ids] };
+    }
     const keys = hubKeysOf(into);
     const entries = ids.map((id) => splitHubId(id, keys));
     const root = entries.at(0)?.root ?? '';
@@ -149,7 +176,7 @@ export function routedEntry(
     id: string,
     app: HeldApp | null
 ): RoutedEntry | null {
-    const held = hubOfEntries(into, [id], app);
+    const held = hubOfEntries(into, collection, [id], app);
     if (held === null) return null;
     return { into: held.into, collection, id: held.ids[0] };
 }
@@ -263,7 +290,7 @@ export function routedOrder(
     order: string[],
     app: HeldApp | null
 ): RoutedOrder | null {
-    const held = hubOfEntries(into, order, app);
+    const held = hubOfEntries(into, collection, order, app);
     return held === null ? null : { into: held.into, collection, order: held.ids };
 }
 

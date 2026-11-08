@@ -16,7 +16,7 @@
 // Refresh has started again.
 
 import type { GitFileCommit } from '../../../../data/model/index.ts';
-import type { CommitPage } from '../../fs-history.ts';
+import type { CommitPage } from '../../fs-parts/history.ts';
 import type { RowRef } from '../view/place.ts';
 import { followedTab, type FollowPane, type FollowTab } from './followed-tab.ts';
 

@@ -10,6 +10,7 @@
     import ThumbGrid, { type ThumbGroup } from '$lib/ui/display/ThumbGrid.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperUrl, WALLPAPER_RANDOM } from '$lib/state/life/pictures/wallpapers.svelte';
+    import { oneStop } from '$lib/state/system/config/messages';
     import type { ConfigRow } from '$lib/state/system/config/rows';
     import type { RowWriter } from '$lib/state/system/config/scopes/write';
     import { useState } from '$lib/state/client/use';
@@ -73,7 +74,7 @@
         onpick={(id: string) => writer.submit(row, id)}
     />
     {#if found.error !== ''}
-        <p class="note">{t('workbench.settings_wallpaper_failed', found.error)}</p>
+        <p class="note">{oneStop(t('workbench.settings_wallpaper_failed', found.error))}</p>
     {:else if empty}
         <p class="note">{t('workbench.settings_wallpaper_empty')}</p>
     {/if}

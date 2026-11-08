@@ -4,17 +4,19 @@
     // unset, for a field a record may lack), a number box held to its range, a text box for a text
     // or a scalar (with suggestions when the spec names a source), a text area, a choice or a
     // multi-pick over the list the spec names, a glyph picker, a hue or colour picker drawing the
-    // palette, a folder, file or path box, an inline list of items, and a word block as four
-    // multi-picks (one of these words, none of them, a word with one of these flags, none with
-    // one), the words from the list the spec names and the flags from that list's flags, and for a
-    // secret its password box (SecretBox.svelte), held by the record's `service`. The rules each
-    // control follows are state/system/config/editors/fields.ts and offers.ts; this draws them.
+    // palette, a folder, file or path box, an inline list of items (InlineItems.svelte), and a word
+    // block as four multi-picks (one of these words, none of them, a word with one of these flags,
+    // none with one), the words from the list the spec names and the flags from that list's
+    // flags, and for a secret its password box (SecretBox.svelte), held by the record's `service`.
+    // The rules each control follows are state/system/config/editors/fields.ts and offers.ts; this
+    // draws them.
     //
     // The partial holds nothing: the value comes in as the field's typed value and every change
     // goes out as a call. A box hands on its text at each keystroke (`ontext`) and, when the caller
     // writes as the box is left, when Enter is pressed or the box loses the focus (`onsettle`); a
     // pick, a toggle or an item list hands on the field's new value (`onpick`), undefined for a
-    // field taken out of its record.
+    // field taken out of its record. A caller that refused the box's text hands its words as
+    // `invalid`, and every box drawn carries `aria-invalid` and the red border while they stand.
     //
     // A checkbox draws its label as the words beside it, as a Settings row's help is drawn. A
     // caller that draws the field's name beside the control itself (`named`), as a card of fields
@@ -45,7 +47,6 @@
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
         BLOCK_LISTS,
@@ -76,6 +77,7 @@
     import type { RegistryWord } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
+    import InlineItems from './InlineItems.svelte';
     import SecretBox from './SecretBox.svelte';
 
     const {
@@ -110,6 +112,11 @@
         onpick: (value: FieldValue | undefined) => void;
         /** How many Discards the draft this control edits has had; none for a row with no draft. */
         discards?: number;
+        /**
+         * Why the caller refused the box's text, already translated, while its message stands: the
+         * box is marked as refused. Undefined while nothing is refused.
+         */
+        invalid?: string;
     };
 
     let {
@@ -124,7 +131,8 @@
         ontext,
         onsettle,
         onpick,
-        discards = 0
+        discards = 0,
+        invalid
     }: Props = $props();
 
     const control = $derived(controlOf(spec));
@@ -263,20 +271,6 @@
         });
     });
 
-    /** The items of an inline list. */
-    const items = $derived(wordsOf(value));
-
-    function setItem(at: number, next: string): void {
-        onpick(items.map((one, place) => (place === at ? next : one)));
-    }
-
-    function moveItem(at: number, by: number): void {
-        const next = [...items];
-        const [taken] = next.splice(at, 1);
-        next.splice(at + by, 0, taken);
-        onpick(next);
-    }
-
     /** A text area is left: its text is the one to settle. */
     function areaLeft(event: FocusEvent): void {
         const field = event.target;
@@ -308,6 +302,7 @@
             value={boxText}
             {label}
             refused={refusedWords}
+            {invalid}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
@@ -317,6 +312,7 @@
             <TextArea
                 value={boxText}
                 {label}
+                {invalid}
                 oninput={(next: string) => ontext?.(next)}
                 grow={{ min: 2, max: 10 }}
             />
@@ -397,61 +393,25 @@
             {label}
             suggestions={offer.items}
             note={offerNote}
+            {invalid}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
         />
     {:else if control === 'list' || control === 'parked'}
-        <div class="items">
-            {#each items as item, at (at)}
-                <div class="item">
-                    {#if spec.items === 'number'}
-                        <NumberInput
-                            value={item}
-                            label={t('settings.editor_item', at + 1, label)}
-                            oninput={(next: string) => setItem(at, next)}
-                        />
-                    {:else}
-                        <TextInput
-                            value={item}
-                            label={t('settings.editor_item', at + 1, label)}
-                            oninput={(next: string) => setItem(at, next)}
-                        />
-                    {/if}
-                    <ToolButton
-                        label={t('settings.editor_item_up', at + 1, label)}
-                        glyph="collapse"
-                        compact
-                        disabled={at === 0}
-                        onclick={() => moveItem(at, -1)}
-                    />
-                    <ToolButton
-                        label={t('settings.editor_item_down', at + 1, label)}
-                        glyph="expand"
-                        compact
-                        disabled={at === items.length - 1}
-                        onclick={() => moveItem(at, 1)}
-                    />
-                    <ToolButton
-                        label={t('settings.editor_item_remove', at + 1, label)}
-                        glyph="trash"
-                        compact
-                        onclick={() => onpick(items.filter((_, place) => place !== at))}
-                    />
-                </div>
-            {/each}
-            <ToolButton
-                label={t('settings.editor_add')}
-                glyph="add"
-                onclick={() => onpick([...items, ''])}
-            />
-        </div>
+        <InlineItems
+            items={wordsOf(value)}
+            numbers={spec.items === 'number'}
+            {label}
+            onpick={(next: string[]) => onpick(next)}
+        />
     {:else if suggests(spec)}
         <SuggestInput
             value={boxText}
             {label}
             suggestions={offer.items}
             note={offerNote}
+            {invalid}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
@@ -460,6 +420,7 @@
         <TextInput
             value={boxText}
             {label}
+            {invalid}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
@@ -497,12 +458,6 @@
         align-items: flex-start;
         gap: 4px;
         min-width: 0;
-    }
-
-    .item {
-        display: flex;
-        align-items: center;
-        gap: 2px;
     }
 
     .caption {

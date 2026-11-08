@@ -9,10 +9,11 @@
     // The head is the title (the page opener where the kind hands `ontitle`, words where it hands
     // none), then the meta row: the mark of the record's hub (RootChip.svelte), the kind's chips
     // and tags (`meta`), then one element CardActions.svelte draws under the pointer, as
-    // `--card-at-rest` says (ui/frame/Card.svelte): the strip of at most three icons the kind names
-    // (`strip`) and, last in it, the "..." opener of the menu this card hands in. The element stays
-    // beside the chips when every icon and the opener fit there, and otherwise lies over the card's
-    // top right corner, as it does on a row that holds nothing else, so drawing it moves nothing.
+    // `--card-at-rest` says (ui/frame/card/Card.svelte): the strip of at most three icons the kind
+    // names (`strip`) and, last in it, the "..." opener of the menu this card hands in. The element
+    // stays beside the chips when every icon and the opener fit there, and otherwise lies over the
+    // card's top right corner, as it does on a row that holds nothing else, so drawing it moves
+    // nothing.
     // The opener, a right-click anywhere on the card, and the context menu key and Shift+F10 on a
     // control of the card open the same menu, which lists every action in runs (record-menu.ts). A
     // card with no action has no opener and no right-click menu of its own, so a right-click on it
@@ -46,7 +47,7 @@
     // card.
 
     import type { Snippet } from 'svelte';
-    import Card from '$lib/ui/frame/Card.svelte';
+    import Card from '$lib/ui/frame/card/Card.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import CardActions from './CardActions.svelte';
@@ -387,9 +388,9 @@
 {/if}
 
 <style>
-    /* The slot fills the box it is laid out in, and the card fills the slot (ui/frame/Card.svelte,
-       `fill`), so the cards of one row of a board are one height and no empty cell is left under a
-       short one. */
+    /* The slot fills the box it is laid out in, and the card fills the slot
+       (ui/frame/card/Card.svelte, `fill`), so the cards of one row of a board are one height and
+       no empty cell is left under a short one. */
     .slot {
         display: flex;
         flex: 1 1 auto;

@@ -12,6 +12,10 @@
 // entry runs, worded from the commands store it hands `chainOf`, so the lines are the ones the
 // command form lists for an Edit of the entry; a save sends those lines, and the server approves
 // them when the save lands and refuses a save whose lines are not the chain the file now holds.
+//
+// A delete the server took leaves the rows on its answer, before the schedules file is read again,
+// until a read that no longer holds the entry arrives, which is decided as the read arrives; a
+// refused delete leaves the row and its answer says why.
 
 import { z } from 'zod';
 import { draftOf, type DraftCommand } from '../../../../data/helpers/run/chain.ts';
@@ -324,6 +328,14 @@ const REFUSED = {
     refused_days: () => t('app.schedules.refused_days')
 };
 
+/**
+ * An entry a delete the server took removed, left out of the rows until a read of the schedules
+ * file that no longer holds it arrives: its position and name, and the rows read when the delete
+ * was sent. A named entry is found by its name, since the entries after it move up; an entry with
+ * no name is found by its position, and only in the rows it was removed from.
+ */
+type Removal = { at: number; name: string; seen: ScheduleRow[] };
+
 /** A choice for each id of a table of labels. */
 function choice<Id extends string>(labels: Record<Id, () => string>) {
     return (id: Id): CommandChoice => ({ id, label: labels[id]() });
@@ -418,13 +430,63 @@ export function createSchedule(
         };
     }
 
+    /** The deletes the server took whose entry the last read of the file still holds. */
+    let removals: Removal[] = $state.raw([]);
+
+    /**
+     * Whether the read `now` holds the entry a removal took out: a named entry by its name, an
+     * entry with no name at its position, and only in the read it was removed from.
+     */
+    function holds(one: Removal, now: ScheduleRow[]): boolean {
+        if (one.name === '') return now === one.seen && now.some((row) => row.at === one.at);
+        return now.some((row) => nameKey(row.name) === nameKey(one.name));
+    }
+
+    /** Whether a removal takes the row out: the row is the entry it removed. */
+    function takes(one: Removal, row: ScheduleRow): boolean {
+        return one.name === '' ? row.at === one.at : nameKey(row.name) === nameKey(one.name);
+    }
+
+    /** The entries of the file read, without those a delete took out. */
+    function standing(): ScheduleRow[] {
+        const now = entities.schedule()?.schedules ?? [];
+        return now.filter((row) => !removals.some((one) => takes(one, row)));
+    }
+
     function rows(): ScheduleRowView[] {
-        return (entities.schedule()?.schedules ?? []).map(rowView);
+        return standing().map(rowView);
+    }
+
+    /**
+     * A read of the file arrived: a removal whose entry it no longer holds ends there, so an entry
+     * saved again under that name by another hand after this read is shown.
+     */
+    entities.afterReceive((message) => {
+        if (message.channel !== 'schedule' || removals.length === 0) return;
+        const now = entities.schedule()?.schedules ?? [];
+        removals = removals.filter((one) => holds(one, now));
+    });
+
+    /**
+     * Leave a deleted entry out of the rows from the answer on, when the read the delete was sent
+     * over is still the last one or the last one still holds the entry; a read that arrived
+     * without it before the answer leaves nothing to take out.
+     */
+    function removed(row: RowRef, seen: ScheduleRow[]): void {
+        const one = { at: row.at, name: row.name, seen };
+        if (holds(one, entities.schedule()?.schedules ?? [])) removals = [...removals, one];
+    }
+
+    /** Stop leaving out an entry saved again under the name a delete took out. */
+    function savedAgain(name: string): void {
+        const key = nameKey(name.trim());
+        if (key === '') return;
+        removals = removals.filter((one) => one.name === '' || nameKey(one.name) !== key);
     }
 
     function none(): string {
         const payload = entities.schedule();
-        const empty = payload !== null && payload.schedules.length === 0;
+        const empty = payload !== null && standing().length === 0;
         return empty && !payload.unread.some((one) => one.file === 'schedules')
             ? t('app.schedules.none')
             : '';
@@ -698,12 +760,23 @@ export function createSchedule(
             { action: 'save', at: one.was?.at ?? null, was: one.was?.name ?? null, entry, chain },
             one.name
         );
-        if (answer.ok) draft = null;
+        if (answer.ok) {
+            draft = null;
+            savedAgain(one.name);
+        }
         return answer;
     }
 
     const act = (action: 'delete' | 'pause' | 'resume') => (row: RowRef) =>
         send({ action, at: row.at, name: row.name }, row.name);
+
+    /** Delete an entry; one the server took leaves the rows at once. */
+    async function remove(row: RowRef): Promise<ScheduleAnswer> {
+        const seen = entities.schedule()?.schedules ?? [];
+        const answer = await act('delete')(row);
+        if (answer.ok) removed(row, seen);
+        return answer;
+    }
 
     return {
         rows,
@@ -737,7 +810,7 @@ export function createSchedule(
         preview,
         check,
         save,
-        remove: act('delete'),
+        remove,
         pause: act('pause'),
         resume: act('resume'),
         runNow: (row) => send({ action: 'run', name: row.name }, row.name)

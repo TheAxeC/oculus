@@ -3,8 +3,10 @@
     // settings found on its right, the control that clears the search, and the filter menu, which
     // offers Modified by putting `@modified` in the query. Down in the search moves the focus to
     // the first setting listed; the wrapper catches the key, since the search box passes its own
-    // keys on only for Escape and Enter. Under 700 px the table of contents is not beside the list,
-    // and the header offers the toggle that shows it over the list.
+    // keys on only for Escape and Enter. The search keeps at least 12em, and the count goes under
+    // it when both do not fit on one line; the controls keep their size and go onto the next line
+    // when they do not fit beside the search. Under 700 px the table of contents is not beside the
+    // list, and the header offers the toggle that shows it over the list.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
@@ -56,10 +58,17 @@
             onclick={ontoggle}
         />
     {/if}
-    <div class="field">
-        <Search value={query} placeholder={t('workbench.settings_search')} oninput={onquery} fill />
+    <div class="found">
+        <div class="field">
+            <Search
+                value={query}
+                placeholder={t('workbench.settings_search')}
+                oninput={onquery}
+                fill
+            />
+        </div>
+        <span class="count" role="status">{found}</span>
     </div>
-    <span class="count" role="status">{found}</span>
     {#if query !== ''}
         <ToolButton
             label={t('workbench.settings_clear')}
@@ -84,18 +93,41 @@
 </div>
 
 <style>
+    /*
+     * The controls beside the search keep their size; when the search's 12em and the controls do
+     * not fit on one line, as in a narrow pane at a large text size, the controls after the search
+     * go onto the next line rather than under the field.
+     */
     .header {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 6px;
         padding: 3px 24px 0;
         margin-top: 11px;
     }
 
+    .header > :global(:not(.found)) {
+        flex: none;
+    }
+
+    /*
+     * The search and its count share a line while both fit; in a narrower pane the count goes onto
+     * its own line under the field, which never shrinks under 12em.
+     */
+    .found {
+        display: flex;
+        flex: 1 1 12em;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 6px;
+        min-width: 12em;
+    }
+
     .field {
         display: flex;
-        flex: 1 1 auto;
-        min-width: 0;
+        flex: 1 1 12em;
+        min-width: 12em;
     }
 
     /* The control after the count clears the search, so the field's own cancel button is hidden. */

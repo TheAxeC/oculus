@@ -19,9 +19,16 @@
     // it holds, so a kind says nothing about it. Every other row stays in the flow, and a control
     // in it lies over the same corner itself, when it has no room beside the chips or always, so
     // the row does not grow for it.
+    //
+    // A control that lies over the corner tells the card the width it takes there (`cardRoom` of
+    // card-room.ts beside it), and on a screen that hovers the title keeps exactly that room at its
+    // end, so its words wrap or are cut before the controls and never under them, whatever the
+    // number of controls. Such a control is drawn unseen at rest (`--card-at-rest-seen`, below), so
+    // it tells the room from the card's first draw and the title does not move when it appears.
 
     import type { Snippet } from 'svelte';
-    import { sanitise } from '../html';
+    import { sanitise } from '../../html';
+    import { provideCardRoom } from './card-room';
 
     type Props = {
         /** The stable item id used by keyboard navigation. */
@@ -77,11 +84,20 @@
         footer
     }: Props = $props();
 
+    /** The width the card's controls lay over its title, in px, as they last told it. */
+    let room = $state(0);
+    provideCardRoom({
+        lay: (width) => {
+            room = Math.max(0, width);
+        }
+    });
+
     const element = $derived(`h${Math.min(6, Math.max(1, Math.trunc(level)))}`);
     const style = $derived.by(() => {
         const hues = [
             tone === undefined ? '' : `--tone: var(--c-${tone})`,
-            ring === undefined ? '' : `--ring: var(--c-${ring})`
+            ring === undefined ? '' : `--ring: var(--c-${ring})`,
+            room === 0 ? '' : `--card-room: ${String(room)}px`
         ].filter((one) => one !== '');
         return hues.length === 0 ? undefined : hues.join('; ');
     });
@@ -139,10 +155,16 @@
        control reads it as `display: var(--card-at-rest, <its own display>)`, so unset gives each
        control its own display back. Beside chips the controls share the chips' line when they fit
        and on a screen that hovers lie over the card when they do not, as they do with no chip
-       (`.meta` below), so drawing them moves nothing. Every card sets it, so a card drawn inside
-       another answers for itself and not for the card around it. */
+       (`.meta` below), so drawing them moves nothing. `--card-at-rest-seen` is `hidden` at rest
+       and unset with it: a control lying over the card reads it as its `visibility`, so it is laid
+       out unseen at rest, takes no press, no focus and no room, and is measured from the first
+       draw. Every card sets both, so a card drawn inside another answers for itself and not for
+       the card around it. */
     .card {
         --card-at-rest: none;
+        --card-at-rest-seen: hidden;
+        /* Set on every card, so a card inside another keeps the room of its own controls alone. */
+        --card-room: 0px;
         position: relative;
         display: flex;
         background: var(--card);
@@ -160,11 +182,13 @@
     .card[data-cursor],
     .card:has(:global([aria-haspopup][aria-expanded='true'])) {
         --card-at-rest: initial;
+        --card-at-rest-seen: initial;
     }
 
     @media (hover: none) {
         .card {
             --card-at-rest: initial;
+            --card-at-rest-seen: initial;
         }
     }
 
@@ -284,6 +308,11 @@
        not hover draws the controls at rest, where lying over the title would cover its words for
        good. */
     @media (hover: hover) {
+        /* The room the controls lying over the title take, so its words end before them. */
+        .title {
+            padding-right: var(--card-room);
+        }
+
         .meta:not(:has(> :not(:global([data-card-control])))) {
             position: absolute;
             top: 8px;

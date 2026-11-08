@@ -20,6 +20,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
         cap: settings.maxHits,
         maxNames: settings.maxNames,
         repositories: locals.server.repositories(),
+        credentials: locals.server.credentials,
         timeout: settings.timeoutS * 1000
     });
 };

@@ -12,6 +12,10 @@
     // has no `field-sizing`. An empty growing box is one line high: a placeholder wider than the
     // box is cut at its edge, not wrapped. `size: 'tree'` draws the text at a tree row's
     // size.
+    //
+    // A caller that refuses the text hands the words as `invalid`, as ui/forms/TextInput.svelte
+    // takes them: the box carries `aria-invalid`, the red border of a refused field, and the words
+    // as its title.
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../controls/text/text-menu';
@@ -47,6 +51,8 @@
         size?: 'sm' | 'tree';
         /** The least and the most lines the box grows between with its text. */
         grow?: { min: number; max: number };
+        /** Why the text is refused, already translated; marks the box and is its title. */
+        invalid?: string;
     };
 
     let {
@@ -61,7 +67,8 @@
         bare = false,
         placeholder,
         size = 'sm',
-        grow
+        grow,
+        invalid
     }: Props = $props();
 
     const lines = $derived(
@@ -87,6 +94,8 @@
         wrap={code ? 'off' : undefined}
         rows={lines}
         aria-label={label}
+        aria-invalid={invalid === undefined ? undefined : 'true'}
+        title={invalid}
         {placeholder}
         {value}
         readonly={readOnly}

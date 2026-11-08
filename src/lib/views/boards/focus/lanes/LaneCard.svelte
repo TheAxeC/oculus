@@ -20,12 +20,12 @@
     // press. Every tag is drawn: the tags a line has no room for wrap onto a further line under it,
     // and the name stays alone on its own line above them.
     //
-    // A card is its own markup rather than ui/frame/Card.svelte: it is a drag handle whose first
-    // line is one row of the tree's height, which is a different thing from the titled box with a
-    // meta row and a body that a board of projects draws. It carries `data-card` and `data-cursor`
-    // all the same, which is what the workbench's keyboard cursor moves over, so a lane card is
-    // reachable by key like every card the primitive draws, and Enter on the card under the cursor
-    // presses its name, which opens the project.
+    // A card is its own markup rather than ui/frame/card/Card.svelte: it is a drag handle whose
+    // first line is one row of the tree's height, which is a different thing from the titled box
+    // with a meta row and a body that a board of projects draws. It carries `data-card` and
+    // `data-cursor` all the same, which is what the workbench's keyboard cursor moves over, so a
+    // lane card is reachable by key like every card the primitive draws, and Enter on the card
+    // under the cursor presses its name, which opens the project.
     //
     // A web address written in the next line is a link (ui/display/text/LinkedText.svelte); the
     // waiting line is names and catalog words, drawn in red after the waiting glyph, whether it

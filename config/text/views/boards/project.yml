@@ -190,7 +190,7 @@ text:
         sessions: Sessions
         unknown: The snapshot holds no project with the id {0}.
     views:
-        listing: Projects
+        listing: Project set
         listing_glyph: folder
         project: Project
         project_glyph: folder

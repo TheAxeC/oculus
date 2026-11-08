@@ -20,7 +20,9 @@
     // layer, so an input inside the menu's root anchors the menu and leaves the list unplaced.
     //
     // A caller whose list is not there yet gives `note` instead of suggestions: the list then
-    // holds that sentence, already translated, and nothing to pick.
+    // holds that sentence, already translated, and nothing to pick. A caller that refuses the text
+    // hands the words as `invalid`, as ui/forms/TextInput.svelte takes them: the box carries
+    // `aria-invalid`, the red border of a refused field, and the words as its title.
 
     import { Combobox } from 'bits-ui';
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
@@ -42,9 +44,11 @@
         /** A sentence listed in place of the suggestions, for a list that is loading or failed. */
         note?: string;
         placeholder?: string;
+        /** Why the text is refused, already translated; marks the box and is its title. */
+        invalid?: string;
     };
 
-    let { value, label, oninput, onenter, onblur, suggestions, note, placeholder }: Props =
+    let { value, label, oninput, onenter, onblur, suggestions, note, placeholder, invalid }: Props =
         $props();
 
     /** How many suggestions are listed at once; typing is how the rest are reached. */
@@ -119,6 +123,8 @@
                     type="text"
                     autocomplete="off"
                     aria-label={label}
+                    aria-invalid={invalid === undefined ? undefined : 'true'}
+                    title={invalid}
                     {placeholder}
                     onblur={left}
                     onfocus={() => (open = true)}

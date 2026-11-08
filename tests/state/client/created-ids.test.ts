@@ -39,7 +39,8 @@ function settleOf(added: [string, string, Record<string, unknown>][]): Settle {
             added.push([collection, id, saved]);
         },
         feed: () => undefined,
-        career: () => undefined
+        career: () => undefined,
+        removed: () => undefined
     };
 }
 

@@ -22,7 +22,11 @@
     //
     // The body tells what it holds how tall the strips above it are together (`--group-strip`), so
     // a group nested in the body stands its strip under this one, and a table's sticky header row
-    // stands under them all (ui/display/table/Table.svelte). A custom property cannot read itself
+    // stands under them all (ui/display/table/Table.svelte). The section tells them the space under
+    // a strip (`--group-strip-gap`), so a part scrolled into view can keep clear of both: the
+    // Settings list scrolls a row under the strips (views/system/workbench/settings/List.svelte),
+    // and the Present Overview's rule form scrolls its labels under the strips and the space
+    // (views/academic/present/arrange/RuleForm.svelte). A custom property cannot read itself
     // on one element, so the section carries the height from above in a second one
     // (`--group-above`), which the strip's `top` and the body's sum read. A sticky element sticks
     // inside its scroller's padding, so the strip takes the pane body's top padding, which
@@ -204,6 +208,7 @@
         --group-above: var(--group-strip, 0px);
         --group-inset: var(--group-indent, 0px);
         --group-gap: 6px;
+        --group-strip-gap: 8px;
         min-width: 0;
     }
 
@@ -229,7 +234,7 @@
         align-items: center;
         gap: var(--group-gap);
         min-width: 0;
-        margin: 0 0 8px;
+        margin: 0 0 var(--group-strip-gap);
         padding: 2px 8px 2px calc(8px + var(--group-inset));
         border-radius: var(--input-radius);
         background: var(--panel);

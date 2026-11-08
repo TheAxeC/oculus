@@ -1,15 +1,15 @@
 // Layer 3, shell. The Open View item of the right-click menu of a pane's strip and of an empty
 // pane's body, and what its picks do. Its submenu lists every listed view by the group the Views
 // view lists it under, through the same fold (state/workbench/navigation/catalogue.ts `arrange`): a
-// submenu per rail page in the rail's order, then the `nav_groups:` groups, then the views no group
-// holds with no heading. The views apps add are registrations like any other, so they are listed
-// under their group while their app acts. A pick opens the view as a new tab of the pane the menu
-// was opened on, and a unique view a page or float holds is shown where it is, as every opener
-// shows it; the item names that page or float as its hint. The menu is drawn from the state at the
-// right-click and another window may change the layout or the apps while it is open, so a pick
-// reads the registry and the holder again and never trusts what was drawn. It lives apart from
-// pane-view.ts so stripMenu stays a function of the facts it is handed, and it reads the client as
-// close-question.svelte.ts does.
+// submenu per rail page in the rail's order, its row drawn with the rail button's glyph, then the
+// `nav_groups:` groups, then the views no group holds with no heading. The views apps add are
+// registrations like any other, so they are listed under their group while their app acts. A pick
+// opens the view as a new tab of the pane the menu was opened on, and a unique view a page or float
+// holds is shown where it is, as every opener shows it; the item names that page or float as its
+// hint. The menu is drawn from the state at the right-click and another window may change the
+// layout or the apps while it is open, so a pick reads the registry and the holder again and never
+// trusts what was drawn. It lives apart from pane-view.ts so stripMenu stays a function of the
+// facts it is handed, and it reads the client as close-question.svelte.ts does.
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
@@ -17,8 +17,10 @@ import {
     arrange,
     groupGlyph,
     listedViews,
-    readGroups
+    readGroups,
+    type NavGroup
 } from '$lib/state/workbench/navigation/catalogue';
+import { railPages } from '$lib/state/workbench/navigation/rail';
 import {
     registrationGlyph,
     registrationHeading,
@@ -84,12 +86,27 @@ export function createOpenView(deps: OpenViewDeps) {
         };
     }
 
+    /**
+     * The groups of the submenu: the view catalogue's, each rail page's carrying the rail button's
+     * glyph, since its row opens a submenu of its own and so never reads as one of its views, and a
+     * reader looks there for the icon pressed on the rail. The catalogue's headings, drawn over
+     * their views in one list, keep the entry's `group_glyph`.
+     */
+    function groups(): NavGroup[] {
+        const config = configMap();
+        const rail = railPages(config);
+        return readGroups(config).map((group) => {
+            const page = rail.find((entry) => entry.page === group.id);
+            return page === undefined ? group : { ...group, glyph: page.glyph };
+        });
+    }
+
     /** The Open View item, its submenu built from the state as it is now. */
     function item(): MenuItem {
         // Until the config has come the map is empty, which reads as no group, so every listed view
         // is listed with no heading.
-        const sections = arrange(listedViews(views()), readGroups(configMap()));
-        const groups = sections.flatMap((section, at) =>
+        const sections = arrange(listedViews(views()), groups());
+        const rows = sections.flatMap((section, at) =>
             section.label === null
                 ? []
                 : [
@@ -104,7 +121,7 @@ export function createOpenView(deps: OpenViewDeps) {
         const loose = sections
             .filter((section) => section.label === null)
             .flatMap((section) => section.items.map(viewItem));
-        return { id: OPEN_VIEW_LIST, label: t('ui.strip_open_view'), items: [...groups, ...loose] };
+        return { id: OPEN_VIEW_LIST, label: t('ui.strip_open_view'), items: [...rows, ...loose] };
     }
 
     /**

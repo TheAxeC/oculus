@@ -79,6 +79,7 @@ const NO_SETTLE: Readonly<Settle> = Object.freeze({
     begin: () => 0,
     entry: () => undefined,
     added: () => undefined,
+    removed: () => undefined,
     feed: () => undefined,
     career: () => undefined
 });
@@ -404,9 +405,15 @@ export function createWrites(
         return answer;
     }
 
-    /** Remove one entry from a collection, in the hub the entry's id names. */
+    /**
+     * Remove one entry from a collection, in the hub the entry's id names. A removal the server
+     * took is held as one, so a list leaves the entry's row out before the snapshot does.
+     */
     async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
-        return send({ kind: 'delete-entry', collection, id });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'delete-entry', collection, id });
+        if (answer.ok && answer.refused.length === 0) settle.removed(collection, id, seq);
+        return answer;
     }
 
     /**

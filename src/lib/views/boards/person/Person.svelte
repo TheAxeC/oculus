@@ -161,10 +161,24 @@
 
     /**
      * Whether this person is the user, the one the key `self` of the primary hub's `local.yml`
-     * names: the flag of the published portfolio, so a write on its way shows the state before it
-     * until the portfolio that carries it arrives.
+     * names: the flag of the published portfolio, which a press on the button reaches only once
+     * the portfolio that carries the write arrives (`marking` below covers the time between).
      */
     const isSelf = $derived(join.person?.self === true);
+
+    /**
+     * Whether a press sent the write that marks this person and its answer or the portfolio that
+     * carries it is still to come: the button is drawn pressed from the press on, so a press is
+     * answered at once, and the published portfolio is the source again once it says so. A refused
+     * write draws the button unpressed again; the writes store says why.
+     */
+    let marking = $state(false);
+    $effect(() => {
+        if (isSelf) marking = false;
+    });
+
+    /** Whether the button is drawn pressed: this person is the user, or a press is marking them. */
+    const pressedSelf = $derived(isSelf || marking);
 
     /** What this person's button can do, from where the key resolves from the primary hub. */
     const standing = $derived(
@@ -183,7 +197,9 @@
         if (standing.kind === 'ambiguous') {
             return t('person.self_ambiguous_tip', personKey, standing.hubs.join(t('person.sep')));
         }
-        return isSelf ? t('person.self_held_tip', title) : t('person.self_tip', title, personKey);
+        return pressedSelf
+            ? t('person.self_held_tip', title)
+            : t('person.self_tip', title, personKey);
     });
 
     /**
@@ -191,10 +207,11 @@
      * on the person already marked, and on one the key does not resolve to, nothing is written, and
      * clearing the key is the Settings row's.
      */
-    function markSelf(): void {
+    async function markSelf(): Promise<void> {
         const person = join.person;
-        if (person === null || standing?.kind !== 'mark' || isSelf) return;
-        setSelf(keyOf(person.id));
+        if (person === null || standing?.kind !== 'mark' || pressedSelf) return;
+        marking = true;
+        if (!(await setSelf(keyOf(person.id)))) marking = false;
     }
 
     function say(words: string): void {
@@ -211,11 +228,11 @@
             <ToolButton
                 label={t('person.self')}
                 glyph="star"
-                pressed={isSelf}
-                active={isSelf}
+                pressed={pressedSelf}
+                active={pressedSelf}
                 disabled={standing?.kind !== 'mark'}
                 title={selfTip}
-                onclick={markSelf}
+                onclick={() => void markSelf()}
             />
         {/if}
         {#if page?.schema !== undefined}

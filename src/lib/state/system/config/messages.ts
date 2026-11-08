@@ -71,3 +71,11 @@ export type Message = { key: string; args: (string | number)[] };
 export function message(id: MessageId, ...args: (string | number)[]): Message {
     return { key: SETTINGS_MESSAGES[id], args };
 }
+
+/**
+ * A worded sentence with one full stop at its end: a sentence whose last value ended with a stop of
+ * its own before the catalog's stop ends with two, and loses one. An ellipsis is left as it is.
+ */
+export function oneStop(sentence: string): string {
+    return sentence.replace(/(?<!\.)\.\.$/, '.');
+}

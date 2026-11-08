@@ -108,17 +108,27 @@ export function sameRail(left: readonly RailEntry[], right: readonly RailEntry[]
 /**
  * Whether a tab holds work no write has taken: a Settings tab whose rail list differs from the one
  * the config holds, or that holds text typed into a field or an editor draft of a list or a family
- * (system/config/typed.ts). A tab of another view holds none.
+ * (system/config/typed.ts), a text neither empty nor among the fields the tab marked refused
+ * (`refusedFields`). A tab of another view holds none.
  */
 export function settingsUnsaved(
     view: string | undefined,
-    state: unknown,
+    tab: TabReads,
+    id: string,
     config: Record<string, unknown> | undefined
 ): boolean {
     if (view !== SETTINGS_VIEW) return false;
+    const state = tab.instanceState(id);
     const draft = railDraft(state);
-    return (draft !== null && !sameRail(draft, configRail(config))) || settingsTyped(state);
+    const railed = draft !== null && !sameRail(draft, configRail(config));
+    return railed || settingsTyped(state, tab.refusedFields(id));
 }
+
+/** Where a tab's saved state and the fields it marked refused are read, by the tab's id. */
+type TabReads = {
+    instanceState: (id: string) => unknown;
+    refusedFields: (id: string) => ReadonlySet<string>;
+};
 
 /** One rail entry moved one place up or down, the list unchanged at either end. */
 export function moveRailEntry(rail: readonly RailEntry[], at: number, by: -1 | 1): RailEntry[] {

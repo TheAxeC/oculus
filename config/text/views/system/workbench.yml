@@ -205,9 +205,9 @@ text:
         settings_empty: 'The field is empty, so nothing was written.'
         settings_empty_item: 'Item {0} is empty. Fill it in or remove it.'
         settings_empty_key: 'Entry {0} has no name. Give it one or remove it.'
-        settings_failed: 'Not written: {0}'
+        settings_failed: 'Not written: {0}.'
         settings_wallpaper_empty: No hub of this workspace holds a wallpaper image yet; put a .jpg, .png or .webp file in the wallpaper folder of a hub.
-        settings_wallpaper_failed: 'The wallpaper images could not be listed: {0}'
+        settings_wallpaper_failed: 'The wallpaper images could not be listed: {0}.'
         settings_wallpaper_label: Wallpaper images
         settings_wallpaper_none: None
         settings_wallpaper_random: Random
@@ -234,7 +234,7 @@ text:
         settings_heading_sources: Project sources
         settings_heading_terminal: Terminal
         settings_heading_unheaded: Without a heading
-        settings_list_failed: 'The folder {0} could not be listed: {1}'
+        settings_list_failed: 'The folder {0} could not be listed: {1}.'
         settings_list_loading: 'Reading the folder {0}...'
         settings_loading: 'Reading {0}...'
         settings_unparsed_at: '{0} does not parse at line {1}, so nothing is written to it; mend the line and the scope reads it again.'
@@ -250,7 +250,7 @@ text:
         settings_mismatch_toggle: 'The value in force is {0}, which is not true or false.'
         settings_hub_file_absent: '{0} is not there. A change to a setting of the hub creates it.'
         settings_hub_loading: 'Reading the settings of the hub {0}...'
-        settings_hub_failed: 'The settings of the hub {0} could not be read, so nothing is written: {1}'
+        settings_hub_failed: 'The settings of the hub {0} could not be read, so nothing is written: {1}.'
         settings_network: 'Not written: the server could not be reached.'
         settings_blank: 'It must not be blank.'
         settings_no_file: 'The file {0} is not in the hub.'
@@ -267,19 +267,19 @@ text:
         settings_not_row_key: 'It must be lowercase letters, digits, dashes and underscores.'
         settings_not_this_kind: 'The value is not of the kind this setting takes.'
         settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
-        settings_origin_also: 'Also set in {0}: {1}'
+        settings_origin_also: 'Also set in {0}: {1}.'
         settings_origin_field: 'not a field of a language record'
         settings_origin_key: 'not a key the file reads; only languages is read'
         settings_origin_language: 'not one of the languages that have colours'
         settings_origin_map: 'not a map'
-        settings_origin_none: '{0} has no {1}, or one that does not read as text, is longer than the file window reads or is a link out of the folder'
+        settings_origin_none: '{0} has no {1}, or one that does not read as text, is longer than the file window reads or is a link out of the folder.'
         settings_origin_not_a_map: 'languages is not a map of language name to its record'
         settings_origin_repeat: 'a name an earlier row already took'
         settings_origin_unnamed: 'a row with no name'
-        settings_origin_skipped: 'Skipped in {0}: {1}: {2}'
-        settings_origin_unread: 'Not read: {0}/{1}: {2}'
+        settings_origin_skipped: 'Skipped in {0}: {1}: {2}.'
+        settings_origin_unread: 'Not read: {0}/{1}: {2}.'
         settings_origin_value: 'outside the values the field takes'
-        settings_refused: 'Not written: {0}'
+        settings_refused: 'Not written: {0}.'
         settings_range: 'It must be a number from {0} to {1}.'
         settings_range_max: 'It must be a number of at most {0}.'
         settings_range_min: 'It must be a number of at least {0}.'
@@ -289,8 +289,8 @@ text:
         settings_reset: Reset Setting
         settings_search: Search settings
         settings_timed_out: 'Not written: no answer came in time, so the write may not have landed.'
-        settings_unparsed: '{0} does not parse at line {1}, so nothing is written to it: {2}'
-        settings_unreadable: '{0} could not be read: {1}'
+        settings_unparsed: '{0} does not parse at line {1}, so nothing is written to it: {2}.'
+        settings_unreadable: '{0} could not be read: {1}.'
         settings_unwritable: 'Not written: {0} could not be written.'
         settings_where: 'Entry {0}, {1}:'
         workbenches_close: Close

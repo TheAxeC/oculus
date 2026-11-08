@@ -204,7 +204,8 @@
         color: var(--ink-txt, var(--ink));
     }
 
-    .tool:hover:not(:disabled) {
+    /* An active button keeps its look under the pointer, so a press it answers shows at once. */
+    .tool:not(.active):hover:not(:disabled) {
         border-color: var(--accent);
     }
 
@@ -425,7 +426,7 @@
         opacity: 1;
     }
 
-    .tool.bare:hover:not(:disabled) {
+    .tool.bare:not(.active):hover:not(:disabled) {
         border-color: transparent;
         background: var(--chip);
         color: var(--ink-txt, var(--ink));

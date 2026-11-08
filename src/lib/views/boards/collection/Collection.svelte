@@ -138,12 +138,21 @@
     const cursor = $derived(cardCursor(instance.state));
 
     /**
-     * The file of the collection in each hub that holds one, the primary hub's first: the cards of
-     * a hub other than the primary are written by that hub's own file, schema and identities.
+     * Whether a write removed the entry and the snapshot still shows it: its card and row go as
+     * soon as the removal is answered (state/forms/settled.svelte.ts).
+     */
+    function gone(entry: Entry): boolean {
+        return client.pages.removed(key, entry.id);
+    }
+
+    /**
+     * The file of the collection in each hub that holds one, the primary hub's first, with the
+     * entries a write removed left out: the cards of a hub other than the primary are written by
+     * that hub's own file, schema and identities.
      */
     const parts = $derived(
         collectionsOfKey(key).map((one) => ({
-            collection: one,
+            collection: { ...one, entries: one.entries.filter((entry) => !gone(entry)) },
             schema: one.schema,
             file:
                 rootOf(one) === primary()

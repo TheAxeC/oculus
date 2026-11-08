@@ -167,8 +167,8 @@ export function createClientState(
     // `queries` is recorded where it is made, so a tab's copy replaces it (queries/tab-scope.ts).
     const { queries, withQueries, tabScope } = createQueryScope();
     const entities = createEntities();
-    // What a write took is shown by the pages before the rebuilt snapshot arrives; the version a
-    // held value is dated by is that of the channel the record is read in.
+    // What a write took is shown by the pages until the snapshot catches up: a held value is dated
+    // by its record's channel version, and a removal ends at the first snapshot kept without it.
     const settled = createSettled(
         (key) =>
             entities.message(
@@ -177,6 +177,7 @@ export function createClientState(
                     : 'portfolio'
             )?.version ?? 0
     );
+    entities.afterReceive(settled.heard);
     const paged = { snapshot: entities.portfolio, feeds: entities.feeds, reads: entities.reads };
     const pages = createPages(paged, settled);
     // The write path refuses a write over a file a source tab holds unsaved text of (or that the
@@ -505,9 +506,9 @@ export function createClientState(
     // view.
     ui.registerUnsaved((id) => filesLineTyped(layout.instanceView(id), ui.instanceState(id)));
     // A Settings tab's rail list, typed field text or editor draft is work no write has taken,
-    // asked against the config the page holds now.
+    // asked against the config the page holds now; a text the tab marked refused is not.
     ui.registerUnsaved((id) =>
-        settingsUnsaved(layout.instanceView(id), ui.instanceState(id), entities.config()?.config)
+        settingsUnsaved(layout.instanceView(id), ui, id, entities.config()?.config)
     );
     const paletteSource = createPaletteSource(entities, feeds, {
         writeConfigValue: writes.writeConfigValue,

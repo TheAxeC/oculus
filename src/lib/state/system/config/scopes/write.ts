@@ -6,8 +6,10 @@
 // A Reset holds the taking out of the user's value, which a Save then takes out of its file.
 //
 // A value equal to the one the file gives the row, with no change held for it, holds nothing; one
-// equal to it with a change held drops the change. The row shows the value held (`shown`), and is
-// marked unsaved (`pending`) while one is held. A row that says why it writes nothing
+// equal to it with a change held drops the change, and so does an emptied box of a row whose
+// scope's file holds no key for it, which says nothing, unless its option takes the empty value
+// (`empty:`), whose empty text is held as any value is. The row shows the value held (`shown`),
+// and is marked unsaved (`pending`) while one is held. A row that says why it writes nothing
 // (`row.blocked`) holds nothing. It is a plain closure with no runes; the view hands it a callback
 // that redraws. `answered` words the answer of a Save.
 
@@ -29,16 +31,26 @@ export function heldKey(row: ConfigRow): string {
 
 /**
  * The value a control's input makes for a row, or why none is: the rules of the row's control
- * (editors/fields.ts), over the lists the page holds.
+ * (editors/fields.ts), over the lists the page holds, told whether the scope's file holds the
+ * row's key.
  */
 function commit(row: ConfigRow, input: string | boolean, lists: Lists): Committed {
-    return commitValue(row.entry, input, lists, row.value);
+    return commitValue(row.entry, input, lists, row.value, row.own);
 }
 
-/** The message an answer earns, or null when it wrote or changed nothing and has nothing to say. */
+/** A reason of the server's without the full stops it ends with, as the sentence adds its own. */
+function unstopped(reason: string): string {
+    return reason.replace(/\.+$/, '');
+}
+
+/**
+ * The message an answer earns, or null when it wrote or changed nothing and has nothing to say. The
+ * server's reasons are joined without their own full stops, so the sentence ends with one.
+ */
 export function answered(answer: WriteAnswer, file: string): Message | null {
     if (answer.refused.length > 0) {
-        return message('refused', answer.refused.map((one) => one.reason).join('; '));
+        const reasons = answer.refused.map((one) => unstopped(one.reason));
+        return message('refused', reasons.join('; '));
     }
     if (answer.ok) return null;
     if (answer.network === true) return message('network');
@@ -117,6 +129,12 @@ export function createRowWriter(
         const made = commit(row, input, lists(row));
         if (made.write) {
             hold(row, made.value);
+            return;
+        }
+        if ('unset' in made) {
+            saying.delete(heldKey(row));
+            if (stage.held(row) !== undefined) stage.drop(row);
+            changed();
             return;
         }
         if (made.said !== undefined) {

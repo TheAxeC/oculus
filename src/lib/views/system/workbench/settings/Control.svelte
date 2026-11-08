@@ -14,12 +14,16 @@
     // It holds the text as a change of the scope on Enter and on leaving the box, and drops it on
     // Escape, and the save key on the tab (Cmd+S, Ctrl+S off macOS) and the Save of a close
     // question hold it before the scope is saved. The text is kept while it is not a value of the
-    // control, so the reader mends it. A pick or a toggle is held as it is made. While a change is
-    // held the control shows the value held, and nothing is written until the scope is saved.
+    // control, so the reader mends it: the box is marked refused while the message stands, and the
+    // tab marks the field refused in the page's own state (never in the instance state), so the tab
+    // counts no unsaved work for it until the next keystroke. A pick or a toggle is held as it is
+    // made. While a change is held the control shows the value held, and nothing is written until
+    // the scope is saved.
 
     import { drawsEditor, slotOf } from '$lib/state/system/config/editors/slots';
     import {
         controlOf,
+        numberRefusal,
         readField,
         textOf,
         type FieldValue
@@ -27,15 +31,15 @@
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import { writtenWhole, type ConfigRow } from '$lib/state/system/config/rows';
-    import { typedText, withTypedText } from '$lib/state/system/config/typed';
+    import { typedField, typedText, withTypedText } from '$lib/state/system/config/typed';
     import type { RowWriter } from '$lib/state/system/config/scopes/write';
     import { useState } from '$lib/state/client/use';
     import Editor from '../editors/Editor.svelte';
     import FieldControl from '../editors/FieldControl.svelte';
-    import { plainText } from './said';
+    import { plainText, said } from './said';
 
     const {
-        ui: { instanceState, setInstanceState, registerTabSave }
+        ui: { instanceState, setInstanceState, registerTabSave, markRefused }
     } = useState();
 
     type Props = {
@@ -74,24 +78,39 @@
     /** The text being typed in the box, or undefined while it shows the value. */
     const typed = $derived(typedText(instanceState(id), slotOf(row)));
 
+    /** Why the writer refused the row's value, worded, while its message stands. */
+    const refusal = $derived.by(() => {
+        const answer = writer.said(row);
+        return answer === null ? undefined : said(answer);
+    });
+
+    /**
+     * A keystroke: the message goes, and so does the refused mark, unless the number box refuses
+     * the new text as it is typed (its range), which it says beside the box.
+     */
     function type(next: string): void {
         writer.clear(row);
+        const refusedAsTyped = control === 'number' && numberRefusal(row.entry, next) !== null;
+        markRefused(id, typedField(slotOf(row)), refusedAsTyped);
         setInstanceState(id, withTypedText(instanceState(id), slotOf(row), next));
     }
 
     function forget(): void {
+        markRefused(id, typedField(slotOf(row)), false);
         setInstanceState(id, withTypedText(instanceState(id), slotOf(row), null));
     }
 
     /**
      * Hold the typed text as the row's change; whether it was taken. A taken text ends the typing,
-     * so the blur that follows Enter finds nothing typed and holds nothing twice.
+     * so the blur that follows Enter finds nothing typed and holds nothing twice; a refused one is
+     * kept and marked refused for the tab, so it is not counted as unsaved work.
      */
     function settle(next: string): boolean {
         if (typed === undefined) return false;
         writer.submit(row, next);
         const taken = writer.said(row) === null;
         if (taken) forget();
+        else markRefused(id, typedField(slotOf(row)), true);
         return taken;
     }
 
@@ -127,6 +146,7 @@
             ontext={type}
             onsettle={settle}
             onpick={pick}
+            invalid={refusal}
         />
     </div>
 {:else if drawn}

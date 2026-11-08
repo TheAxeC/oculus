@@ -14,14 +14,16 @@
     // It is bits-ui's Popover holding bits-ui's Command, as PickMenu.svelte is, with the popover
     // opened by the header's ToolButton and placed against it (`customAnchor`), since a ToolButton
     // draws the pressed state a header action carries and the menu opener does not. The list takes
-    // the focus when it opens, so the arrows move and Enter picks; Escape and a press outside close
-    // it and give the focus back to the button. The box is ui/frame/FloatingList.svelte, so the
-    // list looks as a menu's list does.
+    // the focus when it opens, so the arrows move and Enter picks. Escape closes it and gives the
+    // focus back to the button without opening its tip, as a menu does (ui/menu/menu-items.ts
+    // `menuClosing`); a press outside or Tab closes it and leaves the focus where it went. The box
+    // is ui/frame/FloatingList.svelte, so the list looks as a menu's list does.
 
     import { Command, Popover } from 'bits-ui';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FloatingList from '$lib/ui/frame/FloatingList.svelte';
+    import { menuClosing } from '$lib/ui/menu/menu-items';
     import type { TierWord } from '$lib/state/boards/focus';
     import type { FocusFilter } from '$lib/state/boards/focus/filter';
     import { toggled } from '$lib/state/shared/lists/lists';
@@ -140,23 +142,29 @@
         return made;
     });
 
-    /** A press on the button is the button's own, so it does not also count as a press outside. */
+    /**
+     * How the list closes, as a menu's does: Escape gives the focus back to the button quietly, so
+     * its tip does not open over the list's place, and a press outside or Tab leaves the focus
+     * where the reader put it.
+     */
+    const closing = menuClosing(() => anchor?.querySelector('button'));
+
+    /**
+     * A press on the button is the button's own, so it does not also count as a press outside;
+     * any other press outside leaves the focus where it lands.
+     */
     function outside(event: PointerEvent): void {
         if (event.target instanceof Node && anchor?.contains(event.target) === true) {
             event.preventDefault();
+            return;
         }
+        closing.content.onInteractOutside();
     }
 
     /** The list takes the focus when it opens, so the keys move over its rows. */
     function opened(event: Event): void {
         event.preventDefault();
         list?.focus();
-    }
-
-    /** The focus goes back to the button when the list closes. */
-    function closed(event: Event): void {
-        event.preventDefault();
-        anchor?.querySelector('button')?.focus();
     }
 </script>
 
@@ -226,10 +234,13 @@
         title={t('focus.filter_tip')}
         pressed={hides}
         expanded={open}
-        onclick={() => (open = !open)}
+        onclick={() => {
+            open = !open;
+            closing.changed(open);
+        }}
     />
 </span>
-<Popover.Root bind:open>
+<Popover.Root bind:open onOpenChange={closing.changed}>
     <Popover.Portal>
         <Popover.Content
             customAnchor={anchor}
@@ -238,8 +249,9 @@
             sideOffset={4}
             collisionPadding={8}
             onInteractOutside={outside}
+            onkeydown={closing.content.onkeydown}
             onOpenAutoFocus={opened}
-            onCloseAutoFocus={closed}
+            onCloseAutoFocus={closing.content.onCloseAutoFocus}
         >
             {#snippet child({ wrapperProps, props })}
                 <div {...wrapperProps}>

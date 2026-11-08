@@ -3,10 +3,11 @@
     // buttons, the overview control, the Project facts toggle while the slide on screen comes from
     // a project's deck, the full-screen and presenter controls, the Export to PDF button, the
     // status line of the last act on a slide or on the deck's arrangement, and the place in the
-    // deck. Under it, for a deck whose groups hold project decks, the Projects board's bar over the
-    // projects whose decks those groups hold (views/shared/forms/bar/BoardBar.svelte): the search,
-    // the stale, deadline and waiting toggles, Mine only, the groups and More, then the slices, the
-    // shown count and Clear all; a deck with no such group draws no bar and keeps no room for one.
+    // deck, drawn only once the deck has loaded ("0 / 0" for a loaded deck of no slide). Under it,
+    // for a deck whose groups hold project decks, the Projects board's bar over the projects whose
+    // decks those groups hold (views/shared/forms/bar/BoardBar.svelte): the search, the stale,
+    // deadline and waiting toggles, Mine only, the groups and More, then the slices, the shown
+    // count and Clear all; a deck with no such group draws no bar and keeps no room for one.
     // It holds no state of its own; Present.svelte owns the deck and the position, and
     // acts/filter.svelte.ts the filter, and each action is handed in.
 
@@ -24,8 +25,11 @@
         /** The menu id of the deck on screen. */
         chosen: string;
         onchoose: (id: string) => void;
-        /** How many slides the deck holds, and the 1-based place of the one shown (0 for none). */
-        count: number;
+        /**
+         * How many slides the deck holds, null while it loads or after it failed to load, when no
+         * place in the deck is drawn; and the 1-based place of the one shown (0 for none).
+         */
+        count: number | null;
         at: number;
         overview: boolean;
         /**
@@ -67,12 +71,15 @@
         said,
         filter
     }: Props = $props();
+
+    /** Whether no slide can be moved to, shown or exported: the deck loads, failed or is empty. */
+    const slideless = $derived(count === null || count === 0);
 </script>
 
 <Toolbar label={t('present.toolbar')}>
     <Select value={chosen} label={t('present.deck_menu')} {choices} onchange={onchoose} />
-    <ToolButton label={t('present.previous')} onclick={() => onstep(-1)} disabled={count === 0} />
-    <ToolButton label={t('present.next')} onclick={() => onstep(1)} disabled={count === 0} />
+    <ToolButton label={t('present.previous')} onclick={() => onstep(-1)} disabled={slideless} />
+    <ToolButton label={t('present.next')} onclick={() => onstep(1)} disabled={slideless} />
     <Chip
         label={t('present.overview')}
         glyph={t('present.overview_glyph')}
@@ -93,7 +100,7 @@
         pressed={full}
         active={full}
         onclick={onpresent}
-        disabled={count === 0}
+        disabled={slideless}
     />
     <ToolButton
         label={t('present.presenter')}
@@ -101,16 +108,18 @@
         pressed={presenting}
         active={presenting}
         onclick={onpresenter}
-        disabled={count === 0}
+        disabled={slideless}
     />
     <ToolButton
         label={t('present.export')}
         title={t('present.export_tip')}
         onclick={onexport}
-        disabled={count === 0}
+        disabled={slideless}
     />
     <span class="said" role="status">{said}</span>
-    <span class="counter">{t('present.counter', String(at), String(count))}</span>
+    {#if count !== null}
+        <span class="counter">{t('present.counter', String(at), String(count))}</span>
+    {/if}
 </Toolbar>
 {#if filter !== null}
     <BoardBar

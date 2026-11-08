@@ -58,6 +58,7 @@ import type { OpenWorkspace } from '../files/workspace/open.ts';
 import { perOculus } from '../files/workspace/paths.ts';
 import { words } from '../core/words.ts';
 import {
+    entriesRefusal,
     homeOf,
     noHub,
     routed,
@@ -456,7 +457,7 @@ export async function handleWrite(
 
     const entry = entryWrite(body);
     if (entry !== null) {
-        const off = routeRefusal(into, [entry.id]);
+        const off = entriesRefusal(into, entry.collection, [entry.id]);
         if (off !== null) return off;
         const at = routedEntry(into, entry.collection, entry.id, app);
         const outcome =
@@ -599,7 +600,7 @@ export async function handleWrite(
 
     const order = reorderWrite(body);
     if (order !== null) {
-        const off = routeRefusal(into, order.order);
+        const off = entriesRefusal(into, order.collection, order.order);
         if (off !== null) return off;
         const at = routedOrder(into, order.collection, order.order, app);
         const outcome =
@@ -625,7 +626,7 @@ export async function handleWrite(
 
     const removal = deleteEntryWrite(body);
     if (removal !== null) {
-        const off = routeRefusal(into, [removal.id]);
+        const off = entriesRefusal(into, removal.collection, [removal.id]);
         if (off !== null) return off;
         const at = routedEntry(into, removal.collection, removal.id, app);
         const outcome =

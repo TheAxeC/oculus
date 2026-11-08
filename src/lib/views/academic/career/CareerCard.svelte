@@ -5,7 +5,7 @@
     // and the strip, which opens the editor on the career file. A web address in a line is a link
     // (ui/display/text/LinkedText.svelte). The page hands it its bar's hue and whether it holds the
     // keyboard cursor. The Tag is the only thing its meta row draws at rest, so a card with none
-    // has its controls over its top right corner (ui/frame/Card.svelte).
+    // has its controls over its top right corner (ui/frame/card/Card.svelte).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';

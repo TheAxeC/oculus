@@ -17,9 +17,8 @@
     // conversion, its line endings list holds the one the file has, and each item's tooltip says
     // why. A tab whose indentation is not known yet draws no indentation item.
     //
-    // The items are written from the right end of the bar to its left, the language mode first,
-    // because the bar's right group lays its items out in reverse (StatusBar.svelte); the order on
-    // screen is the one above.
+    // The items are written in the order they are drawn, left to right, the blame first and the
+    // language mode last, so the Tab key walks them as they are read.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -124,45 +123,25 @@
     }
 </script>
 
-{#if shown('language')}
-    <span data-status="language">
+{#if shown('blame') && status.blame !== ''}
+    <span data-status="blame">
         <ToolButton
-            label={languageName(status.language, appTools.languages.names())}
-            glyph="language"
-            title={t('statusbar.language_tip')}
+            label={status.blame}
+            glyph="blame"
+            title={t('statusbar.blame_tip')}
             status
-            onclick={() => onpalette(':language ')}
+            onclick={() => ask(instance, { kind: 'commit' })}
         />
     </span>
 {/if}
-<LanguageItems {instance} {status} {shown} {onpalette} />
-{#if shown('line_ending')}
-    <span data-status="line_ending">
-        <Menu
+{#if shown('caret') && status.caret !== null}
+    <span data-status="caret">
+        <ToolButton
+            label={caretWords(status.caret)}
+            glyph="caret"
+            title={t('statusbar.caret_tip')}
             status
-            placement="above"
-            label={t('statusbar.item_line_ending')}
-            words={endingWords(status.ending)}
-            glyph="line_ending"
-            title={status.writable
-                ? t('statusbar.line_ending_tip')
-                : t('statusbar.line_ending_readonly')}
-            items={endingChoices}
-            onpick={endingPicked}
-        />
-    </span>
-{/if}
-{#if shown('encoding')}
-    <span data-status="encoding">
-        <Menu
-            status
-            placement="above"
-            label={t('statusbar.item_encoding')}
-            words={t('statusbar.encoding')}
-            glyph="encoding"
-            title={t('statusbar.encoding_tip')}
-            items={encodingChoices}
-            onpick={() => undefined}
+            onclick={ongoto}
         />
     </span>
 {/if}
@@ -180,25 +159,45 @@
         />
     </span>
 {/if}
-{#if shown('caret') && status.caret !== null}
-    <span data-status="caret">
-        <ToolButton
-            label={caretWords(status.caret)}
-            glyph="caret"
-            title={t('statusbar.caret_tip')}
+{#if shown('encoding')}
+    <span data-status="encoding">
+        <Menu
             status
-            onclick={ongoto}
+            placement="above"
+            label={t('statusbar.item_encoding')}
+            words={t('statusbar.encoding')}
+            glyph="encoding"
+            title={t('statusbar.encoding_tip')}
+            items={encodingChoices}
+            onpick={() => undefined}
         />
     </span>
 {/if}
-{#if shown('blame') && status.blame !== ''}
-    <span data-status="blame">
-        <ToolButton
-            label={status.blame}
-            glyph="blame"
-            title={t('statusbar.blame_tip')}
+{#if shown('line_ending')}
+    <span data-status="line_ending">
+        <Menu
             status
-            onclick={() => ask(instance, { kind: 'commit' })}
+            placement="above"
+            label={t('statusbar.item_line_ending')}
+            words={endingWords(status.ending)}
+            glyph="line_ending"
+            title={status.writable
+                ? t('statusbar.line_ending_tip')
+                : t('statusbar.line_ending_readonly')}
+            items={endingChoices}
+            onpick={endingPicked}
+        />
+    </span>
+{/if}
+<LanguageItems {instance} {status} {shown} {onpalette} />
+{#if shown('language')}
+    <span data-status="language">
+        <ToolButton
+            label={languageName(status.language, appTools.languages.names())}
+            glyph="language"
+            title={t('statusbar.language_tip')}
+            status
+            onclick={() => onpalette(':language ')}
         />
     </span>
 {/if}

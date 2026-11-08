@@ -39,7 +39,7 @@
     // Over a wallpaper each account's card is its own surface, and the history's body is read off a
     // `Surface`; its table's header row scrolls with the table and paints nothing.
 
-    import Card from '$lib/ui/frame/Card.svelte';
+    import Card from '$lib/ui/frame/card/Card.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -371,7 +371,7 @@
         font-family: var(--font-num);
     }
 
-    /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-at-rest`:
+    /* The refresh control is drawn as its card says, ui/frame/card/Card.svelte's `--card-at-rest`:
        under the pointer, with the focus inside the card, or always where nothing hovers. At rest it
        is not drawn and takes no room, except while a press of it waits for its answer: then it is
        held drawn, turning, whatever the pointer and the focus do, and goes back to the card's rule
@@ -390,7 +390,7 @@
         display: inline-flex;
     }
 
-    /* Out of the flow against the card's face, at the place of ui/frame/Card.svelte's row of
+    /* Out of the flow against the card's face, at the place of ui/frame/card/Card.svelte's row of
        controls and painted solid as they are, so the row of tags keeps its lines and the card its
        height. The row always holds a tag, so that rule does not place it and it places itself. A
        screen that does not hover draws it at rest, where lying over the title would cover its words

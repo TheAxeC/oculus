@@ -5,13 +5,14 @@
 // read file were skipped. An empty file and a file that sets no language say nothing. The texts
 // come with the folder list (`settings` of each folder), so nothing here asks the server.
 //
-// Each sentence is one catalog entry. It is cut at the root's place in it into `lead`, `label` and
-// `tail`, so the view draws the root inside the sentence as the control that shows its
-// Repository scope.
+// Each sentence is one catalog entry ending with a full stop, and a reason put into it carries no
+// stop of its own. It is cut at the root's place in it into `lead`, `label` and `tail`, so the view
+// draws the root inside the sentence as the control that shows its Repository scope.
 
 import { REPO_SETTINGS } from '../../../../data/helpers/editor/editor.ts';
 import type { RepoProblem, RepoSettings } from '../../../../data/sources/config/editor-options.ts';
 import { t } from '../../../shared/words/text.ts';
+import { oneStop } from '../messages.ts';
 import type { FsRoot } from '../../../sources/explorer/view/place.ts';
 
 /** What one line says: a root's languages, no file read, a file not read, or an entry skipped. */
@@ -28,10 +29,14 @@ export type Origin = {
 /** Stands in for the root while the sentence is filled, and is where the sentence is cut. */
 const ROOT = '\u0001';
 
-/** A catalog sentence cut at the root. */
+/**
+ * A catalog sentence cut at the root, with one full stop at its end when the reason it ends with
+ * brought a stop of its own.
+ */
 function cutAtRoot(root: string, filled: string): Pick<Origin, 'lead' | 'label' | 'tail'> {
-    const at = filled.indexOf(ROOT);
-    return { lead: filled.slice(0, at), label: root, tail: filled.slice(at + ROOT.length) };
+    const sentence = oneStop(filled);
+    const at = sentence.indexOf(ROOT);
+    return { lead: sentence.slice(0, at), label: root, tail: sentence.slice(at + ROOT.length) };
 }
 
 /** The words for why an entry was skipped: a value outside what the field takes, or a name. */

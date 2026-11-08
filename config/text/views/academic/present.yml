@@ -55,17 +55,17 @@ text:
         export_too_large: 'The PDF is larger than the {0} MB a file may be.'
         failed: 'The deck could not be read: {0}'
         failed_network: The change did not reach the server.
-        field_discover: takes the decks it finds beyond the ones it names
-        field_discover_none: unset, takes only the decks it names
+        field_discover: Takes the decks it finds beyond the ones it names
+        field_discover_none: Unset, takes only the decks it names
         field_find: Find
-        field_find_folders: 'folders {0} finds decks in'
+        field_find_folders: 'Folders {0} finds decks in'
         field_find_folders_hint: 'folder globs, such as projects/*/*/present, separated by commas'
-        field_find_forms: forms
+        field_find_forms: Forms
         field_find_help: Which project folders the group finds, and the tiers, stages, forms and status chips their projects must have; a list left empty keeps every project.
         field_find_list: '{0} of {1}'
-        field_find_stages: stages
-        field_find_status: status chips
-        field_find_tiers: tiers
+        field_find_stages: Stages
+        field_find_status: Status chips
+        field_find_tiers: Tiers
         field_title: Title
         field_title_help: "The deck's title: the words of its tab, of its entry in the deck menu and of the Overview's heading. No slide of its own deck draws it; the summary and grid slides of a deck whose group holds it draw it for a member deck that is no project's, the grid's only when that deck has no idea slide."
         field_tone_add: Add

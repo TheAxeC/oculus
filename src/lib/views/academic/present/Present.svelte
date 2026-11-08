@@ -170,6 +170,15 @@
     });
     const deck = $derived(drawnDeck());
     const rows = $derived(deck?.slides ?? []);
+    /**
+     * How many slides the toolbar counts: none while no deck is drawn (it loads, failed, or a
+     * switch to another deck is being read) or for a deck whose folder is missing or unreadable.
+     */
+    const counted = $derived(
+        deck === null || deck.state === 'missing' || deck.state === 'unreadable'
+            ? null
+            : rows.length
+    );
     const shown = $derived(slideAt(rows, held.slide));
     const at = $derived(indexOf(rows, held.slide));
     const next = $derived(rows.at(at + 1) ?? null);
@@ -329,7 +338,7 @@
         {choices}
         {chosen}
         onchoose={choose}
-        count={rows.length}
+        count={counted}
         at={rows.length === 0 ? 0 : at + 1}
         overview={grid}
         facts={shown?.project === undefined ? null : held.facts}
@@ -354,7 +363,9 @@
 
 <svelte:document onfullscreenchange={screen.sync} />
 
-<Pane title={t('present.title')} {bar}>
+<!-- The bars take at most a third of the pane and scroll inside it, so the slide keeps the
+     rest. -->
+<Pane title={t('present.title')} {bar} --viewbar-max="33.33%">
     <!-- The box is the deck's own key surface: it is focusable and named as a region, and the keys
          it takes move the reader through the deck rather than acting on the box itself. -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->

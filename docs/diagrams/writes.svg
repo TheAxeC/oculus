@@ -2086,7 +2086,7 @@
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/hubs.ts -->
 <g id="edge71" class="edge">
-<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/hubs.ts: noHub, rootedHome, routeRefusal, routed, routedEntry, routedOrder, routedTarget, withHubId</title>
+<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/hubs.ts: entriesRefusal, noHub, rootedHome, routeRefusal, routed, routedEntry, routedOrder, routedTarget, withHubId</title>
 <path fill="none" stroke="currentColor" d="M180.88,-13186C190.16,-13186 199.45,-13186 208.73,-13186 208.73,-13189 208.73,-13192 208.73,-13195 232.8,-13195 256.87,-13195 280.95,-13195 280.95,-13194.33 280.95,-13193.67 280.95,-13193 296.02,-13193 311.09,-13193 326.16,-13193"/>
 <polygon fill="currentColor" stroke="currentColor" points="325.83,-13195.1 331.83,-13193 325.83,-13190.9 325.83,-13195.1"/>
 </g>

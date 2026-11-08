@@ -14,6 +14,13 @@
 // so a page opened for the old key finds the entry and follows to the new one. An entry that was
 // added is held with its fields until the snapshot holds it.
 //
+// An entry that was removed is held as removed, so a list leaves its row out from the answer on,
+// until a snapshot that no longer holds the entry arrives, and no longer: each arrival is told to
+// the store (`heard`), which asks each removal whether the snapshot still holds its entry, so an
+// entry put back by another hand in a later snapshot is shown. A removal answered once such a
+// snapshot has already arrived is not held at all. An entry added again under the same key by a
+// later write is no longer held as removed.
+//
 // The store is memory only and belongs to one client; a reload reads the server's files.
 
 import { SvelteMap } from 'svelte/reactivity';
@@ -59,11 +66,25 @@ export type SettledStore = {
     pending: (key: string) => boolean;
     /** The key a record under `prefix` had before a write gave it the key `now`, if one did. */
     renamedFrom: (prefix: string, now: string) => string | undefined;
+    /**
+     * Hold the record `key` as removed by write number `seq`, while `shows` answers that the
+     * snapshot holds it; nothing is held when it already answers no.
+     */
+    remove: (key: string, seq: number, shows: () => boolean) => void;
+    /** Whether the record `key` was removed and no snapshot without it has arrived since. */
+    removed: (key: string) => boolean;
+    /** A snapshot arrived: each removal whose record it no longer holds ends. */
+    heard: () => void;
 };
+
+/** A removal held: its write's number, and whether the snapshot as it is now holds the record. */
+type Removal = { seq: number; shows: () => boolean };
 
 /** Settled writes; `versionOf` gives the version of the snapshot a record's key is read in. */
 export function createSettled(versionOf: (key: string) => number): SettledStore {
     const groups = new SvelteMap<string, Group>();
+    /** The records removed that the snapshot still holds, by key. */
+    const gone = new SvelteMap<string, Removal>();
     let sequence = 0;
 
     function begin(): number {
@@ -95,6 +116,8 @@ export function createSettled(versionOf: (key: string) => number): SettledStore 
     ): void {
         const at = versionOf(key);
         for (const [name, group] of groups) if (!alive(name, group)) groups.delete(name);
+        const away = gone.get(key);
+        if (options.created === true && away !== undefined && away.seq < seq) gone.delete(key);
         const before = groups.get(key);
         const held: Record<string, Held> = { ...before?.held };
         for (const [field, value] of Object.entries(saved)) {
@@ -132,5 +155,20 @@ export function createSettled(versionOf: (key: string) => number): SettledStore 
         return undefined;
     }
 
-    return { begin, record, overlay, pending, renamedFrom };
+    function remove(key: string, seq: number, shows: () => boolean): void {
+        const created = groups.get(key);
+        if (created?.created === true) groups.delete(key);
+        if (shows()) gone.set(key, { seq, shows });
+        else gone.delete(key);
+    }
+
+    function removed(key: string): boolean {
+        return gone.has(key);
+    }
+
+    function heard(): void {
+        for (const [name, away] of gone) if (!away.shows()) gone.delete(name);
+    }
+
+    return { begin, record, overlay, pending, renamedFrom, remove, removed, heard };
 }

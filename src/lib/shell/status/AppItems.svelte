@@ -21,10 +21,7 @@
 
     const { appShell } = useState();
 
-    const items = $derived.by(() => {
-        const drawn = appShell.statusItems(side).filter((one) => !hidden.includes(one.key));
-        return side === 'right' ? drawn.reverse() : drawn;
-    });
+    const items = $derived(appShell.statusItems(side).filter((one) => !hidden.includes(one.key)));
     const progress = $derived(side === 'left' ? appShell.requests.windowProgress() : []);
 </script>
 

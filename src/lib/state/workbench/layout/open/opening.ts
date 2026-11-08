@@ -10,7 +10,9 @@
 // for something (one registered with no catalogue group or with `opened: true`) lands where
 // layout/open/landing.ts says, whichever of the two was asked, since a page keeps its documents
 // apart from its tools. A pane hidden inside a folded child is expanded first, since opening a view
-// into something invisible would look like nothing happening.
+// into something invisible would look like nothing happening. Each pane tells the store its width
+// on screen (`measurePane`), held here and never saved, so a view opened for something lands as a
+// tab rather than in a split that would leave a pane too narrow for its text.
 
 import {
     activePath,
@@ -35,7 +37,7 @@ import {
     type ViewId
 } from '../model.ts';
 import { drawnBy } from '../nested.ts';
-import { landingFor } from './landing.ts';
+import { landingFor, type PaneRoom } from './landing.ts';
 import { heldView, type UniqueRule } from './float/pages.ts';
 import { asPreview, isPreview, previewIn, retarget } from './preview.ts';
 import {
@@ -109,7 +111,16 @@ export type Opening = {
      * nothing.
      */
     heldHost: (view: ViewId) => Host | null;
+    /**
+     * Keep the width a pane of a page or float has on screen, by the page's id and the pane's
+     * path, which landing.ts reads so a record opened beside a pane never leaves one too narrow;
+     * null forgets it, as a pane that is no longer drawn there does.
+     */
+    measurePane: (host: string, path: number[], width: number | null) => void;
 };
+
+/** The narrowest width a pane keeps at text size 1, in px: the record page's text still wraps. */
+const NARROWEST = 320;
 
 /** A unique view's instance with the page or float holding it, and whether the screen draws it. */
 type Holder = { host: Host; instance: Instance; drawn: boolean };
@@ -401,7 +412,15 @@ export function createOpening(
         const workbench = access
             .held()
             .pages.some((page) => page.id === host && page.folder !== undefined);
-        const landing = landingFor(tree, opened, attention.received(host), reader, away, workbench);
+        const landing = landingFor(
+            tree,
+            opened,
+            attention.received(host),
+            reader,
+            away,
+            workbench,
+            roomOf(host)
+        );
         const base =
             landing.kind === 'pane' && shownAt(focus, landing.path) ? bench : restore(bench);
         const replaced =
@@ -553,5 +572,32 @@ export function createOpening(
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
     }
 
-    return { openView, openBeside, openInPane, heldInstance, heldHost };
+    /**
+     * The width each pane of a page or float has on screen, in px, by the page's id and the pane's
+     * path, as the panes measure themselves. It lives as long as the page in this window and is
+     * never saved with the layout.
+     */
+    const widths = new Map<string, number>();
+
+    /** The name a pane's width is held under. */
+    const paneKey = (host: string, path: number[]): string => `${host}\n${path.join('.')}`;
+
+    function measurePane(host: string, path: number[], width: number | null): void {
+        if (width === null) widths.delete(paneKey(host, path));
+        else widths.set(paneKey(host, path), width);
+    }
+
+    /**
+     * The room of a page's panes: a pane fits a split while each half is at least the narrowest
+     * width a pane keeps, 320 px at text size 1 times the text size, and a pane not measured yet
+     * fits, so on a page not drawn yet a view lands by the other landing rules alone.
+     */
+    function roomOf(host: string): PaneRoom {
+        const width = (path: number[]): number =>
+            widths.get(paneKey(host, path)) ?? Number.POSITIVE_INFINITY;
+        const least = NARROWEST * (access.ui.textScale() ?? 1);
+        return { fits: (path) => width(path) / 2 >= least, width };
+    }
+
+    return { openView, openBeside, openInPane, heldInstance, heldHost, measurePane };
 }

@@ -53,6 +53,8 @@
     // the pane menu's own close and its question, and New Terminal. With editor_actions hidden it
     // also holds the pane menu's other items (Maximise or Restore, Fold, the page choices, Hide Tab
     // Row or Show Tab Row), and Close is always offered, so nothing needs the `...` button.
+    //
+    // The pane measures its own width into the layout store (pane-view.ts `paneWidth`).
 
     import {
         foldable,
@@ -62,6 +64,7 @@
         isPaneItem,
         paneMenu,
         panePicked,
+        paneWidth,
         stripMenu,
         shownTabPath,
         stripHovered,
@@ -115,6 +118,7 @@
             keepPreview,
             layout,
             lockPane,
+            measurePane,
             openingInstance,
             openInPane,
             pages,
@@ -414,6 +418,7 @@
     class="pane"
     bind:this={element}
     {@attach answersCommands(paneCommand)}
+    {@attach paneWidth(measurePane, page, path)}
     class:floated={float !== undefined}
     class:row-hidden={row === 'hidden'}
     data-pane

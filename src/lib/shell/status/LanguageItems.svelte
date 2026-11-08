@@ -30,9 +30,8 @@
     // approves the repository's ESLint configuration. The linters share the one status item
     // `linter`, which hides them all.
     //
-    // The items are written from the right end of the bar to its left, the linters first, because
-    // the bar's right group lays its items out in reverse (StatusBar.svelte); the order on screen
-    // is the one above, the server first.
+    // The items are written in the order they are drawn, left to right, the server first and the
+    // linters last, so the Tab key walks them as they are read.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -289,33 +288,29 @@
     });
 </script>
 
-{#if shown('linter') && linters.length > 0}
-    <span data-status="linter">
-        {#each linters as one (one.id)}
-            <ToolButton
-                label={one.words}
-                glyph="linter"
-                title={one.tip}
-                status
-                warning={one.warning}
-                onclick={() => pressedLinter(one.state)}
-            />
-        {/each}
-    </span>
-{/if}
-
 {#if served !== null}
-    {#if asks.includes('config') && shown('svelte_config')}
-        <span data-status="svelte_config">
-            <ToolButton
-                label={approved
-                    ? t('statusbar.svelte_config_trusted')
-                    : t('statusbar.svelte_config_reduced')}
-                glyph="svelte_config"
-                title={configTip}
+    {#if shown('language_server')}
+        <span data-status="language_server">
+            <Menu
                 status
-                warning={!approved && choices !== null}
-                onclick={() => onpalette(':svelte-config ')}
+                placement="above"
+                label={t('statusbar.item_language_server')}
+                {words}
+                glyph="language_server"
+                title={tip}
+                items={menu}
+                onpick={(id: string) => ask(instance, { kind: 'action', id })}
+            />
+        </span>
+    {/if}
+    {#if asks.includes('interpreter') && shown('interpreter')}
+        <span data-status="interpreter">
+            <ToolButton
+                label={interpreterWords}
+                glyph="interpreter"
+                title={interpreterTip}
+                status
+                onclick={() => onpalette(':interpreter ')}
             />
         </span>
     {/if}
@@ -331,29 +326,33 @@
             />
         </span>
     {/if}
-    {#if asks.includes('interpreter') && shown('interpreter')}
-        <span data-status="interpreter">
+    {#if asks.includes('config') && shown('svelte_config')}
+        <span data-status="svelte_config">
             <ToolButton
-                label={interpreterWords}
-                glyph="interpreter"
-                title={interpreterTip}
+                label={approved
+                    ? t('statusbar.svelte_config_trusted')
+                    : t('statusbar.svelte_config_reduced')}
+                glyph="svelte_config"
+                title={configTip}
                 status
-                onclick={() => onpalette(':interpreter ')}
+                warning={!approved && choices !== null}
+                onclick={() => onpalette(':svelte-config ')}
             />
         </span>
     {/if}
-    {#if shown('language_server')}
-        <span data-status="language_server">
-            <Menu
+{/if}
+
+{#if shown('linter') && linters.length > 0}
+    <span data-status="linter">
+        {#each linters as one (one.id)}
+            <ToolButton
+                label={one.words}
+                glyph="linter"
+                title={one.tip}
                 status
-                placement="above"
-                label={t('statusbar.item_language_server')}
-                {words}
-                glyph="language_server"
-                title={tip}
-                items={menu}
-                onpick={(id: string) => ask(instance, { kind: 'action', id })}
+                warning={one.warning}
+                onclick={() => pressedLinter(one.state)}
             />
-        </span>
-    {/if}
+        {/each}
+    </span>
 {/if}

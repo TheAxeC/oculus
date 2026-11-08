@@ -10,6 +10,13 @@
     // the file held as its base, and closes the form; Cancel and Escape close it with nothing
     // written (KeyForm.svelte), so a half-typed glob is never written. A key typed in a field
     // stays with the field: the Present pane hands no key a field takes to the deck.
+    //
+    // The form is drawn in its group's body, under the group's sticky strip. Opened from an Edit
+    // Rule pressed on a strip that stands over the body, its top would lie under the strip, and
+    // so would a label the focus is moved to by Tab: in either case the label is scrolled into view
+    // by the least distance, with a scroll margin of the room the strip and the space under it
+    // take, read from `--group-strip`, set on the group's body, and `--group-strip-gap`, set on its
+    // section, so the words stand under the strip.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
@@ -65,6 +72,34 @@
         onset(path, findValue(shown(path), form));
     }
 
+    /**
+     * Scroll `part` of the form into the pane's view by the least distance, none when it is in
+     * view. Each part's scroll margin is the room the group's sticky strip and the space under it
+     * take (`.rule` below), so a part brought into view stands under the strip.
+     */
+    function uncover(part: Element | null): void {
+        part?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+
+    /**
+     * The form's top out from under the strip once it opens, and, as the focus moves into a
+     * control, the words that label it: a list's caption, the Find label at the form's top over
+     * the folder globs, the control itself for the checkbox and the buttons.
+     */
+    function unhidden(form: HTMLElement): () => void {
+        const top = form.querySelector('[data-rule-top]');
+        uncover(top);
+        const moved = (event: FocusEvent): void => {
+            const control = event.target;
+            if (!(control instanceof Element)) return;
+            const list = control.closest('[data-rule-list]');
+            const find = control.closest('[data-rule-find]');
+            uncover(list ?? (find === null ? control : top));
+        };
+        form.addEventListener('focusin', moved);
+        return () => form.removeEventListener('focusin', moved);
+    }
+
     /** The caption of each list of `find:`. */
     function caption(list: FindList): string {
         switch (list) {
@@ -80,51 +115,67 @@
     }
 </script>
 
-<KeyForm
-    label={t('present.rule_form', group)}
-    {work}
-    {busy}
-    {onapply}
-    {oncancel}
-    data-rule-form={group}
->
-    <Field label={t('present.field_find')} help={t('present.field_find_help')}>
-        <div class="find">
-            <TextInput
-                value={find.folders}
-                label={t('present.field_find_folders', group)}
-                placeholder={t('present.field_find_folders_hint')}
-                oninput={(folders: string) => onfind({ ...find, folders })}
-            />
-            {#each FIND_LISTS as { key } (key)}
-                <div class="list">
-                    <span class="caption">{caption(key)}</span>
-                    <MultiSelect
-                        values={find[key]}
-                        label={t('present.field_find_list', caption(key), group)}
-                        choices={choices(key)}
-                        free
-                        search={t('editor.search')}
-                        remove={t('editor.remove')}
-                        removeGlyph={t('editor.remove_glyph')}
-                        none={t('editor.no_choices')}
-                        more={(count: number) => t('editor.more_choices', count)}
-                        onchange={(next: string[]) => onfind({ ...find, [key]: next })}
-                    />
-                </div>
-            {/each}
-        </div>
-    </Field>
-    <Checkbox
-        checked={discover}
-        label={t('present.field_discover')}
-        unset={t('present.field_discover_none')}
-        onchange={(on: boolean) => onset(groupKey(group, 'discover'), on)}
-        onunset={() => onset(groupKey(group, 'discover'), null)}
-    />
-</KeyForm>
+<div class="rule" {@attach unhidden}>
+    <span class="top" data-rule-top></span>
+    <KeyForm
+        label={t('present.rule_form', group)}
+        {work}
+        {busy}
+        {onapply}
+        {oncancel}
+        data-rule-form={group}
+    >
+        <Field label={t('present.field_find')} help={t('present.field_find_help')}>
+            <div class="find" data-rule-find>
+                <TextInput
+                    value={find.folders}
+                    label={t('present.field_find_folders', group)}
+                    placeholder={t('present.field_find_folders_hint')}
+                    oninput={(folders: string) => onfind({ ...find, folders })}
+                />
+                {#each FIND_LISTS as { key } (key)}
+                    <div class="list" data-rule-list>
+                        <span class="caption">{caption(key)}</span>
+                        <MultiSelect
+                            values={find[key]}
+                            label={t('present.field_find_list', caption(key), group)}
+                            choices={choices(key)}
+                            free
+                            search={t('editor.search')}
+                            remove={t('editor.remove')}
+                            removeGlyph={t('editor.remove_glyph')}
+                            none={t('editor.no_choices')}
+                            more={(count: number) => t('editor.more_choices', count)}
+                            onchange={(next: string[]) => onfind({ ...find, [key]: next })}
+                        />
+                    </div>
+                {/each}
+            </div>
+        </Field>
+        <Checkbox
+            checked={discover}
+            label={t('present.field_discover')}
+            unset={t('present.field_discover_none')}
+            onchange={(on: boolean) => onset(groupKey(group, 'discover'), on)}
+            onunset={() => onset(groupKey(group, 'discover'), null)}
+        />
+    </KeyForm>
+</div>
 
 <style>
+    /* Every part of the form keeps the room of the group's sticky strips and the space under them
+       when it is scrolled into view: ui/controls/heads/GroupHead.svelte sets the first on its body
+       and the second on its section, and the form reads both through the body. */
+    .rule,
+    .rule :global(*) {
+        scroll-margin-top: calc(var(--group-strip, 0px) + var(--group-strip-gap, 0px));
+    }
+
+    /* The form's top, the place its first label is scrolled to. */
+    .top {
+        display: block;
+    }
+
     /* The folder globs, then each list under its caption. */
     .find,
     .list {

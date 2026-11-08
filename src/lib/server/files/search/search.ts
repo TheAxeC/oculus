@@ -34,7 +34,10 @@
 // `repositories`, the list the git watcher keeps) is listed by a run of its own in its folder, so
 // its files are listed under its own ignore rules: the root's run leaves the repository out
 // whenever the root's ignore rules name it, as a hub's exclude file names every repository inside
-// the hub, and its files are then answered from the repository's run alone.
+// the hub, and its files are then answered from the repository's run alone. A repository that lies
+// under a folder the repository holding it ignores (a worktree under an ignored `.agents/`) gets no
+// run of its own and is left to the root's run, which leaves it out: git check-ignore is asked
+// about each folder between the two, the repository's own path not counted.
 
 import { spawn } from 'node:child_process';
 import { statSync } from 'node:fs';
@@ -64,6 +67,8 @@ import type {
     SearchHit
 } from '../../../data/model/index.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
+import { gitCredentials, type GitCredentials } from '../../core/git/credentials.ts';
+import { ignoredIn } from '../../core/git/files.ts';
 import { below, realPath, under } from '../../core/paths.ts';
 import { expandHome, resolveRootPath, type Root } from '../files.ts';
 import { notesFolderState } from '../fs/notes.ts';
@@ -544,6 +549,12 @@ export type NamesOptions = {
     withheld: string[];
     /** The repositories of the workspace as the git watcher last found them, as absolute paths. */
     repositories?: readonly string[];
+    /**
+     * The git credentials the server hands every git it starts, for the check of the folders
+     * between a root and a repository inside it; a git with no sign-in when absent, which that
+     * check needs none of.
+     */
+    credentials?: GitCredentials;
 };
 
 /** What a names request answers: the roots' names, or the reason it did not run. */
@@ -626,6 +637,59 @@ function namesPlans(
 /** Whether a path is the folder or lies below it, both written with `/`. */
 function atOrBelow(path: string, folder: string): boolean {
     return path === folder || path.startsWith(`${folder}/`);
+}
+
+/** A repository inside a root as a listing plans it. */
+type NestedRepo = NamesPlan['nested'][number];
+
+/**
+ * The plan without the repositories that lie under a folder the repository holding them ignores.
+ * The repository holding one is the deepest other repository of the plan it lies in, else the
+ * root's; the folders asked about are those between that repository and this one, this one's own
+ * path not counted, so a hub repository its hub's exclude file names by its path is kept and a
+ * worktree under an ignored `.agents/` is not. A repository inside one left out is left out too.
+ * The root's own run then lists the folder under the root's ignore rules, which leave it out. A
+ * check that did not run answers that nothing is ignored, so the repository stays in the plan.
+ */
+async function unignored(
+    plan: NamesPlan,
+    credentials: GitCredentials,
+    timeout: number
+): Promise<NamesPlan> {
+    if (plan.private || plan.nested.length === 0) return plan;
+    const holder = (repo: NestedRepo): NestedRepo | undefined =>
+        plan.nested
+            .filter((other) => other !== repo && atOrBelow(repo.path, other.path))
+            .toSorted((a, b) => b.path.length - a.path.length)
+            .at(0);
+    const asks = new Map<string, Set<string>>();
+    const between = plan.nested.map((repo) => {
+        const outer = holder(repo);
+        const inner = outer === undefined ? repo.path : repo.path.slice(outer.path.length + 1);
+        const steps = inner.split('/').slice(0, -1);
+        const folders = steps.map((_, at) => steps.slice(0, at + 1).join('/'));
+        const dir = outer?.dir ?? expandHome(plan.dir);
+        const asked = asks.get(dir) ?? new Set<string>();
+        for (const folder of folders) asked.add(folder);
+        asks.set(dir, asked);
+        return { repo, outer, dir, folders };
+    });
+    const answers = new Map(
+        await Promise.all(
+            [...asks].map(
+                async ([dir, folders]) =>
+                    [dir, await ignoredIn(credentials, dir, [...folders], timeout)] as const
+            )
+        )
+    );
+    const dropped = new Set<NestedRepo>();
+    const outward = between.toSorted((a, b) => a.repo.path.length - b.repo.path.length);
+    for (const one of outward) {
+        const ignored = answers.get(one.dir);
+        const hidden = one.folders.some((folder) => ignored?.has(folder) === true);
+        if (hidden || (one.outer !== undefined && dropped.has(one.outer))) dropped.add(one.repo);
+    }
+    return { ...plan, nested: plan.nested.filter((repo) => !dropped.has(repo)) };
 }
 
 /** What one run of a listing read: the paths, whether the cap cut it, and how it ended. */
@@ -722,8 +786,12 @@ export async function runNames(
     );
     if (refused !== null) return { ok: false, refused };
     const shared = root === ALL_ROOTS;
-    const plans = namesPlans(roots, options.withheld, shared, options.repositories ?? []).filter(
+    const planned = namesPlans(roots, options.withheld, shared, options.repositories ?? []).filter(
         (plan) => root === ALL_ROOTS || plan.key === root
+    );
+    const credentials = options.credentials ?? gitCredentials(() => []);
+    const plans = await Promise.all(
+        planned.map((plan) => unignored(plan, credentials, options.timeout))
     );
     const listings = await Promise.all(plans.map((plan) => listRoot(plan, options)));
     let room = options.max;

@@ -3,9 +3,10 @@
     // scope (Workspace, Primary hub, Hub, This machine, Repository), beside it for Hub and This
     // machine the pick of one of the workspace's hubs and for Repository one of its repositories,
     // the file the scope reads and writes with how it stands, the count of the scope's unsaved
-    // changes, its Save and Save All. A kind with nothing to pick (Primary hub with no primary,
-    // Repository with no repository) is not offered. Under the bar stand the sentence the last Save
-    // of the scope's file left, the other files that hold changes with their count, and each file
+    // changes, its Save and Save All, each with its words beside its glyph. A kind with nothing to
+    // pick (Primary hub with no primary, Repository with no repository) is not offered. Under the
+    // bar stand the sentence the last Save of the scope's file left, in a line that holds its room
+    // when no sentence stands, the other files that hold changes with their count, and each file
     // whose hub or folder left the workspace with its changes kept and a Discard; nothing is
     // written to such a file. While the unsaved workspace's changes wait for a name, the name
     // question of Save Workspace As is asked (ui/forms/Prompt.svelte), and its answer saves the
@@ -141,21 +142,17 @@
     <ToolButton
         label={t('settings.scope_save')}
         glyph="save"
-        compact
         disabled={count === 0}
         onclick={() => void scopes.save()}
     />
     <ToolButton
         label={t('desktop.menu.save_all')}
         glyph="save"
-        compact
         disabled={held.length === 0}
         onclick={() => void scopes.saveAll()}
     />
 </div>
-{#if last !== null}
-    <p class="said" role="status">{said(last)}</p>
-{/if}
+<p class="said" role="status">{last === null ? '' : said(last)}</p>
 {#each others as other (other.name)}
     {@const answer = scopes.said(other.name)}
     <p class="other" data-scope-held={other.name} role="status">
@@ -220,7 +217,9 @@
         margin: 4px 12px 0;
     }
 
+    /* The line holds one line's room whether or not a sentence stands, so the rows do not move. */
     .said {
+        min-height: 1lh;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }

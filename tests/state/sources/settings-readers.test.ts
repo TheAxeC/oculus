@@ -127,7 +127,7 @@ describe('the readers of a folder settings file', () => {
         ).toEqual([
             'none',
             'plain has no .oculus/settings.yml, or one that does not read as text, is longer ' +
-                'than the file window reads or is a link out of the folder'
+                'than the file window reads or is a link out of the folder.'
         ]);
     });
 

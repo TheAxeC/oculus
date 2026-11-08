@@ -37,7 +37,7 @@
     // pane scrolls (`stays`), so the header row paints the panel solid, the rows carry the surface
     // themselves and nothing is drawn behind the header row.
 
-    import Card from '$lib/ui/frame/Card.svelte';
+    import Card from '$lib/ui/frame/card/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';

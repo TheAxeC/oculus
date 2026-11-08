@@ -34,10 +34,9 @@
     // rule (ui/tabs/tab-strip.ts `horizontalWheelDelta`), and an item the Tab key focuses is
     // scrolled into view. No scrollbar is drawn, so the bar keeps its height, and a swipe that
     // reaches either end stops there rather than reaching the browser's back gesture. An item that
-    // arrives or leaves keeps the scroll where it is, the browser clamping it to the new width. The
-    // right group's markup is written in reverse order and the row reverses it back, so the bell
-    // stands last at the right end and the Tab key walks the right group from its right end to its
-    // left.
+    // arrives or leaves keeps the scroll where it is, the browser clamping it to the new width.
+    // Both groups are written in the order they are drawn, so the bell stands last at the right end
+    // and the Tab key walks the bar from its left end to its right.
     // An item is at most 40 % of the window wide, a longer text ends in an ellipsis, and the
     // several buttons of the linter item share its width, each ending in an ellipsis.
 
@@ -201,6 +200,16 @@
         event.preventDefault();
         bar.scrollLeft += delta;
     }
+
+    /**
+     * An item that takes the focus while the bar is scrolled past it is brought into view, the
+     * least distance that shows it whole, since no scrollbar shows where it is.
+     */
+    function focused(event: FocusEvent): void {
+        if (event.target instanceof HTMLElement) {
+            event.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    }
 </script>
 
 <ContextMenu label={t('statusbar.hide_menu')} items={choices} onpick={toggled}>
@@ -210,6 +219,7 @@
         aria-label={t('statusbar.label')}
         data-status-bar
         onwheel={wheeled}
+        onfocusin={focused}
     >
         <div class="group" data-status-group="left">
             {#if shown('host')}
@@ -320,7 +330,29 @@
             <AppItems side="left" {hidden} />
         </div>
         <div class="group" data-status-group="right">
-            <Bell drawn={shown('bell')} />
+            {#if source !== null}
+                <SourceItems
+                    instance={source.instance}
+                    status={source.status}
+                    {shown}
+                    {onpalette}
+                    {ongoto}
+                />
+            {/if}
+            <AppItems side="right" {hidden} />
+            {#if shown('sessions')}
+                <span data-status="sessions">
+                    <ToolButton
+                        label={plural('statusbar.sessions_name', status.live, status.live)}
+                        glyph="agents"
+                        title={plural('statusbar.sessions_tip', status.live, status.live)}
+                        status
+                        onclick={() => openView('session-list')}
+                    >
+                        {status.live}
+                    </ToolButton>
+                </span>
+            {/if}
             {#if shown('unsaved')}
                 <span data-status="unsaved">
                     <ToolButton
@@ -337,29 +369,7 @@
                     </ToolButton>
                 </span>
             {/if}
-            {#if shown('sessions')}
-                <span data-status="sessions">
-                    <ToolButton
-                        label={plural('statusbar.sessions_name', status.live, status.live)}
-                        glyph="agents"
-                        title={plural('statusbar.sessions_tip', status.live, status.live)}
-                        status
-                        onclick={() => openView('session-list')}
-                    >
-                        {status.live}
-                    </ToolButton>
-                </span>
-            {/if}
-            <AppItems side="right" {hidden} />
-            {#if source !== null}
-                <SourceItems
-                    instance={source.instance}
-                    status={source.status}
-                    {shown}
-                    {onpalette}
-                    {ongoto}
-                />
-            {/if}
+            <Bell drawn={shown('bell')} />
         </div>
     </footer>
 </ContextMenu>
@@ -394,10 +404,10 @@
         display: none;
     }
 
-    /* A group lays its items out on one row and never wraps, as wide as its items. The right group
-       stands at the bar's right edge while there is room (its left margin takes the room) and
-       follows the left group when there is none; it lays its items out from its right end, its
-       markup written reversed (flex-direction: row-reverse draws the first item at the right). */
+    /* A group lays its items out on one row and never wraps, as wide as its items, in the order
+       its markup writes them, so the Tab key walks the bar left to right. The right group stands
+       at the bar's right edge while there is room (its left margin takes the room) and follows the
+       left group when there is none. */
     .group {
         display: flex;
         flex: 0 0 auto;
@@ -406,7 +416,6 @@
     }
 
     .group[data-status-group='right'] {
-        flex-direction: row-reverse;
         margin-left: auto;
     }
 

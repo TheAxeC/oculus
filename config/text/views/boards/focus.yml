@@ -99,7 +99,7 @@ text:
         filter_pillar: Pillar
         filter_pillar_in: '{0} ({1})'
         filter_tier: Tier
-        filter_tip: show only what the ticked roles, tiers, pillars and hubs hold
+        filter_tip: Show only what the ticked roles, tiers, pillars and hubs hold.
         fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding

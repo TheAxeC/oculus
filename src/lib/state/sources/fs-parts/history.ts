@@ -6,20 +6,20 @@
 // the commits when the repository's HEAD moves, since the HEAD is part of its key. A read that
 // failed is held as the answer, as a flag; the sentence saying so is the view's.
 
-import type { GitFilePage } from '../../data/model/index.ts';
-import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
-import { pathUnder } from '../../data/helpers/files/paths.ts';
-import { inBrowser } from '../shared/stores/in-browser.ts';
-import { readAnswer } from './fs-transport.ts';
-import { treeKey, type FsRoot } from './fs.ts';
+import type { GitFilePage } from '../../../data/model/index.ts';
+import type { EntitiesStore, Queries } from '../../shared/stores/shapes.ts';
+import { pathUnder } from '../../../data/helpers/files/paths.ts';
+import { inBrowser } from '../../shared/stores/in-browser.ts';
+import { readAnswer } from '../fs-transport.ts';
+import { treeKey, type FsRoot } from '../fs.ts';
 import {
     copiesOf,
     copyTextOf,
     historyUrl,
     logUrl,
     pageOf
-} from './explorer/sections/timeline-reads.ts';
-import type { SavedCopy } from './explorer/sections/timeline.ts';
+} from '../explorer/sections/timeline-reads.ts';
+import type { SavedCopy } from '../explorer/sections/timeline.ts';
 
 /** The local-history copies of one file, as far as they are read. */
 export type FileCopies = { copies: SavedCopy[]; failed: boolean; loading: boolean };

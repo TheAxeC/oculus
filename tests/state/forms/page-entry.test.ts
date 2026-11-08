@@ -1,7 +1,8 @@
 // Layer 2, client-state tests. The page of an entry: which view opens it and with what state, how a
 // page is found again from its name in the snapshot and the feeds as they stand now, and how the
-// draft of a page is judged against it. The snapshot and the feeds are synthetic and hold only
-// what the page reads.
+// draft of a page is judged against it, and how long a collection entry a write removed is left
+// out of its list: until a snapshot that no longer holds it arrives, and no longer. The snapshot
+// and the feeds are synthetic and hold only what the page reads.
 
 import { describe, expect, it } from 'vitest';
 import type { RegistryWord } from '../../../src/lib/data/helpers/hub-names.ts';
@@ -20,6 +21,7 @@ import {
 } from '../../../src/lib/state/forms/page-entry.ts';
 import { mergedFeeds } from '../../../src/lib/data/snapshot/hubs/feeds.ts';
 import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
+import { createClientState } from '../../../src/lib/state/client/context.ts';
 import { createReadMemo } from '../../../src/lib/state/shared/stores/read-memo.ts';
 
 const SCHEMA: SchemaField[] = [
@@ -407,5 +409,69 @@ describe('pageDraftTarget', () => {
     it('writes every field but the fixed ones', () => {
         expect(target.writable('hub:tasks:a', 'status', {})).toBe(true);
         expect(target.writable('hub:tasks:a', 'key', {})).toBe(false);
+    });
+});
+
+/** A snapshot whose one collection is the hub's Tasks file holding the entries `keys`. */
+function tasksOf(keys: string[]): Snapshot {
+    const held = collection('hub', keys);
+    return { entities: { collections: { [held.id]: held }, career: null } } as unknown as Snapshot;
+}
+
+describe('an entry of a collection a write removed', () => {
+    /** A delete of `hub:a` answered with success, or a snapshot arriving holding the keys given. */
+    type Step = 'delete' | string[];
+    /** The steps, and after each whether the Tasks list leaves `hub:a` out. */
+    type Row = { name: string; steps: Step[]; left: boolean[] };
+
+    const ROWS: Row[] = [
+        {
+            name: 'a delete answered before the snapshot without the entry arrives',
+            steps: ['delete', ['a', 'b'], ['a', 'b'], ['b'], ['b']],
+            left: [true, true, true, false, false]
+        },
+        {
+            name: 'a delete answered after the snapshot without the entry arrived',
+            steps: [['b'], 'delete', ['b']],
+            left: [false, false, false]
+        },
+        {
+            name: 'an entry put back by another hand in the next snapshot',
+            steps: ['delete', ['b'], ['a', 'b']],
+            left: [true, false, false]
+        }
+    ];
+
+    it.each(ROWS)('is left out only until a snapshot without it: $name', ({ steps, left }) => {
+        let held = tasksOf(['a', 'b']);
+        let version = 1;
+        const settled = createSettled(() => version);
+        const pages = createPages({ snapshot: () => held, feeds: () => null }, settled);
+        const seen = steps.map((step) => {
+            if (step === 'delete') {
+                pages.settle.removed('tasks', 'hub:a', settled.begin());
+            } else {
+                held = tasksOf(step);
+                version += 1;
+                settled.heard();
+            }
+            return pages.removed('tasks', 'hub:a');
+        });
+        expect(seen).toEqual(left);
+    });
+
+    it("is left out until a snapshot without it arrives through the client's own wiring", () => {
+        const client = createClientState();
+        let version = 1;
+        const arrive = (keys: string[]): boolean => {
+            client.entities.receive({ channel: 'portfolio', version, payload: tasksOf(keys) });
+            version += 1;
+            return client.pages.removed('tasks', 'hub:a');
+        };
+        arrive(['a', 'b']);
+        client.pages.settle.removed('tasks', 'hub:a', client.settled.begin());
+        const seen = [client.pages.removed('tasks', 'hub:a')];
+        for (const keys of [['a', 'b'], ['b'], ['a', 'b']]) seen.push(arrive(keys));
+        expect(seen).toEqual([true, true, false, false]);
     });
 });

@@ -23,7 +23,7 @@ Every registered view is listed by its words.
 | Editor | editor |
 | Entry | entry |
 | Focus | focus |
-| Projects | listing |
+| Project set | listing |
 | Person | person |
 | Project | project |
 | Awaiting | awaiting_board |

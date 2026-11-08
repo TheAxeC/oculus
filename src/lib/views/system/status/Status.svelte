@@ -25,7 +25,7 @@
     // The view draws cards, so the pane asks for no tint, and over a wallpaper the sample cards
     // paint their own fill. What it draws outside them is read off a `Surface`: the facts and the
     // hooks. The Gallery stands outside that `Surface`, since a card inside one paints nothing
-    // (ui/frame/Card.svelte), and its own sections carry their own surfaces.
+    // (ui/frame/card/Card.svelte), and its own sections carry their own surfaces.
 
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';

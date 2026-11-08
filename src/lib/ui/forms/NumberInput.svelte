@@ -11,7 +11,9 @@
     // so a reader who does not hover it sees why it is red, and Enter and the loss of focus hand
     // nothing on until the text is mended. Which texts are refused is the caller's rule, so the box
     // holds no reading of a number of its own; a text with no refusal passes, as it does without
-    // the prop.
+    // the prop. A caller that says why a text it was handed was refused under the box itself hands
+    // the words as `invalid`, as to a text box: the box is marked and titled, and draws no words
+    // beside it and blocks nothing.
 
     import type { ComponentProps } from 'svelte';
     import TextInput from './TextInput.svelte';
@@ -52,7 +54,7 @@
             {...props}
             {value}
             inputmode="decimal"
-            invalid={refused}
+            invalid={refused ?? props.invalid}
             onenter={enter}
             onblur={leave}
         />

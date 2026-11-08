@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O167
-  brief_check: .scratch/migration/agents/reviews/O167-brief-check.md (ae8f0a511f47d2697, claude-opus-5-5, 241334 tokens, 80 tool uses, 11.1 min)
-  base: 2d28fe2ac
-  worktree: .agents/worktrees/migration-O167
-  executor: agent
-  worker: claude:opus
-  session_id: a63b8b74ba892cc66 (claude-opus-5-5)
-  launched: 2026-11-07
-  report: .scratch/migration/agents/reviews/O167-report.md
-  builder_usage: first run handed back before any code change (cases C1 to C19; nine premises): 298079 tokens, 100 tool uses, 14.4 min; build under the round-0 rulings: 258301 tokens, 856 tool uses, 118.1 min; repair round 1: 212101 tokens, 186 tool uses, 27.6 min
-  reviewer_report: .scratch/migration/agents/reviews/O167-refuter.md (a05cffdf23941c5e1, claude-opus-5-5, 316753 tokens, 103 tool uses, 21.0 min); over round 1: a992c66873d23d525, claude-opus-5-5, 244257 tokens, 68 tool uses, 13.1 min
-  round: 1 (.scratch/migration/agents/briefs/O167-round1.md; snapshot .agents/worktrees/migration-O167-round-1; reported, usage under builder_usage)
-  shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O169 of this plan; O167 writes lines 130-230 (the Save buttons and the "Saved into" line), O169 lines 55-70 (the scope list), disjoint hunks, so the cherry-pick merges them without a conflict; with O168, landed first on 2026-11-08: src/lib/shell/status/StatusBar.svelte, src/lib/views/system/workbench/settings/Header.svelte, src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte, config/text/views/boards/focus.yml, config/text/views/system/workbench.yml, config/text/views/academic/present.yml, src/lib/state/boards/collection/index.ts, src/lib/ui/controls/heads/GroupHead.svelte and docs/diagrams/, where O168's change is a hand-written count pick replaced by one helper call or a pair of keys folded into one; at O167's landing each conflicting hunk takes O167's text with O168's helper call or folded key re-applied by hand (StatusBar.svelte lines 327-374 meet), and the diagrams are generated again
-  landing: not-started
 - step: O151
   brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a423faa7257a10eea, claude-opus-5-5, 217403 tokens, 73 tool uses, 12.6 min)
   base: df5a42a49
@@ -47,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a69da2be8a76365d5 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O151-report.md
-  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min; build under the round-0 rulings: 353934 tokens, 1300 tool uses, 161.4 min
+  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min; build under the round-0 rulings: 353934 tokens, 1300 tool uses, 161.4 min; repair round 1: 320238 tokens, 675 tool uses, 68.3 min
   reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min)
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
@@ -203,6 +189,7 @@ None.
 
 ## Closed items
 
+- Open item 729 (2026-11-08), closed by Axel the same day, as `plan.md` Rulings "Open item 729" says: the session takes the look itself; the desktop half of item 13 was looked at on a scratch desktop app on port 8798, File > Save and a Cmd+S key event each saving with the focus on More actions.
 - Open items 720 to 727 (2026-11-08), closed by Axel the same day, each as `plan.md` Rulings "Open item 720" to "Open item 727" says: 720 (a), 721 (a), 722 (a) built in O170, 723 (a), 724 repair with the slide rule and the private README section, 725 (a), 726 (b), 727 (a) built in O170. The lazy options were: 720 none (the lazy course was to close it untold), 721 (c), 722 (d), 723 (c), 724 repairing only the listed lines without reading every deck, 725 (b), 726 (c), 727 (b).
 - Open item 728 (2026-11-08), withdrawn the same day: Axel had ruled the shape of `queue.md` already (line 115 above); the bloat was the In flight lines, which broke that rule, and they are rewritten to it.
 
@@ -876,6 +863,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+
+- 2026-11-08 (O167 landed). O167, the shell's controls held to one behaviour, landed (booking in `plan.md` under O167, `agents/reviews/O167-landing.md`) with the fixes at landing (the bookmarks route, the Settings header, where a record lands, the comments of R1-T2 and R1-T3, G152 and its wiring row) and its look done in full, item 13's desktop half on a scratch desktop app (ruling 729). O151's repair round 1 is reported (`agents/reviews/O151-report.md`, Round 1); its review over round 1 is next. In flight (1 of 6): O151. Queued: O170, /spec next. Open items: none.
 
 - 2026-11-08 (O151's repair round 1 sent). O168 landed as 47265abdf. O151's round 1 (`agents/briefs/O151-round1.md`, with `agents/reviews/O151-refuter.md`, `O151-source-check.md` and the current `agents/spec.md` copied into its worktree's ledger) goes to builder a69da2be8a76365d5; snapshots `.agents/worktrees/migration-O151-round-1` in oculus and in the hub. In flight (2 of 6): O151 (round 1), O167 (landing next). Queued: O170. Open items: none.
 

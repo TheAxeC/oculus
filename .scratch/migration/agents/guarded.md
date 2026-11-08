@@ -234,6 +234,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G142. Publish and a new version send what they name and nothing else, and a press that is cancelled or fails leaves no record unrecorded.
   Code: `src/lib/server/git/deposit/zenodo.ts`, `zenodo-meta.ts`.
   Test: `tests/routes/git/zenodo.test.ts`, describe 'what Publish and a new version send, and what a press that stops leaves', every row.
+- G152. An entry of a collection or a schedule that a delete the server took removed stays out of its list from the answer on, until a snapshot of the portfolio, or a read of the schedules, that no longer holds it arrives, and no longer: an entry put back by another hand in a later snapshot or read is shown again, a removal answered once such a snapshot or read has arrived is not held, and a refused delete keeps the row.
+  Code: `src/lib/state/forms/settled.svelte.ts` (`remove`, `heard`), `src/lib/state/forms/page-entry.ts` (`settle.removed`, `removed`), `src/lib/state/client/context.ts` (`entities.afterReceive(settled.heard)`), `src/lib/state/system/machine/schedules/schedule.svelte.ts` (`removed`, the `afterReceive` listener).
+  Test: `tests/state/forms/page-entry.test.ts`, describe 'an entry of a collection a write removed', every row, among them "is left out until a snapshot without it arrives through the client's own wiring"; `tests/state/system/schedule-lines.test.ts`, describe 'a schedule a delete took', every row.
 
 ## It starts, and configuration is checked
 

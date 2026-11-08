@@ -1,6 +1,6 @@
 # O151 report, a deck for every research project and the facts strip
 
-NOT done: verify item 1. `npm run test:quick` printed "test:quick: 65.2 s; failed: vitest checks": one test, `tests/checks/tree/size.test.ts` "a folder over ten items > counts a copy that is no git checkout by the files it holds", fails because `TMPDIR` must now point at `.agents/scratch/` inside the oculus worktree, which is a git checkout, so the test's copy is no longer outside one. The same file run alone with `GIT_CEILING_DIRECTORIES` set to that folder passes 10 of 10. This check cannot pass with a temporary folder inside either worktree, and it is handed back for that reason. Everything else in the brief is done; C9 is the orchestrator's.
+Everything in the brief and in the round 1 brief is done; C9 is the orchestrator's.
 
 ## Open items of the state file, verbatim
 
@@ -32,18 +32,18 @@ The unchanged hub was rebuilt for this run as `.agents/scratch/hub-base2`: `rsyn
 
 ## DONE / NOT DONE
 
-All runs below were made after the last deck edit, from the oculus worktree, with `TMPDIR=/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O151/.agents/scratch`.
+All runs below are the runs of repair round 1, made after the round's last change, from the oculus worktree, with `TMPDIR` and `GIT_CEILING_DIRECTORIES` set to `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O151/.agents/scratch` except `npm run test:quick`, which ran with both unset. The programs were recreated in that folder from the appendix, unchanged.
 
 | Item | State | Check and its output as printed |
 |---|---|---|
-| 1. A deck for every one of the 95 research projects, from the project's own sources | DONE | `node c5.mjs <hub worktree> research.txt`: "folders with present.yml: 95 of 95"; `grep -c -E 'DECK FAULTS/NO present/does not parse/REQUIRED KEYS ABSENT/SHAPE:/FIRST SLIDE NOT/CONTROL CHARACTER/SLIDE COUNT OUT' c5.txt` (the bars written as slashes here): 0. `diff -rq` per folder against the hub base copy (`sh diffrq.sh research.txt`): 95 folders, 0 "Only in base", 70 new decks (70 `main.md` and 70 `present.yml` only in the worktree), 25 replaced (25 `main.md` and 25 `present.yml` differ). Covert pair: see C4 under per deck. Hub `git status --short`: 132 lines (50 ` M`, 82 `??`), every path inside one of the 95 `present/` folders (`comm -23` of the status folders against the 95: empty). |
-| 2. Every slide right | DONE except the measured fit, which is C9, the orchestrator's | Slide counts from `c5.txt`: 45 decks of 1 slide, 50 of 2; second slides 33 `columns` and 17 `project`; `grep -c 'kind equation' c5.txt`: 0. `node fit.mjs <hub worktree> research.txt`: "slides: 145; slides over a fit rule: 0; slides with an equation key: 43". C6 (below): the deck, equation and portfolio rows pass with the floor `REAL_FLOORS = { decks: 14, equations: 13 }` (`integrity.test.ts:46`). `node c10.mjs`: "lines repeated across decks: 53", each listed below with the fact it states. Hub ASCII gate (the brief's command): only accented letters in names, five lines (St<e acute>phanie in linfoot `main.md:11`; Link<o diaeresis>ping in modality-dropping-btf `main.md:10` and hccnet-fl-sweden `main.md:4`, `:11`, `:19`). `node prose.mjs`: "hits: 20", each read: the 13 "spaced hyphen" hits are minus signs inside `equation` values or inline math (for example loewner `v - \eta`, linfoot `\sqrt{1 - e^{-2I(X;Y)}}`), and the 7 "first letter" hits, in 4 decks, are sentences that begin with a method name written lower-case first (eBTTR, eLORETA, mPSTD, gBTTR); no "no full stop", "double hyphen" or "filler word" hit. Every figure 23 of 23 `identical` (`sh figcmp.sh`). |
+| 1. A deck for every one of the 95 research projects, from the project's own sources | DONE | `node c5.mjs <hub worktree> research.txt`: "folders with present.yml: 95 of 95"; `grep -c -E 'DECK FAULTS/NO present/does not parse/REQUIRED KEYS ABSENT/SHAPE:/FIRST SLIDE NOT/CONTROL CHARACTER/SLIDE COUNT OUT' c5.txt` (the bars written as slashes here): 0. `diff -rq` per folder against the hub base copy (`sh diffrq.sh research.txt`): 95 folders, 0 "Only in base", 70 new decks (70 `main.md` and 70 `present.yml` only in the worktree), 25 replaced (25 `main.md` and 25 `present.yml` differ). Covert pair: see C4 under per deck. Hub `git status --short`: 143 lines (53 ` M`, 90 `??`); `grep -v '/present/'` of it prints 11 lines, the 11 `README.md` files of round 1 ruling 2 (3 ` M`: glassbox-decision-pipelines, btfno, ecg-readable-substrate; 8 `??`: abstract-bci-meeting-2021, fbttr-strategies, fermat, go-bttr, abduction, hcc-modality-poster, connectivity-motor-imagery, chi-household-survival); the other 132 are inside the 95 `present/` folders. |
+| 2. Every slide right | DONE except the measured fit, which is C9, the orchestrator's | Slide counts from `c5.txt`: 45 decks of 1 slide, 50 of 2; second slides 33 `columns` and 17 `project`; `grep -c 'kind equation' c5.txt`: 0. `node fit.mjs <hub worktree> research.txt`: "slides: 145; slides over a fit rule: 0; slides with an equation key: 43". C6 (below): the deck, equation and portfolio rows pass with the floor `REAL_FLOORS = { decks: 14, equations: 13 }` (`integrity.test.ts:46`). `node c10.mjs`: "lines repeated across decks: 53", each listed below with the fact it states. Hub ASCII gate (the brief's command): only accented letters in names, five lines (St<e acute>phanie in linfoot `main.md:11`; Link<o diaeresis>ping in modality-dropping-btf `main.md:10` and hccnet-fl-sweden `main.md:4`, `:11`, `:19`). `node prose.mjs`: "hits: 20", each read: the 13 "spaced hyphen" hits are minus signs inside `equation` values or inline math (for example loewner `v - \eta`, linfoot `\sqrt{1 - e^{-2I(X;Y)}}`), and the 7 "first letter" hits, in 5 decks (phd-thesis 2, source-localization 2, block-term-tensor-regression, extended-bttr-note, abduction), are sentences that begin with a method name written lower-case first (eBTTR, eLORETA, mPSTD); no "no full stop", "double hyphen" or "filler word" hit. Every figure 23 of 23 `identical` (the `cmp -s` loop of `figcmp.sh`, run over the 23 pairs of "Figures copied": "23 identical"). Doubled apostrophes in a markdown body: an `awk` pass over the 95 `main.md` that prints every body line holding `''` printed nothing. |
 | 3. The facts strip drawn below the slide's text | DONE | Read: `slide.css:27-30` declare `--slide-design-facts: 12px`, `--slide-design-facts-label: 10px` and `--slide-fs-facts`, `--slide-fs-facts-label` as each times `--text-scale` without the slide's fit factor; `:78-79` give 11px and 9px under `body.rice .slide-frame`; `Facts.svelte:162` `--dot-size: 0.75em`, the value and label `font-size` from the two new sizes, `--fact-label` gone (`git diff df5a42a49 -- Facts.svelte`). `git diff -U0` of `Slide.svelte`: one hunk, `@@ -33,10 +33,10 @@`. C8 below. Oculus ASCII gate over the three files: prints nothing (grep exit 1). |
-| Verify 1: `npm run diagrams`, then `npm run test:quick` | NOT DONE | `npm run diagrams`: exit 0, wrote no changed file (`git status --short` shows no `docs/diagrams` path). `npm run test:quick`: "ok prettier", "ok ASCII gate", "ok svelte-kit sync", "ok eslint", "ok svelte-check (10.2 s): ... 0 ERRORS 0 WARNINGS", "FAILED vitest checks (62.5 s)", "Tests 1 failed / 77 passed (78)", "test:quick: 65.2 s; failed: vitest checks". The failure: `tests/checks/tree/size.test.ts:198`, expected `{ out: 'src/lib holds 11 items, over the ten a folder may hold\n', status: 1 }`, received `{ out: '', status: 0 }`. Cause, read from the code: the test's copy is made under `tmpdir()` (`tests/fixtures/scratch.ts:25-30`) without `git init` (`size.test.ts:145-157`, `git = false`), and `utils/folder-check.sh:16-17` counts through `git ls-files` when `git rev-parse --is-inside-work-tree` succeeds; with `TMPDIR` inside the oculus worktree it succeeds, and the copy sits in the ignored `.agents/` folder, so nothing is counted. `npx vitest run tests/checks/tree/size.test.ts` alone: "Tests 1 failed / 9 passed (10)"; the same with `GIT_CEILING_DIRECTORIES=<scratch folder>`: "Tests 10 passed (10)". This step changes neither file. |
+| Verify 1: `npm run diagrams`, then `npm run test:quick` | DONE | `npm run diagrams`: exit 0, and `git status --short docs` printed nothing. `env -u TMPDIR -u GIT_CEILING_DIRECTORIES npm run test:quick`: exit 0, "test:quick: 11 changed file(s), from git since HEAD", "test:quick: 9 test file(s)", "ok prettier (0.8 s)", "ok ASCII gate (0.9 s)", "ok svelte-kit sync (2.9 s)", "ok eslint (2.4 s)", "ok svelte-check (9.0 s): ... 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS", "ok vitest checks (40.8 s)", "test:quick: 43.9 s; every command passed". It does not cover tests that reach no changed file within the import depth, as its own last line says. |
 | Verify 2: ASCII gates | DONE | As in rows 2 and 3. |
 | Verify 3: unused exports | DONE | `sh utils/unused-exports.sh` (333 lines) against `O151-base/unused-exports.txt`: `diff` prints nothing, exit 0. |
-| Verify 4: paths | DONE, with four paths that are not this step's | `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md df5a42a49` printed `.scratch/migration/agents/briefs/O151-cases.md`, `.scratch/migration/agents/briefs/O151.md`, `.scratch/migration/agents/guarded.md`, `.scratch/migration/agents/spec.md`. None was written by this builder: every Write and Edit call of this step's transcript targets only `O151-report.md`, `slide.css`, `Slide.svelte`, `Facts.svelte` in the oculus worktree and the 190 `present/main.md` and `present/present.yml` files in the hub worktree (read from the transcript's tool calls). Hub `git status` and `diff -rq`: row 1. |
-| Verify 5: C5, C6, C10 with sources and output | DONE | Outputs below and in the appendix; sources in the appendix. C6 after the last change: `OCULUS_TEST_HUB=<hub worktree> TMPDIR=<scratch> npx vitest run tests/checks/config/integrity.test.ts -t "deck\|equation\|portfolio" --reporter=verbose`: "Tests 7 passed \| 7 skipped (14)"; real hub: "reads a deck out of every project that has a present/ folder, with no finding 2722ms", "reads an equation out of every slide that writes one, as LaTeX that typesets 1048ms", "reads the portfolio deck with every named deck found 211ms"; load averages before 14.11 9.39 7.60, after 12.17 9.19 7.56. A run just before it, without the verbose reporter: "Tests 7 passed \| 7 skipped (14)", load 14.80 8.55 7.21 before and 15.34 9.38 7.56 after. |
+| Verify 4: paths | DONE, with seven paths that are not this step's | `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md df5a42a49` printed `.scratch/migration/agents/briefs/O151-cases.md`, `.scratch/migration/agents/briefs/O151-round1.md`, `.scratch/migration/agents/briefs/O151.md`, `.scratch/migration/agents/guarded.md`, `.scratch/migration/agents/reviews/O151-refuter.md`, `.scratch/migration/agents/reviews/O151-source-check.md`, `.scratch/migration/agents/spec.md`. These are the ledger files the orchestrator copied into the worktree; this builder edits none of them, its only ledger file being `O151-report.md`. Hub `git status` and `diff -rq`: row 1. |
+| Verify 5: C5, C6, C10 with sources and output | DONE | Outputs below and in the appendix; sources in the appendix. C6 after round 1's last change: `OCULUS_TEST_HUB=<hub worktree> TMPDIR=<scratch> npx vitest run tests/checks/config/integrity.test.ts -t "deck\|equation\|portfolio" --reporter=verbose`: exit 0, "Tests 7 passed \| 7 skipped (14)"; real hub: "reads a deck out of every project that has a present/ folder, with no finding 2399ms", "reads an equation out of every slide that writes one, as LaTeX that typesets 1201ms", "reads the portfolio deck with every named deck found 223ms"; `uptime` load averages before 5.98 8.46 9.82, after 6.95 8.59 9.85. `node katex.mjs`: "equations: 43; throwing: 0". |
 | Verify 6: prose rule | DONE | Row 2 for the program's hits; the phrasing kept on purpose is under judgment calls. |
 | C8 | DONE | Values 12 px and labels 10 px at text size 1; 11 and 9 under rice; 18 and 15 at 1.5; 8.4 and 7 at 0.7; 19.2 and 16 at 1.6; the dot 0.75 x 12 = 9 px at text size 1 (8.25 px under rice), by reading the lines in row 3. |
 | C9 | Not the builder's | The orchestrator's measured fit and the look. |
@@ -661,7 +661,7 @@ All runs below were made after the last deck edit, from the oculus worktree, wit
 ### projects/archive/published/2025/fermat, 2 slides (new; the base held an empty `present/` folder, made in the worktree)
 
 - Sources read: `admin/conference/main_work.tex` 1-546 (whole, comments included; it inputs no file), `admin/2025316733.pdf` (8 pages, "Certified by IEEE PDFExpress", read through `pdftotext`; seventeen numbers and phrases of the source checked with `grep -c`, each found), `project.yml` 1-34. The project has no README. Also opened to settle the root: `manuscript/main.pdf` (15 pages, arXiv:2412.06815v1, 2 Dec 2024), `manuscript/latex/main_work.tex` (its source, title "Federated Block-Term Tensor Regression for decentralised data analysis in healthcare"), `manuscript/latex/main.tex` (byte-identical by `cmp` to `2022/extended-bttr-note/manuscript/main.tex`, the eBTTR article), `admin/conference/submission_axel_faes.pdf` (the submitted version, titled "... for Heart Disease Prediction").
-- Manuscript root: `admin/conference/main_work.tex`. The manifest's title (`project.yml:10`), DOI (`:19`) and venue (`:18`, `:23`) name the FLTA 2025 paper; this file carries that title (`:32`) and its numbers match the IEEE-certified PDF. `manuscript/` holds the arXiv preprint, which `project.yml:15` calls the extended version; its heart-disease and TCGA numbers match the root (checked with `pdftotext` and `grep` on 0.872, 0.874, 0.812, 0.775, 0.609).
+- Manuscript root: `admin/conference/main_work.tex`. The manifest's title (`project.yml:10`), DOI (`:19`) and venue (`:18`, `:23`) name the FLTA 2025 paper; this file carries that title (`:32`) and its numbers match the IEEE-certified PDF. `manuscript/` holds the arXiv preprint, which `project.yml:15` calls the extended version. Its heart-disease table differs from the root's (corrected in round 1, see "Ruling 6" under "Round 1"): the root's "Hybrid Experiment FBTTR" row and its "Local Experiment FBTTR" client rows (AUC 0.89, 0.92, 0.64, 0.68, `admin/conference/main_work.tex:480-485`) are absent from the arXiv table (`manuscript/latex/main_work.tex:494-511`, `manuscript/main.pdf` Table 5), whose only client rows are the FL4E local rows (AUC 0.842, 0.882, 0.546, 0.542), which the root also carries (`admin/conference/main_work.tex:497-500`).
 - Numbers (manuscript, order 1): authors `main_work.tex:34-49`; abstract `:60-72`; federated ACE, shared dimensions `:160-168`; FedAvg step `:199` in Algorithm `fbttr` (`:182-209`); BIC `:276-284`; ECoG data, 62/48/64 electrodes `:316`; 61/46/63 channels, 8 bands, 10 bins `:320`; 5-fold cross-validation, Wilcoxon `:341`; HOPLS and eBTTR significance `:347`; 5 min against 3 min `:351`; ECoG tables `:365-372`, `:388-395`, `:409-416`; FL4E datasets, 740 records, 4 centres, 1,088 patients, 6 centres `:425`; FL4E scenarios `:427-435`; client classes `:456-460`; accuracy gap not significant `:464`; TCGA significance text `:468-470`; heart table `:478-501`; TCGA table `:511-530`; no privacy mechanism `:539`. Venue `project.yml:23`.
 - Disagreements: the abstract (`:63`) says FBTTR "surpasses ... centralized BTTR" on Fed-Heart-Disease and cites 0.872 against 0.812; the 0.812 is the centralized FL4E logistic regression (`:501`, model named at `:425`), and centralized BTTR has 0.874 and 0.783 (`:479`). `project.yml:26` (the arXiv abstract) says the same; `project.yml:14` gives both numbers correctly; `project.yml:11` ("matches or beats centralized BTTR") holds for TCGA and for the AUC level on heart disease. The slides give each comparison with its own baseline. The abstract and `project.yml:14` call the subject 3 thumb comparison "centralized"; the table row is eBTTR (`:410`), which the slides name.
 - Disagreements inside the manuscript: `:468` says FBTTR outperforms every FL4E strategy and the hybrid runs on TCGA, while the hybrid FedAdagrad row reads 0.776 against FBTTR's 0.775 (`:520`, `:511`); `:468` calls the FedAdagrad and FedProx comparisons non-significant, while the table bolds fully federated FedAvg and FedProx (`:514`, `:517`) and leaves FedAdagrad and FedYogi plain (`:515-516`); `:447` says most heart comparisons are significant, while the heart table bolds six accuracy cells and no AUC (`:478-501`). The slides state the 0.776 and the bolding.
@@ -1132,7 +1132,7 @@ Before from the hub base copy, after from the hub worktree (`ls` of each `presen
 - Spec labels that name a kind of fact (ruling 4), true of each deck that uses them: "Stage" (77 decks), "Venue" (54), "Authors" (42), "Data" (35), "Code" (13), "Cohort" (9), "Outcome" (4), "Baselines", "Compute", "Degree", "Form", "Target" (3 each), "Ablation", "Baseline", "Benchmark", "Cohorts", "Corpora", "Horizons", "Input", "Lead", "Pairs", "Supervision", "Tensor", "Training" (2 each).
 - "|||" (33 decks): the column break of a `columns` slide, which `docs/decks.md` requires; it is markup, drawn as no text.
 - Stage values, one-word or two-word states each true of every deck that carries it: "published" (28), "nascent, gate pending" (9: federated-protocol-agents, fl-privacy-auditing, harmonop, hccnet-fl-sweden, modality-dropping-btf, neurosde, physics-tensor-hcc, ssm-longitudinal, xsub-ecog-framework), "accepted" (3: dongho-ecg-clustering, erp-signatures, hccnet-fl), "failed" (3: faithful-block-term-layer, fed-faithful-ecg, jacobian-coupled-blockterm-dp), "stopped" (3: connectivity-motor-imagery, individual-reference-intervals, fedbtd), "de-risking" (2: pathology-tensor-mil, strokeop), "de-risking, gate pending" (2: adapter-format-theory, fed-duplication-limits), "nascent, exploring" (2: concept-bottleneck-hcc, fed-neural-operators), "nascent, speculative" (2: asthma-geo-tensor, paleogenomics-tensor), "scoping, gate pending" (2: hccnet-pathology, multiway-biosignal-fm).
-- Body headings that name a kind of column: "### Limits" (7: connectivity-iris, hcc-modality-poster, hccnet-fl, algebraic-effects-compilation, http2-best-practices, http2-web-performance, ecog-frequency-features), "### Limits and dead ends" (2: ecg-readable-substrate, fed-multicellular-immune), "### Open" (2: masters-algebraic-subtyping, masters-eeg-infotheory).
+- Body headings that name a kind of column: "### Limits" (4 after round 1: connectivity-iris, hccnet-fl, http2-best-practices, ecog-frequency-features), "### Limits and dead ends" (2: ecg-readable-substrate, fed-multicellular-immune), "### Open" (2: masters-algebraic-subtyping, masters-eeg-infotheory).
 - Author lists, each the true authorship of both or all papers: "A. Faes" (glassbox-decision-pipelines, bt-operator-theory, ecg-readable-substrate), "A. Faes, M. Amir Haeri" (btfno, bttd-source-eeg, fed-multicellular-immune), "E. Calvo Merino, A. Faes, M.M. Van Hulle" (ecog-frequency-features, modulation-lmp-bci, highgamma-event-detection), "A. Faes, M. Fahimi Hnazaee, M. Van Hulle" (abstract-bci-meeting-2021, connectivity-motor-imagery), "A. Faes, M.M.J. Guichelaar, D.E. Bouman, S.M. van den Berg, M. Amir Haeri" (hcc-modality-poster, hccnet-fl).
 - Paper titles shared by two records of one work: "Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources" (abstract-bci-meeting-2021 and connectivity-motor-imagery, `sub`), "High-gamma band event detection improves stability of finger trajectories decoded from ECoG-LMP activity" (modulation-lmp-bci and highgamma-event-detection, `sub`; the two PDFs carry this title, see the per-deck parts and "wrong or impossible"), "Towards a Core Language with Row-Based Effects for Optimised Compilation" (icfp-src-abstract and icfp-src-poster, `sub`).
 - Venue values true of both decks: "ICFP 2017 Student Research Competition" (icfp-src-abstract, icfp-src-poster), "JMLR" (adapter-format-theory, bt-operator-theory), "Comput. Biol. Med., under review" (ecg-readable-substrate, meseret-cirrhosis), "Medical Image Analysis or IEEE TMI" (hccnet-pathology, physics-tensor-hcc).
@@ -1725,3 +1725,589 @@ folders with present.yml: 95 of 95
 ```
 
 The C10 output's 53 lines and their decks are listed in full under "Slide-text lines repeated across decks", except the deck lists of the spec labels and of "|||" and "published", which name every deck that uses the label (77 for "Stage") and are summarised by their counts.
+
+# Round 1
+
+## Ruling 1: every statement removed or replaced, per deck
+
+Each entry gives the deck line as it stood before this round, then the words that stand now ("removed" where nothing replaces it).
+
+### archive/published/2025/go-bttr
+
+- Line 11, "M.M. Van Hulle (8 authors)": now "M.M. Van Hulle" (the count is not in the sources).
+- Line 13, "Utrecht (4 analysed) and Leuven (2) ECoG patients": now "Utrecht (subjects 2 to 5) and Leuven (2) ECoG patients" (`main.tex:217`).
+- Line 17, "links above 0.08 (95% reconstruction) join fingers.": now "links above 0.08 join fingers, the threshold at which CGP reconstructs the signal with at least 95% accuracy." (`main.tex:205`).
+- Line 22, "Utrecht, 4 ASL letters, 4 patients: mean r ...": now "Utrecht, 4 ASL letters, subjects 2 to 5: mean r ..." (`main.tex:247`).
+- Line 24, "eBTTR or BTTR falls significantly below Go-BTTR on five subject-finger pairs.": now "eBTTR is significantly lower for subject 1's middle finger and pinky, BTTR for subject 2's index, ring and pinky." (`main.tex:337`).
+- Line 27, headline "Best mean finger correlation on both datasets, with BTTR's single-finger stability": now "Best on co-activated fingers, on par with BTTR on single fingers" (`project.yml` results, abstract).
+- Line 32, title "How Go-BTTR assigns its blocks, and the caveats in the reported tables": now "How Go-BTTR assigns its blocks".
+- Line 33, hook "...while BTTR and Go-BTTR stay stable; Go-BTTR pays for the graph step in training time.": now "As blocks are added, eBTTR's index-finger correlation shows lapses in both datasets, while BTTR and Go-BTTR remain stable." (`main.tex:263, 306`); the training times stay as the paper gives them on line 37.
+- Line 39, "In the Utrecht table, subjects 2, 4 and 5 carry identical values for every finger and method; only subject 3 differs.": removed.
+- Line 40, "Utrecht subject 1 is excluded for lacking M1 coverage, so 4 of the 5 recorded patients are analysed.": now "Utrecht subject 1 is excluded because no electrode covered M1." (`main.tex:68`).
+
+### archive/published/2026/abduction
+
+- Line 5, hook "ECoG finger decoding has dealt with flexion; two patients with epidural grids performed single-finger flexions, ...": now "ECoG finger decoding has focused on flexion; two patients with epidural grids performed cued single-finger flexions (subject 1 only), ..." (`main.tex:62, 125`).
+- Line 13, "2 patients, epidural ECoG, 14-sensor data glove": now "2 patients, epidural ECoG, 5DT 14 Ultra data glove" (`main.tex:125`).
+- Line 17, "the 26 sign letters (both; Bleichner et al. 2016 used 4 gestures)": now "the 26 sign letters (both; beyond the 4 gestures of the Utrecht experiment of Bleichner et al. 2016)" (`main.tex:205`).
+- Line 23, "Flexion for reference: single fingers 0.12 to 0.45 (subject 1); sign letters 0.12 to 0.42 and 0.32 to 0.49.": now "Single-finger flexion for reference, subject 1, thumb to pinky: 0.31, 0.45, 0.12, 0.23, 0.16." (Table `results-subj-1-kul-1`, `main.tex:229`).
+- Line 24, "eBTTR beats chance on every pair and AM, RF and LARS on most; CNN and LSTM are level on several pairs (LSTM 0.32 on subject 1 index-middle).": now "eBTTR is significantly above chance on every finger pair, and better than or on par with the non-linear decoders, deep learning ones included." (`main.tex:213, 297`).
+- Line 25, "Cross-task, subject 1: trained on single fingers and tested on the letters, r falls to 0.08 to 0.22.": now "Cross-task, subject 1: the model trained on single fingers and tested on the letters is significantly lower than the one trained on the letters." (`main.tex:271`).
+- Line 27, headline "Abduction decoded about as well as flexion, except for the thumb": now "Abduction decoded with accuracy comparable to flexion, except for the thumb" (`main.tex:309`).
+- Line 32, title "What the abduction decoding shows, and where it is weak": now "Abduction decoding per finger pair".
+- Line 33, hook "The thumb-index pair is the weakest for both patients; the paper puts this down to the glove lacking a thumb abduction sensor, while its own sensor figure lists a thumb-index abduction sensor.": now "Thumb abduction has the lowest decoding accuracy for both subjects; the paper expects this is due to the difficulty of gauging thumb abduction against flexion with the data glove." (`main.tex:209`, hedge kept).
+- Line 35, panel caption "Predicted and recorded index-middle abduction, ..." and explain "The plot legend names the index-middle pair; the manuscript caption names the thumb-index pair of subject 2 in task 2.": caption now "Predicted and recorded abduction, with the LMP and low- and high-gamma amplitude of one electrode", explain now "The figure relates the raw recording, the glove ground truth, the extracted features and the predicted trajectory; y-axis in arbitrary units, x-axis in ms." (`main.tex:205, 219`).
+- Line 37, "The text reports eBTTR significantly ahead of every method on every pair; the table leaves 12 of the 40 baseline cells unmarked, 10 of them CNN and LSTM.": now "Subject 2 shows overall stronger abduction correlations, especially for the middle-ring and ring-pinky pairs." (`main.tex:209`).
+- Line 38, "Trained on the letters and tested on single fingers, subject 1 reaches 0.07 to 0.28; the paper reads this as on par.": now "Trained on the letters and tested on single fingers, the decoder seemed to perform on par, which the paper reads as a call for all-finger decoders such as eBTTR." (`main.tex:295`, hedge kept).
+- Line 39, "...the epidural grids, whose signals are weaker than subdural ones.": now "...the epidural grids, whose recordings have lower signal amplitudes than subdural ones." (`main.tex:215`).
+- Line 40, "Limits: two facial-pain patients with somatomotor implants, one of whom did no single-finger task.": now "Limits the paper states: two facial-pain patients with somatomotor implants; more recordings from subdural hand-motor grids would help." (`main.tex:299`).
+
+### archive/published/2025/fbttr-strategies
+
+- Line 25, "AM, RF, LARS, CNN and LSTM stay lower on every subject mean; the best of them, LSTM, reaches 0.54, 0.39 and 0.62.": now "FBTTR outperforms the non-multilinear models AM, RF, LARS, CNN and LSTM." (`manuscript/latex/main.tex:586`).
+- Line 27, headline "Federated BTTR on par with eBTTR for all three subjects": now "Federated BTTR on par with, or slightly better than, eBTTR" (`main.tex:423`).
+- Line 32, title "Which aggregation strategy to use, and what the comparison leaves open": now "Which aggregation strategy to use".
+- Line 35, explain "The manuscript reads the colour as Pearson correlation; its colour bar runs past -5 and up to 20.": now "The paper reads the smooth transitions across blocks for each finger as FedAvg yielding stable parameters without large fluctuations." (`main.tex:425`).
+- Line 37, "...0.68/0.67/0.65/0.68; only FedYogi falls significantly.": now ends at "0.68/0.67/0.65/0.68.", followed by a new line "FedAvg performs comparably or better; FedYogi shows slightly reduced performance, FedProx nearly matches FedAvg, FedAdagrad sits in between." (`main.tex:576-580`).
+- Line 39, "The rows labelled centralized BTTR in the strategy tables carry the eBTTR numbers of the main tables.": removed.
+- Line 40, "Limits: the clients are the five 40 s test blocks of one subject, no privacy mechanism is added, and communication is simulated on one workstation.": now "Limits the paper states: synchronisation overhead, possible degradation on highly heterogeneous data, and no privacy-preserving mechanism yet." (`main.tex:588, 594`).
+
+### archive/published/2025/fermat
+
+Every number kept comes from the FLTA paper the manifest names, `admin/conference/main_work.tex`.
+
+- Line 24, "FL4E logistic regression on the same data: best federated AUC 0.846 (FedAvg, FedProx), centralized 0.812.": now "FBTTR outperforms the FL4E fully federated, hybrid and centralized runs on Fed-Heart-Disease in absolute numbers, most comparisons significant." (`main_work.tex:447`).
+- Line 25, "...a significant gain; the hybrid FL4E FedAdagrad run reaches 0.776.": now ends at "...a significant gain." (`main_work.tex:470`).
+- Line 33, heading "The clinical case studies and what they leave open": now "The clinical case studies".
+- Line 37, "Centres are uneven: 164/139, ...": now "Class imbalance across the four clients: 164/139, ..." (`main_work.tex:449-460`).
+- Line 38, "Alone, the two small centres reach accuracy 0.63 and 0.72 with FBTTR, both significantly below the federated model.": now "The hybrid FBTTR run is on par with the fully federated model and significantly outperforms the local runs of the smaller clients (accuracy 0.63 and 0.72)." (`main_work.tex:466, 484-485`).
+- Line 39, "The two large centres score higher alone (AUC 0.89 and 0.92) than the federated model (0.872).": now "The paper suggests that smaller clients with imbalanced data may benefit more from joining federation than from working alone." (`main_work.tex:449`, hedge kept).
+- Line 40, "The hybrid FBTTR run returns the fully federated numbers exactly, 0.872 and 0.772.": removed.
+- Line 44, heading "Fed-TCGA-BRCA and the limits": now "Fed-TCGA-BRCA, and the limits the paper states".
+- Line 46, "FL4E hybrid runs spread from C-index 0.439 (FedProx) to 0.776 (FedAdagrad).": now "FBTTR performs significantly better than centralized BTTR, which the paper reads as FBTTR leveraging the federated data." (`main_work.tex:470`).
+- Line 47, "The text calls FBTTR's lead over FedAdagrad and FedProx non-significant; the table marks FedAvg and FedProx as significant.": now "FBTTR implements only the FedAvg equivalent; FL4E's FedOpt and FedProx runs serve as the comparison." (`main_work.tex:435`).
+- Line 48, "The ECoG case does not say how the recordings were split into clients.": now "Limits: overhead of model synchronisation and possible degradation with highly heterogeneous data." (`main_work.tex:539`).
+- Line 49, "No privacy mechanism is added on top of federation.": now "No specific privacy-preserving mechanism is part of this work." (`main_work.tex:539`).
+
+### archive/published/2026/hcc-modality-poster
+
+- Line 23, "With encoder heads, pretraining lifts every single-group score; with naive concatenation it lowers T1-IOP (0.720 to 0.690) and T2W (0.705 to 0.670).": now "Encoder heads mitigate the pretraining disparity: every group benefits from DINO pretrained per group; with naive concatenation the poster marks T1-IOP (0.720 to 0.690) and T2W (0.705 to 0.670) as degrading." (poster Key finding 1, and the Results table's red marking, checked on the render `hccposter-1.png`).
+- Line 32, heading "Single sequence groups and limits": now "Single sequence groups, cohort and training" (the poster states no limits).
+- Line 36, "Single-group chart: DWI 0.808, DCE 0.780, T1-IOP 0.753, T2W 0.738, all four 0.844; its DWI, T1-IOP, T2W and all-four values equal the pretrained encoder-head row.": now "Training with one group only: DWI 0.808, DCE 0.780, T1-IOP 0.753, T2W 0.738; all four combined 0.844.", followed by the poster's "Multi-modal fusion provides a further gain over any single group." (Single Modality panel).
+- Line 38, "Naive concatenation without and with pretraining: DWI 0.718 and 0.795, T1-IOP 0.720 and 0.690, T2W 0.705 and 0.670.": removed to keep the column at four items; the T1-IOP and T2W values stay on slide 1.
+- Line 43, heading "Limits": now "Cohort and training".
+- Line 45, "One retrospective cohort from one centre: about 240 patients, about 37 of them HCC-positive.": now "Retrospective single-centre cohort from Medisch Spectrum Twente: about 240 patients, about 37 of them HCC-positive." (Dataset panel).
+- Line 46, "AUROC is averaged over 5 folds and 3 seeds; the poster gives no intervals.": now "AUROC over 5 folds and 3 seeds." (Results caption).
+- Line 47, "The design comparison has single-group scores for DWI, T1-IOP and T2W only; DCE alone appears only in the single-group chart.": now two lines from the Training Strategy panel, "Stage 1: each encoder head is pretrained with DINO on its group, then frozen." and "Stage 2: backbone and Transformer trained supervised on P(HCC); stage 3: the full system end to end, all parameters unfrozen."
+
+### archive/stopped/connectivity-motor-imagery
+
+- Line 22, "The lag-1 self-terms and the two links into $x_2$ come back within 0.07 of the truth.": now "The New York Head Model serves as the forward model from brain sources to the scalp." (`manuscript/main.tex:149`).
+- Line 23, "The lag-2 terms come back smaller, and a spurious lag-2 link from $x_3$ to $x_1$ appears.": now "The draft reads these preliminary results as showing that the method can accurately estimate simulated connectivity patterns." (`main.tex:149`).
+- Line 24, "Granger causality, information theory and the discussion are empty headings in the draft.": now "Its conclusion: the work shows the applicability of the Temporal Causal Discovery Framework on source-reconstructed scalp EEG." (`main.tex:168`).
+- Line 44, "$x_1$: own lags 0.5 and $-0.4$; from $x_2$ at lag 1, listed twice as 0.14 and 0.2; from $x_3$ at lag 2, 0.14.": now "$x_1$: own lags 0.5 and $-0.4$; terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$ and $0.2\,x_2(n-1)$." (the draft's equation, `main.tex:154`).
+
+### archive/published/2021/abstract-bci-meeting-2021
+
+- Line 22, "Lag-1 self-terms return as 0.5, 0.77 and 0.8 against 0.5, 0.7 and 0.8; links into $x_2$ as 0.18 and 0.31 against 0.2 and 0.25.": now "Estimated $x_1$: own lags 0.5 and $-0.4$; terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$ and $0.2\,x_2(n-1)$." (`manuscript/main.tex:52`).
+- Line 23, "Lag-2 self-terms shrink to $-0.4$ and $-0.28$ from $-0.7$ and $-0.5$.": now "Estimated $x_2$: own lags 0.77 and $-0.28$, from $x_1$ 0.18 and from $x_3$ 0.31; estimated $x_3$: own lag 0.8." (`main.tex:53-54`).
+- Line 24, "The estimate adds a lag-2 term from $x_3$ into $x_1$ and prints the lag-1 term from $x_2$ twice, as 0.14 and 0.2, against 0.25.": now "The abstract reads these preliminary results as showing that the method can accurately estimate simulated connectivity patterns." (`main.tex:47`).
+
+### coauthor/published/2016/chi-household-survival
+
+- Line 5, hook "...; room-sized RoomAlive uses instrumented controllers and iCon maps objects to generic actions, whereas here each object acts in the game the way it acts in a home.": now "...; in RoomAlive players use touch, instrumented pointing devices or standard controllers, and iCon does not consider an object's real-life purpose, while here each object's virtual attributes represent its real-world function." (the paper's Related Work and Introduction, `pdftotext manuscript/main.pdf` lines 85-86, 105-121).
+- Line 24, "No user study is reported; the game, built as a university course project, is still used as a teaching example in university courses.": now "Developed as a student project for a university-level course; it is still used in university courses as a teaching example." (Acknowledgements; `project.yml:31`).
+
+### coauthor/published/2018/http2-web-performance
+
+- Line 9, plain "...the other new features help a little, and much of the slowness comes from browser and server bugs.": now "...the other new features matter less, and most of the slowness seems to come from immature browser and server software." (Discussion: "almost all of the encountered problems ... seem to be due to inefficient implementations"; hedge kept).
+- Line 23, "HPACK cuts header bytes by more than a factor of five for 400 small files, too little to change a single page load.": now "HPACK cuts header bytes by more than a factor of five for 400 JS files, arguably too little to change a single page load." (Sect. 7, case (c) "400 complex JS files", "arguably too low"; hedge kept).
+- Line 24, "...light pages load alike over HTTPS/1.1 and HTTP/2...": now "...light pages have similar SpeedIndex over HTTPS/1.1 and HTTP/2..." (Fig. 8 and its text).
+- Line 26, headline "The single TCP connection dominates HTTP/2 performance; the other features help little": now "The single TCP connection has the biggest impact on HTTP/2 performance; the other features matter less" (Conclusion: "by-and-large the biggest performance impact"; Discussion: "do not seem to have as large an impact").
+- Line 32, heading "Implementation problems and limits": now "Implementation problems and scope".
+- Line 43, heading "Limits": now "Scope and related work".
+- Line 46, "All networks are emulated, and the results disagree with studies that load pages over the live internet.": now "Networks are emulated; the paper cannot confirm the more positive HTTP/2 results of work that loads pages directly over the internet." (Sect. 8: "We are unable to confirm their findings").
+- Line 48, "Three of the figures are reused from the authors' earlier paper.": now "The QUIC protocol, on UDP, might help HTTP/2 overcome its single-connection problems." (Conclusion; hedge kept).
+
+### manuscripts/ecg-readable-substrate
+
+- Line 39, "Transfer becomes 2 wins, 1 tie, 3 losses (MIMIC to CODE-15) and 2, 2, 2 (CODE-15 to MIMIC); the submitted manuscript does not report this run.": now "... and 2, 2, 2 (CODE-15 to MIMIC) with age and sex given to the encoders." (`README.md:90`).
+
+### manuscripts/clinical-hccnet
+
+- Line 24, "...; 29 were at BCLC stage 0 or A at diagnosis and 27 received curative treatment.": now "...; at diagnosis 13 were at BCLC stage 0 and 16 at stage A, and 27 received curative treatment." (`manuscript/main.tex:192`).
+- Line 26, explain "...; the intervals widen as the number of HCC falls to 10.": now "...; at 3 years, 72 patients with 10 HCC." (`main.tex:294`).
+- Line 33, title "Per sequence, and what the cohort cannot yet show": now "Per sequence, and the limitations".
+- Line 34, hook "Diffusion-weighted and T1 in- and out-of-phase MRI hold up at every horizon; the contrast-enhanced sequence falls to 0.690 at 2 years and 0.433 at 3 years, so the prediction does not rest on contrast.": now "In this cohort the prediction did not rest on the contrast-enhanced sequence: T1 contrast-enhanced MRI on its own reached an AUROC of 0.690 at 2 years and 0.433 at 3 years." (`main.tex:296`).
+
+### archive/published/2021/volga-finger-trajectories
+
+- Line 21, "The thumb is predicted far less well than the other two fingers.": now "The abstract credits the automatic choice of parameters with increased flexibility and interpretability." (`manuscript/main.pdf`, "As the parameters are determined in a fully automatic manner, the model offers increased flexibility and interpretability").
+
+### archive/published/2022/extended-bttr-note
+
+- Line 23, "The gain sits in the middle finger: 0.49 against 0.38 (subject 1) and 0.33 against 0.27 (subject 2), both significant.": now "eBTTR and BTTR differ significantly in the middle finger of subjects 1 and 2: 0.49 against 0.38 and 0.33 against 0.27." (`main.tex:303`).
+- Line 24, "Subject 3 shows no gain; BTTR edges eBTTR, 0.67 against 0.66.": now "On the cued-finger average, AM, RF, LARS, CNN and LSTM are all marked significantly different from eBTTR for every subject." (the bold Avg. cells of the three result tables, `manuscript/main.tex:315-369`; this statement moved here from slide 2).
+- Line 33, hook "Non-cued fingers move with the cued one through tendon anatomy and shared motor neurons; eBTTR predicts those movements, where BTTR, trained per cued finger, barely does.": now "Non-cued fingers move with the cued one, in part through hand and forearm tendon anatomy and the divergent connections from cortical to spinal motor neurons; the paper reports eBTTR predicting these coactivations as well as the cued trajectories." (`main.tex:38, 307`).
+- Line 37, "Non-cued fingers, supplement: eBTTR r 0.43 to 0.82, 0.34 to 0.75 and 0.51 to 0.83 per subject; BTTR 0.01 to 0.62, 0.01 to 0.33 and 0.12 to 0.43.": now "The supplement gives eBTTR and BTTR accuracies for every non-cued finger and notes a significant difference between them; subject 1, thumb cued: index 0.72 against 0.05." (`manuscript/supp.tex`, Table `results-subj-1-unintended` and its caption).
+- Line 38, "...following joint movements better than...": now "...decoding joint movements better than..." (`main.tex:307`).
+- Line 39, "On cued-finger averages eBTTR beats amplitude modulation, RF, LARS, CNN and LSTM significantly for every subject.": moved to slide 1 (line 24) in the wording above; replaced here by "Coactivations are present in the glove data but most likely not encoded by the ECoG." (`main.tex:307`).
+- Line 40, "Coactivations are most likely not encoded in the ECoG, so whether to decode them at all stays open.": now "The paper still renders them: the outcome looks more natural and could add sensory information when approaching an object." (`main.tex:307`).
+
+### ideas/old-charges-stemmatology
+
+- Line 35, "...FactGrid fills 7,607 of about 10.1 million cells, too sparse for a multiway analysis.": now "...FactGrid fills 7,607 of about 10.1 million cells, and the data cannot carry a multiway analysis." (`README.md:24`).
+- Line 38, "Prior art: phylogenetic stemmata of Dante's Monarchia (21 witnesses) agree with the traditional ones; ...; simultaneous contamination stays out of scope in the Bayesian and automatic work.": now "Prior art: phylogenetic stemmata of Dante's Monarchia (20 manuscripts plus the editio princeps) agree closely with the traditional ones; ...; McCollum and Turnbull 2024 leave simultaneous contamination out of scope." (`README.md:57, 61`).
+- Line 45, "Counts of known versions range from 32 (Hughan 1872) to 131 depending on source and what is counted.": now "Counts of known versions differ by source and by what is counted: 32 (Hughan 1872), about 115 (Knoop and Jones 1941), 131 entries on old-charges.org." (`README.md:43`).
+
+### coauthor/published/2024/highgamma-event-detection
+
+Source: the abstract `manuscript/main.pdf`.
+
+- Line 5, hook "State-of-the-art finger decoders drift between movements; ...": now "Even state-of-the-art finger decoders show instabilities between movement events; ..." (Introduction).
+- Line 9, plain "...switches the trajectory decoder on and off, so the predicted finger moves only when the real one does.": now "...switches the trajectory decoder on and off, which steadies the prediction while the hand rests." (Results, Discussion).
+- Line 22, "Rest stability differs: subject 1 shows a variance of 0.011 with gating and 0.03 with the multiband decoder.": now "Stability during rest differs: for subject 1 the average variance is 0.011, against 0.03 for the multiband BTTR decoder." (Results; decoder [2] is the BTTR paper).
+- Line 23, "The gain suggests that high gamma marks movement against rest and that the LMP codes the trajectory itself.": now "The stability improvement suggests that high gamma distinguishes rapid finger movements from rest and that the LMP codes the trajectory." (Discussion, hedge kept).
+- Line 26, headline "Same 0.56 correlation, with rest variance down from 0.03 to 0.011": now "Correlation 0.56, in line with the state of the art; rest variance 0.011 against 0.03 for subject 1" (Results).
+
+### coauthor/published/2025/pfl-ms-npj
+
+Source: `manuscript/main.pdf` (read through `pdftotext`) and `project.yml`.
+
+- Line 11, "... L.M. Peeters, Y. Moreau (73 authors)": now "... L.M. Peeters, Y. Moreau".
+- Line 24, "Adaptive training takes longer for four of the five strategies, 217.51 against 171.77 min for FedProx.": now "The adaptive gains cost training time: adaptive FedProx takes 217.51 min against 171.77 for baseline FedProx, 27% longer." (Results and Table 2).
+- Line 33, heading "Where personalization helps, and what the comparison leaves open": now "Where personalization helps, and the limits the paper states".
+- Line 38, "The federated-to-local gap shrinks with dataset size (Spearman $\rho = -0.503$, $p = 0.010$); the federated-to-centralized gap more so ($\rho = -0.761$).": now "The federated-to-local gap correlates moderately with dataset size (Spearman $\rho = -0.503$, $p = 0.010$), the federated-to-centralized gap strongly ($\rho = -0.761$, $p < 0.001$)." (Results).
+- Line 39, "Fine-tuning helps intermediate-sized clients most; sparse clients risk overfitting and unstable test sets.": now "Fine-tuning gives the most consistent improvements for clients with intermediate data volumes; small clients risk overfitting and unstable evaluation." (Discussion).
+- Line 45, "Federation is simulated on country partitions of one pooled registry extract, with no network, dropout or system effects.": now "Federation is simulated on country partitions, so network variability, system heterogeneity and dropout are not captured." (Discussion, limitations).
+- Line 46, "...which can favour the large ones.": now "...which may favour the larger ones." (hedge kept).
+- Line 47, "Calibration is not reported; the paper places the models at cohort-level use until it is.": now "Current performance may support cohort-level monitoring; calibration needs further work before high-stakes clinical decisions." (Discussion).
+- Line 48, "Led by Ashkan Pirmani; A. Faes is the sixth of 73 authors.": now "Led by Ashkan Pirmani; A. Faes is a middle co-author." (`project.yml` outcome, "Co-author (middle)").
+
+### coauthor/active/flkit
+
+- Line 5, hook "...as an onboarding and usability problem, and bundles what a new group needs to run its first federation.": now "FLKit treats the adoption of federated learning in health and life sciences as an onboarding and usability problem, and bundles environment setup, client and server orchestration, and worked examples." (`README.md:5`, `project.yml` eli5).
+- Line 8, purpose "Make it easier for medical and biology researchers to train models together on data that may not leave their institutions.": now "Lower the entry barrier to federated learning for health and life-science researchers." (`README.md:5`).
+- Line 9, plain "FLKit is a ready-made kit with set-up steps, the programs that connect the sites and worked examples, so a research group can start without building it all itself.": now "FLKit is a kit with set-up steps for the environment, the programs that orchestrate the clients and the server, and worked examples." (`README.md:5`).
+- Line 11, "... L.M. Peeters (10 authors)": now "... L.M. Peeters".
+- Line 22, "The toolkit is public on GitHub.": now "Submitted to JMIR, under review." (`README.md:13`).
+
+### archive/published/2017/icfp-src-poster
+
+Source: `manuscript/main.pdf`, read through `pdftotext -layout` and on a render made with `pdftoppm -r 50 -png` into the round's scratch folder. The bar chart "Loop program variations" prints every bar value as text (Pure 100, 78.5, 35.4, 2.4, 2.3; Latent 100, 74.3, 37.4, 2, 1.9; Incr 100, 56, 62.3, 5.5, 3.8; State 100, 34, 85, 3.3, 2.3), so lines 20 and 21 stand. The N-Queens chart prints no value.
+
+- Line 3, title "How close does optimised Eff get to native OCaml, and why do its rewrites need explicit types?": now "Can an explicitly typed core language with row-based effects make Eff's optimising rewrites less error-prone?" (poster, New Core Language: "make the source-to-source transformations less error-prone").
+- Line 5, hook "The poster sets the Eff optimiser against native OCaml on loop benchmarks and N-Queens, and shows a function-specialisation rewrite that has to re-type its copy of a function.": now "The poster introduces an explicitly typed core language with row-based effects for Eff, compares optimised Eff with regular OCaml, Multicore OCaml, Handlers in Action and Eff directly in OCaml, and shows a function-specialisation rewrite that has to handle the types of its copy of a function." (Preliminary results; Research Problem).
+- Line 8, purpose "Show that programs written with effect handlers can run as fast as plain code once compiled well.": now "Reduce type-checking bugs in the optimised compilation of algebraic effect handlers." (Summary).
+- Line 9, plain "Removing the handlers at compile time brings the loops close to hand-written OCaml, but every removal step has to keep the program's types right.": now "Effect handlers carry a runtime penalty, so the compiler rewrites them away; each rewrite has to keep the program typable, and explicit types in the core language make that less error-prone." (Introduction; Research Problem; New Core Language).
+- Line 17, "...emits regular OCaml code for effectively pure computations...": now "...identifies pure computations and emits regular OCaml code for them..." (Background: "Identify computations that are pure").
+- Line 22, "N-Queens, sizes 2 to 14: Eff(PureOpt) stays within about 10% of OCaml; Handlers in Action peaks near 180%." (a reading of an unlabelled chart, ruling 8): now "The new core language builds on the calculus of Links, with a row-polymorphic type-and-effect system." (New Core Language).
+- Line 23, "Edge cases still need their own optimisations.": now "Optimisations still need to be added for edge cases." (Preliminary results).
+- Line 25, headline "PureOpt loops reach 2 to 5.5% of basic Eff, near native OCaml": now "An explicitly typed core language with row-based effects for optimised compilation" (Summary).
+
+### archive/published/2017/icfp-src-abstract
+
+Source: `manuscript/main.pdf`, read through `pdftotext`.
+
+- Line 8, purpose "Make a compiler for effect handlers, a new programming feature, easier to build without breaking programs.": now "Make an optimising compiler for algebraic effect handlers easier to build without type-checking bugs." (Abstract).
+- Line 25, headline "Proposal: explicit types so rewrites cannot break typing": now "Proposal: an explicitly typed core language to reduce bugs in optimised compilation" (Abstract: "explicitly typed in order to reduce bugs in the optimised compilation").
+
+### coauthor/published/2017/algebraic-effects-compilation
+
+Source: `manuscript/main.pdf`, read through `pdftotext -layout` and, for Fig. 14, on a render of page 24 made with `pdftoppm -f 24 -l 24 -r 90 -png` into the round's scratch folder. Fig. 14 prints every bar value as text above its bar, with the legend order Basic, Opt, Pure, PureOpt, Native; the four lines of the "Loop run time" column match it (Opt is the rewriting bar, Pure the purity-aware bar), so they stand.
+
+- Line 5, hook "Handler-based programs run far slower than hand-written code; ...": now "Most handler-based programs are still much slower than hand-written code; ..." (Abstract).
+- Line 22, "Rewriting or purity-aware code alone narrows the gap; both together reach 1x to 1.5x and remove every trace of handlers and the free monad.": now "Rewriting or purity-aware code alone has varying success in narrowing the gap; only both together are competitive with hand-written OCaml (1x to 1.5x), and they remove every trace of handlers and the free monad." (Section 8.1).
+- Line 23, "...is the fastest of the OCaml-based effect systems tested and close to hand-written OCaml.": now "...is consistently the fastest of the OCaml-based effect systems tested and competitive with hand-written OCaml." (Section 8.2).
+- Line 33, heading "Benchmarks and limits": now "Benchmarks, design choices and future work"; line 44, column "Limits": now "Design choices and future work" (the paper presents these as design choices and future work, Sections 4, 7.3 and 9).
+- Line 47, "Nested handlers are left to future work; every higher-order function is compiled as taking impure arguments.": now "Every higher-order function is compiled as taking impure arguments; optimising complex patterns such as nested handlers is future work." (Section 7.3; Conclusion).
+
+### archive/failed/fed-faithful-ecg
+
+Sources: `README.md`, `CLAUDE.md`, and `code/results/pilot_mechanism/summary.md`, which `README.md:33` and `CLAUDE.md:6` name (the synthetic-pilot numbers of slide 2 are that file's table). The FedProx row comes from `code/results/fed_faithfulness/summary.md`, which neither `README.md` nor `CLAUDE.md` names, so it goes (ruling 5).
+
+- Line 9, plain "...but on real ECGs both hospitals learned the same parts, so nothing scrambled.": now "...but on real ECGs it did not, likely because both hospitals' heartbeats share the same basic shapes." (`README.md:5`, "Likely reason", hedge kept).
+- Line 18, "Arms: centralized, FedAvg, aligned averaging (FedMA-style slot matching) and FedProx.": now "Arms: centralized, FedAvg and aligned averaging (FedMA-style slot matching); FedProx and MOON are benchmarks still to run." (`README.md:72`).
+- Line 22, "Aligned averaging recovered nothing (0.834, 0.107, 0.341); FedProx 0.788, 0.119, 0.613.": now "Aligned averaging recovered nothing (0.834, 0.107, 0.341), because there was no gap." (`README.md:5`).
+- Line 25, headline "No-go: real ECG components align across silos on their own": now "No-go: on real ECG, federated averaging did not degrade faithfulness" (`README.md:3`; `project.yml` outcome).
+- Line 38, "Each client used random unrelated prototypes, a mismatch real ECG silos do not have.": now "The pilot gave each client random unrelated prototypes, which overstated the problem." (`README.md:5`).
+
+### ideas/xsub-ecog-framework (ruling 3)
+
+Sources: `README.md` and `project.yml`. The deck was rewritten whole with Write. It now states the idea as one cross-subject ECoG transfer framework across tasks and datasets, its gate and what it would measure; it names no student method as its mechanism, gives no student result as its status, and names nothing of ward-bttr-crosssubject.
+
+- Line 3, title "A behavior-aligned transfer framework for cross-subject ECoG decoding across non-corresponding grids": now "Does one cross-subject ECoG transfer framework hold across tasks and datasets?".
+- Line 4, sub "Does a minimal-calibration transfer mechanism hold across behaviors and datasets?": now the manifest title, "A Behavior-Aligned Transfer Framework for Cross-Subject Decoding across Non-Corresponding ECoG Grids".
+- Line 5, hook "...a behavior-aligned spatial filter with a shared decoder is a candidate general framework, shown so far on one finger-flexion task.": now "...the idea is one interpretable, minimal-calibration cross-subject transfer framework, tested across behaviors and datasets." (`README.md`, "What it is and why", "The bet").
+- Line 8, plain "Each patient gets a private translator from their own electrodes into a shared set of movement-defined signals; one decoder trained on earlier patients reads those signals for everyone.": now "One way of moving a decoder from earlier patients to a new one, tested on several kinds of movement and on several datasets, with only a little calibration for each new patient.".
+- Lines 14 and 15, the per-subject spatial filter and the shared seq2seq decoder: removed. Now line 14 "Test minimal-calibration cross-subject transfer across non-corresponding grids on BCI Competition IV dataset 4 (3 subjects, finger flexion), which tests dataset generalization." and line 15 "Then a different task: gesture, movement direction or another Kai Miller-library paradigm." (`README.md`, Data and Next).
+- Line 16, "Directions: more tasks (gesture, movement direction), more public ECoG cohorts, and self-supervised donor pretraining for zero-shot transfer.": now "Directions: more public ECoG cohorts, and self-supervised donor pretraining to lift zero-shot transfer while staying interpretable.".
+- Lines 19 to 21: the gate line stays (now line 19); "Target: competitive transfer on at least 2 more tasks and 1 more dataset." becomes "What it would measure: competitive minimal-calibration cross-subject transfer on at least 2 more tasks and 1 more dataset." (line 20); the novelty-check line moves to line 21.
+- Line 22, mechanism "Behavior-aligned spatial filter plus shared seq2seq decoder": now "Minimal-calibration cross-subject transfer tested across tasks and datasets".
+- Line 23, headline "Idea: one task so far; does it generalize?": now "Idea: one cross-subject ECoG framework across tasks and datasets".
+
+### ideas/serial-ecg-af (ruling 4)
+
+- Line 12, chip "Single-ECG bar" value "BTTN 0.762 (provisional), Raghunath 0.85 at 1 yr": now "Attia 0.87 near-term, Raghunath 0.85 at 1 yr" (`README.md:3`). BTTN stays named as the model the project keeps (lines 15 and 18).
+
+### coauthor/stopped/individual-reference-intervals (ruling 9)
+
+Source: `project.yml`, which is the only file besides `present/`. The deck was rewritten whole with Write.
+
+- Line 5, hook "...this project asked whether a range built from the patient's own past values gives machine learning a better signal for readmission or progression.": now "The project explored combining individual, personalized clinical reference intervals with machine learning to predict clinical events such as readmissions or disease progression, in place of population-wide normal ranges." (`project.yml` eli5).
+- Line 8, purpose "Warn earlier that a patient is heading for a hospital readmission or for worse disease.": now "Predict clinical events such as hospital readmissions or disease progression.".
+- Line 9, plain "Ask whether a test result is normal for this person, judged against their own history, and let a model learn from that answer.": now "Judge a test result against a range set for this patient, in place of one normal range for everyone, and let a model learn from that.".
+- Line 20, "The project folder holds only its manifest: no data, code or result was kept.": now "The bet was that per-patient baselines could sharpen event prediction." (`project.yml` eli5).
+- Line 21, mechanism "Per-patient baselines as features for event prediction": now "Per-patient reference intervals combined with machine learning".
+- Line 22, headline "Stopped in 2024 before a full paper for IEEE JBHI": now "Abandoned; it was targeted at IEEE JBHI, 2024" (`project.yml` outcome).
+
+### ideas: fl-privacy-auditing, hccnet-fl-sweden, hccnet-pathology, quantum-tensor-fl, ssm-longitudinal
+
+Each deck said "Nothing has run"; each source gives the stage as "gate-pending" (line 3 of each `README.md`).
+
+- fl-privacy-auditing line 18, "Nothing has run; existing membership-inference attack code is reusable.": now "Gate pending: a novelty lit-check to fix the auditing angle; the attack code is reusable." (`project.yml` status line).
+- hccnet-fl-sweden line 19, "Nothing has run; the Link<o diaeresis>ping data-use, ethics and GDPR agreement is the critical path.": now "Gate pending; the Link<o diaeresis>ping ...".
+- hccnet-pathology line 20, "Nothing has run; the design is the transcribed architecture_v3.": now "Gate pending; the design is the transcribed architecture_v3.".
+- quantum-tensor-fl line 19, "Nothing has run, and neither branch is chosen.": now "Gate pending: a lit-check decides between the two branches." (`README.md:3`, "Decide A vs G after a lit-check").
+- ssm-longitudinal line 19, "Nothing has run; no new data and no collaborator gate are needed.": now "Gate pending: beat the HCCNet baseline; no new data and no collaborator gate are needed." (`project.yml` status line).
+
+### archive/stopped/algebraic-subtyping
+
+- Line 8, plain "A type then says both what a value is and which effects it may trigger, and a more specific type can stand where a general one is asked for.": now "Add effect information to Dolan's algebraic subtyping, which gives a type-and-effect system for algebraic effects and handlers." (`project.yml` eli5).
+
+### coauthor/published/2023/ecog-frequency-features
+
+Source: `manuscript/main.pdf` through `pdftotext`, and `project.yml`.
+
+- Line 5, hook "Finger decoders usually take the whole ECoG spectrum; ...": now "Comparable prior work decodes fingers from the entire ECoG spectrum; ..." (Abstract).
+- Line 9, plain "...follows the finger better and holds still at rest.": now "...follows the finger better and makes fewer false movements at rest." (Abstract: "erroneous predictions during rest were demoted").
+- Line 39, "...most of all for thumb and index.": now "...most of all for thumb, index and pinky." (caption of Figure 7(c)).
+- Line 46, "LMP cannot tell movement from rest, nor a cued finger from co-activation by its neighbours.": now "LMP falls short in discriminating movement from rest, and a cued finger from involuntary co-activation by other fingers." (Discussion).
+
+### active/novel-math-primitives
+
+- Line 5, hook "...this scan maps candidates that pass the first two on paper.": now "...this scan maps about 24 ML-empty survivors, each with a first idea for its bridge and its separation, ranked with medical fit." (`project.yml` eli5, latest).
+- Line 43, "No candidate has a built bridge or a proved property yet.": now "Chip-firing and sandpile dynamics, the first build candidate, was spun out as the sandpile-operator project." (`project.yml` results).
+
+### archive/failed/ms-lipid-handshake
+
+- Line 30, hook "...is most likely ambient RNA contamination, and the uptake rise (p = 0.013) tracks general activation markers.": now "...is likely ambient RNA contamination, and the uptake rise (p = 0.013) may track general myeloid activation, since its genes are activation markers." (`README.md:82-83`, hedges kept).
+- Line 34, "...a parameter-matched sweep leaves BTD no real edge over CP.": now "...a parameter-matched sweep shows BTD's edge over CP is negligible." (`README.md:84`).
+
+### archive/published/2022/block-term-tensor-regression
+
+Source: `manuscript/bare_jrnl.tex`.
+
+- Line 33, hook "BTTR and HOPLS differ significantly only on subject 3, where ACCoS-gBTTR wins; against the Riemannian LightGBM decoder BTTR leads on subject 1, trails on subject 2 and ties on subject 3 (0.67 against 0.6775).": now "On test data ACCoS-gBTTR performs better than ACE-gBTTR and HOPLS for subject 3; against the Riemannian LightGBM decoder ACE-BTTR performs better for subject 1, worse for subject 2 and equally for subject 3 (0.67 against 0.6775)." (`bare_jrnl.tex:836, 850`).
+- Line 35, panel explain "gBTTR and HOPLS follow the timing of each flexion but undershoot its peak." (a chart reading): now "Actual and predicted flexion amplitudes (z-scores) over time; of the BTTR versions only the generalized gBTTR is shown." (caption, `bare_jrnl.tex:824`).
+- Line 37, "...on training data gBTTR scores lower, so it overfits less.": now "...on training data gBTTR scores lower, so it seemingly limits overfitting, mainly for ACCoS-BTTR." (`bare_jrnl.tex:840`).
+- Line 38, "ACE-BTTR beats LSTM, AM, RF and LARS on average for every subject; per finger, thumb and index show no significant gap to LSTM.": now "ACE-BTTR differs significantly from LSTM, AM, RF and LARS on the average for every subject; per finger, thumb and index show no significant difference to LSTM." (`bare_jrnl.tex:848`).
+
+### active/eeg-saad-challenge
+
+- Line 5, hook "Most attention-decoding results are single-dataset and deep models exploit dataset shortcuts; this benchmark ...": now "The challenge's own framing is that most attention-decoding results are single-dataset and that deep models exploit dataset-specific shortcuts; the benchmark ..." (`README.md:7` gives it as the challenge's framing).
+- Line 19, "...spatial decoding can ride on eye gaze.": now "...the organizers warn that spatial decoding can ride on eye gaze." (`README.md:55`).
+
+### active/linfoot-estimator
+
+- Line 27, panel explain "...and 8 carry strong dependence a rank correlation nearly misses.": now "...and 8 carry a label above 0.4 while a rank correlation reads under 0.25." (`README.md:71`).
+- Line 51, "The released R code builds 17 bins where the paper says 18, leaving three inputs constant; the twin application waits on the SDU coauthors' data, its script verified on surrogate pairs." (a claim that the preprint and its code disagree): now "The twin data sit with the SDU coauthors; the twin-application script, which they can run with this model, is verified end to end on surrogate pairs." (`README.md:5, 207`).
+
+The R-code bin count is not written to a private README section: the preprint's own text is not in the project folder (`ls manuscript` holds only the project's drafts), so it was not checked against the paper; the fault is already recorded in `README.md:114` and `:244`.
+
+### active/loewner
+
+- Line 24, "No structured derivative algorithm, efficiency advantage or perturbation bound has been derived yet.": now "Novelty and usefulness remain unestablished; there is no implementation, manuscript or selected venue." (`README.md:3`).
+- Line 39, "...Loewner coordinates do not enlarge the rational family...": now "...need not enlarge..." (`README.md:68`, hedge kept).
+
+### active/sandpile-operator
+
+- Line 26, panel explain "All three reach a similar region, but diffusion smears the mass and the CNN leaks past walls; the sandpile error stays low." (a chart reading): now "Arrival-time maps on top, final mass error below: all models reach a broadly similar region, while diffusion smears the mass magnitude." (`README.md:27`).
+- Line 38, "Stage 0 proves representational capability and inductive bias over smooth diffusion, and nothing about real processes.": now "Stage 0 proves representational capability and an inductive-bias advantage over smooth diffusion, not real-world superiority." (`README.md:31`).
+
+### archive/failed/faithful-block-term-layer
+
+- Line 26, headline "No-go: faithfulness and nonlinear capacity cannot both hold": now "No-go: a clean guarantee gives up the nonlinear capacity BTTN needs" (`README.md:23`).
+
+### archive/failed/jacobian-coupled-blockterm-dp
+
+- Line 22, "Below $\rho$ 0.3 the whitened floor is 16 to 18% lower...": now "...is about 16 to 18% lower..." (`README.md:37`).
+
+### archive/phd/phd-thesis
+
+Source: `manuscript/chapters/`.
+
+- Line 36, "Among neural networks, LSTM-NUE detects directed connectivity best; ...": now "Among the neural networks, LSTM-NUE obtains better sensitivity and precision; ..." (`chapter-3/chapter-3.tex:338`).
+- Line 42, "BTTR trails LightGBM on subject 2 (0.46 against 0.493), and its accuracy drops on rapid finger repetitions, where the ECoG-to-trajectory relation turns nonlinear.": now "LightGBM performs better than BTTR for subject 2 (0.493 against 0.46); the introduction names rapid finger repetitions, hand gestures and sustained flexions as tasks where state-of-the-art decoders are still inadequate." (`chapter-4/chapter-4.tex:377`; `introduction/introduction.tex:93`).
+- Line 44, "Finger abduction, which sign language needs, has not been decoded from ECoG yet.": now "...has not yet been attempted from ECoG." (`conclusion/conclusion.tex:98`).
+
+### archive/published/2016/bachelor-network-ids
+
+Source: `manuscript/main.pdf` through `pdftotext`.
+
+- Line 23, "Naive Bayes, the linear SVM and the one-class SVM do little better than the random baseline's binary F of 0.465." (the one-class SVM's binary F is 0.1275 to 0.4017, Table 11.19, below that baseline): now "Naive Bayes barely beats the random baseline's binary F of 0.465 across datasets; the one-class SVM cannot properly define the boundaries of its class." (Sections 11.3 and 11.7).
+- Line 45, "Country of origin changed nothing, likely because the data came mostly from one country.": now "Country of origin had little impact, which could be because the data came mostly from one country." (KNN evaluation, hedge kept).
+- Line 47, "Labelled training data was the main bottleneck.": now "Finding labelled data was a problem during the experiments." (Section on the datasets).
+
+### archive/published/2018/masters-algebraic-subtyping
+
+- Line 26, headline "Principal types with effects; faster on 3 of 5 benchmarks" (a count the thesis does not state): now "Principal types with effects; faster than subtyping except on Parser and Queens" (Section 6.5.1: "the performance of EffCore is superior ... There is an exception for the Parser and Queens programs").
+
+### archive/published/2021/source-localization
+
+Source: `manuscript/main.tex`.
+
+- Line 34, panel explain "The two curves cross near $\kappa = 0.08$, where neither metric improves without the other worsening." (a chart reading): now "The Pareto-optimal solution is at the intersection, $\kappa \approx 0.08$, where neither metric improves without the other worsening." (caption, `main.tex:179`; `main.tex:234`).
+- Line 36, "...Sparse eLORETA and BC-VARETA agree and are tighter than eLORETA.": now "...no notable differences between Sparse eLORETA and BC-VARETA, and the source space reduction shows against eLORETA." (`main.tex:260`).
+- Line 37, "...ERD in contralateral M1 and VLPFC...": now "...ERD in contralateral M1 and bilateral VLPFC..." (`main.tex:287`).
+- Line 39, "LCMV wins on simulated correlation yet scatters its dipoles; some sources were mislocated while their signals still correlated well.": now "LCMV yields the best simulated correlation yet its dipoles are dispersed; some sources were not accurately located while their signals still correlated well." (`main.tex:148, 182, 337`).
+
+### archive/published/2022/connectivity-iris
+
+- Line 47, "One dataset trains in 1048 s for Conv2D with two predictors; NUE makes LSTM-NUE among the slowest.": now "One dataset trains in 1048 s for Conv2D with two predictors." (the runtime ranking is only in the bar chart of Figure 12, which prints no value as text).
+
+### archive/published/2026/erp-signatures
+
+- Line 19, "...which is conservative when the within-participant dependence is positive.": now "...which is conservative when the within-participant correlation is non-negative." (`README.md:24`).
+
+### archive/published/2026/glassbox-decision-pipelines
+
+Source: `manuscript/main.tex`, `README.md`, `results/age_control/within_code15_seed0.json`.
+
+- Line 9, plain "The large models cannot tell how old the patient is; adding the age...": now "The large models do not keep the patient's age in what they extract; adding the age as one extra number improves every one of them." (`main.tex:94` "the frozen embeddings do not preserve it", `main.tex:153` "it improved every encoder").
+- Line 39, "The MIMIC severe-EMG edge (+0.010) and the clean transport edge (+0.017) change sign across fits.": now "On MIMIC the severe-EMG difference, +0.010, covers zero and flips sign across fits; CODE-15 to MIMIC transport trails, 0.726 against 0.745 clean." (`main.tex:66, 123`; `README.md:125` records zero sign flips for the clean transport comparison, so that half had no source).
+- Line 48, "Synthetic corruptions, one fixed split, two datasets, one endpoint; the printed 0.160 is 0.159 measured.": now "Synthetic corruptions, one fixed split, two datasets, one endpoint." (the removed clause says the paper prints a wrong value; it goes to the private README section, ruling 2).
+
+### archive/published/2026/hccnet-fl
+
+Source: `manuscript/sections/*.tex`, `manuscript/tables/*.tex`, `README.md`.
+
+- Line 24, "...CAF+FedBN lowers ECE from 0.118 to 0.074.": now "...CAF+FedBN lowers ECE from FedAvg's 0.118 to 0.074." (`5_results.tex:5`; 0.118 is FedAvg's ECE, `tables/main_results.tex:12`, which the old line left unnamed).
+- Line 49, "The harness in `code/` is an independent re-implementation run only on a synthetic cohort; the published numbers were not re-run.": now "The harness in `code/` is an independent re-implementation, not the pipeline that produced the published numbers, and has not been re-run on the cohort." (`README.md:25`; no source says the harness ran only on synthetic data).
+
+### coauthor/published/2016/chi-purpose-centric
+
+Source: `manuscript/main.pdf`.
+
+- Line 5, hook "Earlier work maps an object's shape to a digital input, a bottle cap to a knob; purpose-centric appropriation gives each object a virtual role that copies its real-world function.": now "Earlier work maps the affordances of an everyday object to an analogous digital input, a bottle cap to a knob; purpose-centric appropriation gives each object a virtual rendition that mimics its real-world purpose and function." (introduction: "mapping affordances offered by objects to analogous digital input", "virtual renditions that mimic actual purpose and function").
+- Line 9, plain "...players know what it will do before they try it.": now "...players can recognise what it will do before they try it." (the paper: "can help users in immediately recognizing, or envisioning, the effect").
+- Line 18, "...a physics engine reproduces their real-world forces...": now "...a physics engine takes each object's physical characteristics into account..." (Implementation: "takes into account physical characteristics and nuances of each everyday object").
+
+### coauthor/published/2017/http2-best-practices
+
+Source: `manuscript/main.pdf`.
+
+- Line 5, hook "Earlier HTTP/2 studies contradict each other, often because each uses one server, one browser and one metric; ...to separate protocol effects from implementation effects.": now "Earlier HTTP/2 studies contradict each other, and most use a single server package, browser, network setup and metric; the Speeder framework runs many setup permutations to tell protocol behaviour from implementation behaviour." (Section 2: the authors give the single-tool setup as "one of the reasons" they believe, which "often because" overstated).
+- Line 9, plain "...and where it is slower the browsers and servers are to blame.": now "...and where it is slower the cause is mainly inefficient software." (abstract: "mainly caused by inefficiencies in implementations").
+- Line 22, "With 30 large images, sharding over 4 hosts improves HTTP/1 by over 50% in bad networks, and HTTP/2 also gains.": now "With 30 large images, sharding over 4 hosts can improve performance by over 50%, especially in bad networks, and HTTP/2 also profits significantly." (Section 4.3.1).
+- Line 24, "Most HTTP/2 slowdowns trace to browser and server implementations; the single TCP connection hurts under heavy loss.": now "HTTP/2 underperforms mainly through inefficient implementations; with large files, packet loss impacts its single connection more." (abstract; Section 4.1.1 on Figure 2(c); the contributions state that in most cases bad network conditions do not impact h2 much more than h1, so the general loss claim had no source).
+
+### coauthor/published/2023/coordinated-fingers-ecnr
+
+Source: `manuscript/main.pdf`.
+
+- Line 9, plain "...the signal does show reliably when a movement is about to start.": now "...the slow brain signal can show when a movement starts." (Conclusion: "The onset of finger movement is possible to be detected with MRCP features"; "reliably" has no source).
+
+### coauthor/published/2023/modulation-lmp-bci
+
+Source: `manuscript/main.pdf`.
+
+- Line 9, plain "...together they stop the decoded finger from jittering at rest.": now "...together they make the decoded finger steadier at rest." (Results: lower variance during rest).
+- Line 22, "High-gamma activity separates rapid finger movements from rest, while the LMP codes the trajectory.": now "The stability gains suggest that high-gamma activity separates rapid finger movements from rest, while the LMP codes the trajectory." (Discussion keeps "suggest").
+- Line 25, headline "Gamma gating holds correlation at 0.56 and cuts rest variance from 0.03 to 0.011": now "Gamma gating: correlation 0.56, and rest variance 0.011 against 0.03 for participant 1" (the variances are for subject 1, and 0.03 is decoder [2]'s, not a before value of the same decoder).
+
+### coauthor/published/2025/editorial-bigdata-ai-ms
+
+Source: `manuscript/main.pdf`.
+
+- Line 9, plain "...list the problems the field must still solve before AI reaches the clinic.": now "...list the open issues researchers will still have to solve." (Conclusion: "researchers will have to solve some open issues").
+- Line 23, "The editorial reports no new data or experiment.": now "The Topic gathers reviews, perspectives and original research articles." (Introduction; the removed line is a description the editorial does not give).
+
+### coauthor/published/2025/proprioception-exoskeleton
+
+Source: `manuscript/main.pdf`.
+
+- Line 5, hook "The feedback from an exoskeleton moving the fingers dominates sensorimotor EEG, so imagining the movement on top of it adds little a decoder can find.": now "An exoskeleton moving the fingers evokes strong alpha and beta desynchronization in sensorimotor EEG, and the EEG is then similar whether or not the user also imagines the movement." (abstract; Discussion: "brain activations are similar regardless of whether the subject imagines a movement").
+- Line 9, plain "...looks almost the same whether or not...": now "...looks similar whether or not..." (same passage).
+- Line 25, mechanism "Proprioceptive feedback swamps the motor-intention signal in sensorimotor EEG": now "Exoskeleton-induced proprioceptive ERD set against motor-imagery ERD" (Section IV; "swamps" is framing the paper does not use).
+
+### ideas/btd-autoencoder
+
+- Line 15, "The decoder is conditioned on the dataset, so the latent becomes batch-invariant.": now "The decoder is conditioned on the dataset to get a dataset-invariant latent." (`README.md`, Method, Part A item 3, states the aim; the old line stated it as an outcome).
+
+### ideas/fedbtd
+
+- Line 8, plain "...average without lining them up and the result is mush.": now "...average without lining them up and mismatched pieces get mixed." (`README.md`: naive FedAvg "averages mismatched, misrotated, misscaled blocks").
+- Line 19, "What remained open was only the block-term-specific version, below the bar for a top-tier methods venue.": now "The pre-emption puts the idea below the bar for a top-tier methods venue." (`README.md` opening paragraph; the "only the block-term-specific version" clause belonged to the personalization split, not to what remained open).
+
+### ideas/florank-personalization
+
+Source: `README.md`, `notes/ectrims2025-florank-poster.pdf`.
+
+- Line 5, hook "Under site heterogeneity a shared federated model fits no hospital well; FLoRank showed a per-center low-rank adapter fixes that on tabular MS data, and the open question...": now "Under clinical site heterogeneity personalization is essential; FLoRank's per-center low-rank adapter beat FedAVG and plain LoRA on tabular MS data, and the open question..." (poster Conclusion: "significantly outperformed both FedAVG and the original LoRA approach", "Personalization ... is therefore essential"; "fits no hospital well" and "fixes" have no source). The F1 and AUC-PR values with their SDs on line 21 match the poster's Conclusion as printed text.
+
+### ideas/hccnet-fl-sweden
+
+- Line 5, hook "...and the two sites do not share an MRI protocol; ...so each site has to contribute everything it has.": now "...and the two sites are expected to hold different MRI sequence sets; ...so each site has to use everything it has." (`README.md` Method: the sites "will have different available sequences"; Next item 1: "confirm the protocols"; Why a positive: "each uses everything it has").
+
+### ideas/modality-dropping-btf
+
+- Line 5, hook "...and imputation or zero-filling invents data they do not have;...": now "...and imputation or zero-filling fills in data they do not have;..." (`README.md`: "no zero-filling, no imputation"; "invents" is framing the README does not use).
+
+### ideas/paleogenomics-tensor
+
+- Line 8, plain "...split the cube into a few interpretable patterns, each a strand of ancestry over time.": now "...split the cube into a few interpretable patterns of population structure and admixture." (`README.md`: "recover population structure and admixture components").
+
+### ideas/serial-ecg-af (full read)
+
+- Line 23, "...the Gruwez cohort, delivered 2026-07-16, is checked for serial ECGs, and the work stays on MIMIC-IV-ECG if it has none.": now "...the Gruwez cohort, delivered 2026-07-16, is to be checked for serial ECGs; the work stays on MIMIC-IV-ECG if it has none." (`project.yml` next: "Check if the Gruwez cohort ... carries serial ECGs"; the old wording read as a check already done).
+
+### manuscripts/btfno
+
+Source: `manuscript/main.tex`, `README.md`.
+
+- Line 40, "The code trains profiles factorized over the two frequency axes while the theorem counts free profiles over all $K$ modes, and the $L=1$ arm splits shared and routed parameters differently from the CP-expert arm.": now "Scope as the paper states it: an internal factorization comparison at about 670k parameters on one benchmark, not a state-of-the-art benchmark." (`main.tex:300`; the removed line is a claim that the paper and its code disagree, which ruling 1 bars from a slide; the fault went to the README private section, see Ruling 2).
+
+### manuscripts/covert-applied
+
+Source: `manuscript/main.tex`, `README.md`.
+
+- Line 26, headline "Parity with centralized fitting at 24x less communication": now "Parity with centralized fitting, and 24x less communication than masked dense tensors" (`main.tex:899`: Route B "communicates 24x less (0.20 MB per round against 4.8 MB)" than Route A; the old headline left the comparison open and could be read as less than centralized fitting).
+- Line 32, title "What the design buys, and what the multilinear structure does not": now "What the design buys, and the limits on accuracy" (`main.tex:930-936`: the coupled value of $L>1$ is interpretability at no accuracy cost, and on the ECG party alone AUROC rises from 0.625 to 0.637; the old title said the multilinear structure buys none of it).
+- Line 43, heading "No accuracy gain from multilinearity": now "Accuracy limits and scope" (same passage; the paper states flat accuracy in $L$ on the full federation only, and the column also holds the fusion and scope items).
+
+### manuscripts/covert-theory
+
+Source: `manuscript/main.tex`.
+
+- Line 24, "First convergence-and-utility theory for DP block-coordinate descent...": now "To the authors' knowledge, the first convergence-and-utility theory for DP block-coordinate descent..." (`main.tex:73`: "To our knowledge this is the first"; the hedge is kept).
+- Line 45, "The $m$ and $\log(1/\delta)$ factors match only in the per-coordinate-sensitivity regime; under the joint $\ell_2$ clip they differ.": now "The match in $m$ holds only in the per-coordinate-sensitivity regime; under the joint $\ell_2$ clip the bounds need not be tight in $m$." (`main.tex:626-628`: under the joint clip the $m$-dependence "need not be tight (a gap of up to $m$)" and "is not claimed"; the paper does not state that they differ).
+
+### manuscripts/dries-bttr-ecg
+
+Source: `manuscript/main.tex`, `README.md`.
+
+- Line 5, hook "The models that find atrial fibrillation in a sinus-rhythm ECG are deep networks on private cohorts...": now "...are usually deep networks on private cohorts..." (`main.tex:53`: "Models that read it are usually deep networks"; the hedge is kept).
+- Line 41, "...RR pseudo-leads lower the score (0.471 and 0.548);...": now "...RR pseudo-leads are dead weight in sinus-rhythm records (0.471 and 0.548);..." (`README.md:27` gives `median_beat_rr` 0.471 / 0.548, `README.md` Dead-ends: "dead weight in afsr"; the comparison "lower" was not stated for these values).
+
+### manuscripts/fed-multicellular-immune
+
+Source: `manuscript/main.tex`, `README.md`.
+
+- Line 39, "Parity elsewhere: SLE...": now "Comparable elsewhere: SLE..." (`main.tex:55`: "and is comparable elsewhere").
+- Line 47, "...and needs about $10^3$ donors.": now "...and needs about 900 donors at $\varepsilon=4$ for a 30-gene program." (`README.md:40`: "recovery needs n ~ 900 donors @ eps=4 with a 30-gene program, ~4700 at the full gene set"; "about $10^3$" was a rounding the source does not give).
+
+### manuscripts/hccnet-revision
+
+Source: `manuscript/sections/`, `manuscript/tables/`, `README.md`.
+
+- Line 28, headline "...with pre-training doubling AUPRC": now "...with pre-training raising AUPRC by 106.6%" (`sections/4_experiments/d_results.tex`: "the largest average improvement of 106.6% in AUPRC"; "doubling" is a reading the paper does not give).
+
+### manuscripts/meseret-cirrhosis
+
+Source: `manuscript/main.tex`.
+
+- Line 29, headline "Competing-risks models recover the true transplant risk at Spearman 0.90 to 0.92; random forests reach 0.56": now "Cause-specific Cox and Fine-Gray rank the true transplant risk at Spearman 0.92 and 0.90; random forests reach 0.56" (`main.tex:31` and `:295` give the two values at $n=418$; the range 0.90 to 0.92 was not stated, and the paper's own range, 0.90 to 0.99, spans all $n$ and includes multinomial logistic regression).
+- Line 43, "Complexity gains grow with sample size: up to +0.014 at about 2,000 patients and +0.046 on SUPPORT ($n$ = 8873).": now "On three single-event datasets complexity gains are consistent with a sample-size pattern: +0.008 on METABRIC ($n$ = 1904), +0.014 on GBSG ($n$ = 2232), up to +0.046 on SUPPORT ($n$ = 8873)." (`main.tex:200`: "consistent with a sample-size-dependent pattern", with the three datasets and their values; "about 2,000 patients" was not stated).
+
+### Decks read in full against their sources with no statement the rule bars
+
+`find projects -path '*/present/main.md' | wc -l` in the hub worktree: 95. The 66 decks with an entry above were changed; the other 29 were read in full against their sources and left as they are:
+
+- archive/published/2018/masters-eeg-infotheory, archive/published/2026/dongho-ecg-clustering;
+- ideas: adapter-format-theory, asthma-geo-tensor, attention-scoped-instructions, block-term-nca, brecht-fl-partitioning, cirrhosis-digital-twin, clinical-ai-eval-artifacts, concept-bottleneck-hcc, conformal-tensor-factors, ecg-af-fair, engram, faithful-interpretability-position, fed-duplication-limits, fed-neural-operators, federated-protocol-agents, fedlink, harmonop, multiway-biosignal-fm, neurosde, pathology-tensor-mil, physics-tensor-hcc, strokeop;
+- manuscripts: bt-operator-theory (every value against `main.tex`), bttd-source-eeg (the top-K 1.6 of 3 is the dead end `project.yml` and `CLAUDE.md` state), bttn-incident-af (every value against `main.tex`, `README.md` and `RESULTS.md`), raw-pls (every value against `main.tex` and `README.md`, the readout rank $r=6$ at `main.tex:340`, the dead targets at `RESULTS.md:15` and `:36`, the four external datasets at `README.md:88`), ward-bttr-crosssubject (every value against `body.tex`, the BTTR and scalp-EEG values at `README.md:37` and `:47`).
+
+## Ruling 2: the known issues of a paper, kept privately
+
+Each fault below was checked against the paper itself and holds; it is written at the end of the project's `README.md` in the brief's heading and note text, and no deck takes anything from it. The eight new files start with `# <the project's title from project.yml>` and a blank line; the three existing files (glassbox-decision-pipelines, btfno, ecg-readable-substrate) got the section at their end and changed nowhere else.
+
+| Project | Fault written | What showed it |
+|---|---|---|
+| go-bttr | Utrecht table: subjects 2, 4 and 5 carry the same mean and SD for every finger and method | `manuscript/main.tex:219-249`, e.g. `:226` |
+| abduction | Text says no thumb abduction sensor; the glove figure lists one | `main.tex:209`, `:293`; `manuscript/dataglove.png` |
+| abduction | Raw-signal legend names index-middle; caption names thumb-index, subject 2, task 2 | `manuscript/raw_signal.png`; `main.tex:219` |
+| abduction | "Significantly outperforms on all pairs"; 12 of 40 baseline cells unmarked | `main.tex:211`; table `main.tex:238-265` |
+| fbttr-strategies | Caption reads the colour as Pearson correlation; colour bar runs from -5 to 20 | `manuscript/latex/main.tex:435`; `model.png` |
+| fbttr-strategies | "Centralized BTTR" rows repeat the eBTTR rows of the main tables | `main.tex:524, 546, 568` against `:446, 469, 490` |
+| fermat | Hybrid FBTTR row equals the fully federated row, 0.872 and 0.772 | `admin/conference/main_work.tex:478-480` |
+| fermat | Text names only FedAdagrad and FedProx non-significant; table marks FedProx significant and leaves FedYogi unmarked | `main_work.tex:468`; `:505-532` |
+| fermat | ECoG case study gives no split of the recordings into clients | `main_work.tex:315-352` |
+| hcc-modality-poster | Every AUROC is a 5-fold, 3-seed mean with no SD or interval | `manuscript/main.pdf`, render `hccposter-1.png` |
+| hcc-modality-poster | Results table has no DCE single-group column; DCE alone only in the Single Modality chart (0.780) | same render |
+| connectivity-motor-imagery (draft heading) | Granger Causality, Information Theory, Experimental setup and Discussion are headings with no text | `manuscript/main.tex:56, 60, 131, 162` |
+| connectivity-motor-imagery | Recovered $x_1$ carries the lag-1 $x_2$ term twice, 0.14 and 0.2 | `main.tex:154` |
+| abstract-bci-meeting-2021 | Estimated $x_1$ carries the lag-1 $x_2$ term twice, 0.14 and 0.2 | `manuscript/main.tex:52` |
+| chi-household-survival | No user study or evaluation; the Conclusion's gameplay claim rests on no measurement | `manuscript/main.pdf` sections |
+| ecg-readable-substrate | Head-to-head and transfer tables compare a model with age (and sex) to probes without it; the equal-input rerun is not reported | `manuscript/main.tex:127-150`, `:159-181`; `README.md:90` |
+| glassbox-decision-pipelines | Largest age gain printed as +0.160; measured 0.15917, which rounds to 0.159 | `main.tex:27, 38, 94, 153, 161`; `results/age_control/within_code15_seed0.json` |
+| btfno | $c_r$ stated as free over all $K$ modes (Theorem 1 counts on it); the experts factorize it over the two frequency axes | `manuscript/main.tex:90`; `code/core/moe_bt.py:50`, `:53` |
+| btfno | The $L=1$ arm `(8, 57, 1, 24)` and the CP arm `(8, 32, 10, 230)` split routed and shared parameters differently; reported as matched | `code/campaigns/gen_gap_theory/run_pdebench_theory.py:87-88`; `main.tex:300` |
+
+Faults dropped, with why:
+
+- go-bttr line 32, "the caveats in the reported tables": no fault of its own; it pointed at the identical subject columns, written above.
+- hcc-modality-poster line 36, the single-group chart's values "equal the pretrained encoder-head row": on the render `hccposter-1.png` the Single Modality chart (DWI 0.808, T1-IOP 0.753, T2W 0.738, all four 0.844) and the pretrained "Enc. heads + shared" row (0.808, 0.753, 0.738, 0.844) are the same single-group and all-four trainings shown twice, and the poster does not present them as different runs, so the equality is no fault.
+- http2-web-performance line 48, "Three of the figures are reused from the authors' earlier paper": the paper states it itself in three captions, "Image taken from our previous work [18]" (`pdftotext -layout` of `manuscript/main.pdf`, lines 634, 685 and 1414 of the text), so it is a disclosure and no fault. http2-web-performance therefore gets no `README.md`, the one project of the brief's nine without one.
+- linfoot-estimator, the R code's 17 bins against the paper's 18: the preprint's text is not in the project folder (`ls manuscript`: `archive`, `results`, `work`), so the fault was not checked against the paper; `README.md:114` and `:244` already record it.
+
+## Ruling 3: xsub-ecog-framework in its own terms
+
+The deck was rewritten from its `README.md` and `project.yml` (the entry above lists every line). `grep -n -i 'ward\|behavior-aligned\|spatial filter\|seq2seq\|Ceyssens'` over its `main.md` hits only line 4, the `sub`, which is the manifest's own title ("A Behavior-Aligned Transfer Framework for Cross-Subject Decoding across Non-Corresponding ECoG Grids"); no student method, student result or ward-bttr-crosssubject item is on the slide.
+
+## Ruling 4: serial-ecg-af chip
+
+The "Single-ECG bar" chip now reads "Attia 0.87 near-term, Raghunath 0.85 at 1 yr" (`README.md:3`); `grep -n -i 'BTTN\|0\.762'` over the deck hits only lines 15 and 18, which name BTTN as the model the project keeps.
+
+## Ruling 5: fed-faithful-ecg FedProx
+
+The FedProx row came from `code/results/fed_faithfulness/summary.md`, which neither `README.md` nor `CLAUDE.md` names; it is gone, and line 18 now states FedProx and MOON as benchmarks still to run (`README.md:72`). `grep -n -i fedprox` over the deck hits only that line.
+
+## Ruling 6: fermat's disagreement between the two versions
+
+The deck keeps the FLTA paper the manifest names (`project.yml:23`, "IEEE FLTA 2025"), `admin/conference/main_work.tex`. The two versions disagree on the local-client rows of the Fed-Heart-Disease table:
+
+- FLTA paper, `admin/conference/main_work.tex:482-483`, "Local Experiment FBTTR": client 0 AUC 0.89 $\pm$ 0.01, accuracy 0.81 $\pm$ 0.01; client 1 AUC 0.92 $\pm$ 0.01, accuracy 0.84 $\pm$ 0.01.
+- arXiv version, `manuscript/latex/main_work.tex:494-512`: no local FBTTR rows; its only local rows for clients 0 and 1 (`:508-509`) are 0.842 $\pm$ 0.009 and 0.882 $\pm$ 0.007 AUC, the FL4E "Local Experiment" rows that the FLTA paper also prints at `:497-498`.
+
+The deck states no client 0 or client 1 value; its only local values are the smaller clients' FBTTR accuracies 0.63 and 0.72 (`admin/conference/main_work.tex:484-485`), rows the arXiv version does not have.
+
+## Ruling 7: the verify sentence
+
+The sentence that verify item 1 "cannot pass" is gone from the report's first line, and the verify-1 row of the DONE table now gives this round's run: `npm run test:quick` with `TMPDIR` unset, "test:quick: 43.9 s; every command passed".
+
+## Ruling 8: values read from a figure
+
+Every figure value a slide keeps was checked again on a render in `.agents/scratch/`:
+
+- icfp-src-poster, lines 20 and 21: the "Loop program variations" bar chart prints every bar value as text (Pure 100, 78.5, 35.4, 2.4, 2.3; Latent 100, 74.3, 37.4, 2, 1.9; Incr 100, 56, 62.3, 5.5, 3.8; State 100, 34, 85, 3.3, 2.3); render `icfpposter-1.png` (`pdftoppm -r 50 -png`). The N-Queens chart prints no value, and the line read from it was replaced (entry above).
+- algebraic-effects-compilation, lines 37 to 40: Fig. 14 "Relative run-times of Loops example" prints the same twenty values above its bars in the legend order Basic, Opt, Pure, PureOpt, Native; render `aec-p24-24.png` (`pdftoppm -f 24 -l 24 -r 90 -png`).
+- hcc-modality-poster: the Results table (naive concatenation 0.718, 0.720, 0.705, 0.734 and with pretraining 0.795, 0.690, 0.670, 0.772, the last two in red; encoder heads 0.729, 0.731, 0.714, 0.787 and with pretraining 0.808, 0.753, 0.738, 0.844) and the Single Modality chart (0.808, 0.780, 0.753, 0.738, 0.844) print their values as text; render `hccposter-1.png`.
+
+Values that only a chart's geometry gave were removed or replaced by the caption's or the text's own words: the icfp poster's N-Queens reading and the other chart readings marked "a chart reading" in the per-deck entries above.
+
+## Ruling 9: individual-reference-intervals
+
+Line 20, "The project folder holds only its manifest: no data, code or result was kept.", is replaced by "The bet was that per-patient baselines could sharpen event prediction." (`project.yml` eli5); the whole deck now follows `project.yml`, its only source (entry above).
+
+## Verify, round 1
+
+Run after this round's last change, from the oculus worktree, with `TMPDIR` and `GIT_CEILING_DIRECTORIES` set to `.agents/scratch/` except for `npm run test:quick`:
+
+- `npm run diagrams`: exit 0; `git status --short docs`: nothing.
+- `env -u TMPDIR -u GIT_CEILING_DIRECTORIES npm run test:quick`: "ok prettier (0.8 s)", "ok ASCII gate (0.9 s)", "ok svelte-kit sync (2.9 s)", "ok eslint (2.4 s)", "ok svelte-check (9.0 s): ... 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS", "ok vitest checks (40.8 s)", "test:quick: 43.9 s; every command passed".
+- Oculus ASCII gate, `LC_ALL=C grep -n '[^ -~]'` over `src/lib/themes/slide.css`, `src/lib/views/academic/present/Slide.svelte`, `src/lib/views/academic/present/parts/project/Facts.svelte`: nothing, exit 1.
+- Hub ASCII gate, `find projects -path '*/present/*' \( -name '*.md' -o -name '*.yml' \) -print0 | xargs -0 env LC_ALL=C grep -n '[^ -~]'`: five lines, each an accented letter in a name: linfoot-estimator `main.md:11` (St<e acute>phanie), modality-dropping-btf `main.md:10` and hccnet-fl-sweden `main.md:4`, `:11`, `:19` (Link<o diaeresis>ping).
+- Character set of the READMEs this round wrote, `LC_ALL=C grep -n '[^ -~]'` over the 11 files (btfno, ecg-readable-substrate, connectivity-motor-imagery, fermat, fbttr-strategies, go-bttr, hcc-modality-poster, glassbox-decision-pipelines, abduction, abstract-bci-meeting-2021, chi-household-survival): nothing.
+- `sh utils/unused-exports.sh` (333 lines) against `O151-base/unused-exports.txt`: `diff` prints nothing, exit 0.
+- `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md df5a42a49`: the seven ledger paths of the DONE table's verify-4 row, none written by this builder.
+- Hub `git status --short`: 143 lines; outside `present/` only the 11 READMEs.
+- `sh diffrq.sh research.txt`: 95 folders, 0 "Only in base", 70 `main.md` and 70 `present.yml` only in the worktree, 25 `main.md` and 25 `present.yml` differ, 0 "base: no folder".
+- C5, `node c5.mjs <hub worktree> research.txt`: "folders with present.yml: 95 of 95"; fault lines: 0; second slides: 50; `kind equation`: 0.
+- C6: "Tests 7 passed | 7 skipped (14)", the three real-hub rows as in the DONE table.
+- C10, `node c10.mjs`: "lines repeated across decks: 53", the same lines as listed under "Slide-text lines repeated across decks" with "### Limits" now in 4 decks.
+- Fit, `node fit.mjs`: "slides: 145; slides over a fit rule: 0; slides with an equation key: 43".
+- `node katex.mjs`: "equations: 43; throwing: 0".
+- `node prose.mjs`: "hits: 20", 13 minus signs in math and 7 lower-case method names, read as in the DONE table.
+- Figures: 23 of 23 identical to their sources (`cmp -s` loop).
+- Doubled apostrophes in markdown bodies: none.

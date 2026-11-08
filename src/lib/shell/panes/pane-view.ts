@@ -4,8 +4,10 @@
 // the right-click menu of a pane's strip and of an empty pane's body, VS Code's editor group menu,
 // with what each of its picks runs, but for the Open View item, which it is handed and places, and
 // whose submenu and picks are strip/open-view.svelte.ts's; and the path, drop and tab helpers a
-// pane reads (`isPaneDrop`, `stripHovered`, `shownTabPath`, `openLabels`).
+// pane reads (`isPaneDrop`, `stripHovered`, `shownTabPath`, `openLabels`), and the attachment that
+// tells the layout store the pane's width on screen (`paneWidth`).
 
+import type { Attachment } from 'svelte/attachments';
 import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
@@ -646,4 +648,26 @@ export function openLabels(
             pane.tabs.flatMap((tab) => instanceLabel(tab.state) ?? [])
         )
     );
+}
+
+/**
+ * The attachment that tells the layout store a pane's width on screen, under its page and path,
+ * each time the pane is resized, so a record opened beside it never splits a pane too narrow for
+ * its text. A pane gone, or drawn at another path, takes its width away.
+ */
+export function paneWidth(
+    measure: LayoutStore['measurePane'],
+    page: string,
+    path: readonly number[]
+): Attachment<HTMLElement> {
+    const at = [...path];
+    return (node) => {
+        if (typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => measure(page, at, node.clientWidth));
+        observer.observe(node);
+        return () => {
+            observer.disconnect();
+            measure(page, at, null);
+        };
+    };
 }

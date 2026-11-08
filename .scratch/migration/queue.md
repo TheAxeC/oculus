@@ -1,13 +1,13 @@
-In flight (2 of 6 slots in use):
-- O151 (a deck for every research project): repair round 1 with its builder.
-- O167 (the shell's controls hold one behaviour): landing next.
+In flight (1 of 6 slots in use):
+- O151 (a deck for every research project): repair round 1 reported; its review over the round next.
 
 Queued, in order (1 step):
-- O170 (Literature and Present said and drawn plainly): once O167 has landed.
+- O170 (Literature and Present said and drawn plainly): /spec next.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
 Landed, newest first:
+- O167 (the shell's controls hold one behaviour), 2026-11-08, the landing commit.
 - O168 (the boards and record lists drawn whole), 2026-11-08, 47265abdf.
 - O169 (connections and their failures said in full), 2026-11-08, e93fe50e3.
 - O165 (the guides redesigned), 2026-11-07, 3fe97e21a.

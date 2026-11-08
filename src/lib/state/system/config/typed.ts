@@ -7,7 +7,8 @@
 // instance state (state/workbench/ui.svelte.ts), merged into the blob the rail draft already lives
 // in, so a tab switch or a reload brings it back and the rail list is never replaced. A tab holding
 // a typed field text or an editor's draft holds unsaved work, since a half-typed value is not a
-// change yet; the query alone is not.
+// change yet; the query alone is not, and neither is an empty text or one the row's writer refused,
+// which the tab marks in the page's state of its own and never in this record.
 //
 // The query is read here, once, for the search of search.ts and for what a part of a row finds
 // (view/fold.ts, view/matches.ts): `@modified` (in any case) and `@id:<text>` are its filters, and
@@ -122,13 +123,23 @@ export function withTypedText(
     return next;
 }
 
+/** The name a field's unsent text goes by among a tab's refused fields (`refused` below). */
+export function typedField(slot: Slot): string {
+    return JSON.stringify([slot.file, slot.key, slot.hub ?? '']);
+}
+
 /**
  * Whether a state holds work no write has taken: an unsent field text or a list or family draft
- * (editors/slots.ts). The tab asked is a Settings tab, which `settingsUnsaved` of
- * state/workbench/navigation/rail.ts checks before asking.
+ * (editors/slots.ts). A text that is empty, or that the row's writer refused (`refused`, the
+ * tab's refused fields by `typedField`), is not a change waiting and is not counted. The tab asked
+ * is a Settings tab, which `settingsUnsaved` of state/workbench/navigation/rail.ts checks before
+ * asking.
  */
-export function settingsTyped(state: unknown): boolean {
-    return typedList(state).length > 0 || draftsHeld(state) > 0;
+export function settingsTyped(state: unknown, refused: ReadonlySet<string>): boolean {
+    const waiting = typedList(state).filter(
+        (one) => one.text.trim() !== '' && !refused.has(typedField(one))
+    );
+    return waiting.length > 0 || draftsHeld(state) > 0;
 }
 
 /** The state a Settings tab is opened with to show the row `id`, which `settingsReveal` reads. */

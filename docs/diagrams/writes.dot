@@ -369,9 +369,9 @@ restoreCopy", pos="e,396.27,13411.75 307.70,13384.75 322.72,13384.75 337.74,1338
         label="routes/api/write"; style=solid;
         "12. routes/api/write/+server.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">+server.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="48.19,13189.00!"];
     }
-    "12. lib/server/edit/writes.ts" -> "12. lib/server/edit/writes/hubs.ts" [tooltip="noHub, rootedHome, routeRefusal
-routed, routedEntry, routedOrder
-routedTarget, withHubId", pos="e,333.34,13201.00 180.88,13194.00 190.16,13194.00 199.45,13194.00 208.73,13194.00 208.73,13197.00 208.73,13200.00 208.73,13203.00 232.80,13203.00 256.87,13203.00 280.95,13203.00 280.95,13202.33 280.95,13201.67 280.95,13201.00 296.02,13201.00 311.09,13201.00 326.16,13201.00"];
+    "12. lib/server/edit/writes.ts" -> "12. lib/server/edit/writes/hubs.ts" [tooltip="entriesRefusal, noHub, rootedHome
+routeRefusal, routed, routedEntry
+routedOrder, routedTarget, withHubId", pos="e,333.34,13201.00 180.88,13194.00 190.16,13194.00 199.45,13194.00 208.73,13194.00 208.73,13197.00 208.73,13200.00 208.73,13203.00 232.80,13203.00 256.87,13203.00 280.95,13203.00 280.95,13202.33 280.95,13201.67 280.95,13201.00 296.02,13201.00 311.09,13201.00 326.16,13201.00"];
     "12. lib/server/edit/writes.ts" -> "12. lib/server/edit/writes.ts to lib/server/edit/writes/hubs.ts (refuses)" [arrowhead=none, style=dashed, pos="180.88,13184.00 192.16,13184.00 203.45,13184.00 214.73,13184.00 214.73,13183.33 214.73,13182.67 214.73,13182.00 220.06,13182.00 225.40,13182.00 230.73,13182.00"];
     "12. lib/server/edit/writes.ts to lib/server/edit/writes/hubs.ts (refuses)" -> "12. lib/server/edit/writes/hubs.ts" [style=dashed, pos="e,333.34,13191.00 264.95,13182.00 272.28,13182.00 279.61,13182.00 286.95,13182.00 286.95,13185.00 286.95,13188.00 286.95,13191.00 299.95,13191.00 312.95,13191.00 325.94,13191.00"];
     "12. lib/server/edit/writes/hubs.ts" -> "12. lib/server/edit/feeds/literature.ts" [tooltip="engineLiteraturePath, literatureFile", pos="e,468.26,13256.00 377.58,13201.00 393.38,13201.00 409.18,13201.00 424.98,13201.00 424.98,13219.33 424.98,13237.67 424.98,13256.00 437.01,13256.00 449.04,13256.00 461.08,13256.00"];

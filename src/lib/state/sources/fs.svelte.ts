@@ -1,7 +1,7 @@
 // Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces,
-// one file's text, the reader's own bookmarks and the notes of every hub, and the history of one
-// file (fs-history.ts): the copies the server kept before its saves and the commits that touched
-// it.
+// one file's text, the reader's own bookmarks (fs-parts/bookmarks.svelte.ts, with their writes) and
+// the notes of every hub, and the history of one file (fs-parts/history.ts): the copies the server
+// kept before its saves and the commits that touched it.
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
@@ -12,10 +12,11 @@
 //
 // Nothing polls. A write marks everything held, which is what makes the next render of a shown tab
 // ask again, and a hidden tab ask once when it is shown; a bookmark is written through /api/write
-// rather than here, since it is a collection entry, so that write marks everything too. What is
-// held stays drawn until the fresh answer lands, so a tree does not blink out on every add or
-// removal, and a request still out when its key is marked is cancelled, so an answer from before
-// the mark is never held and a listing fetched before a removal cannot reappear after it.
+// rather than here, since it is a collection entry, so that write marks everything too, and a
+// bookmark's removal drops its row from the held bookmarks first. What is held stays drawn until
+// the fresh answer lands, so a tree does not blink out on every add or removal, and a request still
+// out when its key is marked is cancelled, so an answer from before the mark is never held and a
+// listing fetched before a removal cannot reappear after it.
 //
 // The disk is followed through the `files` channel, which is why no poller is needed:
 // `afterReceive` below lists the folders a message names again (explorer/view/disk.ts maps the
@@ -75,7 +76,6 @@ import {
     heldListings,
     listingKeys,
     type HeldListing,
-    NO_BOOKMARKS,
     NO_LISTING,
     NO_NOTES,
     NO_TEXT,
@@ -89,12 +89,10 @@ import {
     readCappedBytes,
     readRoots,
     readText,
-    type BookmarksState,
     type FileText,
     type Listing,
     type NotesState,
     type WorkspacesState,
-    bookmarksAnswer,
     notesAnswer,
     workspacesAnswer
 } from './fs-transport.ts';
@@ -116,8 +114,10 @@ import {
     type CommitPage,
     type FileCommits,
     type FileCopies
-} from './fs-history.ts';
+} from './fs-parts/history.ts';
+import { BOOKMARKS, createBookmarks, type BookmarksStore } from './fs-parts/bookmarks.svelte.ts';
 
+export { BOOKMARK_COLLECTION } from './fs-parts/bookmarks.svelte.ts';
 export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 export type {
     BookmarkEntry,
@@ -129,16 +129,10 @@ export type {
 } from './fs-transport.ts';
 
 /**
- * The collection key the write path resolves to the reader's own bookmarks file. A bookmark is
- * written through /api/write like any other collection entry, so the star, the row's rename and the
- * removal reach the file without knowing where it lives.
+ * The query keys the workspaces and the notes are held under; the bookmarks' key is held by
+ * fs-parts/bookmarks.svelte.ts.
  */
-export const BOOKMARK_COLLECTION = 'bookmarks';
-
-/** The query keys the three whole-file answers are held under. */
 const WORKSPACES = ['fs', 'workspaces'];
-
-const BOOKMARKS = ['fs', 'bookmarks'];
 
 const NOTES = ['fs', 'notes'];
 
@@ -148,8 +142,8 @@ const ALL = ['fs'];
 /** The status the file route answers for a file that is not there. */
 const NOT_FOUND = 404;
 
-/** The file browser's fetched state, one per client. */
-export type FsStore = {
+/** The file browser's fetched state, one per client, the bookmarks' reads and writes among it. */
+export type FsStore = BookmarksStore & {
     listing: (root: string, path: string, shown?: ListingShown) => Listing;
     entries: (root: string, path: string, shown?: ListingShown) => FsEntry[];
     /**
@@ -253,13 +247,6 @@ export type FsStore = {
     refreshFile: (root: string, path: string, repository: string, shown: string) => void;
     /** The text of one copy of a file, or null when the server does not hold it. */
     copyText: (root: string, path: string, id: string) => Promise<string | null>;
-    /** The reader's own bookmarks, asked for once a round like the workspaces. */
-    bookmarks: () => BookmarksState;
-    /**
-     * The same bookmarks once they are answered: what is held for the round, or the answer of the
-     * one request made for them. A caller that has to rewrite the bookmarks awaits it.
-     */
-    bookmarksNow: () => Promise<BookmarksState>;
     /** The notes of every hub, one answer per hub in the workspace's folder order. */
     notes: () => NotesState;
     /**
@@ -293,12 +280,6 @@ export type FsStore = {
     selectWorkspace: (path: string, options?: SendOptions) => Promise<WriteAnswer>;
     /** Leave the open workspace file for the unsaved workspace with no folder. */
     closeWorkspace: (options?: SendOptions) => Promise<WriteAnswer>;
-    /** Add one bookmark through the collection write path, and ask for them again. */
-    addBookmark: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    /** Take one bookmark out, by the label it is found by. */
-    removeBookmark: (label: string) => Promise<WriteAnswer>;
-    /** Give one bookmark another label, by the label it is found by, and ask for them again. */
-    renameBookmark: (id: string, label: string) => Promise<WriteAnswer>;
     /**
      * Say that the bookmarks were written by something else, such as a move of the file they name.
      */
@@ -719,18 +700,7 @@ export function createFs(
         () => switching > 0
     );
 
-    /** The reader's own bookmarks, asked for once and held until they are marked. */
-    function bookmarks(): BookmarksState {
-        const { data } = queries.read(BOOKMARKS, bookmarksAnswer, { enabled: inBrowser() });
-        return data ?? NO_BOOKMARKS;
-    }
-
-    async function bookmarksNow(): Promise<BookmarksState> {
-        const found = queries.peek<BookmarksState>(BOOKMARKS);
-        if (found.data !== undefined && !found.stale && !found.data.loading) return found.data;
-        if (!inBrowser()) return NO_BOOKMARKS;
-        return queries.fetch(BOOKMARKS, bookmarksAnswer);
-    }
+    const bookmarks = createBookmarks(writes, queries, invalidate);
 
     /** The notes of every hub, asked for once and held until the notes are marked. */
     function noteList(): NotesState {
@@ -817,16 +787,8 @@ export function createFs(
         return answer;
     }
 
-    /**
-     * One collection write on the bookmarks file, which is /api/write rather than this endpoint.
-     */
-    async function bookmarkWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send(fields);
-        if (answer.ok) invalidate();
-        return answer;
-    }
-
     return {
+        ...bookmarks,
         listing,
         entries,
         heldEntries,
@@ -853,8 +815,6 @@ export function createFs(
         commitPage: history.commitPage,
         refreshFile: history.refreshFile,
         copyText: history.copyText,
-        bookmarks,
-        bookmarksNow,
         notes: noteList,
         addRoot: (dir: string, options: SendOptions = {}) =>
             switched({ kind: 'roots', action: 'add', dir }, undefined, options),
@@ -880,15 +840,6 @@ export function createFs(
             switched({ action: 'select-workspace', path }, FS_PATH, options),
         closeWorkspace: (options: SendOptions = {}) =>
             switched({ action: 'close-workspace' }, FS_PATH, options),
-        addBookmark: (fields: Record<string, unknown>) =>
-            bookmarkWrite({ kind: 'new-entry', collection: BOOKMARK_COLLECTION, fields }),
-        removeBookmark: (label: string) =>
-            bookmarkWrite({ kind: 'delete-entry', collection: BOOKMARK_COLLECTION, id: label }),
-        renameBookmark: async (id: string, label: string) => {
-            const answer = await writes.writeEntry(BOOKMARK_COLLECTION, id, { label });
-            if (answer.ok) invalidate();
-            return answer;
-        },
         bookmarksChanged: invalidate,
         retryWorkspaces: () => retry(WORKSPACES),
         retryBookmarks: () => retry(BOOKMARKS),

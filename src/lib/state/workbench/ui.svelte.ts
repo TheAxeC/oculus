@@ -26,8 +26,11 @@
 // the server keeps in `views.json` of the state folder: every page of the server sees a record
 // another page set, and a record outlives a reload. A theme or a file icon theme the palette's
 // `:theme` and `:file-icons` lists preview is held beside them and never written (`preview`), so
-// moving through a list draws each choice and leaving it draws the chosen one again.
+// moving through a list draws each choice and leaving it draws the chosen one again. The fields of
+// a view whose typed text was refused are held the same way, beside the records and never written
+// (`refusedFields`), so a Settings tab does not count refused text as unsaved work.
 
+import { SvelteMap } from 'svelte/reactivity';
 import type { BusyTerminal } from '../sessions/terminal/pty/pty-io.ts';
 import {
     createCloseHooks,
@@ -181,10 +184,11 @@ export type UiStore = CloseHooks & {
     /** Write the reader's choice of the suggest list's description panel. */
     setSuggestDetails: (shown: boolean) => void;
     /**
-     * Write the user's own person key to `self` of the primary hub's `local.yml`; an empty key
-     * writes nothing.
+     * Write the user's own person key to `self` of the primary hub's `local.yml`, answering whether
+     * the write landed; an empty key writes nothing and answers false. A refusal is said by the
+     * writes store, as every refused write is.
      */
-    setSelf: (key: string) => void;
+    setSelf: (key: string) => Promise<boolean>;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     /** Write the file icon theme to the `file_icons` option, for every page. */
     setFileIcons: (name: string) => Promise<boolean>;
@@ -199,6 +203,14 @@ export type UiStore = CloseHooks & {
     instanceKeys: (prefix: string) => string[];
     /** Forget every instance record whose id starts with a prefix, in one change. */
     clearInstanceStates: (prefix: string) => void;
+    /**
+     * The fields of an instance whose typed text its writer refused, each by the name the view
+     * gives it: state of this page alone, never saved with the instance's record, and forgotten
+     * with that record.
+     */
+    refusedFields: (id: string) => ReadonlySet<string>;
+    /** Mark one field of an instance as refused, or take the mark away. */
+    markRefused: (id: string, field: string, refused: boolean) => void;
 };
 
 /** The store of the page's look and of the views' records. */
@@ -224,6 +236,9 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
 
     /** What the stores holding a tab's work registered, which a close asks about the tab. */
     const hooks = createCloseHooks();
+
+    /** The refused fields of each instance that has one, by instance id; never written. */
+    const refused = new SvelteMap<string, ReadonlySet<string>>();
 
     /** Per option key, the latest write asked for and the end of the writes sent before it. */
     const sends: Partial<Record<string, { turn: number; last: Promise<unknown> }>> = {};
@@ -482,9 +497,10 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
      * an unsaved workspace too, with no offer to save it; the server refuses it with no primary.
      * Clearing it is the Settings row's, so an empty key writes nothing.
      */
-    function setSelf(key: string): void {
-        if (key === '') return;
-        void deps.writes.writeConfigKey(LOCAL, 'self', key);
+    async function setSelf(key: string): Promise<boolean> {
+        if (key === '') return false;
+        const answer = await deps.writes.writeConfigKey(LOCAL, 'self', key);
+        return answer.ok && answer.refused.length === 0;
     }
 
     /** What a view instance wants remembered. */
@@ -500,8 +516,23 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
      * Forget an instance's state when its tab closes, so a closed editor's draft does not linger.
      */
     function clearInstanceState(id: string): void {
+        refused.delete(id);
         if (!Object.hasOwn(deps.state.views(), id)) return;
         deps.state.changeViews({}, [id]);
+    }
+
+    function refusedFields(id: string): ReadonlySet<string> {
+        return refused.get(id) ?? new Set<string>();
+    }
+
+    function markRefused(id: string, field: string, on: boolean): void {
+        const held = refusedFields(id);
+        if (held.has(field) === on) return;
+        const next = new Set(held);
+        if (on) next.add(field);
+        else next.delete(field);
+        if (next.size === 0) refused.delete(id);
+        else refused.set(id, next);
     }
 
     function instanceKeys(prefix: string): string[] {
@@ -513,6 +544,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
      * keeps under an owner of its own beside the instance's, as a project card keeps its tree.
      */
     function clearInstanceStates(prefix: string): void {
+        for (const id of [...refused.keys()]) if (id.startsWith(prefix)) refused.delete(id);
         const gone = instanceKeys(prefix);
         if (gone.length > 0) deps.state.changeViews({}, gone);
     }
@@ -565,6 +597,8 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         updateInstanceState,
         clearInstanceState,
         instanceKeys,
-        clearInstanceStates
+        clearInstanceStates,
+        refusedFields,
+        markRefused
     };
 }

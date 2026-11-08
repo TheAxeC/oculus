@@ -211,14 +211,15 @@
     /* The strip for the view's controls: 6px above and below, VS Code's view bar padding, wrapping.
        It draws nothing when the view's snippet draws nothing. It takes at most half the box and
        scrolls past that, so a bar of many filters never leaves the body too little room to scroll
-       to its last entry. */
+       to its last entry; a view whose body needs more of the box sets `--viewbar-max` on the pane
+       to a smaller share. */
     .viewbar {
         display: flex;
         flex: 0 0 auto;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        max-height: 50%;
+        max-height: var(--viewbar-max, 50%);
         overflow-y: auto;
         box-sizing: border-box;
         padding: 6px 12px;

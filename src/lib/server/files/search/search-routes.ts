@@ -32,6 +32,7 @@ import { hubDirs, privateFolders } from '../../../data/helpers/files/private-fol
 import { requestFrom } from '../../../data/helpers/search/query.ts';
 import { runNames, runSearch, type SearchOptions } from './search.ts';
 import type { Root } from '../files.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 
 export type SearchRouteOptions = SearchOptions & {
     /** Every root this request may search. */
@@ -42,6 +43,11 @@ export type SearchRouteOptions = SearchOptions & {
     maxNames: number;
     /** The repositories of the workspace, each listed with its own ignore rules. */
     repositories?: readonly string[];
+    /**
+     * The server's git credentials, for the check that leaves out a repository lying under a
+     * folder the repository holding it ignores.
+     */
+    credentials?: GitCredentials;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -70,7 +76,8 @@ export async function handleSearch(
             timeout: options.timeout,
             max: options.maxNames,
             withheld: privateFolders(hubDirs(options.roots), homedir()),
-            repositories: options.repositories ?? []
+            repositories: options.repositories ?? [],
+            ...(options.credentials === undefined ? {} : { credentials: options.credentials })
         });
         if (!listed.ok) {
             return json({ error: listed.refused }, { status: 400, headers: NO_STORE });

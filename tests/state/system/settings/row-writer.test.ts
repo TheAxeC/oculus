@@ -12,14 +12,18 @@
 // the workspace file or a hub's settings file (tests/routes/edit/undo/config-save.test.ts).
 
 import { describe, expect, it } from 'vitest';
-import { createRowWriter } from '../../../../src/lib/state/system/config/scopes/write.ts';
+import type {
+    CatalogEntry,
+    Control
+} from '../../../../src/lib/data/sources/config/catalog/options.ts';
+import { answered, createRowWriter } from '../../../../src/lib/state/system/config/scopes/write.ts';
 import {
     fileRows,
     type ConfigRow,
     type UserFiles
 } from '../../../../src/lib/state/system/config/rows.ts';
 import type { Lists } from '../../../../src/lib/state/system/config/editors/sources.ts';
-import { message } from '../../../../src/lib/state/system/config/messages.ts';
+import { message, type Message } from '../../../../src/lib/state/system/config/messages.ts';
 import { memoryStage } from '../../../views/system/workbench/workbench-fixture.ts';
 import { shipped } from './fixture.ts';
 
@@ -125,6 +129,86 @@ describe('a change of a Settings row', () => {
         expect([writer.pending(row), writer.shown(row)]).toEqual([true, 'vscode-dark-2026']);
         writer.submit(row, 'tokens');
         expect([stage.held(row), writer.pending(row)]).toEqual([undefined, false]);
+    });
+});
+
+/** The `code_theme` row drawn with another control, holding a key of its scope's file or not. */
+function controlRow(control: Control, own: boolean, extra: Partial<CatalogEntry> = {}): ConfigRow {
+    const row = rowOf('code_theme', { code_theme: 'tokens' }, workspace(''));
+    return { ...row, own, entry: { help: row.entry.help, control, ...extra } };
+}
+
+describe('a Settings row whose box is emptied', () => {
+    /**
+     * One control kind, whether its option takes the empty value (`empty:`), whether the scope's
+     * file holds the key, and what the row then holds.
+     */
+    type Emptied = {
+        control: Control;
+        empty?: true;
+        own: boolean;
+        held: unknown;
+        said: Message | null;
+    };
+
+    const ROWS: Emptied[] = [
+        { control: 'text', own: false, held: undefined, said: null },
+        { control: 'long', own: false, held: undefined, said: null },
+        { control: 'path', own: false, held: undefined, said: null },
+        { control: 'number', own: false, held: undefined, said: null },
+        { control: 'choice', own: false, held: undefined, said: null },
+        { control: 'text', own: true, held: { value: '' }, said: null },
+        { control: 'long', own: true, held: { value: '' }, said: null },
+        { control: 'path', own: true, held: undefined, said: message('notAPath') },
+        { control: 'number', own: true, held: undefined, said: message('empty') },
+        { control: 'choice', own: true, held: undefined, said: null },
+        { control: 'choice', empty: true, own: false, held: { value: '' }, said: null },
+        { control: 'choice', empty: true, own: true, held: { value: '' }, said: null },
+        { control: 'path', empty: true, own: false, held: { value: '' }, said: null },
+        { control: 'path', empty: true, own: true, held: { value: '' }, said: null }
+    ];
+
+    it('holds nothing and says nothing for a key the file does not hold, unless the empty text is a value of its option, and answers by its control for one it holds', () => {
+        const outcomes = ROWS.map((one): Emptied => {
+            const extra = one.empty === undefined ? {} : { empty: one.empty };
+            const row = controlRow(one.control, one.own, extra);
+            const { writer, stage } = writerOf();
+            writer.submit(row, '');
+            return { ...one, held: stage.held(row), said: writer.said(row) };
+        });
+        expect(outcomes).toEqual(ROWS);
+    });
+});
+
+describe('a refused value of a Settings row', () => {
+    it('is said until it is withdrawn: Escape, the held value typed back, or Reset', () => {
+        const row = { ...controlRow('number', true, { min: 1, max: 9 }), value: 5 };
+        const { writer, stage } = writerOf();
+        writer.submit(row, 'abc');
+        expect(writer.said(row)).toEqual(message('notNumber'));
+        writer.clear(row);
+        expect(writer.said(row)).toBeNull();
+        writer.submit(row, 'abc');
+        writer.submit(row, '5');
+        expect([writer.said(row), stage.held(row)]).toEqual([null, undefined]);
+        writer.submit(row, '20');
+        expect(writer.said(row)).not.toBeNull();
+        writer.reset(row);
+        expect([writer.said(row), stage.held(row)]).toEqual([null, { reset: true }]);
+    });
+
+    it('names the reasons of a refused Save with no full stop of their own', () => {
+        const answer = {
+            ok: false,
+            changed: [],
+            refused: [
+                { field: 'appearance.yml:code_theme', reason: 'The theme is not listed.' },
+                { field: 'appearance.yml:theme', reason: 'The file is locked' }
+            ]
+        };
+        expect(answered(answer, FILE)).toEqual(
+            message('refused', 'The theme is not listed; The file is locked')
+        );
     });
 });
 

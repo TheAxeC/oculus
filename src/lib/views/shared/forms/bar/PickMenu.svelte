@@ -13,7 +13,9 @@
     // keeping its own heading under it.
     // Typing filters the values by their words, over every heading; the arrows move; a press or
     // Enter picks or unpicks a value, and the list stays open, so several are picked in one go.
-    // Escape and a press outside close it and give the focus back to the button.
+    // Escape closes it and gives the focus back to the button without opening its tip, as a menu
+    // does (ui/menu/menu-items.ts `menuClosing`); a press outside or Tab closes it and leaves the
+    // focus where it went.
     //
     // It is bits-ui's Popover holding bits-ui's Command, as the toolbar's popover and the palette
     // are: the opening, the closing, the focus going back, the keys and the selection are theirs,
@@ -30,6 +32,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FloatingList from '$lib/ui/frame/FloatingList.svelte';
+    import { menuClosing } from '$lib/ui/menu/menu-items';
     import MenuOpener from '$lib/ui/menu/trigger/MenuOpener.svelte';
     import type { FilterChoice, FilterGroup } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
@@ -79,9 +82,20 @@
     /** The id of the first group shown of the section's run, which the section heading is over. */
     const sectionStart = $derived(shown.find((group) => section?.ids.includes(group.id))?.id);
 
+    /** The element around the button, which holds the button the focus goes back to. */
+    let pick = $state<HTMLElement | null>(null);
+
+    /**
+     * How the list closes, as a menu's does: Escape gives the focus back to the button quietly, so
+     * its tip does not open over the bar under it, and a press outside or Tab leaves the focus
+     * where the reader put it.
+     */
+    const closing = menuClosing(() => pick?.querySelector('button'));
+
     /** The search starts empty each time the list opens. */
     function changed(next: boolean): void {
         if (next) query = '';
+        closing.changed(next);
     }
 
     /** The hue of a value's dot, its bar and its fill while picked, as inline custom properties. */
@@ -121,7 +135,7 @@
     </Command.Item>
 {/snippet}
 
-<span class="pick">
+<span class="pick" bind:this={pick}>
     <Popover.Root bind:open onOpenChange={changed}>
         <Popover.Trigger>
             {#snippet child({ props })}
@@ -134,7 +148,15 @@
             {/snippet}
         </Popover.Trigger>
         <Popover.Portal>
-            <Popover.Content side="bottom" align="start" sideOffset={4} collisionPadding={8}>
+            <Popover.Content
+                side="bottom"
+                align="start"
+                sideOffset={4}
+                collisionPadding={8}
+                onInteractOutside={closing.content.onInteractOutside}
+                onkeydown={closing.content.onkeydown}
+                onCloseAutoFocus={closing.content.onCloseAutoFocus}
+            >
                 {#snippet child({ wrapperProps, props })}
                     <div {...wrapperProps}>
                         <FloatingList {label} list={props} shape="grouped">
