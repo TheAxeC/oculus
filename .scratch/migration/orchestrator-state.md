@@ -47,7 +47,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-08
   report: .scratch/migration/agents/reviews/O171-report.md
   shared_paths: src/lib/themes/slide.css, src/lib/views/academic/present/Slide.svelte, parts/project/Project.svelte and parts/project/Facts.svelte with O151 (this plan), whose repair round 2 runs after O171 and O170 land and rebuilds its changes on main's head, so no merge of the two is made
-  round: 0
+  builder_usage: first run (hand-back of C7 and verify 4): 253320 tokens, 58 tool uses, 10.9 min
+  round: 0 (.scratch/migration/agents/briefs/O171-cases.md)
   landing: not-started
 ```
 
