@@ -1,5 +1,5 @@
 In flight (3 of 6 slots in use):
-- O167 (the shell's controls hold one behaviour): report in, its review running.
+- O167 (the shell's controls hold one behaviour): review in (`agents/reviews/O167-refuter.md`), repair round 1 sent (`agents/briefs/O167-round1.md`).
 - O151 (a deck for every research project): building, round-0 rulings sent, in its oculus worktree and its hub worktree.
 - O168 (the boards and record lists drawn whole): first run handed back two cases (`agents/reviews/O168-first-run.md`), both ruled; the resume waits on open item 719 (where a builder's case-run files may live). Base abebbb552.
 
