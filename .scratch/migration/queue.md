@@ -1,10 +1,10 @@
 In flight (3 of 6 slots in use):
-- O167 (the shell's controls hold one behaviour): review in (`agents/reviews/O167-refuter.md`), repair round 1 reported (`agents/reviews/O167-report.md`, section "Round 1"), its review over round 1 in (`agents/reviews/O167-refuter.md`, section "Repair round 1, refuted"). Its landing waits on Axel's rulings on open items 720, 721 and 722; the landing then fixes the head comments R1-T2 and R1-T3 and the report's stale grep R1-P2, and its look settles item 13 (Cmd+S in the browser and the desktop app) and times a scroll over a large board for R1-B1.
-- O151 (a deck for every research project): reported (`agents/reviews/O151-report.md`), its scratchpad files listed there; reviewed (`agents/reviews/O151-refuter.md`). Repair round 1 waits on Axel's rulings on open items 723 and 724, then carries every fix; then the look drawing every deck on a scratch server and the landing of the oculus side. The hub commit waits on Axel's word.
-- O168 (the boards and record lists drawn whole): first run handed back two cases (`agents/reviews/O168-first-run.md`), both ruled (`agents/briefs/O168-cases.md`, Axel ruled open item 719 (a)); built (`agents/reviews/O168-report.md`); reviewed (`agents/reviews/O168-refuter.md`); repair round 1 built (`agents/reviews/O168-report.md`, "Round 1") and reviewed (`agents/reviews/O168-refuter.md`, "Repair round 1, refuted"); landing under way: the range and four fixes at landing staged in `.agents/worktrees/gate`, its gate passed, the look done for C1, C3 at 420 px, C4, C8, C9, C10 and C11, and the stored-mute check printed no mute. The landing waits on open item 726 (the Funding list at a middle width cuts the Title beside an empty column); open item 727 (a refused git action's toast says "A write was refused") asks for a new step. O168 lands before O167, whose shared files take the hand merge at its landing. Base abebbb552.
+- O167 (the shell's controls hold one behaviour): landing, waits on open items 720, 721 and 722.
+- O151 (a deck for every research project): repair round 1, waits on open items 723 and 724.
+- O168 (the boards and record lists drawn whole): landing, waits on open item 726.
 
 Queued, in order (1 step):
-- O170 (Literature and Present said and drawn plainly): waits for O167's landing, since O167 writes the Present toolbar, the presenter screen and the Present view that O170 changes; its brief check is done, /spec again then.
+- O170 (Literature and Present said and drawn plainly): once O167 has landed.
 
 Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
