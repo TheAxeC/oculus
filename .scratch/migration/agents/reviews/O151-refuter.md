@@ -197,3 +197,216 @@ Cases of the brief's "Cases":
 - Whether the fermat manuscript root (`admin/conference/main_work.tex`, the FLTA paper the manifest names) is the right choice over `manuscript/` (the arXiv extended version). The report states its reason, and it is a judgment the brief leaves to the builder; only the unlisted disagreement is raised (Proof 2).
 
 Reviewer usage: a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min.
+
+## Repair round 1, refuted
+
+### Verification
+
+Every command below was run after the builder's last change. Unless a line says otherwise, it ran from the oculus worktree `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O151` (O) or the hub worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O151` (H).
+
+Verify 1 (O):
+```
+$ env -u TMPDIR -u GIT_CEILING_DIRECTORIES npm run diagrams   (last lines)
+docs/diagrams/channels.svg
+docs/diagrams/writes.dot
+docs/diagrams/writes.svg
+$ git status --short          (unchanged after it: 6 M, 5 ??, no docs/ path)
+$ env -u TMPDIR -u GIT_CEILING_DIRECTORIES npm run test:quick
+ok      prettier (2.7 s): All matched files use Prettier code style!
+ok      ASCII gate (3.1 s)
+ok      svelte-kit sync (6.5 s)
+ok      eslint (3.2 s)
+ok      svelte-check (16.0 s): 1794142704169 COMPLETED 589 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (65.6 s): Duration  46.12s (transform 21.42s, setup 0ms, import 42.07s, tests 65.95s, environment 2ms)
+test:quick: 72.4 s; every command passed
+```
+
+Verify 2:
+```
+(O) $ LC_ALL=C perl -ne '<rules-file ASCII gate>' src/lib/themes/slide.css src/lib/views/academic/present/parts/project/Facts.svelte src/lib/views/academic/present/Slide.svelte
+exit=0 (nothing printed)
+(H) $ find projects -path '*/present/*' \( -name '*.md' -o -name '*.yml' \) -print0 | xargs -0 env LC_ALL=C grep -n '[^ -~]'
+projects/active/linfoot-estimator/present/main.md:11:  - { label: 'Lead', value: 'St<e acute>phanie van den Berg; Axel Faes coauthor' }
+projects/ideas/modality-dropping-btf/present/main.md:10:  - { label: 'Data', value: 'real Twente (NL) and Link<o diaeresis>ping (SE) HCC federation' }
+projects/ideas/hccnet-fl-sweden/present/main.md:4:sub: 'HCCNet federated between Twente (NL) and Link<o diaeresis>ping (SE), where sites hold different MRI sequence sets'
+projects/ideas/hccnet-fl-sweden/present/main.md:11:  - { label: 'Partner', value: 'Link<o diaeresis>ping University Hospital, cohort to confirm' }
+projects/ideas/hccnet-fl-sweden/present/main.md:19:  - 'Gate pending; the Link<o diaeresis>ping data-use, ethics and GDPR agreement is the critical path.'
+(H) $ LC_ALL=C grep -n '[^ -~]' <the 11 README.md files of the round>
+ascii exit=1 (nothing printed)
+```
+
+Verify 3 (O):
+```
+$ sh utils/unused-exports.sh | diff - /Users/axelfaes/workspace/oculus/.agents/worktrees/O151-base/unused-exports.txt
+exit=0 (nothing printed); 333 lines
+```
+The brief's relative path `.agents/worktrees/O151-base/unused-exports.txt` does not exist inside the worktree. The base copy sits under the main checkout's `.agents/worktrees/`, so the absolute path was used.
+
+Verify 4:
+```
+(O) $ node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md df5a42a49
+.scratch/migration/agents/briefs/O151-cases.md
+.scratch/migration/agents/briefs/O151-round1.md
+.scratch/migration/agents/briefs/O151.md
+.scratch/migration/agents/guarded.md
+.scratch/migration/agents/reviews/O151-refuter.md
+.scratch/migration/agents/reviews/O151-source-check.md
+.scratch/migration/agents/spec.md
+```
+- Compared with main's ledger by `diff -q`: six of the seven are byte-identical. `guarded.md` differs only by G152, which main gained later (`diff` prints `236a237,239 > - G152 ...`).
+- `git diff df5a42a49` on the worktree's G130 line gives main's text. These are orchestrator copies, not builder writes.
+- `git diff df5a42a49` touches only `slide.css`, `Slide.svelte` and `Facts.svelte` among the non-ledger files.
+
+```
+(H) $ git status --short | wc -l
+143
+(H) $ git status --short | grep -v '/present/'
+ M projects/archive/published/2026/glassbox-decision-pipelines/README.md
+ M projects/manuscripts/btfno/README.md
+ M projects/manuscripts/ecg-readable-substrate/README.md
+?? projects/archive/published/2021/abstract-bci-meeting-2021/README.md
+?? projects/archive/published/2025/fbttr-strategies/README.md
+?? projects/archive/published/2025/fermat/README.md
+?? projects/archive/published/2025/go-bttr/README.md
+?? projects/archive/published/2026/abduction/README.md
+?? projects/archive/published/2026/hcc-modality-poster/README.md
+?? projects/archive/stopped/connectivity-motor-imagery/README.md
+?? projects/coauthor/published/2016/chi-household-survival/README.md
+(H) $ for each of the 95 research projects: diff -rq <folder>/present O151-hub-base/<folder>/present   (summarised by kind)
+  70 Only in worktree present.yml | 70 Only in worktree main.md | 25 main.md differ | 25 present.yml differ | 23 images only in the worktree (one each) | 0 only in base | 0 "base: no folder"
+(H) $ git diff 59095642f --stat -- ':!*/present/*'
+ .../archive/published/2026/glassbox-decision-pipelines/README.md   | 6 ++++++
+ projects/manuscripts/btfno/README.md                               | 7 +++++++
+ projects/manuscripts/ecg-readable-substrate/README.md              | 6 ++++++
+```
+Each tracked README hunk adds only the private section at the end of the file.
+
+Verify 5. The commands are fed from the report's appendix through stdin with `node --input-type=module -`, and the project list comes in by process substitution, so no file is written.
+```
+C5 (c5.mjs source, report lines 1300-1409): last line "folders with present.yml: 95 of 95"; no "DECK FAULTS" line; 50 "slide 2:" lines (33 columns, 17 project)
+C6 (O) $ OCULUS_TEST_HUB=<H> npx vitest run tests/checks/config/integrity.test.ts -t "deck|equation|portfolio" --reporter=verbose   (TMPDIR at the system default)
+ <check mark> ... the real hub > reads a deck out of every project that has a present/ folder, with no finding 2101ms
+ <check mark> ... the real hub > reads an equation out of every slide that writes one, as LaTeX that typesets 761ms
+ <check mark> ... the real hub > reads the portfolio deck with every named deck found 155ms
+      Tests  7 passed | 7 skipped (14)
+ load average 5.89 7.15 8.71 before, 6.13 7.16 8.70 after
+C10 (c10.mjs source, report lines 1417-1471): "lines repeated across decks: 53"; among them '"### Limits" in 4 decks' (connectivity-iris, hccnet-fl, http2-best-practices, ecog-frequency-features), '"### Limits and dead ends" in 2 decks', '"### Open" in 2 decks', '"BCI Competition IV dataset 4, 3 subjects" in 2 decks' (extended-bttr-note, xsub-ecog-framework)
+```
+
+Verify 6 was checked by reading. See R1-T1.
+
+Commands the round-1 report quotes, rerun in the same form:
+```
+fit.mjs:   slides: 145; slides over a fit rule: 0; slides with an equation key: 43
+katex.mjs: equations: 43; throwing: 0
+prose.mjs: hits: 20   (13 spaced-hyphen hits on the front matter, 7 lower-case first letters: eBTTR, eLORETA, mPSTD)
+figure cmp over the 23 source/target pairs of report lines 1104-1126: 23 same
+(H) git status --short: 143 lines; outside present/ only the 11 READMEs (matches the report)
+diffrq.sh: reproduced by the diff -rq loop above (70/70/25/25, 0 only in base)
+```
+- The deck delta since the snapshot was taken by `cmp` of each deck file against `migration-O151-round-1`. It is 66 `main.md` changed, no `present.yml` changed, no figure changed and none deleted. All 66 decks have an entry in the report's Round 1 section.
+- The oculus round delta is none: `diff -u` of the three files in `files.txt` against the snapshot prints nothing for each.
+- `.agents/scratch/` is absent from the oculus worktree (`ls .agents/`: only `plan.yaml`).
+
+### Verdicts
+
+Items of "What to build":
+- Item 1 (a deck for every research project, from its own sources, naming no other project): violated.
+  - Finding R1-S1: the round added a cross-reference to another project.
+  - Finding R1-S6: clinical-ai-eval-artifacts frames the idea through two student studies. It is for the orchestrator.
+  - These hold, each checked by reading: rulings 723 (xsub-ecog-framework), 4 (serial-ecg-af chip: `grep -n -i 'BTTN\|0\.762'` hits only lines 15 and 18) and 5 (fed-faithful-ecg FedProx, `README.md:5` and `:72`).
+- Item 2 (every slide right, and ruling 724's source rule): violated.
+  - Findings R1-S2 (a significance reading the paper does not state), R1-S3 (a fact dropped for room), R1-S4 (a negative the paper states dropped) and R1-S5 (repeated body headings).
+  - Shape, count, titles, equation floor, fit rules and figures hold (C5, C6, fit.mjs, katex.mjs, the cmp loop).
+- Item 3 (the facts strip): holds. The round did not change the three oculus files (snapshot diff empty), and `git diff df5a42a49` shows `--slide-design-facts: 12px`, `--slide-design-facts-label: 10px`, the rice values 11px and 9px, `--dot-size: 0.75em`, and `.facts` and `.label` set from `--slide-fs-facts` and `--slide-fs-facts-label`.
+
+Cases:
+- C1: met. clinical-ai-eval-artifacts is a `project` slide whose numbers ("three", "at least one") are in `README.md`. The student-study framing is raised under item 1 (R1-S6), not as a C1 miss.
+- C2: met. The round's three changed phd-thesis lines match `chapter-3/chapter-3.tex:338`, `chapter-4/chapter-4.tex:377` (with 0.493 at `:416`), `introduction/introduction.tex:93` and `conclusion/conclusion.tex:98`.
+- C3: met. ms-lipid-handshake's hook now keeps the README's hedges (`README.md:82-84`), and its headline is "Disproved: slope -0.06, p = 0.73 on 632k nuclei". algebraic-subtyping still states "Stopped before a standalone paper". raw-pls keeps the dead targets at `main.md:40`.
+- C4: met. `grep -n -i -e covert -e '\bPCD\b' -e 'coupled descent'` gives covert-theory only its own title lines. covert-applied gives `main.md:3` and `:45`, and its new headline names Route A as "masked dense tensors" (`main.tex:78`, `:86`, `:899`), not the other paper.
+- C5: met (rerun above).
+- C6: met (rerun above).
+- C7: met for every round-changed number checked. The checks were go-bttr, abduction, fbttr-strategies, fermat, abstract-bci, connectivity-motor-imagery, clinical-hccnet, meseret-cirrhosis, hccnet-fl, glassbox, fed-multicellular-immune, pfl-ms-npj (27% is printed in the PDF), hccnet-revision (106.6%), bachelor-network-ids, extended-bttr-note supp, linfoot, jacobian and old-charges. The decks not checked are under "Declined to judge".
+- C8: met by reading (unchanged since round 0): 12/10 times 1, 1.5, 0.7 and 1.6; 11/9 under rice; the dot 0.75em of 12px is 9px.
+- C9: not verifiable. It is settled by the orchestrator drawing every deck of the hub worktree on a scratch server running the oculus worktree's code and listing each "Slide too tall", then the look at landing.
+- C10: partial, finding R1-S5.
+
+### 1. Spec
+
+- **R1-S1.** `projects/active/novel-math-primitives/present/main.md:45`, added this round: "Chip-firing and sandpile dynamics, the first build candidate, was spun out as the sandpile-operator project."
+  - What is wrong: round-0 ruling 1 says "A deck names no other project as such: no cross-reference". The sentence names another research project of the hub. Its source (`project.yml:17`) says so, but the project is a spin-out, not something novel-math builds on, applies or extends. So the "builds on" clause does not cover it.
+  - The fix of the finding ("No candidate has a built bridge or a proved property yet", a framing the sources do not give) reaches beyond the finding by bringing in a new violation. A grep for every research project id over every deck finds this one hit; the only other hit is "abduction" in phd-thesis, used as the plain word.
+  - Failure scenario: the portfolio deck shows a slide that points at another project's slide, which the ruling removes from every deck.
+- **R1-S2.** `projects/archive/published/2022/extended-bttr-note/present/main.md:24`, slide 1, written this round: "On the cued-finger average, AM, RF, LARS, CNN and LSTM are all marked significantly different from eBTTR for every subject."
+  - What is wrong: the report names its source as "the bold Avg. cells of the three result tables, `manuscript/main.tex:315-369`". Nothing in the paper says what bold marks. `grep -n -i "bold\|significan" main.tex` finds no legend. The caption at `:328` reads only "Intended (cued) finger movement accuracy for Subject 1 (Pearson correlation)". The only significance statement, `:303`, covers BTTR and HOPLS against eBTTR.
+  - Ruling 724 bars "reading of a chart or comparison that the sources do not state". The slide is the builder's reading of table formatting summed over three tables.
+  - Failure scenario: a reader takes as the paper's finding a significance result the paper never states.
+- **R1-S3.** `projects/archive/published/2026/hcc-modality-poster/present/main.md`, slide 2: the line "Naive concatenation without and with pretraining: DWI 0.718 and 0.795, T1-IOP 0.720 and 0.690, T2W 0.705 and 0.670." is gone.
+  - The report says it was "removed to keep the column at four items". The T1-IOP and T2W values stay on slide 1, but DWI 0.718 and 0.795 are now on no slide (whole deck read). Both values print as text in the poster (`pdftotext -layout manuscript/main.pdf`, lines 54-55).
+  - The column made room by adding "Multi-modal fusion provides a further gain over any single group."
+  - What is wrong: item 2 says "A fact the first slide has no room for goes on the second; no fact is dropped for room."
+  - Failure scenario: the DWI pretraining result of naive concatenation, the one group where pretraining helped it, drops out of the deck.
+- **R1-S4.** `projects/archive/published/2025/fermat/present/main.md`, slide 2 "Fed-Heart-Disease" column: the line "The two large centres score higher alone (AUC 0.89 and 0.92) than the federated model (0.872)." was removed, and its replacement keeps only half of its source sentence.
+  - The source sentence, `admin/conference/main_work.tex:449`, reads "suggesting that smaller clients ... may benefit more ...". Its next sentence, "It should be noted that the larger clients can showcase a decrease of performance due to participating in an FL environment.", is on no slide (whole deck read). The column holds three items, so it had room.
+  - What is wrong: item 2, "Nothing is hidden: no slide leaves out a fact because it is ... negative". The paper states this negative itself, so ruling 724 allows it ("a limitation the sources themselves state"). The values 0.89 and 0.92 are at `main_work.tex:482-483`.
+  - Failure scenario: the deck keeps the paper's positive reading of the client analysis and drops its stated cost to the larger clients.
+- **R1-S5.** Body headings repeated across decks. "### Limits" sits at connectivity-iris `main.md:44`, hccnet-fl `:44`, http2-best-practices `:43` and ecog-frequency-features `:44`. "### Limits and dead ends" sits at ecg-readable-substrate and fed-multicellular-immune `:43`. "### Open" sits at masters-algebraic-subtyping and masters-eeg-infotheory `:43`.
+  - The report files these as "Body headings that name a kind of column" beside the one-word labels.
+  - What is wrong: round-0 ruling 4 allows only "a one-word tag text or spec label that names a kind of thing" and says "a body heading block [is] never repeated across decks". The round renamed three of the six "### Limits" headings (algebraic-effects-compilation, http2-web-performance, hcc-modality-poster: the snapshot grep gives six decks, the worktree four) and left the other four.
+  - If "body heading block" is meant otherwise, the orchestrator rules it.
+  - Failure scenario: C10's rule is applied to some decks and not others in the same round.
+- **R1-S6.** `projects/ideas/clinical-ai-eval-artifacts/present/main.md:14` and `:20`: "Extract the recurring failure modes of three in-hand studies (federated partitioning, ECG representation benchmarking, a vertical-federation go/no-go) ..." and "The study owners co-author their own pieces; ...".
+  - What is wrong: the README (`:11`, `:17`) says two of the three studies are the students' (`brecht-fl-partitioning`, `dongho-ecg-clustering`). Their studies are the deck's evidence base and method, which round-0 ruling 1 bars ("no deck frames its project through a student project"). This is the same kind of clash ruling 723 settled for xsub-ecog-framework only.
+  - It predates the round and the first refuter did not raise it. It is raised here for the orchestrator to rule, not counted against the builder.
+  - Failure scenario: an internal deck frames a senior meta-science idea through students' studies, as xsub did before ruling 723.
+
+### 2. Proof
+
+- **R1-P1.** Private README `projects/manuscripts/btfno/README.md`, second bullet: "the two arms split their parameters differently between the routed and the shared expert, while the paper reports the $L=1$ result as a matched comparison (`manuscript/main.tex:300`)".
+  - What is wrong: `main.tex:300` says only "All comparisons are matched-degree-of-freedom factorization ablations". The script's own lines give the arms as matched in total, `run_pdebench_theory.py:87` `# 673k` and `:88` `# 671k`. `grep -n "L=1\|L = 1"` over `main.tex` finds no claim that the split between the routed and the shared expert is matched.
+  - Ruling 2 says "A fault that does not hold against the paper is not written". This fault rests on a per-component reading the paper does not make.
+  - Failure scenario: the private record lists as a fault of the paper something the paper does not claim, and a later revision acts on it.
+- **R1-P2.** The report's Round 1 entry for `coauthor/stopped/individual-reference-intervals` lists hook, purpose, plain and line 20. The diff also replaces `mechanism` ("Per-patient baselines as features for event prediction" becomes "Per-patient reference intervals combined with machine learning") and `headline` ("Stopped in 2024 before a full paper for IEEE JBHI" becomes "Abandoned; it was targeted at IEEE JBHI, 2024").
+  - The new words match `project.yml:11`.
+  - What is wrong: ruling 1 asks the report to list "per deck, each statement removed or replaced, with its line before and its words after". Two of six are missing; the source-check item at line 22 is among them.
+  - Failure scenario: the orchestrator's read of the per-deck list misses two of the deck's changes.
+- **R1-P3.** Report "Ruling 6": "arXiv version, `manuscript/latex/main_work.tex:494-512`: no local FBTTR rows; its only local rows for clients 0 and 1 (`:508-509`) are 0.842 ... and 0.882 ..., the FL4E 'Local Experiment' rows that the FLTA paper also prints at `:497-498`."
+  - This reproduces: `sed -n 494,512p` and `admin/conference/main_work.tex:486-500` show identical FL4E local rows.
+  - The round brief's premise for ruling 6 ("0.89 and 0.92 against 0.842 and 0.882") therefore does not hold as two versions of the same rows.
+  - What is wrong: the rules file asks that a brief premise that does not reproduce be stated in the report's first section. The report states it only inside the Ruling 6 section, and its first line says everything is done.
+  - Failure scenario: the orchestrator does not see that ruling 6's described disagreement does not exist.
+
+### 3. Standards
+
+- **R1-T1.** Contrast constructions written this round and not named in the report as prose-rule departures (verify item 6 asks that each be named with why):
+  - `projects/active/sandpile-operator/present/main.md:38` "... an inductive-bias advantage over smooth diffusion, not real-world superiority."
+  - `projects/archive/published/2026/hccnet-fl/present/main.md:49` "... an independent re-implementation, not the pipeline that produced the published numbers, ..."
+  - `projects/manuscripts/btfno/present/main.md:40` "... on one benchmark, not a state-of-the-art benchmark."
+  - `projects/coauthor/stopped/individual-reference-intervals/present/main.md` hook and plain, two "in place of".
+
+  The report's judgment-call line (`O151-report.md:1253`) lists the earlier contrast keeps but none of these. Each follows its source's wording (`README.md:31`, `README.md:25`, `main.tex:300`, `project.yml` eli5).
+  - Failure scenario: negation-contrast phrasing enters the decks without the review the brief asks for.
+
+### 4. Behaviour
+
+- **R1-B1.** Eight projects that had no `README.md` now have one: abstract-bci-meeting-2021, fbttr-strategies, fermat, go-bttr, abduction, hcc-modality-poster, connectivity-motor-imagery and chi-household-survival.
+  - Each file holds only the title line and the section "Known issues in the published paper (private)" (or "in the draft" for connectivity-motor-imagery).
+  - Oculus lists `README.md` as a project document under the label README (`src/lib/data/sources/documents/docs.ts:41`). These projects' document lists go from no README to one whose whole text is the private faults.
+  - What is wrong: the report states no user-visible before and after for this.
+  - Failure scenario: at the look, a project's README chip appears and opens on the private faults, with nothing in the report saying to expect it.
+
+### Declined to judge
+
+- The icfp-src-poster bar values on `main.md:20-21`. `pdftotext -layout` gives no text for that chart (only 88 lines in all, none of the values), so checking them needs a page render, which writes a file. The algebraic-effects-compilation Fig. 14 values were checked as PDF text (page 24: 78.5, 74.3, 62.3, 37.4, 35.4, 34, 2.4 2.3, 2 1.9, 5.5 3.8, 3.3 2.3), and so were the hcc-modality-poster table values.
+- The hcc-modality-poster "red" marking of T1-IOP and T2W. The poster text gives "Red: degradation", but the colour of each cell needs a render.
+- Ruling 724's full read of all 95 decks.
+  - All 66 round diffs were read line by line. The changed lines were checked against their sources for the decks named under C7, plus eeg-saad-challenge, loewner, sandpile-operator, faithful-block-term-layer, fed-faithful-ecg, novel-math-primitives, source-localization, block-term-tensor-regression, masters-algebraic-subtyping, http2-web-performance, covert-applied, covert-theory, dries-bttr-ecg, ecg-readable-substrate, serial-ecg-af, flkit, ideas status lines and xsub-ecog-framework.
+  - Whole decks were read for fermat, hcc-modality-poster, fbttr-strategies, xsub-ecog-framework, clinical-ai-eval-artifacts, bachelor-network-ids (part), glassbox (slide 2) and hccnet-pathology (slide 1).
+  - A keyword grep ("identical", "best", "marked", "every subject", "all ... cells", "wrong", "does not report", "authors)") ran over every deck, and every hit was traced. That found R1-S2; the other hits trace to their sources.
+  - The remaining unchanged decks were not read in full against their sources.
+- The connectivity-motor-imagery, go-bttr, fbttr-strategies and chi-household-survival private faults were read but not traced line by line against their papers. The abduction (12 of 40 unmarked cells counted), fermat, glassbox (`within_code15_seed0.json` holds `lead_dropout_3: 0.6054...`; README:105 gives 0.7646) and btfno faults were traced.
+- `git status --short docs`, as the report quotes it, was run as plain `git status --short`, which covers it.
+- C9: the orchestrator's measured fit.
+
+Reviewer usage: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min.
