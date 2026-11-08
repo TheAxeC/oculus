@@ -1,0 +1,177 @@
+diff --git a/src/lib/themes/slide.css b/src/lib/themes/slide.css
+index 5f0e553b5..e23512338 100644
+--- a/src/lib/themes/slide.css
++++ b/src/lib/themes/slide.css
+@@ -12,13 +12,22 @@
+    title, the headings, the body and the small sizes move together, and so do the app's type steps
+    the slide's chips and table are set in. The frame itself and the slide's foot under the content
+    (the strip of a project's facts) keep the factor 1. The design sizes are the sizes at the factor
+-   1, each times the app's text size (`--text-scale`). */
++   1, each times the app's text size (`--text-scale`).
++
++   The strip of a project's facts has two sizes of its own, smaller than the slide's small type so
++   the strip stays below the slide's text: 12 px for its values and 10 px for its labels at the
++   design size (parts/project/Facts.svelte). They are times the text size alone, never the
++   content's factor, since the strip stands outside the content. */
+ .slide-frame {
+     --slide-design-title: 56px;
+     --slide-design-h: 36px;
+     --slide-design-sub: 28px;
+     --slide-design-body: 24px;
+     --slide-design-small: 18px;
++    --slide-design-facts: 12px;
++    --slide-design-facts-label: 10px;
++    --slide-fs-facts: calc(var(--slide-design-facts) * var(--text-scale, 1));
++    --slide-fs-facts-label: calc(var(--slide-design-facts-label) * var(--text-scale, 1));
+     --slide-ui-xs: var(--fs-xs);
+     --slide-ui-sm: var(--fs-sm);
+     --slide-ui-md: var(--fs-md);
+@@ -57,13 +66,15 @@
+ }
+ 
+ /* Under a rice theme the slide sizes are the design sizes times 12/13, rounded to whole pixels (56
+-   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17). The rule sits here because the
+-   sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not
+-   reach. */
++   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17, and the strip's 12 gives 11 and its
++   10 gives 9). The rule sits here because the sizes are declared on `.slide-frame` itself, where a
++   declaration on `body.rice` does not reach. */
+ body.rice .slide-frame {
+     --slide-design-title: 52px;
+     --slide-design-h: 33px;
+     --slide-design-sub: 26px;
+     --slide-design-body: 22px;
+     --slide-design-small: 17px;
++    --slide-design-facts: 11px;
++    --slide-design-facts-label: 9px;
+ }
+diff --git a/src/lib/views/academic/present/Slide.svelte b/src/lib/views/academic/present/Slide.svelte
+index d869cb30c..bd7c1cc0d 100644
+--- a/src/lib/views/academic/present/Slide.svelte
++++ b/src/lib/views/academic/present/Slide.svelte
+@@ -30,16 +30,16 @@
+     // figures, their frames and gaps, the room under a heading, the formulas' fit) is
+     // screen/drawn-slide.ts's; the search and the state it sets are here.
+     //
+-    // The slide's foot, under its content, holds the strip of a project's facts at the frame's own
+-    // type scale, across the frame's whole inner width, which is wider than the reading column
+-    // where that width passes 1040 px (1150 px in a 1280 px frame). A slide that comes from a
+-    // project's deck (`row.project`) carries the strip of that project's facts (`deck.projects`,
+-    // read by `slideFacts`, no strip for a project with none), on every surface that draws a
+-    // slide, its words shown by the pane's Project facts toggle (`facts`) and hidden, their room
+-    // kept, when it is off. The strip wraps to as many lines as its facts need, so its height
+-    // differs from one project to the next; the layout measures the foot as drawn each time it
+-    // runs and takes the content's room above it, so a taller strip leaves the content less room
+-    // and never lies over it.
++    // The slide's foot, under its content, holds the strip of a project's facts in the strip's own
++    // sizes at the frame's factor 1 (themes/slide.css), across the frame's whole inner width, wider
++    // than the reading column where that width passes 1040 px (1150 px in a 1280 px frame). A
++    // slide that comes from a project's deck (`row.project`) carries the strip of that project's
++    // facts (`deck.projects`, read by `slideFacts`, no strip for a project with none), on every
++    // surface that draws a slide, its words shown by the pane's Project facts toggle (`facts`) and
++    // hidden, their room kept, when it is off. The strip wraps to as many lines as its facts need,
++    // so its height differs from one project to the next; the layout measures the foot as drawn
++    // each time it runs and takes the content's room above it, so a taller strip leaves the
++    // content less room and never lies over it.
+ 
+     import { flushSync, untrack } from 'svelte';
+     import Grid from './parts/Grid.svelte';
+diff --git a/src/lib/views/academic/present/parts/project/Facts.svelte b/src/lib/views/academic/present/parts/project/Facts.svelte
+index 0cce6f4b1..bb2e72a52 100644
+--- a/src/lib/views/academic/present/parts/project/Facts.svelte
++++ b/src/lib/views/academic/present/parts/project/Facts.svelte
+@@ -21,10 +21,12 @@
+     // A rule runs across the strip above its first line, in a mix of the muted text colour and
+     // the hairline colour, so it shows on the slide's frame under every theme. The facts wrap to
+     // as many lines as they need, every fact drawn and none broken across two lines. The strip is
+-    // set in the slide's small type (`--slide-fs-small`, themes/slide.css) at the frame's factor
+-    // 1, so it scales with the text size and the theme, outside the content's factor. With the
+-    // pane's Project facts toggle off its words and its rule are hidden and its room is kept, so
+-    // the slide is laid out and measured the same either way.
++    // set in its own two sizes (`--slide-fs-facts` for the values and `--slide-fs-facts-label` for
++    // the labels, themes/slide.css), 12 px and 10 px at the design size, below the slide's small
++    // type so the strip stays under the slide's text. They follow the text size and the theme and
++    // keep the frame's factor 1, outside the content's factor. With the pane's Project facts toggle
++    // off its words and its rule are hidden and its room is kept, so the slide is laid out and
++    // measured the same either way.
+ 
+     import Dot from '../Dot.svelte';
+     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+@@ -149,20 +151,19 @@
+ </div>
+ 
+ <style>
+-    /* The strip is set in the slide's small type, and every measure below is in that type: the
+-       rule above it and the room between the rule and the first line of facts, the gap between
+-       two facts on a line and between two lines, the gap between a label and its value and the
+-       label's size. The dot before a hued value is as wide as half the strip's type, 9 px at the
+-       design size. */
++    /* The strip's values are set in the strip's own value size, and every measure below is in that
++       type: the room between the rule and the first line of facts, the gap between two facts on a
++       line and between two lines, and the gap between a label and its value. The labels are set in
++       the strip's own label size. The dot before a hued value is three quarters of the value
++       type, 9 px at the design size. */
+     .facts {
+-        --fact-label: 0.72em;
+         --fact-gap: 1em;
+         --fact-between: 0.4em;
+-        --dot-size: 0.5em;
++        --dot-size: 0.75em;
+ 
+         padding-top: 0.6em;
+         border-top: 1px solid color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
+-        font-size: var(--slide-fs-small);
++        font-size: var(--slide-fs-facts);
+         line-height: 1.3;
+     }
+ 
+@@ -219,7 +220,7 @@
+     .label {
+         flex: none;
+         color: var(--muted-txt, var(--muted));
+-        font-size: var(--fact-label);
++        font-size: var(--slide-fs-facts-label);
+         letter-spacing: 0.04em;
+         text-transform: uppercase;
+     }
+diff --git a/src/lib/views/academic/present/parts/project/Project.svelte b/src/lib/views/academic/present/parts/project/Project.svelte
+index 07ef73049..581280235 100644
+--- a/src/lib/views/academic/present/parts/project/Project.svelte
++++ b/src/lib/views/academic/present/parts/project/Project.svelte
+@@ -12,8 +12,11 @@
+     // room is measured the text takes the room's width and no figure is drawn. The room is as tall
+     // as the layout, or as the lowest figure's box where that ends lower (`place.depth`), so a
+     // slide whose figures run past its frame is measured too tall. A slide with no figure draws
+-    // its text as it is, the lists and the equation in two columns; one that draws its Markdown
+-    // alone marks the body as its room (`data-room`), the room a Markdown image is held to.
++    // its text as it is: the callout and the lists in one column, and beside them a right-hand
++    // column only while it holds the equation, a diagram or the name of a missing figure, so a
++    // slide with none of these draws its text across the box's whole width. One that draws its
++    // Markdown alone marks the body as its room (`data-room`), the room a Markdown image is held
++    // to.
+ 
+     import Chip from '$lib/ui/controls/Chip.svelte';
+     import Tag from '$lib/ui/controls/Tag.svelte';
+@@ -141,7 +144,7 @@
+                     </ul>
+                 {/if}
+             </div>
+-            {#if right || !pictured}
++            {#if right}
+                 <div class="right">
+                     {#if slide.equation !== undefined}
+                         <Equation {slide} />
+@@ -269,9 +272,10 @@
+         min-width: 0;
+     }
+ 
+-    /* The method and the results side by side wherever the text's box holds two columns of at
+-       least 300 px, as the reading width does; the narrower text beside a column of figures holds
+-       one. */
++    /* The left column and the right-hand column side by side wherever the text's box holds two
++       columns of at least 300 px, as the reading width does; the narrower text beside a column of
++       figures holds one. With no right-hand column the left one is the grid's only item, and the
++       tracks `auto-fit` leaves empty collapse, so it takes the box's whole width. */
+     .cols {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));

@@ -10,7 +10,7 @@ The builder a8f1be288ebe70b91 and the reviewers ace225e279285d09b and ac6693d733
 
 ## Not done
 
-Nothing inside the brief. Not looked at: a light theme, the export on the desktop path, and the toasts of a fetch, pull, push and publish on screen (the sync's was seen; the others are the quoted run of C16).
+Nothing inside the brief.
 
 ## What landed
 
@@ -38,6 +38,9 @@ On a scratch server from the gate (8797), on a scratch copy of the hub, dark the
 - C14: a scratch deck's two captions with a word wider than the box: the figures stacked, no caption over the next figure.
 - C15: Present, Presenter and Export at left 515, 582 and 661 on a non-project slide, a project slide, the Overview and while presenting.
 - C16: a sync to an unreachable remote: "The sync failed: Could not read from remote repository."
+- C16, each action to an unreachable remote, on screen: "The fetch failed: Could not read from remote repository.", "The pull failed: ...", "The push was refused: ...", "The publish was refused: ...", each with the same remote's words; above Changes the line "The last fetch failed: Could not read from remote repository."
+- Light theme: Literature's form, the eight source buttons with Web of Science and Scopus disabled and the tooltip naming the `downloads` row, the result cards with their counts per source; Present's toolbar, the line under it ("The browser blocked the print tab; allow pop-ups for this page and press Export again."), the presenter screen with current slide, next slide and notes; the fetch toast. All legible, nothing clipped.
+- The export on the desktop path, on a scratch desktop app from the gate: "Making the PDF..." at 52 ms, "Wrote deck.pdf beside the deck." at 2168 ms and it stays; `deck/deck.pdf` of 27 pages, `/MediaBox [0 0 960 540]`, read from the file and removed from the scratch hub.
 
 ## Verification
 

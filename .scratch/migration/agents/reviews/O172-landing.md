@@ -10,7 +10,7 @@ The builder ae73ffc61cc4532d3 and the reviewers afc0139febb1e70da and aa55cdabd4
 
 ## Not done
 
-Nothing inside the brief. Not looked at: a light theme (the look ran on the dark theme over a wallpaper, and the code piece's computed style was read with the wallpaper class off), and the moment before KaTeX loads in C8.
+Nothing inside the brief.
 
 ## What landed
 
@@ -46,6 +46,9 @@ On a scratch server from the gate (8797), on a scratch copy of the hub, dark the
 - Career's `order_note`: two paragraphs and a list.
 - An ordered list past 1: `start="3"` in a Markdown preview, on a slide and in a session transcript.
 - An HTML block `<div>if a<b then c</div>` keeps its words.
+- Light theme: the C1, C4, C8, C11 and C16 notes on Tasks cards, C1 on the task's page and the Funding cards (5 `<br>` inside paragraphs): gaps, lists, the link (orange, a tab of its own), the code word in the monospace face, formulas and the table all legible.
+- C8 before KaTeX loads, read per animation frame on a first load in a same-origin frame: the card shows `$x^2$`, `$y^2$` and the `$$...$$` line as their source at 1614 ms, and three typeset formulas at 1646 ms, the card going from 322 to 327 px.
+- Flaw, step O174 in `plan.md`: a cut text whose fourth line falls inside a display formula or a table row shows a sliced strip of it above Show more (C8 and C16 notes, both themes); the cut is a height of whole text lines, and C4 and C5, which hold plain lines and lists, are cut whole.
 
 ## Verification
 
