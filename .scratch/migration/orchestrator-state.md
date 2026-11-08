@@ -39,6 +39,8 @@ dispatch:           # steps in flight, up to six (Z632)
   landing: not-started
 - step: O170
   brief_check: "running: a0e91311c5e402ce3"
+  base: 2385c99b6
+  worktree: .agents/worktrees/migration-O170
   landing: preparing
 - step: O172
   brief_check: "running: a7b3f00ada05c428a"
