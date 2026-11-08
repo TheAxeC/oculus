@@ -39,7 +39,7 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 2 (.scratch/migration/agents/briefs/O151-round2.md; snapshots .agents/worktrees/migration-O151-2-round-2 in oculus and .agents/worktrees/migration-O151-round-2 in the hub); round 1 .scratch/migration/agents/briefs/O151-round1.md (snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
 - step: O173
-  brief_check: "running: a3b6a980fe45e6b36"
+  brief_check: .scratch/migration/agents/reviews/O173-brief-check.md (a3b6a980fe45e6b36, claude-opus-5-5, 176663 tokens, 18 tool uses, 6.1 min)
   landing: preparing
 ```
 
