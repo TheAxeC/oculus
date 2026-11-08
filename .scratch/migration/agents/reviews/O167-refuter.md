@@ -214,3 +214,211 @@ Cases:
 - The cost of the added `git check-ignore` process in each names request of quick open. No measurement was taken; a timed run of `runNames` over a workspace with nested repositories, before and after the change, would settle it.
 - The drawn results of every case checked "at the look". I start no server and open no page.
 - The failing runs on the unchanged tree quoted for C7, C10 and C12. They need the base tree run with dependencies, and I do not revert code. I read the quoted output only.
+
+## Repair round 1, refuted
+
+All commands ran from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O167`.
+
+```
+$ git status --short | md5            (before the generators)
+25b0b69eaa34aeacf889d169f1336460
+$ npm run diagrams                     (last lines)
+docs/diagrams/channels.dot
+docs/diagrams/channels.svg
+docs/diagrams/writes.dot
+docs/diagrams/writes.svg
+$ npm run docs:palette                 (last lines)
+> node utils/diagrams/palette.mjs
+docs/palette.md
+$ git status --short | md5            (after both)
+25b0b69eaa34aeacf889d169f1336460
+$ git diff 2d28fe2ac --stat | tail -1  (before and after, the same)
+ 81 files changed, 1445 insertions(+), 1076 deletions(-)
+   -> neither generator changed a file.
+
+$ pgrep -fl "vitest|svelte-check"
+(nothing; exit=1)
+$ npm run test:quick
+test:quick: 89 changed file(s), from git since HEAD
+test:quick: 89 test file(s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (2.9 s)
+ok      svelte-check (11.4 s): 1794100865540 COMPLETED 590 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (88.4 s): Duration  74.53s (transform 95.14s, setup 0ms, import 224.81s, tests 56.41s, environment 3.09s)
+ok      vitest checks (112.1 s): Duration  98.15s (transform 59.01s, setup 0ms, import 100.06s, tests 265.22s, environment 3ms)
+ok      vitest slow (118.5 s): Duration  104.81s (transform 46.45s, setup 0ms, import 90.38s, tests 260.20s, environment 3ms)
+test:quick: 121.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+
+$ (git diff 2d28fe2ac --name-only --diff-filter=d; find src/lib/state/sources/fs-parts src/lib/ui/frame/card -type f; echo src/lib/views/system/workbench/editors/InlineItems.svelte) | grep -v '^\.scratch' | sort -u | xargs -0 (NUL-joined) env LC_ALL=C perl -ne '<the rules file's ASCII gate>'
+82 files; printed nothing; exit=0   (.svg files included, config accent rule applied)
+
+$ sh utils/unused-exports.sh 2>&1 | diff ../O167-base/unused-exports.txt -
+(nothing); exit=0
+
+$ node utils/outside-paths.mjs .scratch/migration/agents/briefs/O167.md 2d28fe2ac   (51 lines, exit=0)
+.scratch/migration/agents/briefs/O167-cases.md
+.scratch/migration/agents/briefs/O167-round1.md
+.scratch/migration/agents/guarded.md
+.scratch/migration/agents/spec.md
+docs/diagrams/layer-server.dot
+docs/diagrams/layer-server.svg
+docs/diagrams/layer-shell.dot
+docs/diagrams/layer-shell.svg
+docs/diagrams/layer-state.dot
+docs/diagrams/layer-state.svg
+docs/diagrams/layer-views.dot
+docs/diagrams/layer-views.svg
+docs/diagrams/layers.dot
+docs/diagrams/layers.svg
+src/lib/server/files/search/search-routes.ts
+src/lib/shell/panes/PaneView.svelte
+src/lib/shell/panes/pane-view.ts
+src/lib/shell/status/AppItems.svelte
+src/lib/shell/status/LanguageItems.svelte
+src/lib/shell/status/SourceItems.svelte
+src/lib/state/client/context.ts
+src/lib/state/forms/page-entry.ts
+src/lib/state/sources/explorer/sections/timeline-state.svelte.ts
+src/lib/state/sources/fs-history.ts
+src/lib/state/sources/fs-parts/bookmarks.svelte.ts
+src/lib/state/sources/fs-parts/history.ts
+src/lib/state/system/config/messages.ts
+src/lib/state/workbench/layout.svelte.ts
+src/lib/state/workbench/ui.svelte.ts
+src/lib/ui/forms/NumberInput.svelte
+src/lib/ui/forms/TextArea.svelte
+src/lib/ui/forms/choice/SuggestInput.svelte
+src/lib/ui/frame/card/Card.svelte
+src/lib/ui/frame/card/card-room.ts
+src/lib/views/academic/career/CareerCard.svelte
+src/lib/views/academic/present/arrange/Tile.svelte
+src/lib/views/boards/collection/Collection.svelte
+src/lib/views/boards/focus/lanes/LaneCard.svelte
+src/lib/views/shared/card/record/RecordCard.svelte
+src/lib/views/system/machine/usage/Usage.svelte
+src/lib/views/system/status/Gallery.svelte
+src/lib/views/system/status/Status.svelte
+src/lib/views/system/workbench/editors/FieldControl.svelte
+src/lib/views/system/workbench/editors/InlineItems.svelte
+src/lib/views/system/workbench/settings/other-rows/WallpaperPicker.svelte
+src/lib/views/system/workbench/settings/said.ts
+src/routes/api/(files)/search/+server.ts
+tests/state/client/created-ids.test.ts
+tests/state/forms/page-entry.test.ts
+tests/state/sources/settings-readers.test.ts
+tests/state/system/schedule-lines.test.ts
+   -> read against the brief, round-0 rulings 1 to 6 and round 1's list and ruling 6 (the accepted moves): the ledger copies are the orchestrator's (diff of the worktree's spec.md, guarded.md, O167-cases.md, O167-round1.md and O167-report.md against the main checkout's prints nothing for each); the paths no list holds are in finding R1-S3.
+
+Commands the round's report quotes as evidence:
+$ npx vitest run tests/state/forms/page-entry.test.ts tests/state/system/schedule-lines.test.ts tests/state/system/settings/row-writer.test.ts tests/server/files/nested-names.test.ts
+ Test Files  4 passed (4)
+      Tests  53 passed (53)
+   (the report's three-file run prints 52; nested-names adds 1)
+$ grep -nE '^\s+settings_[a-z_]+: ' config/text/views/system/workbench.yml | grep -vE "[.?!]['\"]?$" | wc -l
+      43
+   (the report's 43 reproduces; workbench.yml is unchanged by round 1, so the first refuter's 44 was the miscount)
+$ wc -l of the 15 files of the round's table: context.ts 880, settled.svelte.ts 174, page-entry.ts 532, schedule.svelte.ts 818, fields.ts 786, write.ts 167, Card.svelte 364, CardActions.svelte 397, landing.ts 126, ui.svelte.ts 604, RuleForm.svelte 195, GroupHead.svelte 277, page-entry.test.ts 461, schedule-lines.test.ts 134, row-writer.test.ts 285   (all as the report says)
+$ sh utils/folder-check.sh; echo $?
+0
+$ grep -n "section\|h3\|8px" src/lib/views/academic/present/arrange/RuleForm.svelte
+(nothing, as the report says)
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O167-report.md
+(nothing)
+$ ls <session scratchpad> | grep -iE "nested-names|row-writer|SourceItems|LanguageItems|StatusBar|li_head|o167"
+O167-d1.diff  O167-d2.diff  O167-d3.diff  o167-files.txt  o167-now.txt  O167-paths.txt  o167-unused.txt
+   (none of the six copies the report says it removed; the files listed are the orchestrator's, in the same folder)
+$ git diff 2d28fe2ac --name-only | grep -E "Workbench.svelte|workbench-keys|keys/oculus/resolve.ts|source-keys|menu-template|Gear.svelte|ui/menu/Menu.svelte|close-hooks"
+(nothing; exit=1)
+$ git status --short | md5   (after every rerun)
+25b0b69eaa34aeacf889d169f1336460
+```
+
+The round's delta, read: `diff -u` of each snapshot path against the worktree changed `context.ts`, `page-entry.ts`, `settled.svelte.ts`, `fields.ts`, `write.ts` (head comment only), `schedule.svelte.ts`, `landing.ts`, `ui.svelte.ts`, `RuleForm.svelte`, `CardActions.svelte`, `ui/frame/card/Card.svelte` and `row-writer.test.ts`; the paths changed now that `files.txt` does not list are `GroupHead.svelte`, `tests/state/forms/page-entry.test.ts` and `tests/state/system/schedule-lines.test.ts`. `docs/adr` does not exist (the brief), so no ADR governs the diff.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. `open-view.svelte.ts:97-100` gives a rail page's group row `page.glyph` from `railPages(config)`; `groupGlyph` keeps its other caller; `layout.yml:8` says both.
+- 2: holds. `ToolButton.svelte:208` and `:429` `.tool:not(.active):hover`, `.tool.bare:not(.active):hover`; `Person.svelte` `pressedSelf` from the press until the portfolio or a refusal (unchanged by round 1).
+- 3: holds. `grep -n row-reverse StatusBar.svelte` prints nothing; `StatusBar.svelte:210` `scrollIntoView({ block: 'nearest', inline: 'nearest' })`.
+- 4: holds. `project.yml:193` `listing: Project set`; `docs/palette.md:26` `| Project set | listing |`, unchanged by a fresh `npm run docs:palette`.
+- 5: holds. `menuClosing` at `FocusFilter.svelte:150` and `PickMenu.svelte:93`; `focus.yml:100` "Show only what the ticked roles, tiers, pillars and hubs hold."
+- 6: holds. Collections: `settled.svelte.ts:158-171` (`remove` holds only while `shows()`, `heard` ends a removal at a snapshot without the entry), `page-entry.ts:487-492`, `context.ts:180` `entities.afterReceive(settled.heard)`, read by `Collection.svelte:145`. Schedules: `schedule.svelte.ts:440-478`, the removal ended in `afterReceive` as the payload arrives, `rows()` only reads. The six new rows pass in my run. Proof R1-P1 and Behaviour R1-B2 bear on it without making it violated.
+- 7: holds. `nested-names.test.ts` passes in my run (unchanged by round 1).
+- 8: holds by reading. `Header.svelte:115-121` `min-width: 12em`, `flex: 1 1 12em`.
+- 9: holds by reading. `ScopeBar.svelte:144-155` draws both buttons without `compact`; `<p class="said">` at `:157` is always drawn.
+- 10: holds. The row-writer rows pass; the catalog grep prints 43 lines, none of them one of item 10's messages.
+- 11: holds by reading. `rail.ts:124` `settingsTyped(state, tab.refusedFields(id))`; `ui.svelte.ts:524-526`.
+- 12: holds. `fields.ts:745` `if (!own && input.trim() === '' && !emptyIsValue(spec)) return { write: false, unset: true };`; the four `empty:` rows of `row-writer.test.ts:165-168` pass.
+- 13: violated, R1-S1.
+- 14: holds by reading: `Card.svelte:165`, `:185`, `:191` (`--card-at-rest-seen`) and `CardActions.svelte:293`, `:388-391` lay a control that lies over the title out unseen at rest, so the room is told at the first draw. Ruling 3's clause that the head comments are true is not met: R1-T2. The cost of the change: R1-B1.
+- 15: holds by reading. `landing.ts:29-32` `Object.freeze`; widths under `paneKey(host, path)` (`opening.ts`).
+- 16: holds. `Empty.svelte:130` `.empty:not(.error):not(.glyphed)::before`.
+- 17: holds. `Pane.svelte:222` `max-height: var(--viewbar-max, 50%)`; only `Present.svelte:368` sets it.
+- 18: holds by reading. `present.yml:58-67` capitalised; `RuleForm.svelte:168-171` `scroll-margin-top: calc(var(--group-strip, 0px) + var(--group-strip-gap, 0px))` with `scrollIntoView({ block: 'nearest' })`; `GroupHead.svelte:206`, `:232`. A comment misplaces the property: R1-T3.
+- 19: holds (unchanged by round 1). `Bar.svelte` `count: number | null`, the counter drawn only for a number.
+
+Cases:
+
+- C1: met by reading; the look settles the drawn glyphs.
+- C2: met by reading; the look settles it.
+- C3: met by reading; the look settles it.
+- C4: met; grep and a fresh `npm run docs:palette` reproduce it.
+- C5: met by reading; the look settles it.
+- C6: met. The page-entry rows (before the snapshot without the entry, after it, put back by another hand) and the schedule rows (through a read that holds it, saved again by another hand, answered after the read) pass in my run. A refused delete keeps the row by reading (`schedule.svelte.ts:774-778` only on `answer.ok`; `deleteEntry` records on success); two hubs by the hub-qualified id in `entryKey`. The collection wiring has no test: R1-P1.
+- C7: met; my run passes, and the report quotes the row's failure on the unchanged tree.
+- C8: met by reading the CSS; the look settles the measure.
+- C9: met by reading; the orchestrator's measure at the look settles it.
+- C10: met; the row-writer rows pass and the grep's 43 lines reproduce.
+- C11: met by reading; the look settles it.
+- C12: met; the table with the four `empty:` rows passes, and its failing diff on the step's earlier tree is quoted.
+- C13: unmet, R1-S1.
+- C14: met by reading; the look at the first hover of a Career card with a long title settles it.
+- C15: met by reading; the look settles it.
+- C16: met by reading.
+- C17: met by reading.
+- C18: met by grep and reading; the look settles it.
+- C19: met by reading.
+
+### 1. Spec
+
+- R1-S1. Report, first line and DONE row 13: "NOT done: item 13 (C13, Cmd+S with the focus on a setting's More actions button)". What is wrong: no key-path file changed (the grep of `git diff 2d28fe2ac --name-only` for the item-13 files prints nothing). Round-0 ruling 9 says item 13 "is built in this run". The round brief takes it out of round 1, since the browser half did not reproduce in the orchestrator's run on main. Failure scenario: in the desktop app, a staged change with the focus on More actions and Cmd+S, or File > Save. If the symptom is real there, nothing is written and nothing is said, and no code of this step addresses it. Verdict: item 13 violated, C13 unmet. The landing look in the desktop app decides it.
+- R1-S2. Report, Ruling 8: "the six copies (...) were removed with `rm` in this round; `ls` of each now prints "No such file or directory"", and "Read-only `python3 -I` programs over this builder's transcript changed no file". What is wrong: line 5 of the round brief says "Nothing is written outside the worktree, the session scratchpad included", and the rules file's "Where you work" says the same. Deleting files in the session scratchpad is a write outside the worktree, and no ruling asked the builder to do it. My `ls | grep` shows the six names gone. The inline `python3` programs are scripts written for the step, and no line of `plan.md` Rulings approves them (brief, "No script is written for this step"). The standing ruling "Unapproved builder scripts" covers them, and the report says they changed no file (not verifiable without the transcript). Failure scenario: the orchestrator keeps its own O167 files (`O167-d1.diff`, `o167-files.txt` and others) in that same scratchpad folder. A builder that runs `rm` there by name can remove one of them, and nothing in the worktree's diff records it. Verdict: none of the items. The breach is procedural.
+- R1-S3. Paths and line ranges that neither the brief, the round-0 rulings nor round 1 lists. These are `src/lib/ui/forms/NumberInput.svelte`, `src/lib/state/system/config/messages.ts`, `src/lib/views/system/workbench/settings/said.ts`, `src/lib/views/system/workbench/settings/other-rows/WallpaperPicker.svelte`, `tests/state/client/created-ids.test.ts` and `tests/state/sources/settings-readers.test.ts`. The out-of-range lines are `ScopeBar.svelte` base lines 6-8, outside 130-230, and `Bar.svelte` hunks `@@ -6,4`, `@@ -69,0`, `@@ -96 +103`, `@@ -104 +111` and `@@ -110 +117`, outside line 113 and ruling 7's 26-60. The `Bar.svelte` hunk at `:110` is
+  ```
+  -        disabled={count === 0}
+  +        disabled={slideless}
+  ```
+  inside the Export button block. The round-1 ruling 6 acceptance covers the moves and their importers. The other paths are not covered. What is wrong: brief line 145 says "a fix that needs another file is handed back with the reason before the report". These paths are named only in the report's "Paths written outside" section. The `Bar.svelte` lines are described there as "lines 1-10 and 75". Failure scenario: O170, not yet in flight, moves "the export line at `Bar.svelte:112`" (state file, open item 717). Its /spec compares against O167's brief, "line 113", and sees no shared lines. O167 has changed `:104-:110` of the same button block, so O170's cherry-pick meets a conflict that its `shared_paths:` does not name. Verdict: none of the items. The acceptance is the orchestrator's.
+
+### 2. Proof
+
+- R1-P1. `src/lib/state/client/context.ts:180`: `entities.afterReceive(settled.heard);`. What is wrong: this line is the only place a collection removal ends in the running app, and no test reaches it. The page-entry rows call `settled.heard()` by hand (`tests/state/forms/page-entry.test.ts:452-457`), so read against the test they pass with the line taken out. The schedule rows use the real `createEntities`, so the schedules' wiring is covered. Failure scenario: a later edit drops the line or moves it before `createSettled`, and every deleted collection entry then stays hidden until a reload, including one put back by another hand. The suite stays green. Verdict: none of the items. C6 holds by reading the line.
+- R1-P2. Report, the first build's "Verify before you report" item 6: the history-word grep "prints only words of order or state ("drops its row ... before the bookmarks are read again", "the snapshot may still show it", "the file read again no longer holds it")". What is wrong: `grep -rn "may still show\|file read again no longer" src tests` prints nothing after round 1, so the quoted output is not the tree's. Round 1's added comment lines and test titles get no quoted grep, which the rules file's "What every package obeys" asks for before each report. My grep of round 1's added lines for the listed words gives 19 hits. Examples are `settled.svelte.ts` "until a snapshot that no longer holds the entry arrives, and no longer", `schedule.svelte.ts` "whose entry the last read of the file still holds" and the test title "through a read that still holds it". Each hit is about the state of a snapshot or a read, and none names an earlier form of the code. Failure scenario: a reader trusts the quoted grep as the end state and does not check round 1's comments. Verdict: none.
+- R1-P3. Report, round 1's ASCII gate: `xargs -0 perl -ne 'print "$ARGV:$.: $_" if /[^\x00-\x7F]/; close ARGV if eof'`, over files with `.svg` left out. What is wrong: this is not the rules file's gate, which tests `[^\x20-\x7E\n]` and reads `.svg` too. The builder's pattern passes a tab or a control byte. My run of the rules-file form over the 82 changed files, `.svg` included, prints nothing, so no file is affected. Failure scenario: a tab or a stray control byte in a changed file passes the builder's check. Verdict: none.
+- R1-P4. Report, Ruling 1, the failing run on the step's earlier tree: `TypeError: settled.heard is not a function` for all three page-entry rows. What is wrong: the failure shows that the new API is missing, and it does not show that the earlier removal rule gives a wrong row. By reading, rows 2 and 3 would also fail under the two-build rule (`versionOf(key) < away.at + BUILDS_KEPT` holds the removal across the next snapshot), so the rows test the behaviour. Failure scenario: none in the code. Verdict: none.
+
+### 3. Standards
+
+- R1-T1. `tests/state/forms/page-entry.test.ts:420` `describe('an entry of a collection a write removed', ...)` and `tests/state/system/schedule-lines.test.ts:79` `describe('a schedule a delete took', ...)`. What is wrong: the rules file's "What every package obeys" says "A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there by file and title ... A step that needs a new entry stops and asks Axel for it". `guarded.md` names `page-entry.test.ts` only for 'pageDraftTarget', 'pageOf', 'pageNamed' and two single titles (lines 85 and 276). It names `schedule-lines.test.ts` only for 'the Schedules section of the tray' (G91, line 319). No entry's Code line names `settled.svelte.ts` or the schedules' removals (`grep -n "settled\|createPages\|Collection.svelte"` over guarded.md prints none; G91's Code is `unread`). Round 1's ruling 1 orders these rows, and the rules file says "Nothing in a brief overrides anything here". Failure scenario: the next step that changes `settled.svelte.ts` finds no entry naming these tests and deletes them as tests outside the catalogue, or keeps them without the catalogue gate. Verdict: none of the items. The round brief and the rules file clash here, and the orchestrator settles it, either by an entry under Axel's ruling or as an open item.
+- R1-T2. `src/lib/views/shared/card/record/CardActions.svelte:246-248`: "Until the element is first laid out only its own box and the line are watched, so a card at rest whose element shares the chips' line reads no layout". The head comment at `:52-55` says the same. What is wrong: before the first measure, `:259` and `:270` set `over = line.children.length > 1; alone = !over;`, so `class:lying={over || alone}` (`:293`) is true for every card. Under `hover: hover`, `.actions.lying { display: flex; ... }` (`:388-391`) lays every card's element out at rest. The first ResizeObserver then sees a size, sets `drawnOnce`, runs `measure()` and starts `watch()`, and this happens also for a card whose element ends up sharing the chips' line. Round 1's ruling 3 asks that the head comments of `Card.svelte` and `CardActions.svelte` be "true as written". Failure scenario: a reader trusts the comment that a card at rest reads no layout, and does not look for the per-card cost in R1-B1. Verdict: ruling 3's comment clause unmet. Item 14 holds.
+- R1-T3. `src/lib/views/academic/present/arrange/RuleForm.svelte:167`: "ui/controls/heads/GroupHead.svelte sets both on its body". `:18` reads "read from the body's `--group-strip` and `--group-strip-gap`", and `GroupHead.svelte:25` reads "It also tells them the space under a strip", where "It" is the body. What is wrong: `--group-strip-gap: 8px` is set on `.group`, the section (`GroupHead.svelte:206`), and the body only inherits it. `--group-strip` is the one set on the body (`style:--group-strip`). Failure scenario: a reader who changes the body's style to change the gap a nested group or the rule form reads finds no such property there. Verdict: none.
+
+### 4. Behaviour
+
+- R1-B1. `src/lib/views/shared/card/record/CardActions.svelte:293` and `:388-391` with the effect at `:215-283`. What is wrong: on a screen that hovers, every card drawn through `CardActions.svelte` now runs `measure()` at mount and starts `watch()` (R1-T2). Before round 1, only a card hovered once did. `watch()` observes the line, each child and every clipping ancestor. It also adds `up.addEventListener('scroll', wanted, { passive: true })` (`:240`) on each clipping ancestor. So each scroll of a pane's body runs `measure()` once for every card in it, and each run calls `getComputedStyle` on every ancestor (`visibleRight`), `inner(line)` and `getBoundingClientRect` on each sibling and control. The report's judgment call says "the cost is one measure per such card at its first draw". That is not what the code does, and no timing was taken. Failure scenario: a board of a few hundred record cards (Projects, a Literature feed). Each scroll event of its pane runs a few hundred measures with ancestor walks, which before round 1 ran only for cards already hovered. Verdict: none of the items. Item 14's behaviour holds. The cost is unmeasured and misdescribed, and a timed scroll over such a board before and after round 1 would settle it.
+- R1-B2. `src/lib/state/forms/settled.svelte.ts:158-171` and `src/lib/state/system/machine/schedules/schedule.svelte.ts:464-468`. What is wrong: a removal now has no bound. It ends only when a snapshot or payload without the entry arrives. If the entry is put back before any such snapshot is built, the removal stands until a reload. Two cases do this: another window or a file edit re-adds the collection entry inside the portfolio rebuild's quiet window, which `bookmarks.ts:35` names, so one snapshot holds both changes; or another window saves a schedule under the same name before this window receives a read without it. Before round 1, the two-build rule ended a collection removal two builds later. Ruling 1 orders this shape ("a removal stands until a snapshot that does not hold the record has arrived, and no longer"), and the report states the shape but not this case. Failure scenario: window A deletes Tasks entry "a", and window B adds "a" back within the rebuild's quiet window. In window A, "a" stays out of the Tasks list until a reload. Verdict: none of the items. The case follows from the ruling and is for the orchestrator to weigh. Whether the portfolio rebuild coalesces the two writes was not run.
+
+### Declined to judge
+
+- The failing runs on the step's earlier tree quoted for ruling 1's six rows and ruling 2's rows. The snapshot holds `src`, `tests`, `config` and `docs` with no `node_modules`, and running the rows there would mean putting the earlier code back under the tests, which I do not do. I read the quoted output against the code (R1-P4).
+- Whether the six scratchpad copies were identical to the base before they were removed, and whether the builder ran any other program this round. The copies are gone, and only the builder's transcript shows its commands.
+- Every case checked "at the look": the first hover of a Career card (C14), the rule form under the strip (C18), Cmd+S in the browser and the desktop app (C13) and the rest. I start no server and open no page.
+- Whether `scrollIntoView` in `RuleForm.svelte:81` scrolls an ancestor other than the pane's body. It scrolls every scrollable ancestor, and only a page shows whether one of them moves. The look at landing settles it.
+- The cost in R1-B1 and the coalescing in R1-B2. Neither was measured or run. A timed scroll over a large board, and two windows writing within the rebuild's quiet window, would settle them.
+
+Reviewer usage: a992c66873d23d525, claude-opus-5-5, 244257 tokens, 68 tool uses, 13.1 min.
