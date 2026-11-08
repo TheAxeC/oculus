@@ -696,15 +696,29 @@ export function shortWords(label: string): string {
     return at < 0 ? label : label.slice(0, at);
 }
 
+/** The list, heading or quote mark a line of a long field opens with, alone on it or not. */
+const LEADING_MARK = /^(?:[-*+]|\d+[.)]|#{1,6}|>)(?:\s+|$)/;
+
+/** One line of a long field as words: trimmed, its leading mark dropped. */
+function lineWords(line: string): string {
+    return line.trim().replace(LEADING_MARK, '').trim();
+}
+
 /**
- * The first sentence of a paragraph, cut to `limit`. Whitespace is collapsed first, so a line
- * broken across a manifest reads as one; a cut falls on a word boundary and is marked, so a card
- * never ends mid-word without saying that there is more. A first word longer than `limit` is cut
- * inside itself, except a web address, which is kept whole, since the card draws it as a link and
- * a cut one names no page.
+ * The first sentence of a long field, cut to `limit`, for the one-line cut of a card or a list. A
+ * line broken in a field is a line of its own, so the sentence is read from the first line that
+ * holds words once its leading list, heading or quote mark is dropped; a cut falls on a word
+ * boundary and is marked, so a card never ends mid-word without saying that there is more. A first
+ * word longer than `limit` is cut inside itself, except a web address, which is kept whole, since
+ * the card draws it as a link and a cut one names no page.
  */
 export function firstSentence(text: string, limit: number): string {
-    const flat = text.replace(/\s+/g, ' ').trim();
+    const line =
+        text
+            .split('\n')
+            .map(lineWords)
+            .find((words) => words !== '') ?? '';
+    const flat = line.replace(/\s+/g, ' ');
     if (flat === '') return '';
     const end = /[.!?](\s|$)/.exec(flat);
     const sentence = end === null ? flat : flat.slice(0, end.index + 1);

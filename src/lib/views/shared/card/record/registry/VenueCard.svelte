@@ -22,7 +22,7 @@
     // the browser's own. Both links the card draws, the site and the call, go through `hrefOf`, so
     // neither is left relative to the page's own address. A web address written in a plain item of
     // the metadata line (the timing) is a link (ui/display/text/LinkedText.svelte), and `wants` is
-    // inline Markdown, which links its addresses itself.
+    // its Markdown (views/shared/card/text/FieldMarkdown.svelte), which links its addresses itself.
     //
     // The metadata line holds the fee and the open-access status the entry stores. For a venue
     // whose hub names a journal browser that asks by ISSN, the menu holds Read from the browser,
@@ -34,6 +34,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
@@ -305,8 +306,9 @@
 {/snippet}
 
 {#snippet wants(words: string)}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="wants">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
+    <div class="wants">
+        <FieldMarkdown text={words} />
+    </div>
 {/snippet}
 
 {#snippet themes()}

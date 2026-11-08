@@ -13,6 +13,7 @@
     // strip of projects, which the row under the page's card counts.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import { realProjects } from '$lib/state/sources/registries/venues';
@@ -72,8 +73,9 @@
 
 {#snippet text()}
     {#if domain.blurb}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p>{@html inlineMarkdown(domain.blurb, cardMath(domain.blurb), htmlMemo)}</p>
+        <div class="blurb">
+            <FieldMarkdown text={domain.blurb} />
+        </div>
     {/if}
 {/snippet}
 
@@ -136,7 +138,7 @@
         }
     }
 
-    p {
+    .blurb {
         margin: 0;
         color: var(--muted-txt, var(--muted));
     }

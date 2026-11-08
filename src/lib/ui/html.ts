@@ -35,14 +35,14 @@
 // and the text comes back as it came; that pass-through is safe only while no page is rendered on
 // the server. tests/ui/html.dom.test.ts runs the sanitiser over jsdom's document.
 //
-// The drawings many controls ask for again, an icon's filtering and a field's inline Markdown, are
-// held per page in an `HtmlMemo` the page root makes and provides through Svelte's context, as
-// ui/menu/tip-ids.ts provides its counter, so two pages never share one and a call given none
-// draws afresh.
+// The drawings many controls ask for again, an icon's filtering, a line's inline Markdown and a
+// long field's block Markdown, are held per page in an `HtmlMemo` (ui/display/text/html-memo.ts,
+// its functions handed on from here), so two pages never share one and a call given none draws
+// afresh.
 
 import DOMPurify from 'dompurify';
 import { Lexer, Marked, type MarkedExtension, type Tokens } from 'marked';
-import { getContext, setContext } from 'svelte';
+import { heldDrawing, remembered, type HtmlMemo } from './display/text/html-memo.ts';
 import {
     HEADING_PREFIX,
     escapeAttribute,
@@ -61,6 +61,9 @@ import {
     type EmbedSlot,
     type NoteDrawing
 } from '../data/prose/markdown/note-render.ts';
+
+export { createHtmlMemo, provideHtmlMemo, useHtmlMemo } from './display/text/html-memo.ts';
+export type { HtmlMemo } from './display/text/html-memo.ts';
 
 /**
  * What every heading id of a rendered document starts with, which a press on a link to a fragment
@@ -119,8 +122,8 @@ export const ALLOWED_TAGS = [
 /**
  * The attributes those elements carry: a link's address, an image's address and text, the alignment
  * marked puts on a table cell, the language class it puts on a fenced block, the three a task
- * list's checkbox is drawn with, and the `id` a document's own anchor is jumped to by. Everything
- * else goes, handlers and `style` among it.
+ * list's checkbox is drawn with, the number an ordered list starts at, and the `id` a document's
+ * own anchor is jumped to by. Everything else goes, handlers and `style` among it.
  */
 export const ALLOWED_ATTR = [
     'align',
@@ -131,6 +134,7 @@ export const ALLOWED_ATTR = [
     'href',
     'id',
     'src',
+    'start',
     'title',
     'type'
 ];
@@ -203,57 +207,6 @@ function purifierOver(): typeof DOMPurify | null {
 }
 
 const purifier = purifierOver();
-
-/**
- * How many results each map of an `HtmlMemo` keeps. Past it the oldest result is let go, so a long
- * session that draws many distinct texts holds no more than this many of them.
- */
-const MEMO_HELD = 2000;
-
-/**
- * One page's results of the drawings many controls ask for again and again: each icon file's
- * filtered drawing, and each text's inline Markdown, without formulas and, by the modules and
- * options and the refusal's sentence it was typeset with, with them. A result made with one
- * drawing of formulas is served only to a call with the same drawing, and never to a call
- * without formulas, which reads `plain`. The page root makes one and provides it
- * (`provideHtmlMemo`), so two pages never share a result; a call given none draws afresh.
- */
-export type HtmlMemo = {
-    icons: Map<string, string>;
-    plain: Map<string, string>;
-    math: WeakMap<MathModules, WeakMap<object, Map<string, string>>>;
-};
-
-/** An empty memo, for one page. */
-export function createHtmlMemo(): HtmlMemo {
-    return { icons: new Map(), plain: new Map(), math: new WeakMap() };
-}
-
-/** The one key a page's memo is provided under. */
-const HTML_MEMO = Symbol('html memo');
-
-/** Provide one page's memo to every control it draws. */
-export function provideHtmlMemo(memo: HtmlMemo): void {
-    setContext(HTML_MEMO, memo);
-}
-
-/** The memo of the page a control is drawn in, read while it initialises, or none. */
-export function useHtmlMemo(): HtmlMemo | undefined {
-    return getContext<HtmlMemo | undefined>(HTML_MEMO);
-}
-
-/**
- * The result `memo` holds for `key`, else the one `make` gives, which the memo then holds. A
- * result is a pure function of its key, so the result held is the result `make` would give.
- */
-function remembered<K>(memo: Map<K, string>, key: K, make: () => string): string {
-    const held = memo.get(key);
-    if (held !== undefined) return held;
-    const made = make();
-    memo.set(key, made);
-    if (memo.size > MEMO_HELD) memo.delete(memo.keys().next().value as K);
-    return made;
-}
 
 /**
  * The formulas a rendered document holds apart from its text (`blockMarkdownParts`): the mark of
@@ -516,80 +469,126 @@ export function sanitiseGraph(svg: string): string {
 }
 
 /**
- * The results of `memo` typeset with `math`'s modules and options, keyed by the refusal's sentence
- * and the text.
- */
-function mathMemo(memo: HtmlMemo, math: MathDrawing): Map<string, string> {
-    let byOptions = memo.math.get(math.modules);
-    if (byOptions === undefined) {
-        byOptions = new WeakMap();
-        memo.math.set(math.modules, byOptions);
-    }
-    let held = byOptions.get(math.options);
-    if (held === undefined) {
-        held = new Map();
-        byOptions.set(math.options, held);
-    }
-    return held;
-}
-
-/**
- * One field of Markdown as the HTML a card draws it with. A note and a funding statement are one
- * paragraph and a link or two in the hub's files, so this is the inline renderer: a block renderer
- * would only wrap each of them in a `<p>` the card's own markup already gives them. What the file
- * holds is somebody's text, so the result is sanitised before it is returned, which is what covers
- * every card that draws a value this way. Its `$...$` formulas are typeset once `math` is given, as
- * a document's are, and drawn as their source until then. Many cards draw the same text, and every
- * card draws its fields again when it is drawn again, so with the page's `memo` the result of each
- * distinct text and drawing is made once and held (`HtmlMemo`, at most `MEMO_HELD` per map).
+ * One line of Markdown as the HTML a card draws it with, for a title or a one-line value, which
+ * sits inside markup of its own: the inline renderer, so no block of it reaches that markup. What
+ * the file holds is somebody's text, so the result is sanitised before it is returned, which is
+ * what covers every card that draws a value this way. Its `$...$` formulas are typeset once `math`
+ * is given, as a document's are, and drawn as their source until then. Many cards draw the same
+ * text, and every card draws its fields again when it is drawn again, so with the page's `memo` the
+ * result of each distinct text and drawing is made once and held.
  */
 export function inlineMarkdown(
     text: string,
     math: MathDrawing | null = null,
     memo?: HtmlMemo
 ): string {
-    if (memo === undefined) return inlineDrawing(text, math);
-    if (math === null) return remembered(memo.plain, text, () => inlineDrawing(text, null));
-    const key = JSON.stringify([math.refused, text]);
-    return remembered(mathMemo(memo, math), key, () => inlineDrawing(text, math));
+    return heldDrawing(text, math, memo?.inline, inlineDrawing);
 }
 
-/** The name of the element an inline HTML token opens or closes, or nothing for a comment. */
-const TAG_NAME = /^<\/?([A-Za-z][A-Za-z0-9-]*)/;
+/**
+ * One long field of Markdown (a note, a description, a next action) as the HTML a card and a record
+ * page draw it with: its paragraphs, lists and quotes, and a single newline as a line break, since
+ * a field is written line by line in a hub's files. It is not the document rule: a card has no
+ * outline to link to, so a heading has no id and `[TOC]` stays words. It is sanitised, typeset and
+ * held as `inlineMarkdown` is, in a memo of its own, and drawn in a block element, never a `<p>`
+ * (views/shared/card/text/FieldMarkdown.svelte).
+ */
+export function fieldMarkdown(
+    text: string,
+    math: MathDrawing | null = null,
+    memo?: HtmlMemo
+): string {
+    return heldDrawing(text, math, memo?.field, fieldDrawing);
+}
 
 /**
- * The extension that draws as written, escaped, an inline HTML token naming an element the profile
- * does not keep, whatever the name: `rsync <source> <target>`, `~/data/<data>` and
- * `/local/<jobid>` in a field would otherwise lose each tag to the sanitiser, and so would a
- * `<script>`, which is then shown as the text it is and never reaches the page as an element. A
- * token naming an element the profile keeps, such as `<b>`, and a comment pass to the sanitiser.
+ * What an HTML token may hold that names no element: a comment, an instruction, a CDATA section or
+ * a declaration, each running to the end of the token when it is not closed.
+ */
+const NO_ELEMENT =
+    /<!--[\s\S]*?(?:-->|$)|<\?[\s\S]*?(?:\?>|$)|<!\[CDATA\[[\s\S]*?(?:\]\]>|$)|<![A-Za-z][^>]*>?/;
+
+/**
+ * One tag of an HTML token, with the element's name as its capture group: `<` or `</`, the name,
+ * then anything but `<` and `>`, which a quoted attribute value may hold, then `>`. The `>` may be
+ * missing, so an unterminated `<script` at the end of a token counts as a tag.
+ */
+const ONE_TAG = /<\/?([A-Za-z][A-Za-z0-9-]*)(?:=\s*"[^"]*"|=\s*'[^']*'|[^<>])*>?/;
+
+/** The pieces of an HTML token that are judged: markup naming no element, and each tag. */
+const HTML_PIECE = new RegExp(`${NO_ELEMENT.source}|${ONE_TAG.source}`, 'g');
+
+/**
+ * The extension that goes through an HTML token of a line or a block tag by tag, each judged by its
+ * own name, since a block's token holds every tag of the block: a tag naming an element the profile
+ * does not keep is drawn as written, escaped, whatever the name. `rsync <source> <target>`,
+ * `~/data/<data>` and `/local/<jobid>` in a field would otherwise lose each tag to the sanitiser,
+ * and so would a `<script>`, which is then shown as the text it is and never reaches the page as an
+ * element. A tag with no closing `>`, such as the `<b then c` of `if a<b then c`, is drawn the same
+ * way whatever its name, since the sanitiser would read the words after it as the tag's attributes.
+ * A complete tag naming an element the profile keeps, such as `<b>`, a comment and everything
+ * between the tags pass to the sanitiser.
  */
 const UNKEPT_TAGS_AS_TEXT: MarkedExtension = {
     renderer: {
         html({ text }: Tokens.HTML | Tokens.Tag): string {
-            const name = TAG_NAME.exec(text)?.at(1)?.toLowerCase();
-            const kept = name === undefined || (ALLOWED_TAGS as readonly string[]).includes(name);
-            return kept ? text : escapeAttribute(text);
+            return text.replace(HTML_PIECE, (piece: string, name: string | undefined) => {
+                if (name === undefined) return piece;
+                const kept =
+                    piece.endsWith('>') &&
+                    (ALLOWED_TAGS as readonly string[]).includes(name.toLowerCase());
+                return kept ? piece : escapeAttribute(piece);
+            });
         }
     }
 };
 
-/** The inline reader of a field with no formulas, built once. */
+/** The inline reader of a line with no formulas, built once. */
 const inlineReader = new Marked(UNKEPT_TAGS_AS_TEXT);
 
-/** One field of Markdown as `inlineMarkdown` draws it, made afresh. */
-function inlineDrawing(text: string, math: MathDrawing | null): string {
-    if (math === null) return sanitise(inlineReader.parseInline(text, { async: false }));
+/** The block rule of a long field: a single newline is a line break. */
+const FIELD_RULE: MarkedExtension = { gfm: true, breaks: true };
+
+/** The block reader of a long field with no formulas, built once. */
+const fieldReader = new Marked(UNKEPT_TAGS_AS_TEXT, FIELD_RULE);
+
+const readInline = (reader: Marked, text: string): string =>
+    reader.parseInline(text, { async: false });
+
+const readBlocks = (reader: Marked, text: string): string => reader.parse(text, { async: false });
+
+/**
+ * One text sanitised as `read` reads it: with `reader` when no formula is to be typeset, else with
+ * a reader of `rules` that holds each formula apart, as a document's are.
+ */
+function readSanitised(
+    text: string,
+    math: MathDrawing | null,
+    reader: Marked,
+    rules: readonly MarkedExtension[],
+    read: (reader: Marked, text: string) => string
+): string {
+    if (math === null) return sanitise(read(reader, text));
     const mark = `slot-${crypto.randomUUID()}`;
     const formulas: string[] = [];
     const parser = new Marked(
-        UNKEPT_TAGS_AS_TEXT,
+        ...rules,
         mathExtension(math, (html) => {
             formulas.push(html);
             return `<span class="${MATH_SLOT}">${mark}-m${formulas.length - 1}</span>`;
         })
     );
-    return sanitise(parser.parseInline(text, { async: false }), { mark, formulas });
+    return sanitise(read(parser, text), { mark, formulas });
+}
+
+/** One line of Markdown as `inlineMarkdown` draws it, made afresh. */
+function inlineDrawing(text: string, math: MathDrawing | null): string {
+    return readSanitised(text, math, inlineReader, [UNKEPT_TAGS_AS_TEXT], readInline);
+}
+
+/** One long field of Markdown as `fieldMarkdown` draws it, made afresh. */
+function fieldDrawing(text: string, math: MathDrawing | null): string {
+    return readSanitised(text, math, fieldReader, [UNKEPT_TAGS_AS_TEXT, FIELD_RULE], readBlocks);
 }
 
 /**

@@ -16,14 +16,15 @@
     // key; a kind no row reads is a line naming that hub's `.oculus/config.yml`. A source of the
     // kind `library`, `request` or `derived` is stated on the card instead: the library call, the
     // contact to ask, or the sets it is built from and the script that builds it; a web address in
-    // it, a contact's form among them, is a link. The description and the notes are inline
-    // Markdown, which links its addresses itself.
+    // it, a contact's form among them, is a link. The description and the notes are their Markdown
+    // (views/shared/card/text/FieldMarkdown.svelte), which links its addresses itself.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import type { RecordAction } from '$lib/views/shared/card/record/record-menu';
@@ -147,10 +148,9 @@
 {/snippet}
 
 {#snippet description(words: string)}
-    <p class="description">
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
-    </p>
+    <div class="description">
+        <FieldMarkdown text={words} />
+    </div>
 {/snippet}
 
 {#snippet facts()}
@@ -200,8 +200,9 @@
     {#if notes !== ''}
         <div class="note">
             <Glyph name="note_back" />
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <span>{@html inlineMarkdown(notes, cardMath(notes), htmlMemo)}</span>
+            <div class="words">
+                <FieldMarkdown text={notes} />
+            </div>
         </div>
     {/if}
 {/snippet}
@@ -331,7 +332,8 @@
     /* A path, a file pattern or an address is one unbroken word, which breaks at the card's edge
        rather than widening the card past its column. */
     .description,
-    .note > span {
+    .note > span,
+    .note > .words {
         min-width: 0;
         overflow-wrap: anywhere;
     }

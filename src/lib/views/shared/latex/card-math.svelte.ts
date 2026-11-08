@@ -1,9 +1,10 @@
 // Layer 3, shared view partial. The formulas of a card's Markdown fields: a hub writes math in its
 // files as LaTeX between dollars, so a field that holds a dollar asks for KaTeX
 // (`loadMarkdownMath`, one load for the page), and every field a component draws with
-// `inlineMarkdown(text, cardMath(text))` is drawn again with its formulas typeset once the modules
-// are in. A field with no dollar loads nothing. A component makes its own `cardMath` in its script,
-// so the drawing is that component's state and nothing is held at module level.
+// `inlineMarkdown(text, cardMath(text))` or `fieldMarkdown(text, cardMath(text))` is drawn again
+// with its formulas typeset once the modules are in. A field with no dollar loads nothing. A
+// component makes its own `cardMath` in its script, so the drawing is that component's state and
+// nothing is held at module level.
 
 import type { MathDrawing } from '$lib/ui/html';
 import { t } from '$lib/state/shared/words/text';

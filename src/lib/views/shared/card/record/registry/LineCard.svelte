@@ -18,6 +18,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import RecordField from '$lib/views/shared/card/record/RecordField.svelte';
     import { realProjects } from '$lib/state/sources/registries/venues';
@@ -117,8 +118,9 @@
 {/snippet}
 
 {#snippet goal(words: string)}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="goal">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
+    <div class="goal">
+        <FieldMarkdown text={words} />
+    </div>
 {/snippet}
 
 {#snippet fundingLine(words: string)}
@@ -130,8 +132,9 @@
 {/snippet}
 
 {#snippet blurb(words: string)}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-    <p class="blurb">{@html inlineMarkdown(words, cardMath(words), htmlMemo)}</p>
+    <div class="blurb">
+        <FieldMarkdown text={words} />
+    </div>
 {/snippet}
 
 {#snippet text()}

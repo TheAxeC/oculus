@@ -1,15 +1,16 @@
 <script lang="ts">
     // Layer 3, shared view. What a project card says the project is and does next: its ELI5 under
-    // its label, cut to views/shared/card/Clamp.svelte when the caller keeps an open state for it,
-    // and the first sentence of its next action under the label NEXT, drawn as the ELI5 is: the
-    // label in the ELI5 label's style and the sentence at the ELI5's size and colour. A web address
-    // written in either is a link (ui/display/text/LinkedText.svelte).
-    // views/shared/card/project/ProjectCard.svelte draws it; on the project page it draws the ELI5
-    // alone (`next` off), since the page's NEXT block holds the whole next action.
+    // its label, cut to views/shared/card/text/Clamp.svelte when the caller keeps an open state for
+    // it, and the first sentence of its next action under the label NEXT, drawn as the ELI5 is: the
+    // label in the ELI5 label's style and the sentence at the ELI5's size and colour. The ELI5 is
+    // its Markdown (views/shared/card/text/FieldMarkdown.svelte), and a web address in the sentence
+    // is a link (ui/display/text/CodeText.svelte). views/shared/card/project/ProjectCard.svelte
+    // draws it; on the project page it draws the ELI5 alone (`next` off), since the page's NEXT
+    // block holds the whole next action.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
-    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import Clamp from '../Clamp.svelte';
+    import Clamp from '../text/Clamp.svelte';
+    import FieldMarkdown from '../text/FieldMarkdown.svelte';
     import { firstSentence } from '$lib/state/boards/board';
     import type { Project } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
@@ -34,10 +35,12 @@
     <div class="said">
         <span class="label">{t('project.card.eli5')}</span>
         {#if onmore === undefined}
-            <p><LinkedText text={project.eli5} /></p>
+            <div class="eli5">
+                <FieldMarkdown text={project.eli5} />
+            </div>
         {:else}
             <Clamp open={more} ontoggle={onmore}>
-                <LinkedText text={project.eli5} />
+                <FieldMarkdown text={project.eli5} />
             </Clamp>
         {/if}
     </div>
@@ -55,6 +58,7 @@
     }
 
     .said p,
+    .said .eli5,
     .said :global(.clamp) {
         margin: 2px 0 0;
         font-size: var(--fs-md);

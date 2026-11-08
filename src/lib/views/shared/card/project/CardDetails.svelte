@@ -4,9 +4,11 @@
     // (views/shared/card/record/RecordDetails.svelte), each field under its small label
     // (RecordField.svelte beside it): on the left STATUS, LATEST, NEXT (the whole next action),
     // RESULTS, OUTCOME and IDEAS / AVENUES; on the right REPRODUCED, DISSEMINATED IN, FILES, then
-    // whatever the card puts after them (its subtasks and follow-up blocks). Every prose field is
-    // drawn through CodeText, so a backticked word is code and a web address in the other words is
-    // a link.
+    // whatever the card puts after them (its subtasks and follow-up blocks). LATEST, NEXT, OUTCOME
+    // and REPRODUCED are written line by line and are drawn as their Markdown
+    // (../text/FieldMarkdown.svelte); STATUS, RESULTS and IDEAS / AVENUES are one value each and
+    // are drawn through CodeText, so a backticked word is code and a web address in the other words
+    // is a link.
     //
     // DISSEMINATED IN lists the entries of the collections flagged `dissemination` that name the
     // project, each a press that opens that entry's page in the current pane
@@ -20,6 +22,7 @@
     import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import CardDocs from '../CardDocs.svelte';
+    import FieldMarkdown from '../text/FieldMarkdown.svelte';
     import RecordDetails from '../record/RecordDetails.svelte';
     import RecordField from '../record/RecordField.svelte';
     import PressBox from './PressBox.svelte';
@@ -50,11 +53,29 @@
         const page = pageView(entry.collection, entry.id, entry.title);
         openView(page.view, page.state);
     }
+
+    /**
+     * REPRODUCED's words: the date and the note on one line, or, when the note holds a line break,
+     * the date and then the note's blocks after a blank line.
+     */
+    function reproducedWords(date: string | undefined, note: string | undefined): string {
+        const parts = [date, note].filter((part) => part !== undefined && part !== '');
+        return parts.join(note?.includes('\n') === true ? '\n\n' : ' | ');
+    }
 </script>
 
 {#snippet field(name: string, value: string)}
     <RecordField label={name}>
         <p class="value"><CodeText text={value} linked /></p>
+    </RecordField>
+{/snippet}
+
+<!-- A field written line by line: its Markdown, under its label. -->
+{#snippet longField(name: string, value: string)}
+    <RecordField label={name}>
+        <div class="value">
+            <FieldMarkdown text={value} />
+        </div>
     </RecordField>
 {/snippet}
 
@@ -75,11 +96,11 @@
     {/if}
     {#if item.project.latest}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.latest'), item.project.latest)}
+        {@render longField(t('project.card.latest'), item.project.latest)}
     {/if}
     {#if item.project.next}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.next'), item.project.next)}
+        {@render longField(t('project.card.next'), item.project.next)}
     {/if}
     {#if item.project.results.length > 0}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -87,7 +108,7 @@
     {/if}
     {#if item.project.outcome}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(t('project.card.outcome'), item.project.outcome)}
+        {@render longField(t('project.card.outcome'), item.project.outcome)}
     {/if}
     {#if item.project.ideas.length > 0}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -98,11 +119,9 @@
 {#snippet right()}
     {#if item.project.reproduced}
         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render field(
+        {@render longField(
             t('project.card.reproduced'),
-            [item.project.reproduced.date, item.project.reproduced.note]
-                .filter((part) => part !== undefined && part !== '')
-                .join(' | ')
+            reproducedWords(item.project.reproduced.date, item.project.reproduced.note)
         )}
     {/if}
     {#if shows.length > 0}

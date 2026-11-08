@@ -35,6 +35,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
@@ -148,7 +149,14 @@
     const key = $derived(fitKey(fit, vocab));
     const tone = $derived(fitTone(fit, vocab));
     const sub = $derived(`${institution} | ${country}`);
-    const note = $derived(`${focus}${fit === '' ? '' : ` - ${fit}`}`);
+    /**
+     * The focus and the fit as one field: joined on a line, or, when the focus holds a line break,
+     * the fit as the paragraph after it, so a list in the focus does not swallow it.
+     */
+    const note = $derived.by(() => {
+        if (focus === '' || fit === '') return focus || fit;
+        return `${focus}${focus.includes('\n') ? '\n\n' : ' - '}${fit}`;
+    });
     /** The hubs whose Applications file an application from this lead can go to. */
     const hubs = $derived(applyHubs(client));
     const deadlineTail = $derived(
@@ -341,8 +349,9 @@
         </div>
     {/if}
     {#if note !== ''}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="note">{@html inlineMarkdown(note, cardMath(note), htmlMemo)}</p>
+        <div class="note">
+            <FieldMarkdown text={note} />
+        </div>
     {/if}
     {#if posting(url) !== undefined}
         <p class="posting">

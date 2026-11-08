@@ -18,7 +18,7 @@ text:
         restore: Restore
         restore_tip: restore to the radar
         search: Search radar | title | venue | project | why ...
-        threatens: 'threatens: {0}'
+        threatens: 'threatens:'
         toolbar: Radar actions
         tracked: '{0} tracked, last sweep {1}'
         untitled: (untitled)

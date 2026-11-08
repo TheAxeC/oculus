@@ -46,22 +46,10 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a8f1be288ebe70b91 (claude-opus-5-5)
   launched: 2026-11-08
   report: .scratch/migration/agents/reviews/O170-report.md
-  builder_usage: first run (hand-back on item 6's candidates): 288889 tokens, 75 tool uses, 10.1 min
+  builder_usage: first run (hand-back on item 6's candidates): 288889 tokens, 75 tool uses, 10.1 min; build under the round-0 ruling: 248284 tokens, 261 tool uses, 36.3 min
+  reviewer_report: .scratch/migration/agents/reviews/O170-refuter.md (ace225e279285d09b, claude-opus-5-5, 300603 tokens, 38 tool uses, 20.0 min)
   round: 0
   shared_paths: src/lib/views/academic/present/Slide.svelte with step O151 of this plan; O151 rewrites the head comment's paragraph on the slide's foot, this step lines 15-34, 56-62 and 170-290, so the changes lie in separate hunks and the merge is simple
-  landing: not-started
-- step: O172
-  brief_check: .scratch/migration/agents/reviews/O172-brief-check.md (a7b3f00ada05c428a, claude-opus-5-5, 221472 tokens, 27 tool uses, 10.2 min)
-  base: bf279a486
-  worktree: .agents/worktrees/migration-O172
-  executor: agent
-  worker: claude:opus
-  session_id: ae73ffc61cc4532d3 (claude-opus-5-5)
-  launched: 2026-11-08
-  report: .scratch/migration/agents/reviews/O172-report.md
-  builder_usage: 325511 tokens, 132 tool uses, 18.7 min
-  reviewer_report: .scratch/migration/agents/reviews/O172-refuter.md (afc0139febb1e70da, claude-opus-5-5, 241873 tokens, 28 tool uses, 12.4 min)
-  round: 1
   landing: not-started
 ```
 
@@ -894,6 +882,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-08 (O172 landed). O172, a long field drawn with its newlines and paragraphs, landed (booking in `plan.md`, `agents/reviews/O172-landing.md`). O170's review (`agents/reviews/O170-refuter.md`) has two Proof and seven Standards findings and no Spec or Behaviour finding. Open items: none. Next: O170's repair round 1, its review over the round, its landing, then O151's repair round 2.
 - 2026-11-08 (O172 repair round 1 sent). O172's builder reported with one red line, the floor of `html-sites.test.ts`, and its review (`agents/reviews/O172-refuter.md`) has one Spec, three Standards and four Behaviour findings. Every finding is ruled in `agents/briefs/O172-round-1.md`; the floor becomes 19 under the ruling of open item 490 (a). O170's builder is running under its round-0 ruling. Next: O172's round, its review over the round, its landing.
 - 2026-11-08 (O170's first-run case ruled). O170's builder handed back its first run with one case, item 6's candidate rule against "A slide with no caption or explanation lays out exactly as today" and C10. Ruled inside the step's part in `agents/briefs/O170-cases.md`: the forced `side` under the text is a candidate only when `side` as `placeOf` places it misses a `least`; C27 and C28 added. The same builder is resumed with `round: 0`. O172's builder is running. Next: O170's and O172's reports, their reviews and landings, then O151's repair round 2.
 - 2026-11-08 (O171 landed). O171, the slide frame a 16:9 shape with no pixel size, landed (booking in `plan.md`, `agents/reviews/O171-landing.md`), with open item 731 (a), the slide font, carried out at the landing. Open items: none. Step O172 is added by open item 732 (a). In flight: none. Next: /spec O170, correcting its `frame: { width: 400 }` case, and /spec O172, then O151's repair round 2.

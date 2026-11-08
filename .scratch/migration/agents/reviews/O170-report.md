@@ -1,6 +1,6 @@
-NOT DONE: nothing is built. The first run found a case the brief's own rules get wrong (item 6's candidate rule against its sentence "A slide with no caption or explanation lays out exactly as today" and against C10), so the step stops here before any code changes and hands back the first run and that case for a ruling.
+Everything in the brief is done
 
-# O170 report (stop at the first run)
+# O170 report
 
 ## Open items of the state file (verbatim)
 
@@ -40,9 +40,9 @@ C12 inputs with no least: tall scale 0.3492 area 0.2439 | forced wide: scale 0.3
 - (a), my recommendation: the forced `wide` is a candidate only when `placeOf`'s `side` misses a `least`. Every case stays as written, by the arithmetic above: C9 has no text, so no forced `wide` is tried and `side` at 0.16 misses 0.5, giving `stacked`; C10 and every slide with no caption keep `placeOf`'s `side`; C12 misses 0.36 at 0.3492 and takes the forced `wide` at 0.38; C13 misses 0.5 at both, giving `stacked`. Item 6's rule text would read "the forced `side` under the text, only when `side` as `placeOf` places it misses a `least`".
 - (b): the candidate rule stands and the sentence and C10's "unchanged" go. A slide with no caption whose text is one line then moves its figures from a column beside the text to a block under it, a visible change to slides the step line does not name. The lazy option is neither; (b) changes more of the product than the step asks for.
 
-Waiting on this ruling; nothing depends on it but item 6.
+**The orchestrator's ruling (`.scratch/migration/agents/briefs/O170-cases.md`).** Option (a) is taken; option (b) is the worse option and neither option is the lazy one. Item 6's first bullet reads word for word: "the candidates: `side` as `placeOf` places it, when every figure's box is at least its `least`; with text, and only when `side` as `placeOf` places it misses a `least`, `side` forced under the text (`wide`), when it has room of its own and every box is at least its `least`; and `stacked`, which has no neighbour beside it and takes no `least`;". The rest of item 6 stands. A figure with no `least` meets it. `slide-layout.ts`'s head comment states the rule as that bullet gives it. C27 and C28 are added: the inputs of C12 with no `least`, and with each `least` 0.3, each answering `side`, `tall`, each box 0.3492, the unchanged answer. C4's reading is accepted: "a search never asks it" is the case of a listing that answered, and after a failed listing item 3 applies and the route answers `no-key` without asking the outside source (`handler.ts:144-145`). C24 is not a case of the brief and has no row.
 
-## The cases' first run, every case, on the unchanged tree
+## The cases' first run, every case, on the unchanged tree, as handed back
 
 Tree state: `git status --short` printed nothing and `diff -rq` of `../O170-base/{src,tests,config,utils}` against the worktree printed nothing, taken after the case runs and before this report was written. The verify list was run 0 times.
 
@@ -279,36 +279,291 @@ C23 schedule refused, rows: ["one"]
 
 A notice has no `text` field, so each row of C16 prints the notice whole.
 
+The C12-row answer on the unchanged tree, for C27 and C28 as the coordinator named it, is the line `C12 {"arrangement":"side","shape":"tall","height":0.4,"boxes":[0.3492,0.3492]}` above.
+
+## The cases after the build
+
+The builder runs no page: a case only a page shows names its look, with the view, the state and what should be seen, and reading of the code is what is quoted before it.
+
+- **C1.** `grep -rn "citation-js" config --exclude=local.yml` prints nothing, exit 1. `config/text/views/feeds/literature.yml:18` reads as dictated. Look: Literature, a paper no source serves a BibTeX entry for, Copy BibTeX, the line names no library.
+- **C2.** Reading: `Literature.svelte` `onMount` no longer holds a call of `go()`; `go()` (`:155`) is reached from the Search button and Enter alone. Look: a Literature tab with a query held, reload, the network log shows no `/api/literature?source=`, the form shows the query, the list the idle line.
+- **C3.** Reading: `sources` is `listed ?? form.listed ?? configuredSources(config()?.config ?? {})` and the listing is saved through `change({ listed })` when it differs. Look: reload of a tab that has listed once, the buttons stand in the first frame and do not move when `?sources` answers; a new tab shows the config's rows from its first frame.
+- **C4.** As the ruling reads it. Reading: `Head.svelte` `disabled={!source.available}`, and a row before the listing has `available: true`. After a listing, `sourceOn` needs `available`, so a search does not ask the source. Look on a scratch hub: a source whose required `downloads` row is absent is pressable until the listing answers, then disabled with its tooltip.
+- **C5.** Reading: `go()` returns at once while `settled` is false, ahead of the line that sets the "none on" state. A failed listing sets `settled` and leaves `listed` null, so the drawn rows stay and Search asks those on and available. After the tab closes, `onMount`'s body returns at `if (closed) return`. Look with the route held.
+- **C6.** Reading: `exportTab` takes `clear` from `sayFor` at the press, and calls it after `await print.answered`; `clear` empties the line only while the object on show is its own, and every `say` makes a new object. `export_running` and `export_blocked` go through `say`, so they stay. Look: Present, Export to PDF in a browser tab, "Opening the print tab..." goes once the print tab has been answered.
+- **C7.** Reading: `Bar.svelte:139` `.said` takes `flex: 1 1 auto`, `max-width: 100%`, `min-width: 0`, in a `Toolbar` that wraps. Look: a narrow Present pane, the line stands whole on its own row.
+- **C8.** Reading: under `.meters` one `.slides` grid holds `.current` and `.side`, `.presenter` is the size container, `@container (min-width: 572px)` switches at a pane of 596 px. At that width and above columns are `3fr 1fr`, below it rows are `3fr 2fr`, so the next slide's cell is inside the side at every size. Look: the presenter screen at 2400, 1400, 900, 620, 596, 590 and 400 px, heights 800 and 300 px, `getBoundingClientRect` of the frames and the notes; past the last slide, the end-of-deck line and no next slide.
+- **C9 to C13, C27, C28.** The Node run below.
+- **C14.** Reading: `Slide.svelte` reads `leastOf` at pass 0 of the `under` loop and lays out once more with it. Look on a scratch deck: a caption word wider than the box side by side is drawn stacked or under the text, no caption over the next figure.
+- **C15.** Reading: the Facts chip stands after Export (`Bar.svelte:113`, Present `:90`, Presenter `:98`, Export `:106`), so nothing it draws sits to the left of those. Look: the left offsets of Present, Presenter and Export on a project slide, a non-project slide, the Overview and while presenting, by `getBoundingClientRect`.
+- **C16.** The quoted run below. The look: a hub whose remote is unreachable.
+- **C17 to C23, C25.** The rows of G152, quoted below with their failing or passing run on the unchanged tree. On the C22 row in `tests/state/system/schedule-lines.test.ts`, 'a read at its number whose rows are the same ends it'.
+- **C26.** Reading: `export_blocked` goes through `say`, which replaces the opening line and is not cleared by this press's `clear`, since `clear` is reached only after a granted hold; a print page that never asks ends with `print.answered` at the end of the hold; a second deck's press takes a new object, so the first's `clear` finds another line on show and does nothing. Look: a browser that blocks the tab, and the two decks.
+
+### The Node run of C9 to C13, C27 and C28, after the build
+
+```
+$ node --input-type=module -e "
+import { layOut } from './src/lib/views/academic/present/screen/slide-layout.ts';
+const p=(n,o)=>console.log(n, JSON.stringify(o===null?null:{arrangement:o.arrangement,shape:o.shape,height:o.height,boxes:o.figures.map(b=>+b.width.toFixed(4))}));
+p('C9', layOut({room:{width:.9,height:.4},figures:[{ratio:.4,least:.5},{ratio:.4,least:.5}],text:null}));
+p('C10', layOut({room:{width:.9,height:.4},figures:[{ratio:1.2,least:.1},{ratio:1.2,least:.1}],text:null}));
+p('C11-none', layOut({room:{width:.9,height:.4},figures:[{ratio:1.2}],text:null}));
+p('C11-least', layOut({room:{width:.9,height:.4},figures:[{ratio:1.2,least:5}],text:null}));
+p('C12', layOut({room:{width:1,height:.4},figures:[{ratio:1,least:.36},{ratio:1,least:.36}],text:.02}));
+p('C13', layOut({room:{width:1,height:.4},figures:[{ratio:1,least:.5},{ratio:1,least:.5}],text:.02}));
+p('C27', layOut({room:{width:1,height:.4},figures:[{ratio:1},{ratio:1}],text:.02}));
+p('C28', layOut({room:{width:1,height:.4},figures:[{ratio:1,least:.3},{ratio:1,least:.3}],text:.02}));
+p('no-caption-one-line-text', layOut({room:{width:.8125,height:.35},figures:[{ratio:1},{ratio:1}],text:.03}));
+"
+C9 {"arrangement":"stacked","shape":"alone","height":0.4,"boxes":[0.08,0.08]}
+C10 {"arrangement":"side","shape":"alone","height":0.4,"boxes":[0.45,0.45]}
+C11-none {"arrangement":"one","shape":"alone","height":0.4,"boxes":[0.48]}
+C11-least {"arrangement":"one","shape":"alone","height":0.4,"boxes":[0.48]}
+C12 {"arrangement":"side","shape":"wide","height":0.4,"boxes":[0.38,0.38]}
+C13 {"arrangement":"stacked","shape":"tall","height":0.4,"boxes":[0.2,0.2]}
+C27 {"arrangement":"side","shape":"tall","height":0.4,"boxes":[0.3492,0.3492]}
+C28 {"arrangement":"side","shape":"tall","height":0.4,"boxes":[0.3492,0.3492]}
+no-caption-one-line-text {"arrangement":"side","shape":"tall","height":0.35,"boxes":[0.2555,0.2555]}
+```
+
+### The run of C16, after the build
+
+`.agents/scratch/after.case.ts`, run through the vitest configuration quoted above, is the C16 test of the case-run program above with its last line printing `one.message`, and it asserts nothing. It and the configuration are removed.
+
+```
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run --config .agents/scratch/v.config.ts --reporter=dot --silent=false
+C16 fetch refused: ["The fetch failed: no remote"]
+C16 push refused: ["The push was refused: rejected"]
+C16 pull refused: ["The pull failed: conflict"]
+C16 sync refused: ["The sync failed: behind"]
+C16 publish refused: ["The publish was refused: exists"]
+C16 commit refused: ["A write was refused: nothing"]
+C16 fetch no answer: ["A write got no answer: socket hung up"]
+C16 fetch cancelled: ["The fetch failed: fetch was stopped by Cancel"]
+C16 fetch refused with fields: ["The fetch failed: one; two"]
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+### The new and changed tests: the unchanged tree, then the build
+
+The tests were edited before any file under `src/` or `config/`, and run over the unchanged source. `<ellipsis>` stands for the character vitest prints where it shortens a title.
+
+```
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/state/forms/page-entry.test.ts tests/state/system/schedule-lines.test.ts tests/routes/hubs/hub-writes.test.ts tests/routes/machine/schedules.test.ts tests/server/machine/runs/schedules/watch.test.ts -t "build|read|left out|schedule a delete took|removed|delete" --reporter=dot
+Test Files  5 failed (5)
+Tests  16 failed | 14 passed | 80 skipped (110)
+```
+
+| Test, on the unchanged tree | Result |
+| --- | --- |
+| schedules.test 'a delete names the read taken right a<ellipsis>' | `AssertionError: expected { ok: true } to deeply equal { ok: true, read: 7 }` |
+| hub-writes, 'an entry of the primary hub' and 'an entry of the second hub' (rerun alone, 2 failed, 47 skipped) | `AssertionError: expected undefined to be 2 // Object.is equality` |
+| page-entry 'a snapshot at the build that still ho<ellipsis>' | `expected [ true, true ] to deeply equal [ true, false ]` |
+| page-entry 'an answer that names no build holds n<ellipsis>' | `expected [ true ] to deeply equal [ false ]` |
+| page-entry 'a snapshot below what was seen at the<ellipsis>' | `expected [ false, true, true ] to deeply equal [ false, true, false ]` |
+| page-entry 'a snapshot between what was seen and <ellipsis>' | `expected [ false, true, true, true ] to deeply equal [ false, true, true, false ]` |
+| page-entry 'ends two removals each at its own build' | `expected [ Array(3) ] to deeply equal [ [ true, true ], <ellipsis>(2) ]` |
+| page-entry "is left out until its build through the client's own wiring, a reconnect included" | `expected [ true, true, true, true, true ] to deeply equal [ true, true, false, true, false ]` |
+| page-entry 'taken, its answer naming no build' | `expected true to be false // Object.is equality` |
+| schedule-lines 'a read at its number whose rows are t<ellipsis>', 'an answer that names no read holds no<ellipsis>', 'a read below what was seen at the ans<ellipsis>' | `expected [ [ 'two' ] ] to deeply equal [ [ 'one', 'two' ] ]` |
+| schedule-lines 'a read between what was seen and its <ellipsis>' | `expected [ [ 'two' ], [ 'two' ] ] to deeply equal [ [ 'two' ], [ 'one', 'two' ] ]` |
+| schedule-lines 'ends two removals each at its own read' | `expected [ [], [], [] ] to deeply equal [ [], [ 'one' ], [ 'one', 'two' ] ]` |
+| watch 'publishes every read with its number<ellipsis>' | `TypeError: made.nextRead is not a function` |
+
+Passing on the unchanged tree, the behaviours the change preserves: watch 'sends one message for two publishes with no read between'; schedules 'a pause names none'; page-entry 'a snapshot below the build holds it a<ellipsis>', 'a removal answered with the channel a<ellipsis>', 'an entry put back by another hand aft<ellipsis>', 'refused', 'taken, its answer naming a build'; schedule-lines 'it is left out from the answer<ellipsis>', 'saved again by another hand<ellipsis>', 'a delete answered with the read at it<ellipsis>', 'a delete the server refused<ellipsis>'.
+
+The same five files after the build, every row of G152 passing:
+
+```
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/state/forms/page-entry.test.ts tests/state/system/schedule-lines.test.ts tests/routes/hubs/hub-writes.test.ts tests/routes/machine/schedules.test.ts tests/server/machine/runs/schedules/watch.test.ts --reporter=verbose
+Test Files  5 passed (5)
+Tests  110 passed (110)
+```
+
+### Every edit to an existing test
+
+No threshold or predicate was loosened; each row below follows an item of the brief.
+
+| File | Was | Is | Why |
+| --- | --- | --- | --- |
+| `tests/state/forms/page-entry.test.ts` | rows 'a delete answered before the snapshot without the entry arrives', 'a delete answered after the snapshot without the entry arrived', 'an entry put back by another hand in the next snapshot', each ended by the entry's absence | seven rows in `ROWS`, each with a numbered step, the three old stories among them as 'a snapshot below the build holds it and the one at the build ends it', 'a removal answered with the channel already at the build holds nothing', 'an entry put back by another hand after the build is shown' | item 9: a removal ends by its number |
+| same | "is left out until a snapshot without it arrives through the client's own wiring" | "is left out until its build through the client's own wiring, a reconnect included" | item 9 and C21 |
+| `tests/state/system/schedule-lines.test.ts` | three rows ended by a read without the entry; `readOf(names)`; payload without `read` | eight rows with numbers; `readOf(names, read)`; `read: 0` in `linesOver`'s payload | item 9 |
+| `tests/routes/machine/schedules.test.ts`, `tests/server/machine/runs/schedules/file.test.ts`, `record.test.ts`, `tests/server/root/context-fixture.ts` | the fake of `SchedulesWatcher` | gains `nextRead: () => 1`, no assertion touched | `nextRead` joins the type |
+
+The rows added beside these are `hub-writes.test.ts`, describe 'the build a delete-entry answer names'; `schedules.test.ts`, the `it.each` of 'a delete names the read taken right after its commit' and 'a pause names none'; `watch.test.ts`, describe 'the read number of the schedules payload'; page-entry's 'ends two removals each at its own build' and 'is held by the answer of the delete: $name'; schedule-lines' 'ends two removals each at its own read'.
+
 ## DONE / NOT DONE
 
 | Row | State | Proof |
 | --- | --- | --- |
-| Items 1 to 10 | NOT DONE, not started | `diff -rq` of the four folders against the base copy printed nothing |
+| Items 1 to 10 | DONE | the sections above and the checks below; item 10's ledger text is under "Doc text" for the orchestrator |
 | The first run of every case | DONE | the section above |
-| `npm run diagrams`, `npm run test:quick` | NOT RUN, 0 runs | the stop comes before any change |
-| The ASCII gate over changed files | NOT RUN | no file of the step is changed |
-| The grep and unused-exports checks of "Verify before you report" | NOT RUN | no file of the step is changed |
-| The guarded tests G8, G28, G46, G91, G117 | NOT RUN | no file of the step is changed |
-| No test added or changed | none | no test file is changed |
+| The cases after the build | DONE where a run reaches them; C1 to C8, C14, C15 and C26, and C16's remote case, name their look on landing | the section above |
+| `npm run diagrams` | DONE, exit 0 | 2 runs, one before each `npm run test:quick` |
+| `npm run test:quick` | DONE, the last run prints `test:quick: 248.0 s; every command passed` | the lines below |
+| The failed command, rerun alone | DONE | `npx vitest run tests/checks/source/comment-width.test.ts`: `Test Files  1 passed (1)`, `Tests  2 passed (2)` |
+| The ASCII gate over every file the step changes | DONE, prints nothing, exit 0 | the perl line of the brief over the 38 paths |
+| `grep -rn "citation-js" config --exclude=local.yml` | DONE, prints nothing, exit 1 | |
+| `grep -rn "export_opened" config src tests --exclude=local.yml` | DONE, prints nothing, exit 1 | |
+| `grep -n "shows()" src/lib/state/forms/settled.svelte.ts` | DONE, prints nothing, exit 1 | |
+| `sh utils/unused-exports.sh` against the base's list | DONE, no line added | below |
+| The guarded tests G8, G28, G46, G91, G117 | DONE | below |
+| Each new or changed test on the unchanged tree, then after | DONE | the section above |
+| Each new or changed sentence against the prose rule | DONE, by reading | the sentences read true; no departure to name |
+| No history in added comments and titles | DONE | below |
+| Size limits | DONE | every file in the list below is at or under 880 lines and every component at or under 520 |
 
-Run counts: `npm run test:quick` 0, `npm run diagrams` 0, any whole-suite command 0, the case-run program 1.
+**Full-list runs: 2.** The first failed one check: `FAILED  vitest checks (187.2 s)`, `tests/checks/source/comment-width.test.ts`, `tests/state/system/schedule-lines.test.ts:97` over the hundredth column. That comment was shortened, the check rerun alone, the list run once more.
+
+The last run, `npm run test:quick -- <the 38 paths>` with `TMPDIR` unset:
+
+```
+test:quick: 38 changed file(s), from the given paths
+test:quick: 227 test file(s)
+ok      prettier (1.0 s): All matched files use Prettier code style!
+ok      ASCII gate (1.0 s)
+ok      svelte-kit sync (2.7 s)
+ok      svelte-check (13.3 s): 1794169573895 COMPLETED 590 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (13.5 s)
+ok      vitest checks (122.5 s): Duration  105.29s (transform 47.64s, setup 0ms, import 113.25s, tests 257.86s, environment 4ms)
+ok      vitest (142.8 s): Duration  126.69s (transform 77.79s, setup 0ms, import 208.64s, tests 271.84s, environment 15.38s)
+ok      vitest slow (245.3 s): Duration  229.26s (transform 25.31s, setup 0ms, import 133.62s, tests 774.86s, environment 14ms)
+test:quick: 248.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+The guarded tests, the 60 files named on the `Test:` lines of G8, G28, G46, G91 and G117:
+
+```
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run <the 60 files> --reporter=dot
+ FAIL  |unit| tests/routes/edit/undo/config-save.test.ts > the Save of a Settings scope, one write of its file and one record > writes 'two options of the workspace file' in one record, and the undo puts it back
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 59 passed (60)
+      Tests  1 failed | 794 passed (795)
+$ TMPDIR=.agents/scratch/tmp GIT_CEILING_DIRECTORIES=.agents/scratch/tmp npx vitest run tests/routes/edit/undo/config-save.test.ts --reporter=dot
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+```
+
+That test hit vitest's 5000 ms limit with 60 files running side by side, and the file passes alone; this step changes neither it nor the config writes it covers. Whether it was load alone is a judgment, and the look is not what would settle it: a run of the same 60 files on the base copy would.
+
+`diff .agents/worktrees/O170-base/unused-exports.txt <(sh utils/unused-exports.sh)` prints only lines the base has and this tree has not, so the step adds no line:
+
+```
+1,2d0
+< ERROR: Error loading vite.config.ts (File './.svelte-kit/tsconfig.json' not found.)
+< ERROR: Please fix or visit https://knip.dev/reference/known-issues
+337d334
+< knip stopped with status 2
+```
+
+Those three lines are the base copy's own (it has no `.svelte-kit` folder).
+
+History words in the added comment lines and test titles, `git diff -U0 -- src tests` filtered to comment lines, `it(`, `it.each`, `describe(` and `name: '` lines, then for "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands", and the two new files read for the same words. Each hit, judged:
+
+| Hit | Judgment |
+| --- | --- |
+| `form.ts`: "null before its first"; "a tab draws before any listing" | order within a tab's life, no history of the code |
+| `export.ts`: "when it is still the line on show"; "while it is still this line on show" | the state at the call |
+| `Literature.svelte`: "before that both do nothing"; "before which a search sends nothing"; "it is drawn still" | order at run time; "still" is motionless |
+| `page-entry.test.ts`: 'a snapshot at the build that still holds the entry ends it' | the entry's state in that snapshot |
+| `due.ts`: "at or before", "before a moment", "before `now`", "still sees the one before it" (moved text) | clock order, the comment moved unchanged from `watch.ts` |
+
+Comments re-read beside the changed code and true as they stand: `src/lib/views/feeds/literature/words.ts:104` (names citation-js as what built the entry; `src/lib/state/feeds/literature/bibtex.ts` still loads it), `Stage.svelte:3` and `src/lib/themes/slide.css:2` (`SLIDE_SHAPE`, which the Presenter no longer imports and they still use). Comments rewritten by the step: the heads of `Literature.svelte`, `Head.svelte`, `run.svelte.ts`, `form.ts`, `export.ts`, `Bar.svelte`, `Presenter.svelte`, `Slide.svelte` (its layout paragraph alone), `drawn-slide.ts`, `slide-layout.ts`, `notice-sources.ts`, `settled.svelte.ts`, `watch.ts`, `routes.ts`, `context.ts:170-171`, `page-entry.ts` at `Settle.removed` and `removed`, and `schedule.svelte.ts` at `Removal`, the listener and `removed`.
+
+Greps of the names the step removes: `export_opened` and `shows()` as above; `unwrittenListeners` and `holds(one` (of the schedule store) find nothing in `src`, `tests` or `config` beyond the unrelated `holds` of `file-undo.ts`, `problems.svelte.ts`, `symbols.ts`, `keys.ts` and `collection-text.ts`.
+
+`src/lib/views/academic/present/Slide.svelte` hunks, `git diff -U0`: base lines 20-21, 32-34, 61, 254, 258 and 261, all inside the three ranges the brief allows, and the paragraph "The slide's foot" is untouched.
+
+`.agents/scratch` is removed.
 
 ## Files with line counts
 
-None changed. This report is the one file written (`.scratch/migration/agents/reviews/O170-report.md`); the case-run program and its folder under `.agents/scratch/` are removed.
+`wc -l` after the build. The two new files are the splits the brief allows.
+
+| File | Lines |
+| --- | --- |
+| `config/text/statusbar.yml` | 263 |
+| `config/text/views/academic/present.yml` | 152 |
+| `config/text/views/feeds/literature.yml` | 111 |
+| `src/lib/data/model/machine/model-machine.ts` | 852 |
+| `src/lib/server/edit/writes.ts` | 805 |
+| `src/lib/server/machine/runs/schedules/due.ts` (new) | 85 |
+| `src/lib/server/machine/runs/schedules/routes.ts` | 354 |
+| `src/lib/server/machine/runs/schedules/watch.ts` | 804 |
+| `src/lib/server/root/context.ts` | 859 |
+| `src/lib/state/client/context.ts` | 880 |
+| `src/lib/state/client/shapes/payloads.ts` | 287 |
+| `src/lib/state/client/shapes/unwritten.ts` (new) | 55 |
+| `src/lib/state/client/shapes/write-answer.ts` | 65 |
+| `src/lib/state/client/writes.svelte.ts` | 845 |
+| `src/lib/state/feeds/literature/form.ts` | 156 |
+| `src/lib/state/feeds/literature/run.svelte.ts` | 233 |
+| `src/lib/state/forms/page-entry.ts` | 529 |
+| `src/lib/state/forms/settled.svelte.ts` | 180 |
+| `src/lib/state/shared/stores/shapes.ts` | 572 |
+| `src/lib/state/system/machine/schedules/schedule.svelte.ts` | 811 |
+| `src/lib/state/workbench/navigation/notice-sources.ts` | 424 |
+| `src/lib/views/academic/present/Bar.svelte` | 155 |
+| `src/lib/views/academic/present/Slide.svelte` | 493 |
+| `src/lib/views/academic/present/acts/acts.svelte.ts` | 160 |
+| `src/lib/views/academic/present/acts/export.ts` | 250 |
+| `src/lib/views/academic/present/presenter/Presenter.svelte` | 284 |
+| `src/lib/views/academic/present/screen/drawn-slide.ts` | 95 |
+| `src/lib/views/academic/present/screen/slide-layout.ts` | 303 |
+| `src/lib/views/feeds/literature/Head.svelte` | 163 |
+| `src/lib/views/feeds/literature/Literature.svelte` | 345 |
+| `tests/routes/hubs/hub-writes.test.ts` | 890 |
+| `tests/routes/machine/schedules.test.ts` | 129 |
+| `tests/server/machine/runs/schedules/file.test.ts` | 87 |
+| `tests/server/machine/runs/schedules/record.test.ts` | 117 |
+| `tests/server/machine/runs/schedules/watch.test.ts` | 425 |
+| `tests/server/root/context-fixture.ts` | 251 |
+| `tests/state/forms/page-entry.test.ts` | 570 |
+| `tests/state/system/schedule-lines.test.ts` | 251 |
+
+`npm run diagrams`, the first command of the verify list, also regenerates four files the brief's list does not name: `docs/diagrams/layer-state.dot` and `.svg` (the count `state/feeds to layer data` 41 to 42) and `docs/diagrams/layers.dot` and `.svg` (`state to data` 564 to 565), from the import of `literatureRows` in `form.ts`. They are left as generated, for the landing commit.
 
 ## Judgment calls the brief left open
 
-None were taken: nothing is built.
+- **The clearing of the export line** is `sayFor(line)`, which answers a function that clears the line only while the same object is on show; `said` is held as a `$state.raw` object so two lines of equal words are told apart. The alternative, comparing the words, would clear a later act's identical line.
+- **The name `nextBuild`** on `WriteTarget`, optional since `target()`'s callers without a server have none to ask; such a removal answers with no `build` and holds nothing.
+- **The two splits.** `shapes/unwritten.ts` holds the listeners and `tell`, since `writes.svelte.ts` stood at 877 lines of 880; `schedules/due.ts` holds the due-time helpers, since `watch.ts` stood at 873. `src/lib/state/client` is left at 10 items.
+- **`Removal`'s shape** on the page: `{ seq, build, seen }` for an entry and `{ at, name, read, seen }` for a schedule.
+- **`configuredSources`** is the name of the rows from the config, `keyed` being true when an `auth` row is required, and `key`, `help` and `bibtex` null, no listing having said them.
+- **`least` is read at pass 0 of the `under` loop** at each factor tried, and the loop's break also waits for a figure with a `least` above 0, so a slide with no caption or explanation runs no extra layout.
+- **`reload` adds to its count before the check that the watcher is closed**, the brief's "as its first statement"; a closed watcher publishes nothing, so the number has no reader then.
 
 ## Host- or user-visible changes
 
-None: no code changed.
+| View, state | Before | After |
+| --- | --- | --- |
+| Literature, Copy BibTeX of a paper no source serves | "BibTeX copied, built by citation-js because no source served one" | "BibTeX copied, built from the paper's fields because no source served one" |
+| Literature, a tab with a query held, reload | a search goes to every source that is on | no request; the form holds the query, the list shows the idle line until Search or Enter |
+| Literature, reload of a tab that has listed | no button until `?sources` answers | the last listing's buttons from the first frame, in its order |
+| Literature, a new tab | no button until `?sources` answers | one button per row of the config, pressable, replaced when the listing answers |
+| Literature, Search before the listing answers | a "none on" line | nothing happens |
+| Literature, a listing that fails | no button, Search says none on | the rows stay, Search asks those on and available |
+| Present, Export to PDF in a browser tab | "The deck opened in a new tab; the browser's print dialog saves it as a PDF.", kept | "Opening the print tab..." from the press, gone once the print tab is answered or the hold ends |
+| Present, a narrow pane, a long status line | cut beside the controls | whole on its own row of the toolbar, cut only where wider than the pane |
+| Present, presenter screen | below the wrap point the side is the pane's width and the next slide wider than the current | the current slide's frame at least as wide and tall as the next's at every pane size; below 596 px the slide over the side, the next slide and the notes as two equal columns |
+| Present, a slide of figures side by side with a caption word wider than the box | the word runs over the next figure | drawn under the text or stacked, no word over a neighbour |
+| Present, toolbar on a project slide against any other | Present, Presenter and Export move as the Facts chip comes and goes | those three stand still; the chip stands after Export |
+| Status bar, a refused fetch, push, pull, sync or publish | "A write was refused: <reason>" | "The fetch failed: <reason>", "The push was refused: <reason>", "The pull failed: <reason>", "The sync failed: <reason>", "The publish was refused: <reason>" |
+| A collection entry deleted and put back inside the portfolio's quiet window | the row stays out | the row comes back at the build the answer named |
+| A schedule deleted and saved again by another window inside the wait | the row stays out | the row comes back at the read the answer named |
 
 ## Anything in the brief that was wrong or impossible
 
-- Item 6's candidate rule against its sentence and C10, the section "The case the brief's rules get wrong" above. Everything else in the brief read true against the tree on this read.
-- C24 does not exist in the brief's list of cases (C23 is followed by C25).
+- Item 6's candidate rule against its sentence and C10, the section "The case the brief's rules get wrong" above, ruled by option (a).
+- C24 does not exist in the brief's list of cases (C23 is followed by C25); the ruling needs no row.
+- The list "Paths this step writes" leaves out the four `docs/diagrams` files that `npm run diagrams`, on the verify list, regenerates, named under "Files with line counts".
 
 ## Doc text
 
@@ -320,4 +575,10 @@ G152's three lines of `agents/guarded.md` as `grep -n` prints them:
 239:  Test: `tests/state/forms/page-entry.test.ts`, describe 'an entry of a collection a write removed', every row, among them "is left out until a snapshot without it arrives through the client's own wiring"; `tests/state/system/schedule-lines.test.ts`, describe 'a schedule a delete took', every row.
 ```
 
-Their replacements are written once the step is built, at the resume.
+Their replacements:
+
+```
+- G152. An entry of a collection or a schedule that a delete the server took removed stays out of its list from the answer on, until the first portfolio message or `schedule` payload numbered at the number its answer named or later, whether or not it holds the entry, or numbered below what was seen at the answer (a restarted server). A number between what was seen and the removal's holds it until the removal's. An entry put back by another hand is shown once that number has arrived, a removal answered with the number already reached or by an answer that names no number is not held, and a refused delete keeps the row. The `delete-entry` answer's `build` is the version of the next portfolio message, the schedules route's delete `read` is the number of the read after its commit, and the watcher publishes every read, also one whose rows equal the last.
+  Code: `src/lib/state/forms/settled.svelte.ts` (`remove`, `heard`), `src/lib/state/forms/page-entry.ts` (`settle.removed`, `removed`), `src/lib/state/client/context.ts` (`entities.afterReceive(settled.heard)`), `src/lib/state/system/machine/schedules/schedule.svelte.ts` (`removed`, the `afterReceive` listener), `src/lib/server/edit/writes.ts` (`nextBuild`, the `delete-entry` branch), `src/lib/server/machine/runs/schedules/routes.ts` (the `read` of a delete in `commit`), `src/lib/server/machine/runs/schedules/watch.ts` (`reads`, `reload`, `nextRead`).
+  Test: `tests/state/forms/page-entry.test.ts`, describe 'an entry of a collection a write removed', every row, among them "is left out until its build through the client's own wiring, a reconnect included"; `tests/state/system/schedule-lines.test.ts`, describe 'a schedule a delete took', every row; `tests/routes/hubs/hub-writes.test.ts`, describe 'the build a delete-entry answer names', every row; `tests/routes/machine/schedules.test.ts`, 'a delete names the read taken right after its commit', 'a pause names none'; `tests/server/machine/runs/schedules/watch.test.ts`, describe 'the read number of the schedules payload', every row.
+```

@@ -35,22 +35,21 @@
     // the file to that application, since a link to it would only download it, and everything else
     // is a link. A refused or failed open is said through `onsaid`, the line the collection view
     // shows every write's answer on. A web address written inside the subtitle, a meta row's value
-    // or a plain field's value is a link (ui/display/text/LinkedText.svelte); a body field is
-    // inline Markdown, which links its addresses itself.
+    // or a plain field's value is a link (ui/display/text/LinkedText.svelte); a body field is its
+    // Markdown (views/shared/card/text/FieldMarkdown.svelte), which links its addresses itself.
     //
-    // A long body field on a card is views/shared/card/Clamp.svelte, open or cut by the view
+    // A long body field on a card is views/shared/card/text/Clamp.svelte, open or cut by the view
     // instance's state, and drawn whole by a card handed no `onmore`; the page draws it whole.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
-    import Clamp from '../../../card/Clamp.svelte';
+    import Clamp from '../../../card/text/Clamp.svelte';
+    import FieldMarkdown from '../../../card/text/FieldMarkdown.svelte';
     import PressBox from '../../../card/project/PressBox.svelte';
     import EntryLink from './EntryLink.svelte';
     import RecordField from '../../../card/record/RecordField.svelte';
-    import { inlineMarkdown, useHtmlMemo } from '$lib/ui/html';
-    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         drawnFields,
         type Drawn,
@@ -96,8 +95,6 @@
 
     let { entry, collection, schema, root, onsaid, more, onmore, column }: Props = $props();
 
-    const cardMath = createCardMath();
-    const htmlMemo = useHtmlMemo();
     /** The moment the deadline's countdown is measured from. */
     const now = Date.now();
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
@@ -211,12 +208,10 @@
 <!-- A long body field: cut to its clamp and opened by the control, or whole on a card without. -->
 {#snippet text(words: string)}
     {#if onmore === undefined}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
+        <FieldMarkdown text={words} />
     {:else}
         <Clamp open={more} ontoggle={onmore}>
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            {@html inlineMarkdown(words, cardMath(words), htmlMemo)}
+            <FieldMarkdown text={words} />
         </Clamp>
     {/if}
 {/snippet}
@@ -342,14 +337,12 @@
                 </div>
             {:else if drawn.kind === 'body' && drawn.field === 'statement'}
                 <blockquote class="stmt" title={t('collection.fundstmt_tip')}>
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                    {@html inlineMarkdown(drawn.values[0], cardMath(drawn.values[0]), htmlMemo)}
+                    <FieldMarkdown text={drawn.values[0]} />
                 </blockquote>
             {:else if drawn.kind === 'body'}
-                <p class="prose">
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                    {@html inlineMarkdown(drawn.values[0], cardMath(drawn.values[0]), htmlMemo)}
-                </p>
+                <div class="prose">
+                    <FieldMarkdown text={drawn.values[0]} />
+                </div>
             {:else if drawn.kind === 'person'}
                 <div class="row">
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->

@@ -40,12 +40,12 @@
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import CareerCard from './CareerCard.svelte';
+    import CareerCard, { type CardLine } from './CareerCard.svelte';
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import { usePaneFold } from '../../shared/card/pane-fold';
     import { personNames } from '$lib/state/boards/person';
-    import { careerShown, STRATEGY_TONE, type CareerLine } from '$lib/state/forms/career-view';
+    import { careerShown, STRATEGY_TONE } from '$lib/state/forms/career-view';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { hubId } from '$lib/state/shared/page/hubs';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -77,9 +77,9 @@
     );
 
     /** The lines of the strategy card: the goal, the milestone and its day, the note, the order. */
-    const strategy = $derived.by((): CareerLine[] => {
+    const strategy = $derived.by((): CardLine[] => {
         if (career === null) return [];
-        const lines: CareerLine[] = [];
+        const lines: CardLine[] = [];
         if (career.goal !== undefined) {
             lines.push({ label: t('career.goal'), text: career.goal });
         }
@@ -94,7 +94,7 @@
             });
         }
         if (career.orderNote !== undefined) {
-            lines.push({ label: t('career.order_note'), text: career.orderNote });
+            lines.push({ label: t('career.order_note'), text: career.orderNote, long: true });
         }
         for (const step of career.order) {
             const when = step.when ?? '';

@@ -1,8 +1,8 @@
 // Layer 3, primitive test. The one sanitiser, run with DOMPurify over a document (this file is a
-// *.dom.test.ts, which vite.config.ts runs in jsdom): the Markdown line a card's field becomes, a
-// slide's Markdown, and a note's document with its formulas, each drawn as the page draws it. A
-// paper saved to Literature is written to a Literature file in a temporary hub, and its abstract is
-// drawn as a card draws a field, both as the file holds it and as the source sent it.
+// *.dom.test.ts, which vite.config.ts runs in jsdom): the Markdown line and the long field a card
+// draws, a slide's Markdown, and a note's document with its formulas, each drawn as the page draws
+// it. A paper saved to Literature is written to a Literature file in a temporary hub, and its
+// abstract is drawn as a card draws a field, both as the file holds it and as the source sent it.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import {
     blockMarkdown,
     blockMarkdownParts,
+    fieldMarkdown,
     inlineMarkdown,
     sanitise,
     type MarkdownExtras
@@ -71,6 +72,28 @@ describe('inlineMarkdown', () => {
         expect(invalid).toContain('class="math-error"');
         expect(invalid).toContain('$\\frac{1}{$');
         expect(invalid).not.toContain('katex');
+    });
+});
+
+describe('fieldMarkdown', () => {
+    it('is the sanitiser over the field renderer, so no long field reaches a card around it', () => {
+        const words = '<script>alert(1)</script>, <img src=x onerror="alert(1)"> and';
+        const paragraph = fieldMarkdown(`In ${words} rsync <source> <target>`);
+        const list = fieldMarkdown(`- In ${words} rsync <source> <target>`);
+        expect(paragraph).toContain('<p>');
+        expect(list).toContain('<li>');
+        for (const field of [paragraph, list]) {
+            expect(field).not.toMatch(/onerror|<script/);
+            expect(field).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+            expect(field).toContain('rsync &lt;source&gt; &lt;target&gt;');
+        }
+        expect(fieldMarkdown('<div>rsync <source> <target></div>')).toBe(
+            '<div>rsync &lt;source&gt; &lt;target&gt;</div>'
+        );
+        const script = fieldMarkdown('<div><script>alert(1)</script></div>');
+        expect(script).toBe('<div>&lt;script&gt;alert(1)&lt;/script&gt;</div>');
+        expect(fieldMarkdown('<div>a <script')).toContain('&lt;script');
+        expect(fieldMarkdown('<div>if a<b then c</div>')).toBe('<div>if a&lt;b then c</div>');
     });
 });
 

@@ -44,6 +44,7 @@ digraph layer_ui {
         "folder ui/theme to layer data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/theme to layer state" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/theme to layer themes" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui to folder ui/display" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui to layer data" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder ui/tabs" [label="state", style=dashed];
@@ -137,6 +138,8 @@ digraph layer_ui {
     "folder ui/theme" -> "folder ui/theme to layer themes" [arrowhead=none, style=dashed, minlen=2, weight=10];
     "folder ui/theme to layer themes" -> "layer themes from folder ui/theme" [style=dashed];
     { rank=same; "folder ui/theme to layer themes"; "layer themes from folder ui/theme"; }
+    "folder ui" -> "folder ui to folder ui/display" [arrowhead=none, minlen=1, weight=10];
+    "folder ui to folder ui/display" -> "folder ui/display" [];
     "folder ui" -> "folder ui to layer data" [arrowhead=none, style=dashed];
     "folder ui to layer data" -> "layer data from folder ui" [style=dashed];
     { rank=same; "folder ui"; "folder ui to layer data"; "layer data from folder ui"; }

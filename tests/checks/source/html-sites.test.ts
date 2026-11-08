@@ -1,9 +1,9 @@
 // Layer 4, tree check. Every place the app writes raw HTML into the page draws one of three things:
-// the output of ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown
-// (inlineMarkdown sanitises what it renders), or a string from config/text/, which oculus wrote for
-// itself. A site that draws anything else is listed below by file and expression with the reason
-// it is safe, or this test fails. Adding a {@html} to a view is therefore a choice a reader of this
-// file can see.
+// the output of ui/html.ts's sanitise, sanitiseSvg or sanitiseGraph, one line of inline Markdown or
+// one long field of block Markdown (inlineMarkdown and fieldMarkdown sanitise what they render), or
+// a string from config/text/, which oculus wrote for itself. A site that draws anything else is
+// listed below by file and expression with the reason it is safe, or this test fails. Adding a
+// {@html} to a view is therefore a choice a reader of this file can see.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { byKey } from '../../../src/lib/data/helpers/guards.ts';
@@ -20,7 +20,13 @@ const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..', 'src
  * The calls whose result is filtered already. A site is one of these, a catalog line, or named
  * below.
  */
-const FILTERED = ['sanitise(', 'sanitiseSvg(', 'sanitiseGraph(', 'inlineMarkdown('];
+const FILTERED = [
+    'sanitise(',
+    'sanitiseSvg(',
+    'sanitiseGraph(',
+    'inlineMarkdown(',
+    'fieldMarkdown('
+];
 
 /** The sites that draw neither, each with why its HTML cannot carry anything but its own markup. */
 const ALLOWED: Record<string, string> = {
@@ -231,7 +237,7 @@ function looseTrustedIntros(root: string): string[] {
 }
 
 describe('every {@html} site', () => {
-    it('draws the sanitiser, inline Markdown, the catalog, or a named exception', () => {
+    it('draws the sanitiser, inline or field Markdown, the catalog, or a named exception', () => {
         expect(unfilteredSites(LIB)).toEqual([]);
     });
 
@@ -239,7 +245,7 @@ describe('every {@html} site', () => {
         const counted = svelteFiles(LIB).flatMap((file) =>
             htmlSites(readFileSync(join(LIB, file), 'utf8'))
         );
-        expect(counted.length).toBeGreaterThanOrEqual(32);
+        expect(counted.length).toBeGreaterThanOrEqual(19);
     });
 
     it('marks as catalog text only an Intro whose words are a catalog line', () => {

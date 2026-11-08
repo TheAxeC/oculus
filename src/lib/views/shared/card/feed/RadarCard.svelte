@@ -23,11 +23,13 @@
     // The source line (authors, venue, year) is one line, cut with an ellipsis where the card ends,
     // and its whole text is the line's tooltip; on the paper's page it is drawn whole. A web
     // address in it is a link (ui/display/text/LinkedText.svelte); the note and the threat are
-    // inline Markdown, which links its addresses itself.
+    // their Markdown (views/shared/card/text/FieldMarkdown.svelte), which links its addresses
+    // itself, and the threat stands in a column of its own beside its label.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
     import {
         keylessFeedEntry,
@@ -289,21 +291,18 @@
         </div>
     {/if}
     {#if note !== ''}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="note">{@html inlineMarkdown(note, cardMath(note), htmlMemo)}</p>
+        <div class="note">
+            <FieldMarkdown text={note} />
+        </div>
     {/if}
     {#if threat !== ''}
-        <p class="threat">
+        <div class="threat">
             <Glyph name="warn" />
-            <!-- eslint-disable svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-            <span
-                >{@html t(
-                    'radar.threatens',
-                    inlineMarkdown(threat, cardMath(threat), htmlMemo)
-                )}</span
-            >
-            <!-- eslint-enable svelte/no-at-html-tags -->
-        </p>
+            <span class="threat-label">{t('radar.threatens')}</span>
+            <div class="threat-words">
+                <FieldMarkdown text={threat} />
+            </div>
+        </div>
     {/if}
     {#if posting(word('url')) !== undefined}
         <p class="paper">
@@ -392,8 +391,21 @@
         margin-top: 6px;
     }
 
+    /* The glyph and the label on the first line of the threat, whose words wrap in their own
+       column. */
     .threat {
+        flex-wrap: nowrap;
+        align-items: baseline;
         color: var(--c-red-txt);
+    }
+
+    .threat-label {
+        flex: 0 0 auto;
+    }
+
+    .threat-words {
+        flex: 1 1 0;
+        min-width: 0;
     }
 
     .paper a {
