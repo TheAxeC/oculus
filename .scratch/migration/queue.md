@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O171 (the slide frame a 16:9 shape with no pixel size): /spec running.
+- O171 (the slide frame a 16:9 shape with no pixel size): building.
 
 Queued, in order (2 steps):
 - O170 (Literature and Present said and drawn plainly): /spec once O171 has landed.

@@ -38,8 +38,17 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 1 (.scratch/migration/agents/briefs/O151-round1.md; snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
 - step: O171
-  brief_check: "running: a8c7afd700e04bb47"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O171-brief-check.md (a8c7afd700e04bb47, claude-opus-5-5, 221013 tokens, 66 tool uses, 10.5 min)
+  base: 00adcfa54
+  worktree: .agents/worktrees/migration-O171
+  executor: agent
+  worker: claude:opus
+  session_id: aaf1e8ca5b7205734 (claude-opus-5-5)
+  launched: 2026-11-08
+  report: .scratch/migration/agents/reviews/O171-report.md
+  shared_paths: src/lib/themes/slide.css, src/lib/views/academic/present/Slide.svelte, parts/project/Project.svelte and parts/project/Facts.svelte with O151 (this plan), whose repair round 2 runs after O171 and O170 land and rebuilds its changes on main's head, so no merge of the two is made
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
