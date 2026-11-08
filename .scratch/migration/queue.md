@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O151 (a deck for every research project): repair round 2 running, its builder fitting every deck on its own scratch server.
-- O173 (the audit asks every research project for a deck): builder running.
-- O174 (a cut long field shows no sliced block): builder running.
+- O173 (the audit asks every research project for a deck): repair round 1 running.
+- O174 (a cut long field shows no sliced block): first review running.
 
 Queued: none.
 

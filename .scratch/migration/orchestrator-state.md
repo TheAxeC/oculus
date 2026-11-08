@@ -45,9 +45,11 @@ dispatch:           # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   session_id: aca21d5a391ac3483 (claude-opus-5-5)
+  builder_usage: 212085 tokens, 69 tool uses, 19.7 min
   launched: 2026-11-09
   report: .scratch/migration/agents/reviews/O173-report.md
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O173-refuter.md (a0a900d566b589741, claude-opus-5-5, 195803 tokens, 27 tool uses, 12.8 min)
+  round: 1 (.scratch/migration/agents/briefs/O173-round-1.md; snapshot .agents/worktrees/migration-O173-round-1)
   landing: not-started
 - step: O174
   base: abe602359
@@ -55,6 +57,7 @@ dispatch:           # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   session_id: ad7049ea982f2311d (claude-opus-5-5)
+  builder_usage: 144856 tokens, 32 tool uses, 10.6 min
   launched: 2026-11-09
   report: .scratch/migration/agents/reviews/O174-report.md
   round: 0
@@ -893,6 +896,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O173 repair round 1 sent). O173's review (`agents/reviews/O173-refuter.md`) holds every item and meets every case but C9, the look; three Standards findings are ruled in `agents/briefs/O173-round-1.md` and go to builder aca21d5a391ac3483. O174 was prepared in parallel (base abe602359), its first review running. O151's round 2 runs. In flight (3 of 6): O151, O173, O174. Open items: none.
 - 2026-11-09 (owed looks of O170 and O172 taken). Recorded in `agents/reviews/O170-landing.md` and `agents/reviews/O172-landing.md` under The look. One flaw found, booked as O174 in `plan.md` (ruling Look flaws), queued after O173. Next: O151's repair round 2 and O173 in parallel (Axel, 2026-11-08: "taking the owed looks, then doing O151 and O173 in parallel").
 - 2026-11-08 (O170 landed). O170, Literature and Present said and drawn plainly, landed (booking in `plan.md`, report `agents/reviews/O170-landing.md`). `src/lib/ui/html/` now holds `html.ts` and `html-memo.ts`. Next: O173 alongside O151's repair round 2 (ruling O173 alongside O151), once the owed looks are taken, O151's builder fitting every deck on its own scratch server at main's head with O151's oculus changes applied, then the review over the round, the measurement of every deck, O151's landing and the hub commit on Axel's word.
 - 2026-11-08 (O170 repair round 1 sent). Every finding of O170's review is ruled in `agents/briefs/O170-round-1.md`, except Standards S2, which rests on a false premise: the file carries `// @module-tag slow`. Next: O170's round, its review over the round, its landing, then O151's repair round 2.
