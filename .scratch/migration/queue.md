@@ -1,9 +1,9 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O171 (the slide frame a 16:9 shape with no pixel size): /spec running.
-- O151 (a deck for every research project): waiting; repair round 2 once O171 and O170 have landed.
 
-Queued, in order (1 step):
+Queued, in order (2 steps):
 - O170 (Literature and Present said and drawn plainly): /spec once O171 has landed.
+- O151 (a deck for every research project): repair round 2 once O171 and O170 have landed.
 
 Owed looks: none.
 
