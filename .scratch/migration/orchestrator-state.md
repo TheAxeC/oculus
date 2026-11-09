@@ -38,6 +38,9 @@ dispatch:           # steps in flight, up to six (Z632)
     brief_check: ".scratch/migration/agents/reviews/O180-brief-check.md (af5af1f8f126742f6, claude-opus-5-5, 269392 tokens, 39 tool uses, 696 s)"
     reviewer_report: ".scratch/migration/agents/reviews/O180-refuter.md (aade7a12319164806, claude-opus-5-5, 233680 tokens, 32 tool uses, 936 s)"
 
+  - step: O181
+    landing: preparing
+    brief_check: "running: aae22591a037e332b"
 ```
 
 ## The standing demands (from Axel, in force)
