@@ -133,17 +133,12 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             file: fileOf(input.hub, path),
             ...(writable ? { action: 'website' as const } : {}),
             ...(place === ''
-                ? sentence(
-                      writable
-                          ? 'audit.msg_site_differs_whole'
-                          : 'audit.msg_site_differs_whole_no_cv',
-                      file.name
-                  )
-                : sentence(
-                      writable ? 'audit.msg_site_differs' : 'audit.msg_site_differs_no_cv',
-                      file.name,
-                      place
-                  ))
+                ? writable
+                    ? sentence('audit.msg_site_differs_whole', file.name)
+                    : sentence('audit.msg_site_differs_whole_no_cv', file.name)
+                : writable
+                  ? sentence('audit.msg_site_differs', file.name, place)
+                  : sentence('audit.msg_site_differs_no_cv', file.name, place))
         });
     }
 }

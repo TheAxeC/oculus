@@ -23,6 +23,12 @@
     // does in its column of names, has the box draw no words, the label kept as its accessible
     // name.
     //
+    // A `list` field whose spec sets `empty` tells a key its record lacks from a list held empty:
+    // the first draws the words Not set above its Add, the second the words Empty list and a Clear
+    // that takes the key out (`onpick` with undefined), so a list emptied here can go back to not
+    // set. A list with an item, a list whose spec does not set `empty` and a `parked` field draw no
+    // such words.
+    //
     // A value outside what the control offers is shown and marked: a Tag with the words that it is
     // not in the list beside a single value, and the same words after a multi-pick's chip. While
     // the list the control draws from is still being read the held value is shown as the one item,
@@ -193,6 +199,18 @@
     const emptyWords = $derived.by(() => {
         if (typeof spec.empty === 'string') return spec.empty;
         return spec.empty === true || optional ? t('settings.unset') : undefined;
+    });
+
+    /** Whether this list tells a key its record lacks from a list held empty, as `empty` asks. */
+    const tellsEmpty = $derived(control === 'list' && spec.empty !== undefined);
+
+    /** Whether the record holds this list with no item. */
+    const heldEmpty = $derived(tellsEmpty && Array.isArray(value) && value.length === 0);
+
+    /** The words of such a list with no item: not set for an absent key, else an empty list. */
+    const emptyListNote = $derived.by(() => {
+        if (heldEmpty) return t('settings.list_empty');
+        return tellsEmpty && value === undefined ? t('settings.unset') : undefined;
     });
 
     /** The list a choice or multi draws from. */
@@ -403,6 +421,8 @@
             items={wordsOf(value)}
             numbers={spec.items === 'number'}
             {label}
+            note={emptyListNote}
+            onclear={heldEmpty ? () => onpick(undefined) : undefined}
             onpick={(next: string[]) => onpick(next)}
         />
     {:else if suggests(spec)}

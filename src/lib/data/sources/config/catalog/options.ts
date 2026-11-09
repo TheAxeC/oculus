@@ -80,19 +80,21 @@ type ValuesBy = { field: string; sources: Record<string, Source> };
  * entry that is not its heading, section or default. `options` is a fixed list; `from` the sources
  * whose items are offered together, or `{ field, sources }`, the source another field of the record
  * picks; on a text control `from` is the source the box suggests from and holds the value to
- * nothing; `empty`
- * adds the empty value as a choice that writes `''` (`true`, or the words that say what empty
- * does, which the choice draws for its empty item); `min` and `max` bound a number, or each item
- * of a list of numbers; `whole` holds a number, or each item of a list of numbers, to a whole
- * number; `form` holds a text, or each item of a list of texts, to one of FORMS; `slots` names the
- * fixed items of a list; `items: number` makes a list's items numbers; `joined` writes a multi as
- * one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or
- * while the named toggle field of the record is true; `fields` describes the records of a
- * `records` field. A text field with `fields` and `holds: record` takes a text or one record of
- * its fields (takesRecord). `sparse` on a family draws each card with the fields its record sets
- * and a menu that adds the others. `described` names the record of the file's `descriptions:` the
- * field is, as `<file>#<name>`, with `.record` after it for a field that holds one record of a
- * family record, so the field's schema is described once (schemas/options.ts).
+ * nothing; `empty` adds the empty value as a choice that writes `''` (`true`, or the words that say
+ * what empty does, which the choice draws for its empty item), and on a list field of a record,
+ * drawn by a family card that is not sparse, in either form, tells a key the record lacks (drawn as
+ * not set) from a list held empty (drawn as an empty list with a Clear that takes the key out), its
+ * words drawn nowhere; `min` and `max` bound a number, or each item of a list of numbers; `whole`
+ * holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or
+ * each item of a list of texts, to one of FORMS; `slots` names the fixed items of a list; `items:
+ * number` makes a list's items numbers; `joined` writes a multi as one text separated by spaces;
+ * `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of
+ * the record is true; `fields` describes the records of a `records` field. A text field with
+ * `fields` and `holds: record` takes a text or one record of its fields (takesRecord). `sparse` on
+ * a family draws each card with the fields its record sets and a menu that adds the others.
+ * `described` names the record of the file's `descriptions:` the field is, as `<file>#<name>`, with
+ * `.record` after it for a field that holds one record of a family record, so the field's schema is
+ * described once (schemas/options.ts).
  */
 export type FieldSpec = {
     help: string;

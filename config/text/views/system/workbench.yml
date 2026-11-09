@@ -90,6 +90,9 @@ text:
         texts_about: The words the views draw, one file per view, in config/text/ and the folders under it.
         texts_title: Texts
         unset: Not set
+        list_empty: Empty list
+        list_clear: 'Clear {0}'
+        list_clear_word: Clear
         scope_kind: Scope
         scope_workspace: Workspace
         scope_primary: Primary hub
