@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Queued: none.
+Queued: O178 (the CV's sections set in the hub), waiting for open item 739.
 
 Owed looks: none.
 
