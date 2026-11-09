@@ -11,7 +11,6 @@ The builder a69da2be8a76365d5, the brief check a423faa7257a10eea and the reviewe
 ## Not done
 
 - The hub's 132 `present/` paths and 11 `README.md` records are uncommitted in the hub worktree `.agents/worktrees/migration-O151`; the commit waits on Axel's word. The worktree and its snapshot `migration-O151-round-2` stay until it.
-- The audit row `{ file: present/present.yml, tiers: { words: [research] } }` is uncommitted in the hub's `.oculus/config.yml`; the commit waits on Axel's word.
 - No deck draws a figure: 27 panels on 19 decks are undrawn, the files stay in their folders. Decks holding an equation: 13, against 43 in the round 2 snapshot. Second slides of 10 decks carry the equation and their first slides do not. Axel reads the slides and rules what changes.
 - The portfolio deck's Overview (110 tiles) froze the page for more than five minutes, so its tiles were not seen drawn.
 
@@ -35,4 +34,4 @@ Builder a69da2be8a76365d5: first run 152174 tokens, 27 tool uses, 6.7 min; build
 
 ## Next
 
-The hub commit of the decks and of the audit row, each on Axel's word; then Axel reads the slides.
+The hub commit of the decks on Axel's word; then Axel reads the slides.
