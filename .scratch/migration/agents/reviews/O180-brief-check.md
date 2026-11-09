@@ -190,3 +190,17 @@ Other dictated words:
 - Whether `axel-faes` is a people entry; not readable under this brief.
 
 Usage: af5af1f8f126742f6, claude-opus-5-5, 269392 tokens, 39 tool uses, 696 s
+
+## Closed
+
+- F1: ruling 745 and items 2 and 5; `differences` takes the key of the `links_with_code` row (item 5); verify 3 quotes the absence.
+- F2: item 7 and the audit case name the settings; `audit.yml` is in the write list.
+- F3: the new file `tests/data/website/paper-fields.test.ts` is named, in the write list and in verify 2; G139 is extended in `agents/guarded.md`.
+- F4: item 8 lists every comment.
+- F5: "Where you work" says the hub change stays uncommitted and the commit is the orchestrator's.
+- F6: Decision 1 is worded to what the check accepts.
+- C1: the cases say what a row passing at the base quotes; the rows of `project_year`, `kind_pre`, `kind_post` and `links_with_code` use other keys; the 14-row literal comes from the first run.
+- C2: the base copy is named.
+- C3: verify 1 follows `agents/spec.md`; report order follows it too.
+- Implied inputs: `from: ''`, `key: constructor`, a `__proto__` record key (item 4) and the real hub's byte length, entry count and settings read are in the cases.
+- Premise wording corrected: `entryOf` range, `publication()` range, the `.publication` grep's result, the block form of the defaults.

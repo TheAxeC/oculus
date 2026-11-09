@@ -37,6 +37,8 @@ dispatch:           # steps in flight, up to six (Z632)
     reviewer_report: ".scratch/migration/agents/reviews/O179-refuter.md (a79c6329d16447dbe, claude-opus-5-5, 184490 tokens, 30 tool uses, 785 s)"
     landing: not-started
     brief_check: ".scratch/migration/agents/reviews/O179-brief-check.md (a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s)"
+  - step: O180
+    landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -184,7 +186,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
-- Open item 745 (2026-11-09, step O180, three website words still fixed in `papers.ts` that ruling 744 did not name. **What the tree shows.** `website.paper_fields` makes the fields of a paper configurable. Three other words of the publications file stay in code: the key that holds a section's list, `papers` (`papers.ts:176`); the name of the code link, `Code` (`papers.ts:28`); and the words for the user's place among the authors, `first`, `senior` and `coauthor` (`papers.ts:54-56`). The report is `agents/reviews/O180-brief-check.md`, finding F1. **The choice**, each built inside O180, with the values written into the hub's `.oculus/config.yml` so today's file is unchanged, and oculus shipping none of them. (a) Three keys under `website:`: `paper_list: papers`, `code_link_name: Code`, `author_places: { lead: first, supervisor: senior, collaborator: coauthor }`. Pro: each word has one plain place and the rows of `paper_fields` keep one shape. Con: three more keys, each needing the empty case handled. (b) The two words go on the rows that use them, `{ key: links, from: links_with_code, name: Code }` and `{ key: order, from: author_place, words: { lead: first, supervisor: senior, collaborator: coauthor } }`, and `paper_list: papers` is one key. Pro: a word sits beside the field it belongs to. Con: a row's fields differ by its `from`, and the Settings card shows `name` and `words` on every row. **Recommendation:** (a), as a judgment: one shape per row and one place per word. Leaving the three words in code is the lazy option and breaks the rule on hardcoding, so it is not offered.
 
 
 
@@ -195,6 +196,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 745 (2026-11-09, three website words still fixed in `papers.ts`), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 745" says; step O180.
 - Open item 744 (2026-11-09, the fields of a paper on the website are hardcoded), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 744" says; step O180.
 - Open item 743 (2026-11-09, step O179's first defect cannot be produced by a hub file), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 743" says.
 
