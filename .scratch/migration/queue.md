@@ -1,6 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O175 (the portfolio Overview usable at 110 tiles).
 
-Queued: O175 (the portfolio Overview usable at 110 tiles), O176 (the decks repaired after O151), O177 (the stage umbrella).
+Queued: O176 (the decks repaired after O151), O177 (the stage umbrella).
 
 Owed looks: none.
 
