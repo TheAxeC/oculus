@@ -24,6 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
+  - step: O178
+    landing: preparing
+    brief_check: .scratch/migration/agents/reviews/O178-brief-check.md (a68f29698156160cf, claude-opus-5-5, 226791 tokens, 22 tool uses, 528 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -171,7 +174,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
-- Open item 739 (2026-11-09, O178's preparation): ruling 738 names `website.cv_sections` with `key`, `fields` and the period form, and sends the record fields and the period words to the same settings; it names no keys for those. The tree: `FROM_RECORD` (`src/lib/server/content/audit/website/cv.ts:165`) differs from its default `location` and `when` only for `projects`, whose rows take `url` and `when`; the employer CVs' section `teaching` is in none of the ten rows and takes the default; `MONTHS`, `OPEN_END` and `AWARD_TIME` are three values. Proposed for every option: a row of `website.cv_sections` takes `period: timestamp` (left out, the row prints its period text in `duration`) and `record_fields: [url, when]` (left out, `location` and `when`). (a) The words grouped as `website.cv_words.months`, `website.cv_words.open_end` and `website.cv_words.award_time`, as `website.files.*` groups the file paths. Pros: one heading in Settings, the form the website block already has. Cons: none found. (b) Three flat keys `website.cv_months`, `website.cv_open_end`, `website.cv_award_time`. Pros: each is one key. Cons: three unrelated rows in Settings. No lazy option is listed: leaving them in `cv.ts` is what 738 ended. Recommended (a), a judgment. O178 has no brief or worktree until this is ruled.
 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
@@ -179,6 +181,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+
+- Open item 739 (2026-11-09, O178's preparation), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 739" says. ruling 738 names `website.cv_sections` with `key`, `fields` and the period form, and sends the record fields and the period words to the same settings; it names no keys for those. The tree: `FROM_RECORD` (`src/lib/server/content/audit/website/cv.ts:151`) differs from its default `location` and `when` only for `projects`, whose rows take `url` and `when`; the employer CVs' section `teaching` is in none of the ten rows and takes the default; `MONTHS`, `OPEN_END` and `AWARD_TIME` are three values. Proposed for every option: a row of `website.cv_sections` takes `period: timestamp` (left out, the row prints its period text in `duration`) and `record_fields: [url, when]` (left out, `location` and `when`). (a) The words grouped as `website.cv_words.months`, `website.cv_words.open_end` and `website.cv_words.award_time`, as `website.files.*` groups the file paths. Pros: one heading in Settings, the form the website block already has. Cons: none found. (b) Three flat keys `website.cv_months`, `website.cv_open_end`, `website.cv_award_time`. Pros: each is one key. Cons: three unrelated rows in Settings. No lazy option is listed: leaving them in `cv.ts` is what 738 ended. Recommended (a), a judgment. O178 has no brief or worktree until this is ruled.
 
 - Open item 738 (2026-11-09, Axel's question from his CV session), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 738" says; step O178. `SECTIONS` at `src/lib/server/content/audit/website/cv.ts:47-58` is a fixed list of ten CV sections, and `cvFile` (`cv.ts:442`) writes only those, so a row naming another section (`cv_section: service`) is read and dropped with no finding. No row of the hub does so today. (a) A new step O178: the hub's settings gain `website.cv_sections`, rows of `key`, `fields` and the period form in the file's order, beside `website.kinds`; oculus's defaults hold none, the hub holds the ten rows, in a hub commit on Axel's word; a row naming a section the list lacks is an audit finding naming the row and the section; the award date rule (`AWARDS`), the profile fields (`FROM_RECORD`) and the period words (`MONTHS`, `OPEN_END`, `AWARD_TIME`) leave `cv.ts` for the same settings. Pros: no section needs oculus again, a misspelt section is reported, each section chooses its fields and place. Cons: a new settings shape, a step and a hub commit. (b) The loop proposed in the CV session, writing any section a row names with the `TITLED` fields after the ten. Pros: three lines. Cons: a misspelt section becomes a section on the website with no finding, a new section cannot have other fields or another place, the ten stay in the code. (b) is the lazy option. Recommended (a), a judgment.
 
@@ -865,6 +869,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O178 prepared). Open items 738 and 739 ruled (a). O178's brief check closed in the brief under its Closed heading. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 stopped at its preparation). Open item 738 ruled (a); step O178 booked; `/spec migration O178` stopped on open item 739, the keys of the record fields and the period words. In flight (0 of 6). Open items: 739.
 - 2026-11-09. O176 landed: oculus booking 5976da035, its 25 decks at hub commit 83b3034df on Axel's word, the hub worktrees removed. In flight (0 of 6). Open items: none.
 - 2026-11-09. O177 landed on main (6322c57f9), its hub side at hub commit b64f84066. Next: the review of O176 over repair round 1, then its landing.
