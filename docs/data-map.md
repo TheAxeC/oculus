@@ -120,6 +120,10 @@ audit.stage_folders:      # the folders a project at a stage is kept under
 website.folder:           # the website's folder, which Write the website writes its three files into
 website.cv:               # the command run in that folder after a write
 website.kinds:            # the sections of the website's publications, by stage and form
+website.cv_sections:      # the CV's sections in order, each with its fields, period and record fields
+website.cv_words.months:     # the twelve month words of the CV's periods
+website.cv_words.open_end:   # the CV's word for a period with no end
+website.cv_words.award_time: # the time and zone after the day of a CV timestamp
 website.files.site:       # the website's own file, relative to its folder
 website.files.cv:         # the CV's file, relative to the website's folder
 website.files.papers:     # the publications' file, relative to the website's folder
@@ -155,7 +159,7 @@ A word the hub's values no longer give, taken out with `<word>: null` or left ou
 
 In oculus's own values a row left with no word stays. In a list or a row the hub writes itself, each such word is a finding naming the hub's file at the word's place.
 
-Oculus reads twenty-seven keys from the primary hub's file alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `literature.sources`, `literature.prefer`, `website.folder`, `website.cv`, `website.kinds`, `website.files.site`, `website.files.cv`, `website.files.papers`, `website.files.industry` and `links`. When another hub sets one of them, the primary's value stands and the key is a finding of that hub's file. Oculus reads the other 42 keys from each hub's own file, and a path among them resolves against the folder of that hub.
+Oculus reads thirty-one keys from the primary hub's file alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `literature.sources`, `literature.prefer`, `website.folder`, `website.cv`, `website.kinds`, `website.cv_sections`, `website.cv_words.months`, `website.cv_words.open_end`, `website.cv_words.award_time`, `website.files.site`, `website.files.cv`, `website.files.papers`, `website.files.industry` and `links`. When another hub sets one of them, the primary's value stands and the key is a finding of that hub's file. Oculus reads the other 42 keys from each hub's own file, and a path among them resolves against the folder of that hub.
 
 A value of `bookmarks`, `schedules` or `apps_dir` resolves in this order:
 
@@ -207,7 +211,7 @@ settings:                 # your values of oculus's options for this workspace
 
 A folder's `path` is absolute or starts with `~`. Its `repository_scan_depth` is how many levels below it oculus searches for repositories, any whole number from -1: 0 searches the folder alone and -1 every level.
 
-Without `primary:` the workspace has no primary hub. It then has no bookmarks file and no schedules, Settings refuses the twenty-seven keys of the primary and writes a hub's other keys only once a hub is picked, and an update task and an app's new record are refused.
+Without `primary:` the workspace has no primary hub. It then has no bookmarks file and no schedules, Settings refuses the thirty-one keys of the primary and writes a hub's other keys only once a hub is picked, and an update task and an app's new record are refused.
 
 `settings:` holds each option of oculus's defaults files and catalogs, keyed as the merged config keys it, with no file names. In `settings:`, a key of the hub's settings, a key no option names and a value its option refuses are findings, and oculus's value stands for each. Besides the options, it takes these keys:
 

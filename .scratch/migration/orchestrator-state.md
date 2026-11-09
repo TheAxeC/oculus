@@ -174,7 +174,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 
 
-- Open item 741 (2026-11-09, O178's landing): four sentences of the documents `agents/spec.md:72` leaves to Axel. `docs/data-map.md:122` gains the four new keys after `website.kinds`, `:158` and `:210` say thirty-one keys in place of twenty-seven and `:158` lists the four, and `docs/HELP.md:528` says a differing file offers Write the website while a CV section is set. (a) Write the four lines as a fix on main: pro, the pages are true; con, none beyond the edit. (b) Leave them: pro, no edit; con, the pages stay false; this is the lazy option. Recommendation: (a).
+- Open item 742 (2026-11-09, O178's landing): two defects O178 left in delivered work. One: two refused rows of one setting that share a key are one finding, because the `once` key in `src/lib/data/sources/config/catalogs.ts` uses the row's label. Two: in Settings a row's `record_fields` left out and empty are drawn alike though they mean different things (location and when, or nothing). (a) A new step: `RowIssue` in `src/lib/data/sources/config/settings/rows/check.ts` carries the row's position and `once` uses it, so one row with several issues stays one finding; a list field that may be empty draws the words `Not set` while the key is absent and removing its last item saves the absent key's state only through an explicit empty choice. Pro: both ended; con: one more step through brief, build and review. (b) Leave them: pro, no work; con, a second refused row stays hidden and a reader cannot tell the two states apart; this is the lazy option. Recommendation: (a).
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
@@ -182,6 +182,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 741 (2026-11-09, O178's document lines), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 741" says.
 - Open item 740 (2026-11-09, how the `cv_hide` changes reach oculus), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 740" says.
 - Open item 739 (2026-11-09, O178's preparation), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 739" says. ruling 738 names `website.cv_sections` with `key`, `fields` and the period form, and sends the record fields and the period words to the same settings; it names no keys for those. The tree: `FROM_RECORD` (`src/lib/server/content/audit/website/cv.ts:151`) differs from its default `location` and `when` only for `projects`, whose rows take `url` and `when`; the employer CVs' section `teaching` is in none of the ten rows and takes the default; `MONTHS`, `OPEN_END` and `AWARD_TIME` are three values. Proposed for every option: a row of `website.cv_sections` takes `period: timestamp` (left out, the row prints its period text in `duration`) and `record_fields: [url, when]` (left out, `location` and `when`). (a) The words grouped as `website.cv_words.months`, `website.cv_words.open_end` and `website.cv_words.award_time`, as `website.files.*` groups the file paths. Pros: one heading in Settings, the form the website block already has. Cons: none found. (b) Three flat keys `website.cv_months`, `website.cv_open_end`, `website.cv_award_time`. Pros: each is one key. Cons: three unrelated rows in Settings. No lazy option is listed: leaving them in `cv.ts` is what 738 ended. Recommended (a), a judgment. O178 has no brief or worktree until this is ruled.
 
@@ -870,7 +871,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-11-09 (O178 landed on oculus main). Its hub worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O178` waits for Axel's word: `git add -A && git commit` there, cherry-pick on hub main, remove the worktree and branch. Until then the live hub has no CV section, so Write the website is off. In flight (0 of 6). Open items: 741.
+- 2026-11-09 (O178 landed on oculus and on the hub, eb801a32e). In flight (0 of 6). Open items: 742.
 - 2026-11-09 (O178 repair round 1 sent; ruling 740). The round's brief `agents/briefs/O178-round-1.md` carries findings B1, B2, B5, ST1 to ST3 and a publication's `cv_hide`. At landing: the `service` row, the three `docs/data-map.md` lines to Axel, the stray `/tmp/x` behind the red rows of `tests/server/edit/config-key.test.ts`. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 building; eleventh row booked). At landing, before the hub commit, add to the hub worktree's `.oculus/config.yml` the row `- { key: service, fields: [title, location, duration, url, about, hide] }` after `academic` (`plan.md` Rulings "O178 service row"). In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 building). Prepared at a2928dd16, hub worktree at 29e47d50f; builder a3e426484f4e3af8e (claude-opus-5-5) launched. In flight (1 of 6): O178. Open items: none.
