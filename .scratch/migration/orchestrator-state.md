@@ -33,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
     builder_usage: "153116 tokens, 38 tool uses, 536 s"
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O179-report.md
-    round: 0
-    reviewer_report: ""
+    round: 1
+    reviewer_report: ".scratch/migration/agents/reviews/O179-refuter.md (a79c6329d16447dbe, claude-opus-5-5, 184490 tokens, 30 tool uses, 785 s)"
     landing: not-started
     brief_check: ".scratch/migration/agents/reviews/O179-brief-check.md (a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s)"
 ```

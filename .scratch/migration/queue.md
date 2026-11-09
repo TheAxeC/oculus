@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O179 (an absent list told from an empty one), under review.
+- O179 (an absent list told from an empty one), repair round 1 building.
 
 Queued: O180 (the fields of a paper on the website come from configuration), waiting for open item 745.
 
