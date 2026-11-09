@@ -158,3 +158,15 @@ The brief dictates the keys, the words and no other text for any file. The `sett
 One grep of mine over `config/options` passed `--exclude=local.yml` after `--`, where git treats it as a path. It printed one line of the tracked `config/options/local.yml` (line 16). `config/local.yml` itself is not tracked (`git ls-files --error-unmatch config/local.yml` fails) and was not read.
 
 Usage: a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s
+
+## Closed
+
+The ruling on open item 743 struck the first half of the step, which closes every finding on `RowIssue`, `checkRows`, the finding key, the cases over refused rows and the `reader.test.ts` assertions.
+
+- Line numbers: corrected in the brief (`draft.ts:17-18`).
+- Draft runs over `draft.ts`, a place the step does not change: removed; the cases are now renders of the component.
+- No case exercised the `FieldControl` branch: the cases render it with `svelte/server`, and the look at landing shows it.
+- `empty` undescribed on a list (`catalog/options.ts:83-85`, `config/options/appearance.yml`): item 3, both in the write list.
+- The 520-line limit: named under Conventions.
+- Implied inputs 5 and 6 need no change; implied input 7 is named under Cases, read in the diff.
+- Clear button: Decision 2 gives its reason.

@@ -1,6 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O179 (an absent list told from an empty one), preparing.
 
-Queued: O179 (a refused row is its own finding, an absent list told from an empty one), waiting for open item 743.
+Queued: O180 (the fields of a paper on the website come from configuration).
 
 Owed looks: none.
 
