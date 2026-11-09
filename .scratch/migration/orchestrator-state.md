@@ -30,18 +30,35 @@ dispatch:           # steps in flight, up to six (Z632)
     executor: agent
     worker: claude:opus
     session_id: a7f944bcd13b21980 (claude-opus-5-5)
+    builder_usage: 183581 tokens, 61 tool uses, 981 s
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O175-report.md
     round: 0
     landing: not-started
     brief_check: .scratch/migration/agents/reviews/O175-brief-check.md (aecd7b11c26c70e4a, claude-opus-5-5, 155635 tokens, 19 tool uses, 370 s)
   - step: O176
-    landing: preparing
-    brief_check: "running: a379c743a49e059f5"
+    base: f5e4fa700
+    worktree: .agents/worktrees/migration-O176
+    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176
+    executor: agent
+    worker: claude:opus
+    session_id: aa5d402b0228d31d1 (claude-opus-5-5)
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O176-report.md
+    round: 0
+    landing: not-started
+    brief_check: .scratch/migration/agents/reviews/O176-brief-check.md (a379c743a49e059f5, claude-opus-5-5, 196944 tokens, 34 tool uses, 1065 s)
   - step: O177
     base: 12f08efdc
     worktree: .agents/worktrees/migration-O177
-    landing: preparing
+    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O177
+    executor: agent
+    worker: claude:opus
+    session_id: ad215e14fdd46d365 (claude-opus-5-5)
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O177-report.md
+    round: 0
+    landing: not-started
     brief_check: .scratch/migration/agents/reviews/O177-brief-check.md (a602a835ac6d57075, claude-opus-5-5, 227351 tokens, 28 tool uses, 664 s)
 ```
 
