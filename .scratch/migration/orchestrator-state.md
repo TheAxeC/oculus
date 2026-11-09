@@ -33,9 +33,11 @@ dispatch:           # steps in flight, up to six (Z632)
     builder_usage: "326442 tokens, 152 tool uses, 2557 s"
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O180-report.md
-    round: 0
+    round: 1
     landing: not-started
     brief_check: ".scratch/migration/agents/reviews/O180-brief-check.md (af5af1f8f126742f6, claude-opus-5-5, 269392 tokens, 39 tool uses, 696 s)"
+    reviewer_report: ".scratch/migration/agents/reviews/O180-refuter.md (aade7a12319164806, claude-opus-5-5, 233680 tokens, 32 tool uses, 936 s)"
+
 ```
 
 ## The standing demands (from Axel, in force)
@@ -183,7 +185,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
-- Open item 748 (2026-11-09, step O181, what counts as hardcoding and who names the new keys). The tree: `git ls-files src | wc -l` gives 2142 files, 410784 lines. `git grep` of `??` before a literal gives 1170 `''`, 578 `null`, 379 numbers, 56 booleans and 92 words; all-capital constants number 2159 in 779 files. No value is named in the step beyond its nine sites, and each new key is a user-visible name `/spec` may not take. Rule clash: ruling Settings (2026-09-30) says an option becomes a config key only where the right answer differs between files, repositories or languages or is a matter of taste, every other behaviour being one fixed choice; ruling Hardcoding sweep (2026-11-09) says the fixed values get config keys. Question 1, the clash. (a) The sweep replaces ruling Settings for every value it moves. Pro: one rule, no value is left to argue over. Con: Settings grows by every moved value, by a number the read gives. (b) Ruling Settings stays and only values that differ between hubs or are a matter of taste get keys. Pro: a shorter Settings. Con: `poll.ts:330` and `latex/endpoint.ts:502`, which the sweep names, could stay fixed. Recommended (a), since the sweep is the later and the specific ruling and (b) leaves in code what it names. Lazy option: (b). Question 2, what stays in code. (a) Three kinds stay, each listed by file in the builder's report: an absence value (`''`, `null`, `0`, `false`, `[]` meaning nothing is there); a fact of another program or format (an exit code, an HTTP status, `SYMBOL_KIND_NAMES`); a word the code itself branches on over a closed set of oculus's own (the type `TabBar`, a view id). Everything else moves. Pro: config holds only what a person could set. Con: the line takes the builder's reading, which the review and the report check. (b) Nothing stays: every literal moves, the absence values included. Pro: no reading needed. Con: `?? ''` on an optional field gets a key that means nothing, about 1750 of them. Recommended (a). Lazy option: limiting the sweep to the nine named sites, which is not offered. Question 3, the names. (a) The brief fixes the rule and the builder names by it: `<section>.<what the value is>` in snake case with the unit as the suffix (`_ms`, `_s`), in `config/defaults/` for a value of oculus and in the hub's `.oculus/config.yml` for a hub's word; the report lists every new key, and Axel can rename any before the landing commit. The rule on real cases: `poll.ts:330` to `hpc.poll_timeout_ms: 40000`; `latex/endpoint.ts:502` to `latex.format_file_name: main.tex`; `opening.svelte.ts:187` to `terminal.default_agent: claude`; `UPDATE_TASKS` to `update_tasks: [litwatch, scout, linkedin, inbox]` in the hub, default `[]`; `FEED_REGISTRIES` to `feed_registries: [leads, radar]` beside `collections:` in `config/defaults/sources.yml`; and `appearance.ts:406-407`, `pane-view.ts:418-419`, `builds.ts:419` get no key, since `show_tabs`, `editor_actions` and `latex.auto_clean` already stand in `config/defaults`, and an invalid value falls to that default in place of a literal. Pro: one builder run. Con: names are seen after they are built. (b) The builder stops after its read with the full list of proposed keys for a ruling, then applies them. Pro: every name ruled before it is built. Con: a list of several hundred lines and a second builder run. Recommended (a). Lazy option: none of the two costs less for the same result. Size, a judgment: reading all of `src/` is about 5 million tokens, some 15 times O180's builder (326442 tokens).
 
 
 
@@ -195,6 +196,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 748 (2026-11-09, step O181, what counts as hardcoding and who names the new keys), withdrawn the same day: the rulings Hardcoding sweep and O180 scope and the step's own line had settled all three questions, so there was no choice to put to Axel.
 - Open item 747 (2026-11-09, `cv_hide` on a manifest's `cv:` record), withdrawn the same day: its option (b), a named field in `projectCv`, broke the rule on hardcoding, so there was no choice to put to Axel. O180's repair round makes `projectCv` keep every key as `publication()` does, with `ProjectCv` typing only what `cv.ts` uses; `cv.cv_hide` is then a row in `config/schemas/manifest-schema.yml` and the `cv.*` line of `docs/data-map.md`.
 - Open item 746 (2026-11-09, O180's hub lines without a worktree of the hub), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 746" says; step O180.
 - Open item 745 (2026-11-09, three website words still fixed in `papers.ts`), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 745" says; step O180.
@@ -891,7 +893,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-11-09 (O181 stopped at /spec, open item 748). O179 landed as 60751d00e. O180's review runs. In flight (1 of 6): O180. Open items: 748.
+- 2026-11-09 (O180 reviewed; repair round 1 sent). Review in `agents/reviews/O180-refuter.md`, round in `agents/briefs/O180-round-1.md`. O181 is prepared next. In flight (1 of 6): O180. Open items: none.
 - 2026-11-09 (O179 landed). The list drawing is on main (booking in `plan.md`, `agents/reviews/O179-landing.md`). O180's review runs; O181 is prepared next. In flight (1 of 6): O180. Open items: none.
 - 2026-11-09 (O181 booked; ruling Hardcoding sweep). O179 landing, its fixes on main uncommitted. O180 built, its review next, its repair round carries the website items of the ruling. O181 queued. In flight (2 of 6): O179, O180. Open items: none.
 - 2026-11-09 (O180 building; ruling 746). Builder a693cdb5194fcfd55 (claude-opus-5-5) launched in the oculus worktree at 3c2f99290; O180 makes no worktree of the hub, and the hub's lines are written at landing on Axel's word. O179's builder is on repair round 1. In flight (2 of 6): O179, O180. Open items: none.

@@ -1,8 +1,8 @@
 In flight (1 of 6 slots in use):
-- O180 (the fields of a paper on the website come from configuration), review running.
+- O180 (the fields of a paper on the website come from configuration), repair round 1 building.
 
 Queued:
-- O181 (no hardcoding left in oculus), ruling Hardcoding sweep; waits on open item 748.
+- O181 (no hardcoding left in oculus), ruling Hardcoding sweep.
 
 Owed looks: none.
 
