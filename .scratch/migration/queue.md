@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Queued: none.
+Queued: O179 (a refused row is its own finding, an absent list told from an empty one), waiting for open item 743.
 
 Owed looks: none.
 
