@@ -860,7 +860,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-11-09. O176 landed: its oculus side is this commit's booking, its 25 decks are in the hub worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176`, uncommitted, waiting for Axel's word; after that commit that worktree, `migration-O176-round-1` and `migration-O151-round-2` in the hub are removed. In flight (0 of 6). Open items: none.
+- 2026-11-09. O176 landed: oculus booking 5976da035, its 25 decks at hub commit 83b3034df on Axel's word, the hub worktrees removed. In flight (0 of 6). Open items: none.
 - 2026-11-09. O177 landed on main (6322c57f9), its hub side at hub commit b64f84066. Next: the review of O176 over repair round 1, then its landing.
 
 - 2026-11-09 (open items 736 and 737 ruled). 736 (a) and 737 (a). O176's and O177's repair rounds run. In flight (2 of 6): O176, O177. Open items: none.

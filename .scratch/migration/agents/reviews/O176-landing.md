@@ -1,6 +1,6 @@
 # O176 landing
 
-Position: the oculus migration, step O176 (the decks repaired after O151) landed. Next: the hub commit of the 25 decks, on Axel's word.
+Position: the oculus migration, step O176 (the decks repaired after O151) landed. Next: nothing queued.
 
 Open items: none.
 
@@ -10,7 +10,7 @@ The runner's agent listing showed no agent of the step running; the builder, the
 
 ## Not done
 
-The hub commit: the 25 decks are uncommitted in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176`, and a hub commit needs Axel's word. The hub worktrees `migration-O176`, `migration-O176-round-1` and `migration-O151-round-2` stay until then.
+Nothing inside the brief. The 25 decks are hub commit 83b3034df, made on Axel's word; the hub worktrees `migration-O176`, `migration-O176-round-1` and `migration-O151-round-2` are removed.
 
 ## What landed
 
@@ -30,7 +30,7 @@ With `TMPDIR` unset: `npm run diagrams && npm run docs:palette` changed no track
 
 ## Next
 
-The hub commit on Axel's word, then the removal of the three hub worktrees.
+Nothing queued.
 
 ## Agents
 

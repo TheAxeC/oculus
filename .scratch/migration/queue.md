@@ -5,7 +5,7 @@ Queued: none.
 Owed looks: none.
 
 Landed, newest first:
-- O176 (the decks repaired after O151), 2026-11-09; hub commit waits for Axel's word.
+- O176 (the decks repaired after O151), 2026-11-09, 5976da035; hub 83b3034df.
 - O177 (the stage umbrella), 2026-11-09, 6322c57f9; hub b64f84066.
 - O175 (the portfolio Overview usable at 110 tiles), 2026-11-09.
 - O151 (a deck for every research project), 2026-11-09, a6dfb9555; hub 76cf0c5f9.
