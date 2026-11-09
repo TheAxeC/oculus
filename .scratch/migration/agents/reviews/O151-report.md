@@ -1,6 +1,6 @@
 # O151 report, a deck for every research project and the facts strip
 
-Everything in the brief and in the round 1 brief is done; C9 is the orchestrator's.
+The round 2 items are built; the compromises in what was built stand first in "# Round 2" at the end of this file, and that section holds where an earlier section differs from it, since rows above it state rounds 0 and 1. C9 is the orchestrator's.
 
 ## Open items of the state file, verbatim
 
@@ -2311,3 +2311,4246 @@ Run after this round's last change, from the oculus worktree, with `TMPDIR` and 
 - `node prose.mjs`: "hits: 20", 13 minus signs in math and 7 lower-case method names, read as in the DONE table.
 - Figures: 23 of 23 identical to their sources (`cmp -s` loop).
 - Doubled apostrophes in markdown bodies: none.
+
+# Round 2
+
+## NOT done, and what the coordinator has to know first
+
+Nothing the round brief asks for is left unbuilt. These are the compromises in what was built, each stated in full because each changes what a reader of the decks gets.
+
+1. **Facts were cut from slides to fit, and they were not given a second slide.** Ruling 1 says a fact that cannot stand on one slide is the reason for a second slide; it also says a second slide is rare. The 82 one-slide decks and the 13 two-slide decks together hold 1210 removed and 799 added lines against the round 1 state (`diff -U0`, counts per deck under "Per deck"), which is a net loss of text. The theory and failed decks lost the most: covert-theory (the PALM no-go, the "first" claim, the floor checks), ms-lipid-handshake (the specs Pairs and First cohorts, ambient RNA, BTD), jacobian-coupled-blockterm-dp (the spec Control and some numbers), and many coauthor decks lost minor numbers. Every cut is a `-` line in "Every changed line". On a two-slide deck the same pressure cut, for example, the two-branch and warm-start AUROC pairs of bttn-incident-af, whose names stay in its Dead ends chip with no number. I weighed the rarity of a second slide above completeness on one slide; that weighing is a judgment and it is the coordinator's to overturn deck by deck.
+2. **Second slides are alike in their drawn parts, with these differences.** All 13 second slides have tag, eli5, specs, method, results and a headline (grep counts `specs=2 method=2 results=2 headline=2` per deck). Three of them (clinical-hccnet, dries-bttr-ecg, ecg-readable-substrate) have no equation, because their sources give none for that slide's content, and `grep -c begin{equation}` of dries's manuscript is 0. `mechanism` stands on first slides only (`mechanism=1` per deck); the field is not drawn on a slide.
+3. **The method lists of the ten equation second slides are one bullet long.** An equation opens a half-width column, so the left column carries eli5, one short method bullet and the results. Numbers that did not fit as bullets stand in the specs chips.
+4. **Figures that no slide draws any more stay in their folders.** No figure was deleted (`diff -rq`: no `Only in` line on the base side). The panels no longer drawn: clinical-hccnet (fusion_over_time, sequences_by_horizon), dries-bttr-ecg (forest_auroc, interpret_afsr_afibonly_blocks), btfno (fig_mechanism), bttd-source-eeg (fig2_source_maps, real_contralateral), linfoot-estimator (engine_shapes), hccnet-revision (figure_outline, calibration), meseret-cirrhosis (fig_simulation, meseret_landmark), raw-pls (fig2_results, synthetic_upgrades), ward-bttr-crosssubject (pipeline_flowchart, finger_spatial_maps). linfoot's engine label is not described in its manuscript: `grep -c -i sinkhorn` of the live `main.tex` is 0.
+5. **A short name stands for a longer one on one chip.** bttn-incident-af's Dead ends chip says "tensor 0.675" for the beat-time-lead tensor; the longer name made the chip row wrap and the slide too tall.
+
+## How the rules met in this round
+
+- The spec's line "A builder runs no page ... whatever a brief says" conflicts with the round brief and ruling 730, which have the builder start a server and open a headless Chrome for the fit. I followed ruling 730 and the coordinator's message; the report states the conflict so that it can be ruled.
+- The one measuring program is `.agents/scratch/measure.mjs`. Beside it ran only `c5.mjs` and `c10.mjs`, the brief's case-run programs that print and write nothing into the diff (their source stands in this report's appendix; the paths in it are read as the new worktree's). All were removed before this report's hand-back.
+- The section "Every changed line" was generated with `diff -U0` and a shell redirect into this report, because the before-to-now diff is about 250 KB. Every other section was written with Write or Edit. Each deck file was written with Edit or Write, one file at a time.
+
+## Per ruling
+
+1. **One slide per deck.** 82 decks hold one slide and 13 hold two (`grep -c '^kind:'` per deck), 108 slides where there were 145. No `kind: columns` slide is left. The 13 are listed under "Decks that keep a second slide".
+2. **A second slide looks like the first.** Same `kind: project` layout, a question or statement title of the first slide's form, and the parts in the NOT-done item 2 above.
+3. **Every slide fits.** First and final measurement below.
+4. **Slides made from the material only.** See "Per deck". The live-source updates are listed under "Up to date".
+5. **All 17 issues per deck.** See "Per deck".
+6. **Up to date.** The live checkout was read for the six named projects; the updates are listed under "Up to date".
+7. **Kept as they stand.** The round 1 fixes, R1-S1 to R1-S6, R1-P1, R1-T1 and the private README records. No deck takes anything from a section headed private.
+8. **Every changed line.** See "Every changed line".
+
+## First and final measurement
+
+The first measurement, taken with the server on 8796 before any deck was changed, on main's frame (`.agents/scratch/first-measurement.txt`, last line): `decks 95, tiles 145, marked Too tall 115`. Beside it stands the 99 of `O151-fit.md` on the old frame (95 decks, 145 slides, 92 decks and 99 slides too tall).
+
+The final measurement, over every deck, printed by the approved program after the last change: `decks 95, tiles 108, marked Too tall 0`. The 108 tiles are 82 first slides of the one-slide decks and 26 of the 13 two-slide decks.
+
+## Decks that keep a second slide
+
+Each keeps a second slide because its sources give results, limits or dead ends that the first slide has no room for and that item 2 of the brief requires on the slides.
+
+| Deck | Why one slide cannot hold it |
+|---|---|
+| bttn-incident-af | The first slide holds the model and the fused AUROC; occlusion, published comparators, external cohorts and dead ends stand on the second. |
+| meseret-cirrhosis | The first slide holds the simulation and competing events; the discrimination ceiling, landmark analysis and failed transport stand on the second. |
+| ward-bttr-crosssubject | The first slide holds the method and transfer results; the same-protocol ablation, cursor replication and dead ends stand on the second. |
+| hccnet-revision | The first slide holds model results and pre-training gains; the ablation, calibration and fusion stand on the second. |
+| dries-bttr-ecg | The first slide holds cohorts and baselines; weight maps, the R-peak ablation, limits and dead ends stand on the second. |
+| clinical-hccnet | The first slide holds the fused AUROC and odds ratios; per-sequence AUROC, HCC stage at diagnosis, limits and dead ends stand on the second. |
+| bttd-source-eeg | The first slide holds simulation results; correlated sources, real visual EEG and the method's limits stand on the second. |
+| fed-multicellular-immune | The first slide holds federated recovery and privacy; lung and liver gains, the missing secure merge and differential privacy stand on the second. |
+| raw-pls | The first slide holds the structural and grade results and proofs; radiomics margins, dead targets and external datasets stand on the second. |
+| linfoot-estimator | The first slide holds the estimator and pooled RMSE; independent samples, closed routes, runs in progress and credit stand on the second. |
+| btfno | The first slide holds MoBTE and the generalization gap; the theorem at $L=1$, diversity, the AAAI 2027 rejection and scope stand on the second. |
+| ecg-readable-substrate | The first slide holds the named-feature results; the equal-input arm, transfer, limits and dead ends stand on the second. |
+| bt-operator-theory | The first slide holds the separation; the synthetic checks and the scope stand on the second, with the equation. |
+
+## Up to date
+
+The live hub checkout was read for the projects of ruling 6. These changed a deck's lines (source in brackets):
+
+- linfoot-estimator (live `manuscript/main.tex`): title, authors with S.M. van den Berg, Target IEEE TNNLS in preparation, RMSE 0.0544 and 0.0539 against 0.0714 and 0.0708, paired $-0.0169$ intervals, 0.0537 against 0.0566, departure at most $2.38 \times 10^{-7}$.
+- clinical-hccnet (live `manuscript/main.tex`): 243 patients, 804 of 947 MRI analysed, adjusted odds ratio intervals, JHEP Reports.
+- btfno (live `project.yml` and manuscript): Venue "AAAI 2027 rejected; targeting MLST"; the "at equal fit" framing is gone.
+- bt-operator-theory (live manuscript and manifest): Authors A. Faes, M. Amir Haeri; Target Neural Networks.
+- ecg-af-fair (live `README.md`, `project.yml`, `notes/concept-note/`): cohort numbers and Direction 3.
+- dongho-ecg-clustering (live `project.yml`): BSPC 131, 111784.
+
+Disagreements between a project's own places, none of which a slide takes a side on beyond the brief's order of precedence (manuscript, then README or named results file, then manifest):
+
+| Project | One place | The other place |
+|---|---|---|
+| linfoot-estimator | Manifest results: ParamPL0z 0.0548 against 0.0714, $-0.0166$ $[-0.0203,-0.0130]$, 0.0491 to 0.0554, 26 groups | `manuscript/main.tex:41,265,310,397` |
+| linfoot-estimator | Manifest `outcome` "No contribution is in the paper yet" and coauthor | The manuscript's authorship and the manifest's `lead` |
+| bt-operator-theory | `README.md:83` "Blocking corrections" | `manuscript/main.tex:93,229,256,361`; the slide carries no critique |
+| dongho-ecg-clustering | Manifest AMI 0.245 | 0.148; neither is on the deck |
+| ecg-af-fair | Live `README.md` Direction 3 | Manifest "Two directions" |
+| fermat | arXiv local-client rows 0.89 and 0.92 | FLTA 0.842 and 0.882 |
+| covert-applied | Project `CLAUDE.md` names J-BHI | The manifest and deck name Neurocomputing |
+
+## Per deck: the check of the 17 issues
+
+Every deck's text was read this round against the 17 issues of ruling 5. The issues that need a source (statements the sources do not give, numbers from a file the sources do not name, claims no source makes, chart values read off a picture) were checked in this way: every line a deck holds now is a line, a shortening or a recombination of lines that stood in that deck after round 1 and were checked against its project's sources there (the per-deck part of "# Round 1"); the short method and hook lines written for the second slides state what those lines or the project's manuscript state; and the live-source updates are read from the live source named in the "Up to date" section. The issues the sources do not bear on (a repeated line, a banned pattern, a slide too tall, the right-hand column) were checked with C10, the prose grep and the final measurement. covert-theory's deck does not name COVERT (`grep -c -i covert` prints 0) and covert-applied's names only itself. The command `grep -oE '[0-9]+(\.[0-9]+)?'` over each deck against its before-state, followed by `comm -23`, prints new numbers in four decks only (linfoot-estimator, dongho-ecg-clustering, ecg-af-fair, clinical-hccnet), and every one of those numbers was then found by `grep -l -F` in that project's live source. A row's "none" means that reading found no instance of any of the 17 issues other than issue 10. Issue 10 (a fact dropped) is not "none" for any deck that lost a line to fit: the row's two counts are the removed and added lines of `diff -U0` between the before-state and the deck, and the lines themselves are in "Every changed line". The repeated lines of issue 11 are listed under C10.
+
+| Deck | Slides | Removed / added lines | 17 issues other than 10 |
+|---|---|---|---|
+| eeg-saad-challenge | 1 | 17 / 8 | none |
+| linfoot-estimator | 2 | 26 / 33 | none |
+| loewner | 1 | 16 / 7 | none |
+| novel-math-primitives | 1 | 11 / 6 | none |
+| sandpile-operator | 1 | 16 / 6 | none |
+| faithful-block-term-layer | 1 | 16 / 8 | none |
+| fed-faithful-ecg | 1 | 14 / 6 | none |
+| jacobian-coupled-blockterm-dp | 1 | 20 / 9 | none |
+| ms-lipid-handshake | 1 | 21 / 6 | none |
+| phd-thesis | 1 | 14 / 7 | none |
+| bachelor-network-ids | 1 | 15 / 8 | none |
+| icfp-src-abstract | 1 | 5 / 4 | none |
+| icfp-src-poster | 1 | 7 / 5 | none |
+| masters-algebraic-subtyping | 1 | 16 / 8 | none |
+| masters-eeg-infotheory | 1 | 14 / 6 | none |
+| abstract-bci-meeting-2021 | 1 | 10 / 6 | none |
+| source-localization | 1 | 20 / 6 | none |
+| volga-finger-trajectories | 1 | 4 / 2 | none |
+| block-term-tensor-regression | 1 | 23 / 8 | none |
+| connectivity-iris | 1 | 20 / 10 | none |
+| extended-bttr-note | 1 | 23 / 8 | none |
+| fbttr-strategies | 1 | 22 / 7 | none |
+| fermat | 1 | 19 / 9 | none |
+| go-bttr | 1 | 23 / 9 | none |
+| abduction | 1 | 10 / 7 | none |
+| dongho-ecg-clustering | 1 | 25 / 10 | none |
+| erp-signatures | 1 | 11 / 7 | none |
+| glassbox-decision-pipelines | 1 | 17 / 8 | none |
+| hcc-modality-poster | 1 | 17 / 8 | none |
+| hccnet-fl | 1 | 20 / 10 | none |
+| algebraic-subtyping | 1 | 0 / 0 | none |
+| connectivity-motor-imagery | 1 | 16 / 8 | none |
+| flkit | 1 | 8 / 6 | none |
+| chi-household-survival | 1 | 12 / 8 | none |
+| chi-purpose-centric | 1 | 12 / 9 | none |
+| algebraic-effects-compilation | 1 | 18 / 8 | none |
+| http2-best-practices | 1 | 16 / 7 | none |
+| http2-web-performance | 1 | 16 / 7 | none |
+| coordinated-fingers-ecnr | 1 | 14 / 10 | none |
+| ecog-frequency-features | 1 | 19 / 9 | none |
+| modulation-lmp-bci | 1 | 8 / 5 | none |
+| highgamma-event-detection | 1 | 11 / 7 | none |
+| editorial-bigdata-ai-ms | 1 | 10 / 6 | none |
+| pfl-ms-npj | 1 | 20 / 10 | none |
+| proprioception-exoskeleton | 1 | 15 / 11 | none |
+| individual-reference-intervals | 1 | 0 / 0 | none |
+| adapter-format-theory | 1 | 3 / 2 | none |
+| asthma-geo-tensor | 1 | 0 / 0 | none |
+| attention-scoped-instructions | 1 | 3 / 2 | none |
+| block-term-nca | 1 | 3 / 2 | none |
+| brecht-fl-partitioning | 1 | 7 / 5 | none |
+| btd-autoencoder | 1 | 2 / 1 | none |
+| cirrhosis-digital-twin | 1 | 16 / 9 | none |
+| clinical-ai-eval-artifacts | 1 | 2 / 1 | none |
+| concept-bottleneck-hcc | 1 | 4 / 3 | none |
+| conformal-tensor-factors | 1 | 3 / 2 | none |
+| ecg-af-fair | 1 | 13 / 12 | none |
+| engram | 1 | 16 / 8 | none |
+| faithful-interpretability-position | 1 | 4 / 3 | none |
+| fed-duplication-limits | 1 | 3 / 2 | none |
+| fed-neural-operators | 1 | 4 / 3 | none |
+| fedbtd | 1 | 1 / 1 | none |
+| federated-protocol-agents | 1 | 4 / 3 | none |
+| fedlink | 1 | 8 / 5 | none |
+| fl-privacy-auditing | 1 | 3 / 2 | none |
+| florank-personalization | 1 | 12 / 7 | none |
+| harmonop | 1 | 3 / 2 | none |
+| hccnet-fl-sweden | 1 | 3 / 2 | none |
+| hccnet-pathology | 1 | 15 / 7 | none |
+| modality-dropping-btf | 1 | 12 / 8 | none |
+| multiway-biosignal-fm | 1 | 15 / 8 | none |
+| neurosde | 1 | 9 / 6 | none |
+| old-charges-stemmatology | 1 | 18 / 9 | none |
+| paleogenomics-tensor | 1 | 1 / 1 | none |
+| pathology-tensor-mil | 1 | 10 / 7 | none |
+| physics-tensor-hcc | 1 | 4 / 3 | none |
+| quantum-tensor-fl | 1 | 7 / 5 | none |
+| serial-ecg-af | 1 | 8 / 5 | none |
+| ssm-longitudinal | 1 | 4 / 3 | none |
+| strokeop | 1 | 2 / 2 | none |
+| xsub-ecog-framework | 1 | 5 / 4 | none |
+| bt-operator-theory | 2 | 19 / 27 | none |
+| btfno | 2 | 21 / 25 | none |
+| bttd-source-eeg | 2 | 23 / 24 | none |
+| bttn-incident-af | 2 | 15 / 18 | none |
+| clinical-hccnet | 2 | 23 / 25 | none |
+| covert-applied | 1 | 19 / 10 | none |
+| covert-theory | 1 | 19 / 9 | none |
+| dries-bttr-ecg | 2 | 23 / 24 | none |
+| ecg-readable-substrate | 2 | 17 / 25 | none |
+| fed-multicellular-immune | 2 | 20 / 30 | none |
+| hccnet-revision | 2 | 25 / 19 | none |
+| meseret-cirrhosis | 2 | 26 / 23 | none |
+| raw-pls | 2 | 20 / 22 | none |
+| ward-bttr-crosssubject | 2 | 26 / 20 | none |
+
+## Oculus, the four files
+
+`git diff --stat -- src`, after the last change: `slide.css` 25 lines, `Slide.svelte` 20, `Facts.svelte` 27, `Project.svelte` 16; 53 insertions and 35 deletions. `grep -c '<<<<<<<\|>>>>>>>'` over the four files prints 0 for each. `.slide-frame` holds `--slide-design-facts: 0.9375cqw` and `--slide-design-facts-label: 0.78125cqw`, and `body.rice` holds `0.859375cqw` and `0.703125cqw`.
+
+The grep of the changed comments for 'before', 'used to', 'no longer', 'still', 'always has been', 'always had', 'as before', 'previously', 'the step adds' and 'after this package lands' (`git diff -U0 -- src`, the added lines) has one hit, "The dot before a hued value is three quarters of the value type" in `Facts.svelte`. It is the position of the dot, no history.
+
+## Prose
+
+Each slide's text was read against the prose rule. A grep of the decks' sentences for "rather than", " - ", " -- ", ", but not ", "not only", "is not ..., it" and " not ... but " hits minus signs inside LaTeX and two sentences ("IVIM work exists ... but not as longitudinal tensor fusion" in physics-tensor-hcc, "separately, but not their combination" in neurosde), each stating what the source's check found and no contrast of the banned form. A grep for "leverage", "comprehensive", "crucial", "showcase" and "moreover" hits only the metric name "comprehensiveness" in fed-faithful-ecg.
+
+## Verify, round 2 (run after the last change)
+
+| Check | Result |
+|---|---|
+| `npm run diagrams` | exit 0; `git status --short docs` printed nothing |
+| `npm run test:quick` with `TMPDIR` unset | `test:quick: 42.5 s; every command passed`. Its own line on what it does not cover: tests that reach no changed file within the import depth, other than the checks under `tests/checks/source` and `tests/checks/tree`, the build, the lint of unchanged files |
+| Oculus ASCII gate over `slide.css`, `Facts.svelte`, `Slide.svelte`, `Project.svelte` | `LC_ALL=C grep -n '[^ -~]'` prints 0 lines |
+| Hub non-ASCII grep over the `present/` folders | 4 lines, each the accented letter in the place name Link<o umlaut>ping: `ideas/modality-dropping-btf/present/main.md:10`; `ideas/hccnet-fl-sweden/present/main.md:4`, `:11`, `:19` |
+| `sh utils/unused-exports.sh` against `O151-2-base/unused-exports.txt` | `diff` prints 0 lines |
+| `node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md 3d5b3da7d` | prints 4 paths. Three are ledger files the orchestrator wrote: `.scratch/migration/agents/briefs/O151-round2.md`, `.scratch/migration/agents/reviews/O151-oculus-before-round-2.patch`, `.scratch/migration/plan.md`. The fourth, `src/lib/views/academic/present/parts/project/Project.svelte`, is named by the round brief's "Paths this round writes" and is absent from the O151 brief's list that this tool reads |
+| Hub `git status --short` | 143 lines: 132 under `present/` folders of the brief's list, 11 the `README.md` records of round 1 (`git status --short \| grep -v /present/ \| wc -l` prints 11). No `README.md` was changed this round: `find ... -newer first-measurement.txt` over figures prints 0, and the round wrote only `present/main.md` files |
+| `diff -rq` per folder against `O151-hub-base` | Quoted below. The base copy holds only each folder's `present/`, so the `Only in` lines for a folder's other files are that fact; compared `present/` to `present/`, 50 files differ, all `main.md` or `present.yml`, and no file exists only on the base side, so no figure was deleted |
+| Equation floor | `grep -c '^equation'` summed over the decks prints 13, the floor of `REAL_FLOORS` in `tests/checks/config/integrity.test.ts` |
+| C5 | `node c5.mjs <H> research.txt` prints all 95 folders with `present.yml`, each slide's kind and keys; no fault line. Output quoted below; source in the appendix of round 0, its paths read as the new worktree's |
+| C6 | `OCULUS_TEST_HUB=<H> TMPDIR=<S> GIT_CEILING_DIRECTORIES=<S> npx vitest run tests/checks/config/integrity.test.ts -t "deck\|equation\|portfolio"`: 7 passed, 7 skipped (the skipped ones are the tests the `-t` filter excludes) |
+| C10 | `node c10.mjs <H> research.txt`: 36 repeated lines, all fact-labels and facts true of each deck. The non-label ones: the shared author lists; the paper titles shared by a paper and its abstract or poster (Causal Graphical Modelling..., High-gamma band event detection..., Towards a Core Language...); the venue strings and stage words. Output quoted below |
+| Final measurement | `decks 95, tiles 108, marked Too tall 0` |
+| Server and Chrome | stopped by the pids started; no listener on 8796 or 9340; `.agents/scratch/` contents removed, as the hand-back states |
+
+## Programs
+
+The source of the one measuring program is quoted here; it was removed with the scratch folder.
+
+```js
+// Ruling 730's one measuring program. For every slide of every deck, drawn in the Present view's
+// Overview of that deck on the scratch server: whether its tile holds the mark "Too tall", and by
+// how much the content passes the frame (scrollHeight against clientHeight of the tile's
+// .slide-frame). It prints those facts and changes nothing. Given project ids as arguments, only
+// those decks are measured.
+const debug = 'http://127.0.0.1:9340';
+const page = 'http://127.0.0.1:8796/';
+const sleep = (ms) => new Promise((go) => setTimeout(go, ms));
+
+for (const tab of await (await fetch(`${debug}/json/list`)).json()) {
+    if (tab.type === 'page' && tab.url.startsWith(page)) await fetch(`${debug}/json/close/${tab.id}`);
+}
+const made = await (await fetch(`${debug}/json/new?about:blank`, { method: 'PUT' })).json();
+const socket = new WebSocket(made.webSocketDebuggerUrl);
+await new Promise((go) => socket.addEventListener('open', go, { once: true }));
+let next = 0;
+const waiting = new Map();
+socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    if (data.id !== undefined && waiting.has(data.id)) {
+        waiting.get(data.id)(data);
+        waiting.delete(data.id);
+    }
+});
+const send = (method, params = {}) =>
+    new Promise((go) => {
+        const id = ++next;
+        const timer = setTimeout(() => {
+            waiting.delete(id);
+            go({});
+        }, 30000);
+        waiting.set(id, (data) => {
+            clearTimeout(timer);
+            go(data);
+        });
+        socket.send(JSON.stringify({ id, method, params }));
+    });
+const evaluate = async (expression) => {
+    const answer = await send('Runtime.evaluate', {
+        expression,
+        returnByValue: true,
+        awaitPromise: true
+    });
+    if (answer.result?.exceptionDetails) throw new Error(JSON.stringify(answer.result));
+    return answer.result?.result?.value;
+};
+
+await send('Page.enable');
+await send('Runtime.enable');
+await send('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 720,
+    deviceScaleFactor: 1,
+    mobile: false
+});
+await send('Page.bringToFront');
+await send('Emulation.setFocusEmulationEnabled', { enabled: true });
+await send('Page.navigate', { url: page });
+
+const until = async (expression, what, limit = 60000) => {
+    const start = Date.now();
+    while (Date.now() - start < limit) {
+        if (await evaluate(expression)) return true;
+        await sleep(300);
+    }
+    return `timed out: ${what}`;
+};
+
+const checked = (result) => {
+    if (result !== true) throw new Error(result);
+};
+checked(await until(`document.querySelector('[data-rail-page="present"] button') !== null`, 'the rail', 120000));
+await evaluate(`document.querySelector('[data-rail-page="present"] button').click()`);
+const menu = `document.querySelector('select[aria-label="Deck"]')`;
+checked(await until(`${menu} !== null && ${menu}.options.length > 1`, 'the deck menu', 120000));
+const choiceIds = await evaluate(`[...${menu}.options].map((one) => one.value)`);
+const wanted = process.argv.slice(2);
+let shownFirst = false;
+if (choiceIds.includes('portfolio')) {
+    await evaluate(`(() => {
+        const menu = ${menu};
+        menu.value = 'portfolio';
+        menu.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    await sleep(800);
+    shownFirst = true;
+}
+const projectIds = (await evaluate(`[...${menu}.options].map((one) => one.value)`))
+    .filter((one) => one.startsWith('project:'))
+    .map((one) => one.replace('project:', ''));
+const toDo = wanted.length > 0 ? projectIds.filter((one) => wanted.includes(one)) : projectIds;
+
+const overviewOpen = `document.querySelector('[data-overview]') !== null`;
+const overviewChip = `[...document.querySelectorAll('button')].find((one) => one.textContent.trim().endsWith('Overview'))`;
+const read = `[...document.querySelectorAll('.tile.pressable')].map((tile) => {
+    const frame = tile.querySelector('.slide-frame');
+    return {
+        key: tile.dataset.tile,
+        title: (tile.querySelector('h1,h2,h3,h4')?.textContent ?? '').trim(),
+        tall: [...tile.querySelectorAll('button,span')].some((one) => one.textContent.trim().endsWith('Too tall') && (frame === null || !frame.contains(one))),
+        scroll: frame === null ? 0 : frame.scrollHeight,
+        client: frame === null ? 0 : frame.clientHeight
+    };
+})`;
+
+let marked = 0;
+let total = 0;
+for (const id of toDo) {
+    if (await evaluate(overviewOpen)) {
+        await evaluate(`${overviewChip}.click()`);
+        await until(`!(${overviewOpen})`, 'the grid to close', 15000);
+    }
+    await evaluate(`(() => {
+        const menu = ${menu};
+        menu.value = 'project:${id}';
+        menu.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    const on = await until(
+        `![...${menu}.options].some((one) => one.value === 'project:${id}') && /\\d+$/.test(document.querySelector('.counter')?.textContent ?? '')`,
+        `deck ${id}`,
+        30000
+    );
+    if (on !== true) {
+        console.log(`ERROR\t-\t-\t${id}\t${on}`);
+        continue;
+    }
+    await evaluate(`${overviewChip}.click()`);
+    const shown = await until(`${overviewOpen} && document.querySelectorAll('.tile.pressable .slide-frame').length > 0`, `tiles of ${id}`, 30000);
+    if (shown !== true) {
+        console.log(`ERROR\t-\t-\t${id}\t${shown}`);
+        continue;
+    }
+    let rows = [];
+    let steady = 0;
+    const start = Date.now();
+    while (steady < 3 && Date.now() - start < 15000) {
+        await sleep(500);
+        const now = await evaluate(read);
+        steady = JSON.stringify(now) === JSON.stringify(rows) && now.length > 0 ? steady + 1 : 0;
+        rows = now ?? [];
+    }
+    for (const row of rows) {
+        const past = row.scroll - row.client;
+        const percent = row.client === 0 ? 0 : Math.round((past / row.client) * 100);
+        console.log(`${row.tall ? 'TOO-TALL' : 'fits'}\t${past}px\t${percent}%\t${id}\t${row.title}`);
+        total += 1;
+        if (row.tall) marked += 1;
+    }
+    await evaluate(`${overviewChip}.click()`);
+}
+console.log(`decks ${toDo.length}, tiles ${total}, marked Too tall ${marked}`);
+await fetch(`${debug}/json/close/${made.id}`);
+socket.close();
+if (shownFirst) process.exit(0);
+```
+
+## C5 output
+
+```
+projects/active/eeg-saad-challenge: 1 slide(s), deck.title "EEG-sAAD", order ["main.md"]
+  slide 1: kind project; title: Decoding which talker a listener attends to, across unseen EEG datasets
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/active/linfoot-estimator: 2 slide(s), deck.title "Linfoot Estimator", order ["main.md"]
+  slide 1: kind project; title: A Linfoot estimator invariant to what the estimand is invariant to
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Where the published estimator is lower, and which routes are closed
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/active/loewner: 1 slide(s), deck.title "Loewner", order ["main.md"]
+  slide 1: kind project; title: Trainable Loewner layers for compact rational operators
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/active/novel-math-primitives: 1 slide(s), deck.title "Math-Primitives", order ["main.md"]
+  slide 1: kind project; title: Mathematical objects ML does not use yet, each with a route to a layer
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/active/sandpile-operator: 1 slide(s), deck.title "Sandpile-Op", order ["main.md"]
+  slide 1: kind project; title: A differentiable sandpile operator for threshold-cascade spreading
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/failed/faithful-block-term-layer: 1 slide(s), deck.title "Faithful BT Layer", order ["main.md"]
+  slide 1: kind project; title: Can a block-term layer carry a provable no-leakage faithfulness guarantee?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/failed/fed-faithful-ecg: 1 slide(s), deck.title "Fed-Faithful ECG", order ["main.md"]
+  slide 1: kind project; title: Does federated averaging break a glass-box ECG model's explanation?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/failed/jacobian-coupled-blockterm-dp: 1 slide(s), deck.title "Jacobian-Coupled BT-DP", order ["main.md"]
+  slide 1: kind project; title: Can whitened block scores make the gap lower a block-term DP floor?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, mechanism, headline
+projects/archive/failed/ms-lipid-handshake: 1 slide(s), deck.title "MS Lipid Handshake", order ["main.md"]
+  slide 1: kind project; title: A lipid handshake in multiple-sclerosis lesions, tested and disproved
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, mechanism, headline
+projects/archive/phd/phd-thesis: 1 slide(s), deck.title "PhD Thesis", order ["main.md"]
+  slide 1: kind project; title: Finger movement decoding: from source localisation to tensor regression
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2016/bachelor-network-ids: 1 slide(s), deck.title "Flow-based Network IDS (BSc)", order ["main.md"]
+  slide 1: kind project; title: Can machine learning on IP flows alone detect intrusions out of the box?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2017/icfp-src-abstract: 1 slide(s), deck.title "Row-Based Effects Core Language (abstract)", order ["main.md"]
+  slide 1: kind project; title: Can an explicitly typed core language make optimised Eff less error-prone?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2017/icfp-src-poster: 1 slide(s), deck.title "Row-Based Effects Core Language (poster)", order ["main.md"]
+  slide 1: kind project; title: Can explicit types with row-based effects make Eff's rewrites less error-prone?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2018/masters-algebraic-subtyping: 1 slide(s), deck.title "Algebraic Subtyping (MSc)", order ["main.md"]
+  slide 1: kind project; title: Can Dolan's algebraic subtyping carry effects and keep its properties?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2018/masters-eeg-infotheory: 1 slide(s), deck.title "EEG Info-Theoretic Connectivity (MSc)", order ["main.md"]
+  slide 1: kind project; title: How much information do abstract and concrete words share in one region?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2021/abstract-bci-meeting-2021: 1 slide(s), deck.title "BCI Connectivity (abstract)", order ["main.md"]
+  slide 1: kind project; title: Can a causal-discovery network seed a graph model of EEG source links?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2021/source-localization: 1 slide(s), deck.title "eLORETA Source Reduction", order ["main.md"]
+  slide 1: kind project; title: Can sparse Bayesian screening of the lead field make eLORETA sparse?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2021/volga-finger-trajectories: 1 slide(s), deck.title "Finger Trajectories (Volga abstract)", order ["main.md"]
+  slide 1: kind project; title: Can a block-term tensor regression read single-finger trajectories from ECoG?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2022/block-term-tensor-regression: 1 slide(s), deck.title "BTTR Finger Decoding", order ["main.md"]
+  slide 1: kind project; title: Can block-term tensor regression choose its own ranks and decode fingers?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2022/connectivity-iris: 1 slide(s), deck.title "NN Connectivity", order ["main.md"]
+  slide 1: kind project; title: Can neural networks match Granger causality on directed EEG connectivity?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2022/extended-bttr-note: 1 slide(s), deck.title "BTTR Coactivation", order ["main.md"]
+  slide 1: kind project; title: Can one tensor regression predict all five fingers at once?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2025/fbttr-strategies: 1 slide(s), deck.title "FBTTR Strategies", order ["main.md"]
+  slide 1: kind project; title: Can block-term regression be trained across clients without pooling ECoG?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2025/fermat: 1 slide(s), deck.title "FERMAT", order ["main.md"]
+  slide 1: kind project; title: Does federated block-term regression hold up on brain and clinical data?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2025/go-bttr: 1 slide(s), deck.title "Sign-Language ECoG", order ["main.md"]
+  slide 1: kind project; title: Can one decoder choose, block by block, which fingers to regress together?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/abduction: 1 slide(s), deck.title "Finger Abduction", order ["main.md"]
+  slide 1: kind project; title: Can finger abduction be decoded from ECoG as well as flexion?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/dongho-ecg-clustering: 1 slide(s), deck.title "ECG-Repr", order ["main.md"]
+  slide 1: kind project; title: Does the ECG representation, more than the algorithm, decide clustering?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/erp-signatures: 1 slide(s), deck.title "ERP Signatures", order ["main.md"]
+  slide 1: kind project; title: Do stimulus type and task structure change N-Back ERP signatures?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/glassbox-decision-pipelines: 1 slide(s), deck.title "Robust-XAI-ECG", order ["main.md"]
+  slide 1: kind project; title: What do frozen ECG foundation models gain from the patient's age?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/hcc-modality-poster: 1 slide(s), deck.title "Modality-Specific HCC Encoding (poster)", order ["main.md"]
+  slide 1: kind project; title: Does one encoder head per MRI sequence group predict HCC better?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/published/2026/hccnet-fl: 1 slide(s), deck.title "HCCNet-FL", order ["main.md"]
+  slide 1: kind project; title: Which part of a longitudinal MRI model should hospitals federate?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/archive/stopped/algebraic-subtyping: 1 slide(s), deck.title "Algebraic Subtyping", order ["main.md"]
+  slide 1: kind project; title: Algebraic subtyping for algebraic effects and handlers
+    keys: title, sub, hook, eli5, method, results, mechanism, headline
+projects/archive/stopped/connectivity-motor-imagery: 1 slide(s), deck.title "Motor-Imagery Connectivity", order ["main.md"]
+  slide 1: kind project; title: Can an attention network and a graph process recover EEG source links?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/active/flkit: 1 slide(s), deck.title "FLKit", order ["main.md"]
+  slide 1: kind project; title: How can health researchers be brought onto federated learning?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2016/chi-household-survival: 1 slide(s), deck.title "Household Survival (abstract)", order ["main.md"]
+  slide 1: kind project; title: A broom, a fan, a vacuum cleaner and a mousetrap as room-game weapons
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2016/chi-purpose-centric: 1 slide(s), deck.title "Objects as Game Controllers (abstract)", order ["main.md"]
+  slide 1: kind project; title: Should a game controller do in the game what it does in real life?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2017/algebraic-effects-compilation: 1 slide(s), deck.title "Algebraic Effects Compilation", order ["main.md"]
+  slide 1: kind project; title: Can algebraic effect handler code run as fast as hand-written OCaml?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2017/http2-best-practices: 1 slide(s), deck.title "HTTP/2 Best Practices", order ["main.md"]
+  slide 1: kind project; title: Do concatenation, embedding and sharding still make sense in HTTP/2?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2018/http2-web-performance: 1 slide(s), deck.title "HTTP/2 Web Performance", order ["main.md"]
+  slide 1: kind project; title: Which HTTP/2 features speed up page loads over HTTP/1.1?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2023/coordinated-fingers-ecnr: 1 slide(s), deck.title "Coordinated Fingers from HD-EEG (abstract)", order ["main.md"]
+  slide 1: kind project; title: Can high-density EEG tell individual and coordinated finger movements apart?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2023/ecog-frequency-features: 1 slide(s), deck.title "ECoG Frequency Features", order ["main.md"]
+  slide 1: kind project; title: Which ECoG frequency features carry finger movement?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2023/modulation-lmp-bci: 1 slide(s), deck.title "LMP Gamma Modulation (abstract)", order ["main.md"]
+  slide 1: kind project; title: Can gamma-band event detection steady ECoG finger trajectories?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2024/highgamma-event-detection: 1 slide(s), deck.title "High-Gamma Event Detection (abstract)", order ["main.md"]
+  slide 1: kind project; title: Does high-gamma event detection keep decoded fingers still at rest?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2025/editorial-bigdata-ai-ms: 1 slide(s), deck.title "MS Big-Data Editorial", order ["main.md"]
+  slide 1: kind project; title: Where do big data and AI stand in multiple sclerosis research and care?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2025/pfl-ms-npj: 1 slide(s), deck.title "PFL-MS", order ["main.md"]
+  slide 1: kind project; title: Can federated learning predict MS progression across differing countries?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/published/2025/proprioception-exoskeleton: 1 slide(s), deck.title "Proprioception EEG", order ["main.md"]
+  slide 1: kind project; title: Can EEG read intention while an exoskeleton moves the fingers?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/coauthor/stopped/individual-reference-intervals: 1 slide(s), deck.title "Reference Intervals", order ["main.md"]
+  slide 1: kind project; title: Can per-patient reference intervals sharpen the prediction of clinical events?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/ideas/adapter-format-theory: 1 slide(s), deck.title "Format Theory", order ["main.md"]
+  slide 1: kind project; title: Which tensor format should a fine-tuning update use?
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/asthma-geo-tensor: 1 slide(s), deck.title "Asthma-Geo", order ["main.md"]
+  slide 1: kind project; title: Predicting asthma attacks from where and when a patient breathes
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/attention-scoped-instructions: 1 slide(s), deck.title "Scoped Instructions", order ["main.md"]
+  slide 1: kind project; title: Scope and precedence for the instructions a language-model agent reads
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/block-term-nca: 1 slide(s), deck.title "Block-term NCA", order ["main.md"]
+  slide 1: kind project; title: Growth rules that name their mechanisms
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/brecht-fl-partitioning: 1 slide(s), deck.title "FL Partitioning", order ["main.md"]
+  slide 1: kind project; title: Federated ECG models break on label skew, and global accuracy hides it
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/ideas/btd-autoencoder: 1 slide(s), deck.title "BTD Autoencoder", order ["main.md"]
+  slide 1: kind project; title: An autoencoder whose bottleneck is a block-term decomposition
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/cirrhosis-digital-twin: 1 slide(s), deck.title "Cirrhosis iDT", order ["main.md"]
+  slide 1: kind project; title: One patient history, two risks: heart and liver in cirrhosis
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/clinical-ai-eval-artifacts: 1 slide(s), deck.title "Eval Artifacts", order ["main.md"]
+  slide 1: kind project; title: Clinical-AI evaluation artifacts
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/concept-bottleneck-hcc: 1 slide(s), deck.title "Concept-Bottleneck HCC", order ["main.md"]
+  slide 1: kind project; title: Future liver-cancer risk that runs through concepts a radiologist can correct
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/conformal-tensor-factors: 1 slide(s), deck.title "Conformal Tensor", order ["main.md"]
+  slide 1: kind project; title: Calibrated uncertainty on the factors a clinician reads
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/ecg-af-fair: 1 slide(s), deck.title "ECG-AF (FAIR)", order ["main.md"]
+  slide 1: kind project; title: Hidden atrial fibrillation from a normal-rhythm ECG on the Gruwez cohort
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/engram: 1 slide(s), deck.title "Engram", order ["main.md"]
+  slide 1: kind project; title: Locating and excising a memorised record inside a clinical language model
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/ideas/faithful-interpretability-position: 1 slide(s), deck.title "Faithful-Interp Position", order ["main.md"]
+  slide 1: kind project; title: Measured faithful interpretability for structured-tensor clinical models
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/fed-duplication-limits: 1 slide(s), deck.title "FL Duplication", order ["main.md"]
+  slide 1: kind project; title: When one patient record sits at several hospitals of a federation
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/fed-neural-operators: 1 slide(s), deck.title "Fed Neural Operators", order ["main.md"]
+  slide 1: kind project; title: One neural operator trained across silos with different field resolutions
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/fedbtd: 1 slide(s), deck.title "FedBTD", order ["main.md"]
+  slide 1: kind project; title: Aligning block terms before federated averaging, stopped by prior art
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/federated-protocol-agents: 1 slide(s), deck.title "Protocol Agents", order ["main.md"]
+  slide 1: kind project; title: Keeping a multi-site study faithful to one protocol without moving data
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/fedlink: 1 slide(s), deck.title "FedLink", order ["main.md"]
+  slide 1: kind project; title: FedLink: which gene cluster makes which antibiotic?
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/fl-privacy-auditing: 1 slide(s), deck.title "FL Privacy Audit", order ["main.md"]
+  slide 1: kind project; title: A standard privacy audit for deployed federated and DP clinical models
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/florank-personalization: 1 slide(s), deck.title "FLoRank Personalization", order ["main.md"]
+  slide 1: kind project; title: Structured per-hospital personalization for federated clinical models
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/harmonop: 1 slide(s), deck.title "HarmonOp", order ["main.md"]
+  slide 1: kind project; title: MRI harmonization learned as an operator between scanner function spaces
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/hccnet-fl-sweden: 1 slide(s), deck.title "HCCNet FL Sweden", order ["main.md"]
+  slide 1: kind project; title: Federated HCC risk across a real two-country hospital network
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/hccnet-pathology: 1 slide(s), deck.title "HCCNet Pathology", order ["main.md"]
+  slide 1: kind project; title: Liver-cancer risk from MRI through four pathology-specific networks
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/modality-dropping-btf: 1 slide(s), deck.title "Modality-Dropping BTF", order ["main.md"]
+  slide 1: kind project; title: Federated fusion where a hospital missing a modality drops that mode
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/multiway-biosignal-fm: 1 slide(s), deck.title "Multiway FM", order ["main.md"]
+  slide 1: kind project; title: A biosignal foundation model pretrained on the factors of the data tensor
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/neurosde: 1 slide(s), deck.title "NeuroSDE", order ["main.md"]
+  slide 1: kind project; title: One shared stochastic cortical dynamics to decode a new subject's ECoG
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/old-charges-stemmatology: 1 slide(s), deck.title "Old Charges", order ["main.md"]
+  slide 1: kind project; title: Rebuilding the copying tree of the Old Charges with phylogenetic methods
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/paleogenomics-tensor: 1 slide(s), deck.title "Paleo-Tensor", order ["main.md"]
+  slide 1: kind project; title: Ancient-DNA population structure from a population by locus by period tensor
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/pathology-tensor-mil: 1 slide(s), deck.title "Pathology Tensor-MIL", order ["main.md"]
+  slide 1: kind project; title: Whole-slide pathology read through block-term tissue signatures
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/physics-tensor-hcc: 1 slide(s), deck.title "Physics-Tensor HCC", order ["main.md"]
+  slide 1: kind project; title: Making multiparametric liver MRI fusion pay off for future HCC risk
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/quantum-tensor-fl: 1 slide(s), deck.title "Quantum Tensor/FL", order ["main.md"]
+  slide 1: kind project; title: One exploratory quantum-methods paper from the tensor and federated line
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/serial-ecg-af: 1 slide(s), deck.title "Serial-ECG AF", order ["main.md"]
+  slide 1: kind project; title: Predicting future AF from atrial substrate change across serial ECGs
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/ssm-longitudinal: 1 slide(s), deck.title "SSM Longitudinal", order ["main.md"]
+  slide 1: kind project; title: A continuous-time state-space model over irregular MRI follow-ups
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/strokeop: 1 slide(s), deck.title "StrokeOp", order ["main.md"]
+  slide 1: kind project; title: Ischemic tissue fate learned as an operator, perfusion to final infarct
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/ideas/xsub-ecog-framework: 1 slide(s), deck.title "XSub-ECoG", order ["main.md"]
+  slide 1: kind project; title: Does one cross-subject ECoG framework hold across tasks and datasets?
+    keys: title, sub, hook, eli5, specs, method, results, mechanism, headline
+projects/manuscripts/bt-operator-theory: 2 slide(s), deck.title "BT-Op-Theory", order ["main.md"]
+  slide 1: kind project; title: Why does a block-term spectral kernel generalize better than CP?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: What do the checks show, and what is the reach of the claim?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/btfno: 2 slide(s), deck.title "BT-FNO", order ["main.md"]
+  slide 1: kind project; title: Do block-term spectral weights help one operator span PDE families?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Which part of the gain is the factorization's, and what is still open?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/bttd-source-eeg: 2 slide(s), deck.title "LF-BTD", order ["main.md"]
+  slide 1: kind project; title: Can one decomposition localize evoked EEG generators and their dynamics?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Correlated sources, real visual EEG, and where the method stops
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/bttn-incident-af: 2 slide(s), deck.title "BTTN", order ["main.md"]
+  slide 1: kind project; title: Can an interpretable ECG model predict atrial fibrillation before onset?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: What do the block factors read, and where does the evidence stop?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/clinical-hccnet: 2 slide(s), deck.title "Clin-HCCNet", order ["main.md"]
+  slide 1: kind project; title: Can liver parenchyma MRI alone predict HCC years before diagnosis?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: How does each sequence perform, and what limits the result?
+    keys: title, sub, hook, tag, eli5, specs, method, results, headline
+projects/manuscripts/covert-applied: 1 slide(s), deck.title "COVERT", order ["main.md"]
+  slide 1: kind project; title: COVERT: block-term regression across parties holding different modalities
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+projects/manuscripts/covert-theory: 1 slide(s), deck.title "Private Coupled Descent", order ["main.md"]
+  slide 1: kind project; title: Private Coupled Descent: privacy that does not pay for feature dimension
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, mechanism, headline
+projects/manuscripts/dries-bttr-ecg: 2 slide(s), deck.title "BTTR-AF", order ["main.md"]
+  slide 1: kind project; title: Can a model of readable maps identify AF from a sinus-rhythm ECG?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Where does the weight sit, what does alignment do, what are the limits?
+    keys: title, sub, hook, tag, eli5, specs, method, results, headline
+projects/manuscripts/ecg-readable-substrate: 2 slide(s), deck.title "Readable-FM-ECG", order ["main.md"]
+  slide 1: kind project; title: Do ECG foundation models beat named measurements on one-year mortality?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: What changes when the encoders also get age, and what limits the result?
+    keys: title, sub, hook, tag, eli5, specs, method, results, headline
+projects/manuscripts/fed-multicellular-immune: 2 slide(s), deck.title "Fed-Multicellular", order ["main.md"]
+  slide 1: kind project; title: Can multicellular immune programs be recovered without sharing cells?
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Where does multicellularity pay, and what is not solved?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/hccnet-revision: 2 slide(s), deck.title "HCCNet", order ["main.md"]
+  slide 1: kind project; title: Predicting liver cancer from a patient's whole series of surveillance MRI
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Where does the pre-training gain come from, and what does fusion show?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/meseret-cirrhosis: 2 slide(s), deck.title "Cirrhosis-CR", order ["main.md"]
+  slide 1: kind project; title: What a cirrhosis benchmark loses when its outcome is scored as a class
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Where is the static ceiling, and what do updated measurements add?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/raw-pls: 2 slide(s), deck.title "RAW-PLS", order ["main.md"]
+  slide 1: kind project; title: RAW-PLS: tensor-PLS for tumours in a different place in every patient
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: What holds against registration, and what did not hold?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+projects/manuscripts/ward-bttr-crosssubject: 2 slide(s), deck.title "BSA-ECoG", order ["main.md"]
+  slide 1: kind project; title: Decoding finger movements in a new patient from other patients' implants
+    keys: title, sub, hook, tag, eli5, specs, method, results, mechanism, headline
+  slide 2: kind project; title: Does the alignment carry the transfer, and where does it stop?
+    keys: title, sub, hook, tag, eli5, specs, method, results, equation, headline
+folders with present.yml: 95 of 95
+```
+
+## C10 output
+
+```
+"Venue" in 54 decks:
+    projects/archive/published/2017/icfp-src-abstract (specs.label)
+    projects/archive/published/2017/icfp-src-poster (specs.label)
+    projects/archive/published/2021/abstract-bci-meeting-2021 (specs.label)
+    projects/archive/published/2021/source-localization (specs.label)
+    projects/archive/published/2021/volga-finger-trajectories (specs.label)
+    projects/archive/published/2022/block-term-tensor-regression (specs.label)
+    projects/archive/published/2022/connectivity-iris (specs.label)
+    projects/archive/published/2022/extended-bttr-note (specs.label)
+    projects/archive/published/2025/fbttr-strategies (specs.label)
+    projects/archive/published/2025/fermat (specs.label)
+    projects/archive/published/2025/go-bttr (specs.label)
+    projects/archive/published/2026/abduction (specs.label)
+    projects/archive/published/2026/dongho-ecg-clustering (specs.label)
+    projects/archive/published/2026/erp-signatures (specs.label)
+    projects/archive/published/2026/glassbox-decision-pipelines (specs.label)
+    projects/archive/published/2026/hcc-modality-poster (specs.label)
+    projects/archive/published/2026/hccnet-fl (specs.label)
+    projects/coauthor/active/flkit (specs.label)
+    projects/coauthor/published/2016/chi-household-survival (specs.label)
+    projects/coauthor/published/2016/chi-purpose-centric (specs.label)
+    projects/coauthor/published/2017/algebraic-effects-compilation (specs.label)
+    projects/coauthor/published/2017/http2-best-practices (specs.label)
+    projects/coauthor/published/2018/http2-web-performance (specs.label)
+    projects/coauthor/published/2023/coordinated-fingers-ecnr (specs.label)
+    projects/coauthor/published/2023/ecog-frequency-features (specs.label)
+    projects/coauthor/published/2023/modulation-lmp-bci (specs.label)
+    projects/coauthor/published/2024/highgamma-event-detection (specs.label)
+    projects/coauthor/published/2025/editorial-bigdata-ai-ms (specs.label)
+    projects/coauthor/published/2025/pfl-ms-npj (specs.label)
+    projects/coauthor/published/2025/proprioception-exoskeleton (specs.label)
+    projects/ideas/adapter-format-theory (specs.label)
+    projects/ideas/attention-scoped-instructions (specs.label)
+    projects/ideas/harmonop (specs.label)
+    projects/ideas/hccnet-pathology (specs.label)
+    projects/ideas/modality-dropping-btf (specs.label)
+    projects/ideas/neurosde (specs.label)
+    projects/ideas/pathology-tensor-mil (specs.label)
+    projects/ideas/physics-tensor-hcc (specs.label)
+    projects/ideas/ssm-longitudinal (specs.label)
+    projects/ideas/strokeop (specs.label)
+    projects/ideas/xsub-ecog-framework (specs.label)
+    projects/manuscripts/btfno (specs.label)
+    projects/manuscripts/bttd-source-eeg (specs.label)
+    projects/manuscripts/bttn-incident-af (specs.label)
+    projects/manuscripts/clinical-hccnet (specs.label)
+    projects/manuscripts/covert-applied (specs.label)
+    projects/manuscripts/covert-theory (specs.label)
+    projects/manuscripts/dries-bttr-ecg (specs.label)
+    projects/manuscripts/ecg-readable-substrate (specs.label)
+    projects/manuscripts/fed-multicellular-immune (specs.label)
+    projects/manuscripts/hccnet-revision (specs.label)
+    projects/manuscripts/meseret-cirrhosis (specs.label)
+    projects/manuscripts/raw-pls (specs.label)
+    projects/manuscripts/ward-bttr-crosssubject (specs.label)
+"Authors" in 43 decks:
+    projects/active/linfoot-estimator (specs.label)
+    projects/archive/published/2017/icfp-src-abstract (specs.label)
+    projects/archive/published/2017/icfp-src-poster (specs.label)
+    projects/archive/published/2021/abstract-bci-meeting-2021 (specs.label)
+    projects/archive/published/2021/source-localization (specs.label)
+    projects/archive/published/2021/volga-finger-trajectories (specs.label)
+    projects/archive/published/2022/block-term-tensor-regression (specs.label)
+    projects/archive/published/2022/connectivity-iris (specs.label)
+    projects/archive/published/2022/extended-bttr-note (specs.label)
+    projects/archive/published/2025/fbttr-strategies (specs.label)
+    projects/archive/published/2025/fermat (specs.label)
+    projects/archive/published/2025/go-bttr (specs.label)
+    projects/archive/published/2026/abduction (specs.label)
+    projects/archive/published/2026/dongho-ecg-clustering (specs.label)
+    projects/archive/published/2026/erp-signatures (specs.label)
+    projects/archive/published/2026/glassbox-decision-pipelines (specs.label)
+    projects/archive/published/2026/hcc-modality-poster (specs.label)
+    projects/archive/published/2026/hccnet-fl (specs.label)
+    projects/archive/stopped/connectivity-motor-imagery (specs.label)
+    projects/coauthor/active/flkit (specs.label)
+    projects/coauthor/published/2016/chi-household-survival (specs.label)
+    projects/coauthor/published/2016/chi-purpose-centric (specs.label)
+    projects/coauthor/published/2017/algebraic-effects-compilation (specs.label)
+    projects/coauthor/published/2017/http2-best-practices (specs.label)
+    projects/coauthor/published/2018/http2-web-performance (specs.label)
+    projects/coauthor/published/2023/coordinated-fingers-ecnr (specs.label)
+    projects/coauthor/published/2023/ecog-frequency-features (specs.label)
+    projects/coauthor/published/2023/modulation-lmp-bci (specs.label)
+    projects/coauthor/published/2024/highgamma-event-detection (specs.label)
+    projects/coauthor/published/2025/editorial-bigdata-ai-ms (specs.label)
+    projects/coauthor/published/2025/pfl-ms-npj (specs.label)
+    projects/coauthor/published/2025/proprioception-exoskeleton (specs.label)
+    projects/coauthor/stopped/individual-reference-intervals (specs.label)
+    projects/manuscripts/bt-operator-theory (specs.label)
+    projects/manuscripts/btfno (specs.label)
+    projects/manuscripts/bttd-source-eeg (specs.label)
+    projects/manuscripts/bttn-incident-af (specs.label)
+    projects/manuscripts/clinical-hccnet (specs.label)
+    projects/manuscripts/dries-bttr-ecg (specs.label)
+    projects/manuscripts/fed-multicellular-immune (specs.label)
+    projects/manuscripts/hccnet-revision (specs.label)
+    projects/manuscripts/meseret-cirrhosis (specs.label)
+    projects/manuscripts/ward-bttr-crosssubject (specs.label)
+"Data" in 32 decks:
+    projects/archive/failed/faithful-block-term-layer (specs.label)
+    projects/archive/published/2016/bachelor-network-ids (specs.label)
+    projects/archive/published/2018/masters-eeg-infotheory (specs.label)
+    projects/archive/published/2021/source-localization (specs.label)
+    projects/archive/published/2021/volga-finger-trajectories (specs.label)
+    projects/archive/published/2022/block-term-tensor-regression (specs.label)
+    projects/archive/published/2022/connectivity-iris (specs.label)
+    projects/archive/published/2022/extended-bttr-note (specs.label)
+    projects/archive/published/2025/fbttr-strategies (specs.label)
+    projects/archive/published/2025/fermat (specs.label)
+    projects/archive/published/2025/go-bttr (specs.label)
+    projects/archive/published/2026/dongho-ecg-clustering (specs.label)
+    projects/archive/published/2026/erp-signatures (specs.label)
+    projects/archive/published/2026/glassbox-decision-pipelines (specs.label)
+    projects/archive/published/2026/hcc-modality-poster (specs.label)
+    projects/archive/stopped/connectivity-motor-imagery (specs.label)
+    projects/coauthor/published/2023/coordinated-fingers-ecnr (specs.label)
+    projects/coauthor/published/2023/ecog-frequency-features (specs.label)
+    projects/coauthor/published/2023/modulation-lmp-bci (specs.label)
+    projects/ideas/asthma-geo-tensor (specs.label)
+    projects/ideas/clinical-ai-eval-artifacts (specs.label)
+    projects/ideas/fed-duplication-limits (specs.label)
+    projects/ideas/harmonop (specs.label)
+    projects/ideas/modality-dropping-btf (specs.label)
+    projects/ideas/neurosde (specs.label)
+    projects/ideas/pathology-tensor-mil (specs.label)
+    projects/ideas/serial-ecg-af (specs.label)
+    projects/ideas/ssm-longitudinal (specs.label)
+    projects/ideas/strokeop (specs.label)
+    projects/manuscripts/fed-multicellular-immune (specs.label)
+    projects/manuscripts/meseret-cirrhosis (specs.label)
+    projects/manuscripts/ward-bttr-crosssubject (specs.label)
+"Stage" in 28 decks:
+    projects/active/novel-math-primitives (specs.label)
+    projects/archive/published/2017/icfp-src-abstract (specs.label)
+    projects/coauthor/stopped/individual-reference-intervals (specs.label)
+    projects/ideas/adapter-format-theory (specs.label)
+    projects/ideas/asthma-geo-tensor (specs.label)
+    projects/ideas/attention-scoped-instructions (specs.label)
+    projects/ideas/block-term-nca (specs.label)
+    projects/ideas/btd-autoencoder (specs.label)
+    projects/ideas/concept-bottleneck-hcc (specs.label)
+    projects/ideas/conformal-tensor-factors (specs.label)
+    projects/ideas/ecg-af-fair (specs.label)
+    projects/ideas/faithful-interpretability-position (specs.label)
+    projects/ideas/fed-duplication-limits (specs.label)
+    projects/ideas/fed-neural-operators (specs.label)
+    projects/ideas/fedbtd (specs.label)
+    projects/ideas/federated-protocol-agents (specs.label)
+    projects/ideas/fedlink (specs.label)
+    projects/ideas/fl-privacy-auditing (specs.label)
+    projects/ideas/harmonop (specs.label)
+    projects/ideas/hccnet-fl-sweden (specs.label)
+    projects/ideas/neurosde (specs.label)
+    projects/ideas/paleogenomics-tensor (specs.label)
+    projects/ideas/pathology-tensor-mil (specs.label)
+    projects/ideas/physics-tensor-hcc (specs.label)
+    projects/ideas/quantum-tensor-fl (specs.label)
+    projects/ideas/ssm-longitudinal (specs.label)
+    projects/ideas/strokeop (specs.label)
+    projects/ideas/xsub-ecog-framework (specs.label)
+"Code" in 10 decks:
+    projects/archive/published/2018/masters-algebraic-subtyping (specs.label)
+    projects/coauthor/active/flkit (specs.label)
+    projects/coauthor/published/2017/algebraic-effects-compilation (specs.label)
+    projects/manuscripts/bt-operator-theory (specs.label)
+    projects/manuscripts/btfno (specs.label)
+    projects/manuscripts/bttd-source-eeg (specs.label)
+    projects/manuscripts/dries-bttr-ecg (specs.label)
+    projects/manuscripts/ecg-readable-substrate (specs.label)
+    projects/manuscripts/fed-multicellular-immune (specs.label)
+    projects/manuscripts/hccnet-revision (specs.label)
+"Cohort" in 10 decks:
+    projects/archive/published/2026/hccnet-fl (specs.label)
+    projects/coauthor/published/2025/pfl-ms-npj (specs.label)
+    projects/ideas/cirrhosis-digital-twin (specs.label)
+    projects/ideas/concept-bottleneck-hcc (specs.label)
+    projects/ideas/ecg-af-fair (specs.label)
+    projects/ideas/hccnet-pathology (specs.label)
+    projects/ideas/physics-tensor-hcc (specs.label)
+    projects/manuscripts/bttn-incident-af (specs.label)
+    projects/manuscripts/clinical-hccnet (specs.label)
+    projects/manuscripts/hccnet-revision (specs.label)
+"nascent, gate pending" in 8 decks:
+    projects/ideas/federated-protocol-agents (specs.value)
+    projects/ideas/fl-privacy-auditing (specs.value)
+    projects/ideas/harmonop (specs.value)
+    projects/ideas/hccnet-fl-sweden (specs.value)
+    projects/ideas/neurosde (specs.value)
+    projects/ideas/physics-tensor-hcc (specs.value)
+    projects/ideas/ssm-longitudinal (specs.value)
+    projects/ideas/xsub-ecog-framework (specs.value)
+"A. Faes, M. Amir Haeri" in 4 decks:
+    projects/manuscripts/bt-operator-theory (specs.value)
+    projects/manuscripts/btfno (specs.value)
+    projects/manuscripts/bttd-source-eeg (specs.value)
+    projects/manuscripts/fed-multicellular-immune (specs.value)
+"Outcome" in 4 decks:
+    projects/archive/failed/faithful-block-term-layer (specs.label)
+    projects/archive/failed/fed-faithful-ecg (specs.label)
+    projects/archive/failed/jacobian-coupled-blockterm-dp (specs.label)
+    projects/archive/stopped/connectivity-motor-imagery (specs.label)
+"Target" in 4 decks:
+    projects/active/linfoot-estimator (specs.label)
+    projects/coauthor/stopped/individual-reference-intervals (specs.label)
+    projects/ideas/hccnet-pathology (specs.label)
+    projects/manuscripts/bt-operator-theory (specs.label)
+"Baselines" in 3 decks:
+    projects/ideas/btd-autoencoder (specs.label)
+    projects/ideas/harmonop (specs.label)
+    projects/ideas/paleogenomics-tensor (specs.label)
+"Degree" in 3 decks:
+    projects/archive/published/2016/bachelor-network-ids (specs.label)
+    projects/archive/published/2018/masters-algebraic-subtyping (specs.label)
+    projects/archive/published/2018/masters-eeg-infotheory (specs.label)
+"E. Calvo Merino, A. Faes, M.M. Van Hulle" in 3 decks:
+    projects/coauthor/published/2023/ecog-frequency-features (specs.value)
+    projects/coauthor/published/2023/modulation-lmp-bci (specs.value)
+    projects/coauthor/published/2024/highgamma-event-detection (specs.value)
+"Form" in 3 decks:
+    projects/archive/published/2017/icfp-src-abstract (specs.label)
+    projects/archive/published/2017/icfp-src-poster (specs.label)
+    projects/archive/published/2021/abstract-bci-meeting-2021 (specs.label)
+"A. Faes" in 2 decks:
+    projects/archive/published/2026/glassbox-decision-pipelines (specs.value)
+    projects/manuscripts/ecg-readable-substrate (specs.value)
+"A. Faes, M. Fahimi Hnazaee, M. Van Hulle" in 2 decks:
+    projects/archive/published/2021/abstract-bci-meeting-2021 (specs.value)
+    projects/archive/stopped/connectivity-motor-imagery (specs.value)
+"A. Faes, M.M.J. Guichelaar, ..., M. Amir Haeri" in 2 decks:
+    projects/archive/published/2026/hcc-modality-poster (specs.value)
+    projects/archive/published/2026/hccnet-fl (specs.value)
+"Benchmark" in 2 decks:
+    projects/ideas/old-charges-stemmatology (specs.label)
+    projects/manuscripts/btfno (specs.label)
+"Causal Graphical Modelling of Functional Connectivity from Reconstructed EEG Sources" in 2 decks:
+    projects/archive/published/2021/abstract-bci-meeting-2021 (sub)
+    projects/archive/stopped/connectivity-motor-imagery (sub)
+"Cohorts" in 2 decks:
+    projects/manuscripts/dries-bttr-ecg (specs.label)
+    projects/manuscripts/ecg-readable-substrate (specs.label)
+"Comput. Biol. Med., under review" in 2 decks:
+    projects/manuscripts/ecg-readable-substrate (specs.value)
+    projects/manuscripts/meseret-cirrhosis (specs.value)
+"Compute" in 2 decks:
+    projects/active/loewner (specs.label)
+    projects/ideas/conformal-tensor-factors (specs.label)
+"Corpora" in 2 decks:
+    projects/coauthor/published/2018/http2-web-performance (specs.label)
+    projects/ideas/engram (specs.label)
+"de-risking" in 2 decks:
+    projects/ideas/pathology-tensor-mil (specs.value)
+    projects/ideas/strokeop (specs.value)
+"de-risking, gate pending" in 2 decks:
+    projects/ideas/adapter-format-theory (specs.value)
+    projects/ideas/fed-duplication-limits (specs.value)
+"High-gamma band event detection improves stability of finger trajectories decoded from ECoG-LMP activity" in 2 decks:
+    projects/coauthor/published/2023/modulation-lmp-bci (sub)
+    projects/coauthor/published/2024/highgamma-event-detection (sub)
+"Horizons" in 2 decks:
+    projects/ideas/concept-bottleneck-hcc (specs.label)
+    projects/ideas/physics-tensor-hcc (specs.label)
+"ICFP 2017 Student Research Competition" in 2 decks:
+    projects/archive/published/2017/icfp-src-abstract (specs.value)
+    projects/archive/published/2017/icfp-src-poster (specs.value)
+"Measured" in 2 decks:
+    projects/archive/failed/ms-lipid-handshake (tag.text)
+    projects/archive/phd/phd-thesis (tag.text)
+"Medical Image Analysis or IEEE TMI" in 2 decks:
+    projects/ideas/hccnet-pathology (specs.value)
+    projects/ideas/physics-tensor-hcc (specs.value)
+"nascent, exploring" in 2 decks:
+    projects/ideas/concept-bottleneck-hcc (specs.value)
+    projects/ideas/fed-neural-operators (specs.value)
+"nascent, speculative" in 2 decks:
+    projects/ideas/asthma-geo-tensor (specs.value)
+    projects/ideas/paleogenomics-tensor (specs.value)
+"Setup" in 2 decks:
+    projects/coauthor/published/2017/http2-best-practices (specs.label)
+    projects/ideas/brecht-fl-partitioning (specs.label)
+"stopped" in 2 decks:
+    projects/coauthor/stopped/individual-reference-intervals (specs.value)
+    projects/ideas/fedbtd (specs.value)
+"Supervision" in 2 decks:
+    projects/archive/published/2018/masters-algebraic-subtyping (specs.label)
+    projects/archive/published/2018/masters-eeg-infotheory (specs.label)
+"Towards a Core Language with Row-Based Effects for Optimised Compilation" in 2 decks:
+    projects/archive/published/2017/icfp-src-abstract (sub)
+    projects/archive/published/2017/icfp-src-poster (sub)
+lines repeated across decks: 36
+```
+
+## `diff -rq` of every `present/` folder against its base copy
+
+```
+Only in projects/active/eeg-saad-challenge/present: main.md
+Only in projects/active/eeg-saad-challenge/present: present.yml
+Only in projects/active/linfoot-estimator/present: engine_shapes.png
+Only in projects/active/linfoot-estimator/present: main.md
+Only in projects/active/linfoot-estimator/present: present.yml
+Only in projects/active/loewner/present: main.md
+Only in projects/active/loewner/present: present.yml
+Only in projects/active/novel-math-primitives/present: main.md
+Only in projects/active/novel-math-primitives/present: present.yml
+Only in projects/active/sandpile-operator/present: main.md
+Only in projects/active/sandpile-operator/present: present.yml
+Only in projects/active/sandpile-operator/present: rollout.png
+Only in projects/archive/failed/faithful-block-term-layer/present: main.md
+Only in projects/archive/failed/faithful-block-term-layer/present: present.yml
+Files projects/archive/failed/fed-faithful-ecg/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/failed/fed-faithful-ecg/present/main.md differ
+Files projects/archive/failed/fed-faithful-ecg/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/failed/fed-faithful-ecg/present/present.yml differ
+Only in projects/archive/failed/jacobian-coupled-blockterm-dp/present: main.md
+Only in projects/archive/failed/jacobian-coupled-blockterm-dp/present: present.yml
+Only in projects/archive/failed/ms-lipid-handshake/present: main.md
+Only in projects/archive/failed/ms-lipid-handshake/present: present.yml
+Only in projects/archive/failed/ms-lipid-handshake/present: within_cohort_macnair.png
+Only in projects/archive/phd/phd-thesis/present: main.md
+Only in projects/archive/phd/phd-thesis/present: present.yml
+Only in projects/archive/published/2016/bachelor-network-ids/present: main.md
+Only in projects/archive/published/2016/bachelor-network-ids/present: present.yml
+Only in projects/archive/published/2017/icfp-src-abstract/present: main.md
+Only in projects/archive/published/2017/icfp-src-abstract/present: present.yml
+Only in projects/archive/published/2017/icfp-src-poster/present: main.md
+Only in projects/archive/published/2017/icfp-src-poster/present: present.yml
+Only in projects/archive/published/2018/masters-algebraic-subtyping/present: main.md
+Only in projects/archive/published/2018/masters-algebraic-subtyping/present: present.yml
+Only in projects/archive/published/2018/masters-eeg-infotheory/present: main.md
+Only in projects/archive/published/2018/masters-eeg-infotheory/present: present.yml
+Only in projects/archive/published/2021/abstract-bci-meeting-2021/present: main.md
+Only in projects/archive/published/2021/abstract-bci-meeting-2021/present: present.yml
+Only in projects/archive/published/2021/source-localization/present: main.md
+Only in projects/archive/published/2021/source-localization/present: present.yml
+Only in projects/archive/published/2021/source-localization/present: sparsity-acc-spread_norm.png
+Only in projects/archive/published/2021/volga-finger-trajectories/present: main.md
+Only in projects/archive/published/2021/volga-finger-trajectories/present: present.yml
+Only in projects/archive/published/2022/block-term-tensor-regression/present: image10.png
+Only in projects/archive/published/2022/block-term-tensor-regression/present: main.md
+Only in projects/archive/published/2022/block-term-tensor-regression/present: present.yml
+Only in projects/archive/published/2022/connectivity-iris/present: main.md
+Only in projects/archive/published/2022/connectivity-iris/present: present.yml
+Only in projects/archive/published/2022/extended-bttr-note/present: ebttr_fig.jpeg
+Only in projects/archive/published/2022/extended-bttr-note/present: main.md
+Only in projects/archive/published/2022/extended-bttr-note/present: present.yml
+Only in projects/archive/published/2025/fbttr-strategies/present: main.md
+Only in projects/archive/published/2025/fbttr-strategies/present: model.png
+Only in projects/archive/published/2025/fbttr-strategies/present: present.yml
+Only in projects/archive/published/2025/fermat/present: main.md
+Only in projects/archive/published/2025/fermat/present: present.yml
+Only in projects/archive/published/2025/go-bttr/present: gobttr.jpeg
+Only in projects/archive/published/2025/go-bttr/present: main.md
+Only in projects/archive/published/2025/go-bttr/present: present.yml
+Only in projects/archive/published/2026/abduction/present: main.md
+Only in projects/archive/published/2026/abduction/present: present.yml
+Only in projects/archive/published/2026/abduction/present: raw_signal.png
+Files projects/archive/published/2026/dongho-ecg-clustering/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/published/2026/dongho-ecg-clustering/present/main.md differ
+Files projects/archive/published/2026/dongho-ecg-clustering/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/published/2026/dongho-ecg-clustering/present/present.yml differ
+Only in projects/archive/published/2026/erp-signatures/present: main.md
+Only in projects/archive/published/2026/erp-signatures/present: present.yml
+Only in projects/archive/published/2026/glassbox-decision-pipelines/present: main.md
+Only in projects/archive/published/2026/glassbox-decision-pipelines/present: present.yml
+Only in projects/archive/published/2026/hcc-modality-poster/present: main.md
+Only in projects/archive/published/2026/hcc-modality-poster/present: present.yml
+Files projects/archive/published/2026/hccnet-fl/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/published/2026/hccnet-fl/present/main.md differ
+Files projects/archive/published/2026/hccnet-fl/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/archive/published/2026/hccnet-fl/present/present.yml differ
+Only in projects/archive/stopped/algebraic-subtyping/present: main.md
+Only in projects/archive/stopped/algebraic-subtyping/present: present.yml
+Only in projects/archive/stopped/connectivity-motor-imagery/present: main.md
+Only in projects/archive/stopped/connectivity-motor-imagery/present: present.yml
+Only in projects/coauthor/active/flkit/present: main.md
+Only in projects/coauthor/active/flkit/present: present.yml
+Only in projects/coauthor/published/2016/chi-household-survival/present: main.md
+Only in projects/coauthor/published/2016/chi-household-survival/present: present.yml
+Only in projects/coauthor/published/2016/chi-purpose-centric/present: main.md
+Only in projects/coauthor/published/2016/chi-purpose-centric/present: present.yml
+Only in projects/coauthor/published/2017/algebraic-effects-compilation/present: main.md
+Only in projects/coauthor/published/2017/algebraic-effects-compilation/present: present.yml
+Only in projects/coauthor/published/2017/http2-best-practices/present: main.md
+Only in projects/coauthor/published/2017/http2-best-practices/present: present.yml
+Only in projects/coauthor/published/2018/http2-web-performance/present: main.md
+Only in projects/coauthor/published/2018/http2-web-performance/present: present.yml
+Only in projects/coauthor/published/2023/coordinated-fingers-ecnr/present: main.md
+Only in projects/coauthor/published/2023/coordinated-fingers-ecnr/present: present.yml
+Only in projects/coauthor/published/2023/ecog-frequency-features/present: main.md
+Only in projects/coauthor/published/2023/ecog-frequency-features/present: present.yml
+Only in projects/coauthor/published/2023/modulation-lmp-bci/present: main.md
+Only in projects/coauthor/published/2023/modulation-lmp-bci/present: present.yml
+Only in projects/coauthor/published/2024/highgamma-event-detection/present: main.md
+Only in projects/coauthor/published/2024/highgamma-event-detection/present: present.yml
+Only in projects/coauthor/published/2025/editorial-bigdata-ai-ms/present: main.md
+Only in projects/coauthor/published/2025/editorial-bigdata-ai-ms/present: present.yml
+Only in projects/coauthor/published/2025/pfl-ms-npj/present: main.md
+Only in projects/coauthor/published/2025/pfl-ms-npj/present: present.yml
+Only in projects/coauthor/published/2025/proprioception-exoskeleton/present: main.md
+Only in projects/coauthor/published/2025/proprioception-exoskeleton/present: present.yml
+Only in projects/coauthor/stopped/individual-reference-intervals/present: main.md
+Only in projects/coauthor/stopped/individual-reference-intervals/present: present.yml
+Only in projects/ideas/adapter-format-theory/present: main.md
+Only in projects/ideas/adapter-format-theory/present: present.yml
+Only in projects/ideas/asthma-geo-tensor/present: main.md
+Only in projects/ideas/asthma-geo-tensor/present: present.yml
+Only in projects/ideas/attention-scoped-instructions/present: main.md
+Only in projects/ideas/attention-scoped-instructions/present: present.yml
+Only in projects/ideas/block-term-nca/present: main.md
+Only in projects/ideas/block-term-nca/present: present.yml
+Only in projects/ideas/brecht-fl-partitioning/present: main.md
+Only in projects/ideas/brecht-fl-partitioning/present: present.yml
+Files projects/ideas/btd-autoencoder/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/btd-autoencoder/present/main.md differ
+Files projects/ideas/btd-autoencoder/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/btd-autoencoder/present/present.yml differ
+Only in projects/ideas/cirrhosis-digital-twin/present: main.md
+Only in projects/ideas/cirrhosis-digital-twin/present: present.yml
+Files projects/ideas/clinical-ai-eval-artifacts/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/clinical-ai-eval-artifacts/present/main.md differ
+Files projects/ideas/clinical-ai-eval-artifacts/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/clinical-ai-eval-artifacts/present/present.yml differ
+Only in projects/ideas/concept-bottleneck-hcc/present: main.md
+Only in projects/ideas/concept-bottleneck-hcc/present: present.yml
+Only in projects/ideas/conformal-tensor-factors/present: main.md
+Only in projects/ideas/conformal-tensor-factors/present: present.yml
+Files projects/ideas/ecg-af-fair/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/ecg-af-fair/present/main.md differ
+Files projects/ideas/ecg-af-fair/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/ecg-af-fair/present/present.yml differ
+Only in projects/ideas/engram/present: main.md
+Only in projects/ideas/engram/present: present.yml
+Only in projects/ideas/faithful-interpretability-position/present: main.md
+Only in projects/ideas/faithful-interpretability-position/present: present.yml
+Only in projects/ideas/fed-duplication-limits/present: main.md
+Only in projects/ideas/fed-duplication-limits/present: present.yml
+Only in projects/ideas/fed-neural-operators/present: main.md
+Only in projects/ideas/fed-neural-operators/present: present.yml
+Only in projects/ideas/fedbtd/present: main.md
+Only in projects/ideas/fedbtd/present: present.yml
+Only in projects/ideas/federated-protocol-agents/present: main.md
+Only in projects/ideas/federated-protocol-agents/present: present.yml
+Only in projects/ideas/fedlink/present: main.md
+Only in projects/ideas/fedlink/present: present.yml
+Files projects/ideas/fl-privacy-auditing/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/fl-privacy-auditing/present/main.md differ
+Files projects/ideas/fl-privacy-auditing/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/fl-privacy-auditing/present/present.yml differ
+Files projects/ideas/florank-personalization/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/florank-personalization/present/main.md differ
+Files projects/ideas/florank-personalization/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/florank-personalization/present/present.yml differ
+Only in projects/ideas/harmonop/present: main.md
+Only in projects/ideas/harmonop/present: present.yml
+Files projects/ideas/hccnet-fl-sweden/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/hccnet-fl-sweden/present/main.md differ
+Files projects/ideas/hccnet-fl-sweden/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/hccnet-fl-sweden/present/present.yml differ
+Files projects/ideas/hccnet-pathology/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/hccnet-pathology/present/main.md differ
+Files projects/ideas/hccnet-pathology/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/hccnet-pathology/present/present.yml differ
+Only in projects/ideas/modality-dropping-btf/present: main.md
+Only in projects/ideas/modality-dropping-btf/present: present.yml
+Only in projects/ideas/multiway-biosignal-fm/present: main.md
+Only in projects/ideas/multiway-biosignal-fm/present: present.yml
+Only in projects/ideas/neurosde/present: main.md
+Only in projects/ideas/neurosde/present: present.yml
+Only in projects/ideas/old-charges-stemmatology/present: main.md
+Only in projects/ideas/old-charges-stemmatology/present: present.yml
+Only in projects/ideas/paleogenomics-tensor/present: main.md
+Only in projects/ideas/paleogenomics-tensor/present: present.yml
+Only in projects/ideas/pathology-tensor-mil/present: main.md
+Only in projects/ideas/pathology-tensor-mil/present: present.yml
+Only in projects/ideas/physics-tensor-hcc/present: main.md
+Only in projects/ideas/physics-tensor-hcc/present: present.yml
+Files projects/ideas/quantum-tensor-fl/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/quantum-tensor-fl/present/main.md differ
+Files projects/ideas/quantum-tensor-fl/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/quantum-tensor-fl/present/present.yml differ
+Only in projects/ideas/serial-ecg-af/present: main.md
+Only in projects/ideas/serial-ecg-af/present: present.yml
+Files projects/ideas/ssm-longitudinal/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/ssm-longitudinal/present/main.md differ
+Files projects/ideas/ssm-longitudinal/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/ideas/ssm-longitudinal/present/present.yml differ
+Only in projects/ideas/strokeop/present: main.md
+Only in projects/ideas/strokeop/present: present.yml
+Only in projects/ideas/xsub-ecog-framework/present: main.md
+Only in projects/ideas/xsub-ecog-framework/present: present.yml
+Files projects/manuscripts/bt-operator-theory/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bt-operator-theory/present/main.md differ
+Files projects/manuscripts/bt-operator-theory/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bt-operator-theory/present/present.yml differ
+Only in projects/manuscripts/btfno/present: fig_mechanism.png
+Files projects/manuscripts/btfno/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/btfno/present/main.md differ
+Files projects/manuscripts/btfno/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/btfno/present/present.yml differ
+Only in projects/manuscripts/bttd-source-eeg/present: fig2_source_maps.png
+Files projects/manuscripts/bttd-source-eeg/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bttd-source-eeg/present/main.md differ
+Files projects/manuscripts/bttd-source-eeg/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bttd-source-eeg/present/present.yml differ
+Only in projects/manuscripts/bttd-source-eeg/present: real_contralateral.png
+Only in projects/manuscripts/bttn-incident-af/present: bttn_interpret.png
+Files projects/manuscripts/bttn-incident-af/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bttn-incident-af/present/main.md differ
+Only in projects/manuscripts/bttn-incident-af/present: pipeline_overview.png
+Files projects/manuscripts/bttn-incident-af/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/bttn-incident-af/present/present.yml differ
+Only in projects/manuscripts/clinical-hccnet/present: fusion_over_time.png
+Only in projects/manuscripts/clinical-hccnet/present: main.md
+Only in projects/manuscripts/clinical-hccnet/present: present.yml
+Only in projects/manuscripts/clinical-hccnet/present: sequences_by_horizon.png
+Files projects/manuscripts/covert-applied/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/covert-applied/present/main.md differ
+Files projects/manuscripts/covert-applied/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/covert-applied/present/present.yml differ
+Files projects/manuscripts/covert-theory/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/covert-theory/present/main.md differ
+Files projects/manuscripts/covert-theory/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/covert-theory/present/present.yml differ
+Only in projects/manuscripts/dries-bttr-ecg/present: forest_auroc.png
+Only in projects/manuscripts/dries-bttr-ecg/present: interpret_afsr_afibonly_blocks.png
+Files projects/manuscripts/dries-bttr-ecg/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/dries-bttr-ecg/present/main.md differ
+Files projects/manuscripts/dries-bttr-ecg/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/dries-bttr-ecg/present/present.yml differ
+Files projects/manuscripts/ecg-readable-substrate/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/ecg-readable-substrate/present/main.md differ
+Files projects/manuscripts/ecg-readable-substrate/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/ecg-readable-substrate/present/present.yml differ
+Files projects/manuscripts/fed-multicellular-immune/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/fed-multicellular-immune/present/main.md differ
+Files projects/manuscripts/fed-multicellular-immune/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/fed-multicellular-immune/present/present.yml differ
+Only in projects/manuscripts/hccnet-revision/present: calibration.png
+Only in projects/manuscripts/hccnet-revision/present: figure_outline.png
+Files projects/manuscripts/hccnet-revision/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/hccnet-revision/present/main.md differ
+Files projects/manuscripts/hccnet-revision/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/hccnet-revision/present/present.yml differ
+Only in projects/manuscripts/meseret-cirrhosis/present: fig_simulation.png
+Files projects/manuscripts/meseret-cirrhosis/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/meseret-cirrhosis/present/main.md differ
+Files projects/manuscripts/meseret-cirrhosis/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/meseret-cirrhosis/present/present.yml differ
+Only in projects/manuscripts/raw-pls/present: fig2_results.png
+Files projects/manuscripts/raw-pls/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/raw-pls/present/main.md differ
+Files projects/manuscripts/raw-pls/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/raw-pls/present/present.yml differ
+Files projects/manuscripts/ward-bttr-crosssubject/present/main.md and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/ward-bttr-crosssubject/present/main.md differ
+Only in projects/manuscripts/ward-bttr-crosssubject/present: pipeline_flowchart.png
+Files projects/manuscripts/ward-bttr-crosssubject/present/present.yml and /Users/axelfaes/workspace/research-hub/.agents/worktrees/O151-hub-base/projects/manuscripts/ward-bttr-crosssubject/present/present.yml differ
+```
+
+## Every changed line
+
+Generated with `diff -U0 <before-state> <deck>` per deck: a line beginning `-` is the line before this round, a line beginning `+` the line now. The source of each line is given above the record: a `+` line that is a shortening or a recombination of `-` lines takes its source from those lines, as checked per deck in "# Round 1"; a line carrying a number no `-` line had is from the live source named under "Up to date" (the `comm -23` check under "Per deck"). A deck with no changed line has an empty block.
+
+### eeg-saad-challenge
+
+```diff
+-title: 'Decoding which talker a listener attends to, on EEG datasets the model has never seen'
++title: 'Decoding which talker a listener attends to, across unseen EEG datasets'
+-hook: 'The challenge''s own framing is that most attention-decoding results are single-dataset and that deep models exploit dataset-specific shortcuts; the benchmark trains on five public sets and scores blind on two held-out ones with new subjects, stimuli, setups and in-trial attention switches.'
++hook: 'Train on five public sets; score blind on two with new subjects, stimuli, setups and in-trial attention switches.'
+-  plain: 'Train a decoder on five public brain-recording collections, then let the organizers test it on two secret ones; the score rewards both being right and noticing quickly when the listener switches voices.'
++  plain: 'Train on five public collections; the organizers test on two secret ones, scoring accuracy and how fast a switch is noticed.'
+-  - { label: 'Stage', value: 'exploring; not registered' }
+-equation: 'H = \frac{2\,\mathrm{Acc}\cdot L}{\mathrm{Acc} + L}, \qquad \text{per switch } e^{-|\tau^* - t_0|/60}'
+-  - 'Planned: a multilinear (channel, time, frequency) decoder with mode-wise factors shared across datasets.'
+-  - 'Switch detection as a change-point problem on the decoder statistic, since the score charges latency directly.'
+-  - 'A learned montage map for BioSemi 64, NeuroScan 64 and 255-channel high-density sets.'
+-  - 'Open choice: decode direction or the attended envelope; the organizers warn that spatial decoding can ride on eye gaze.'
++  - 'Planned: a multilinear decoder with mode-wise factors shared across datasets and a learned map for BioSemi 64, NeuroScan 64 and 255-channel sets.'
++  - 'Switch detection as change-point on the decoder statistic; $H = 2\,\mathrm{Acc}\,L/(\mathrm{Acc}+L)$, per switch $e^{-|\tau^*-t_0|/60}$.'
+-  - 'No results: not registered, no data staged, no code.'
+-  - 'First number: linear stimulus reconstruction plus causal HMM, leave-one-dataset-out.'
+-  - 'Bar: the organizers expect linear stimulus reconstruction to transfer better than deep models; a structured model has to beat it on held-out datasets.'
++  - 'No results: not registered, no data staged, no code. First number: linear stimulus reconstruction plus causal HMM, leave-one-dataset-out.'
++  - 'Bar: organizers expect linear reconstruction to transfer better than deep models; a structured model must beat it on held-out data.'
++  - 'Rules: at most 1000 ms lookahead; no test-time adaptation; 2 test submissions, the last counts. KUL 2.1 corrects a 70 ms misalignment in 2.0.'
+-
+----
+-kind: columns
+----
+-# The rules the decoder must meet, and the data it must transfer across
+-
+-### Rules
+-
+-- At most 1000 ms lookahead per labelled sample, counting every lag in every step.
+-- No test-time adaptation and no use of dataset, subject or trial identity.
+-- One binary label per sample at 128 Hz; at most 2 test submissions, and the last one counts.
+-- Top-five entries are reproduced and rule-checked by the organizers.
+-
+-|||
+-
+-### Data
+-
+-- Three languages (Danish, Dutch, Chinese) and two amplifier systems across the five training sets.
+-- Only 64 of the 255 high-density channels may be used, at train and test.
+-- KUL must be version 2.1, which corrects a 70 ms EEG-stimulus misalignment in 2.0.
+-- The 255-channel record names a SynAmps RT device where the challenge page lists BioSemi, so channel maps come from the files.
+----
+```
+
+### linfoot-estimator
+
+```diff
+-title: 'A pretrained Linfoot estimator made invariant to what the estimand is invariant to'
+-sub: 'Towards a pretrained deep learning estimator of the Linfoot informational correlation'
+-hook: 'The published estimator reads raw values and trains on two positively dependent copula families, so a monotone change of margins moves its estimate and reversed dependence breaks it; rank input, the eight symmetries of the square and a generator of exact-label shapes remove both failures.'
++title: 'A Linfoot estimator invariant to what the estimand is invariant to'
++sub: 'A Pretrained Rank-Based Estimator of the Linfoot Informational Correlation'
++hook: 'Exactly invariant to strictly increasing marginal maps and the eight symmetries of the square, through ranks and averaging.'
+-  plain: 'Turn the values into ranks so stretching an axis changes nothing, average over flips and turns of the square, and train on an endless supply of invented shapes whose true answer is known exactly.'
++  plain: 'Turn values into ranks so stretching an axis changes nothing, average over flips and turns, and train on shapes with exact answers.'
+-  - { label: 'Lead', value: 'St<e acute>phanie van den Berg; Axel Faes coauthor' }
+-  - { label: 'Preprint', value: 'arXiv:2512.12358, arXiv only' }
+-  - { label: 'Estimator', value: 'ParamPL0z' }
+-  - { label: 'Stage', value: 'exploring; IEEEtran draft for IEEE TNNLS next' }
+-equation: 'L = \sqrt{1 - e^{-2I(X;Y)}}'
++  - { label: 'Authors', value: 'A. Faes, S.M. van den Berg, ..., J. von B. Hjelmborg' }
++  - { label: 'Target', value: 'IEEE TNNLS, in preparation' }
++  - { label: 'Preprint', value: 'arXiv:2512.12358' }
+-  - 'Ranks are the maximal invariant under monotone margins, so feeding them makes marginal invariance exact.'
+-  - 'Averaging over the eight symmetries of the square makes negative dependence as accurate as positive.'
+-  - 'Label engine: random smooth log-densities projected to uniform margins by Sinkhorn scaling, with exact labels and exact samples.'
+-  - 'ParamPL0z gates five maximum pseudo-likelihood copula starts, its own estimate and a start fixed at 0, then applies a logit correction.'
++  - 'Starts: four maximum pseudo-likelihood copula fits, normal-scores correlation, own estimate, a start fixed at zero; softmax gate, logit-scale correction.'
++  - 'A CNN on rank histograms, trained by squared error on a mixture of three simulated training sets with exact labels, a tenth independent samples.'
+-  - '12-family test: ParamPL0z 0.0548 against 0.0714 for the published estimator (paired $-0.0166$ $[-0.0203, -0.0130]$); the published one is lower on none of 26 groups.'
+-  - 'Largest change on reflected and rotated copies $2.38 \times 10^{-7}$, against 1.00 for the published estimator.'
+-  - 'Under reversed or rotated association 0.0491 to 0.0554, where the published estimator reads 0.6028 to 0.6029.'
+-  - 'The published pipeline is ported to Python and reproduces the preprint''s Table 1 column in all 24 cells to within 0.0063.'
+-panels:
+-  - { figure: engine_shapes.png, caption: 'The preprint''s two families and 18 draws from the label engine', explain: 'Every engine label is exact; 12 of the 18 draws fall rather than rise, and 8 carry a label above 0.4 while a rank correlation reads under 0.25.' }
+-mechanism: 'Rank input, D4 averaging and gated parametric starts'
+-headline: 'Pooled error 0.0548 against 0.0714 on the 12 families'
++  - 'Pooled RMSE 0.0544 and 0.0539 on 12 VineCopula families, against 0.0714 and 0.0708 published; paired $-0.0169$ $[-0.0206, -0.0133]$ and $[-0.0207, -0.0133]$.'
++  - 'Lowest of ten columns, next KSG on ranks 0.0650 and 0.0651, every other column''s paired interval above; lower on seven of 12 families.'
++  - 'Every scored family is inside the training prior. Reversed, rotated, reflected 0.0250 to 0.0553 against 0.4487 to 0.6029 for the published estimator.'
++mechanism: 'Rank input, symmetry averaging and gated parametric starts'
++headline: 'Pooled RMSE 0.0544 and 0.0539 against 0.0714 and 0.0708 on the 12 families'
+-kind: columns
++kind: project
++title: 'Where the published estimator is lower, and which routes are closed'
++sub: 'Independent samples, measured departure, closed routes, runs in progress and credit'
++hook: 'On independent samples the published estimator is lower, 0.0537 against 0.0566.'
++tag: { class: mixed, text: 'Limits and closed routes' }
++eli5:
++  purpose: 'Where the new estimator does not help; ideas set aside.'
++  plain: 'The published estimator is lower on independent samples.'
++specs:
++  - { label: 'Port', value: 'Table 1 reproduced within 0.0063' }
++  - { label: 'Departure', value: 'at most $2.38 \times 10^{-7}$' }
++  - { label: 'Backbone bias ratio', value: '2.13 to 1.65' }
++method:
++  - 'Departure from invariance measured on exact images.'
++results:
++  - 'Closed: an operator backbone, not built; reshaping the label prior; six levers against the accuracy floor. Held-out family and equal-training-data runs are in progress.'
++  - 'The Linfoot estimand and Propositions 2.1 and 2.2 with the Clayton closed form are the preprint authors''.'
++equation: 'L = \sqrt{1 - e^{-2I(X;Y)}}'
++headline: 'On independent samples the published estimator is lower, 0.0537 against 0.0566'
+-# Closed routes, credit and prior work
+-
+-### Closed routes
+-
+-- An operator backbone: on the 480k-example model the fine-structure bias ratio fell from 2.13 to 1.65 and error turned scatter-dominated, so it is not built.
+-- Reshaping the label prior trades error between dependence bands; four arms all land within 0.001 of 0.062 overall.
+-- Six levers against the accuracy floor; only a finer input resolution moved it, by 1.8 percent.
+-- MIST cannot be scored on bivariate data: its released weights read about 0.33 nats where the truth is 0.
+-
+-|||
+-
+-### Credit, prior work and the classical panel
+-
+-- The Linfoot estimand, Proposition 2.1 and Proposition 2.2 with the Clayton closed form are the preprint authors'; no contribution of this work is in the paper yet, and the new draft is the preprint's successor.
+-- Supervised amortised MI estimation is published (MIST, InfoNet, InfoAtlas, ALICE); none of their abstracts uses rank histograms, exact group invariance, several training priors, gating or parametric starts.
+-- Against six classical estimators and MINE, the August estimator read 0.0624 pooled against 0.0799 for the best classical one, unchanged under four monotone transforms that moved raw-value estimators by 0.0142 to 0.2501.
+-- The twin data sit with the SDU coauthors; the twin-application script, which they can run with this model, is verified end to end on surrogate pairs.
+----
+```
+
+### loewner
+
+```diff
+-hook: 'A Loewner construction builds a rational model from sampled responses; the question is whether letting task gradients reach that construction gives a distinct learning algorithm with better reconstruction or perturbation behaviour at matched cost.'
++hook: 'Does letting task gradients reach a Loewner construction give a distinct learning algorithm at matched cost?'
+-  plain: 'A classical recipe turns measured responses into a small exact formula; the layer learns, across many examples, how to clean the measurements first so the formula comes out better.'
++  plain: 'A classical recipe turns measured responses into a small exact formula; the layer learns how to clean the measurements first.'
+-  - { label: 'Stage', value: 'scoping; algorithm development' }
+-equation: 'v_{\text{next}} = v - \eta\,\big[W + \beta D_r(v)^{\top} D_r(v) + \epsilon I\big]^{-1} \nabla F(v; y)'
+-  - 'Correct $v$ with the step above, $W$ the observation precision and $D_r = \partial R_r / \partial v$; step sizes, metric weights and penalty schedules are shared trainable parameters.'
+-  - 'Outer loss: query reconstruction plus a first-order noise risk $\mathrm{tr}(J_y \Sigma J_y^{\top})$.'
+-  - 'Open deliverable: an efficient Loewner-structured derivative and adjoint inside the correction.'
++  - 'Correct by $v_{\text{next}} = v - \eta[W + \beta D_r^{\top} D_r + \epsilon I]^{-1} \nabla F(v; y)$; steps and weights are trainable.'
++  - 'Outer loss: query reconstruction plus noise risk $\mathrm{tr}(J_y \Sigma J_y^{\top})$. Open: an efficient Loewner-structured derivative and adjoint.'
+-  - 'No experiments have run, and code/ holds only its README.'
+-  - 'Occupied: differentiable rational approximation, neural rational filtering and low-rank Loewner response fitting.'
+-  - 'First number: a matched local synthetic pilot against direct rational filter learning.'
+-  - 'Novelty and usefulness remain unestablished; there is no implementation, manuscript or selected venue.'
++  - 'No experiments have run; code/ holds only its README; no implementation, manuscript or venue. Novelty and usefulness remain unestablished.'
++  - 'Occupied: differentiable rational approximation, neural rational filtering, low-rank Loewner fitting; a Loewner divided-difference matrix already appears in ML.'
++  - 'First number: a matched local synthetic pilot (orders 4 and 8, 16 or 32 observed nodes, 3 seeds) against direct rational filter learning.'
+-
+----
+-kind: columns
+----
+-# The planned pilot, its assumptions, and the claims the audit rules out
+-
+-### Synthetic pilot and assumptions
+-
+-- Scalar discrete-time responses from stable simple poles, split 512, 128, 256 before sampling; orders 4 and 8, 16 or 32 observed nodes, 256 query nodes, 3 seeds.
+-- Comparators: plain and noise-weighted Loewner fitting, a matched pole/residue network, a regularized direct rational fitter and a generic corrector.
+-- Score: normalized squared complex error on held-out queries, with paired intervals across systems and seeds.
+-- For nonsingular $E$, Loewner coordinates need not enlarge the rational family; singular descriptors and repeated poles need separate analysis, and a fixed-rank SVD derivative needs spectral separation.
+-
+-|||
+-
+-### Not supported, and not yet compared
+-
+-- Autodiff through a rational fit, plain low-rank Loewner fitting or a Jacobian penalty does not by itself make a new algorithm.
+-- A Loewner divided-difference matrix already appears in neural matrix-function backpropagation, so no first-use claim.
+-- Better conditioning of one realization matrix does not prove lower sensitivity of the whole learned map, and ridge regularization does not ensure stable poles.
+-- Still to extract before a new objective is claimed: Singh and Sznaier (2020), Gosea and Antoulas (2016), data-driven structured realization, noisy Loewner data-driven control and three 2026 parametric rational-interpolation papers.
+----
+```
+
+### novel-math-primitives
+
+```diff
+-title: 'Mathematical objects machine learning does not use yet, each with a route to a layer'
++title: 'Mathematical objects ML does not use yet, each with a route to a layer'
+-hook: 'A new primitive differs from a renamed special case only if it has a differentiable bridge, a separation from what a standard layer represents, and one provable property before any benchmark; this scan maps about 24 ML-empty survivors, each with a first idea for its bridge and its separation, ranked with medical fit.'
++hook: 'A scan of about 24 ML-empty survivors, each with a first idea for its differentiable bridge and its separation.'
+-  plain: 'Search for mathematical objects nobody in machine learning uses yet, keep only those that can be made trainable and can do something ordinary layers cannot, and rank them by use in medicine.'
++  plain: 'Search for objects nobody in machine learning uses yet, keep those that can be trained and beat ordinary layers, and rank them by use in medicine.'
+-  - 'Frame each one as object, differentiable bridge, separation, then one provable property or toy capability.'
+-  - 'Rank the survivors by ML potential and medical fit.'
++  - 'Frame each as object, differentiable bridge, separation, then one provable property or toy capability; rank by ML potential and medical fit.'
+-  - 'No code and no manuscript; the gate is to pick one survivor and run the four-step test.'
++  - 'Refuted, already in ML: graph magnitude, Ihara zeta, Schur functors, tensor Z-eigenvalues. Downgraded: matroid bias, holonomy.'
++  - 'No code, no manuscript. Gate: pick one survivor, chip-firing first, and run the four-step test; every claim is re-verified first.'
+-
+----
+-kind: columns
+----
+-# Earlier finds that failed deeper checks, and what is still to do
+-
+-### Refuted or downgraded
+-
+-- Graph magnitude: refuted, now used for generalization bounds, diversity metrics and GNN pooling.
+-- Ihara zeta, Schur functors and tensor Z-eigenvalues: refuted, each already in ML.
+-- Matroid bias and holonomy: downgraded; differentiable routes already exist.
+-- Minkowski tensors are partly mined in biomedical imaging; flag valuations are the unused successor.
+-
+-|||
+-
+-### Still to do
+-
+-- Every "unused in ML" claim is to be re-verified before any first claim in a manuscript.
+-- Imaging and the geometry, topology and physics areas are heavily mined, so their survivors are few.
+-- Chip-firing and sandpile dynamics converged as the first build candidate.
+----
+```
+
+### sandpile-operator
+
+```diff
+-hook: 'Tumour infiltration, infarct growth and seizure spread move only once a local threshold is crossed and stop at tissue barriers; smooth linear diffusion has no threshold and leaks across barriers, so it cannot represent such fronts.'
++hook: 'Tumour, infarct and seizure fronts cross local thresholds and stop at barriers; smooth diffusion has no threshold and leaks.'
+-  - { label: 'Stage', value: 'exploring; no manuscript' }
+-equation: '\text{excess} = \tau\,\mathrm{softplus}\!\left(\frac{u - \theta}{\tau}\right)'
+-  - 'A small conv head predicts a per-cell threshold field $\theta$; the mass above it is redistributed conservatively to passable neighbours.'
+-  - 'Walls stay empty; $\tau$ is learnable, and $\tau \to 0$ recovers the exact hard sandpile.'
+-  - 'Applied recurrently from one visit to the next; trained by one-step MSE with backprop through the step.'
++  - 'A conv head predicts thresholds $\theta$; the excess $\tau\,\mathrm{softplus}((u-\theta)/\tau)$ moves conservatively to passable neighbours.'
++  - 'Walls stay empty; $\tau$ is learnable, $\tau \to 0$ recovers the exact hard sandpile; applied recurrently, trained by one-step MSE.'
+-  - 'Rollout MSE 0.003 against 0.233 for linear diffusion (about 77x lower) and 0.169 for a CNN.'
+-  - 'Active-region IoU 0.95, 0.82 and 0.47; zero wall mass by construction, while the CNN leaks.'
+-  - 'The ground truth comes from the same class of dynamics, so this shows capability only; real-data superiority is the question for stages 1 and 2.'
+-panels:
+-  - { figure: rollout.png, caption: 'Held-out synthetic medium: arrival step and final mass error', explain: 'Arrival-time maps on top, final mass error below: all models reach a broadly similar region, while diffusion smears the mass magnitude.' }
++  - 'Rollout MSE 0.003 against 0.233 for linear diffusion (about 77x lower) and 0.169 for a CNN; IoU 0.95, 0.82, 0.47; zero wall mass, the CNN leaks.'
++  - 'The ground truth comes from the same class of dynamics, so this shows capability only; the IoU gap is modest, the 77x gap is in the mass magnitude.'
++  - 'ISLES24 first; HCC shrinks under treatment, so the operator must condition on it; liver deformation makes registration an issue.'
+-
+----
+-kind: columns
+----
+-# What stage 0 does not show, and what the real stages need
+-
+-### Caveats
+-
+-- Stage 0 proves representational capability and an inductive-bias advantage over smooth diffusion; real-world superiority is the empirical question for stages 1 and 2.
+-- The IoU gap is modest; the 77x gap is in the mass magnitude.
+-- The current run_all.sh runs only the local synthetic stage.
+-
+-|||
+-
+-### Real stages
+-
+-- ISLES24 first: the infarct grows from a core with no treatment-shrinkage confound.
+-- HCC lesions shrink and recur under TACE, ablation or resection, so the operator must condition on treatment or use surveillance intervals.
+-- Liver deformation between visits makes registration a further issue.
+-- Method: replace the fixed rollout by a deep-equilibrium fixed point, with longer held-out rollouts and a $\tau$ ablation.
+----
+```
+
+### faithful-block-term-layer
+
+```diff
+-hook: 'BTTN reports a frequency and a lead signature per block; the bet was a theorem that the prediction runs through those signatures with no hidden leakage, and it fails under the nonlinear head that gives BTTN its accuracy.'
++hook: 'The bet was a theorem that prediction runs through the signatures with no leakage; it fails under the nonlinear head.'
+-  plain: 'The model only looks through a few named windows, which can be proved; but what it does with what it sees through them is a free nonlinear rule the windows do not describe.'
++  plain: 'The model looks through named windows, which can be proved; what it does with what it sees is a free nonlinear rule.'
+-  - { label: 'Stage', value: 'failed' }
+-equation: 'Z_k[:,t,:] = A_k^{\top} X[:,t,:]\, C_k, \qquad \hat y = h(Z_1, \dots, Z_K)'
+-  - 'Each block projects the input onto a reported frequency signature $A_k$ and lead signature $C_k$; a nonlinear head $h$ predicts.'
+-  - 'Faithfulness is split into P1, off-subspace invariance, and P2, signature completeness.'
+-  - 'Low rank is tested as a rescue: a leakage bound indexed by $r_f r_l$.'
++  - 'Each block computes $Z_k[:,t,:] = A_k^{\top} X[:,t,:] C_k$ on reported signatures $A_k$, $C_k$; a nonlinear head $h$ predicts.'
++  - 'P1, off-subspace invariance; P2, signature completeness; low rank tested as a rescue, a leakage bound indexed by $r_f r_l$.'
+-  - 'P1 holds for any head, by construction; it is the known chi-net and B-cos confinement principle in block-term form.'
+-  - 'P2 fails: two models with the same signatures and different heads predict differently, so the signatures under-determine the output.'
+-  - 'Low rank bounds frequency-lead leakage by $O(r_f r_l)$, but the full-length nonlinear temporal head escapes the bound.'
+-  - 'A clean guarantee forces a linear or energy readout per block, giving up the capacity BTTN needs to match a CNN.'
++  - 'P1 holds for any head, by construction: the known chi-net and B-cos confinement principle in block-term form.'
++  - 'P2 fails: two models with the same signatures and different heads predict differently.'
++  - 'Low rank bounds leakage by $O(r_f r_l)$, but the nonlinear temporal head escapes it; a clean guarantee forces a linear or energy readout.'
++  - 'Fallback set aside: concept-bottleneck literature finds smaller bottlenecks leak more, against the rank-indexed wedge.'
+-
+----
+-kind: columns
+----
+-# Why the weaker fallback was also set aside
+-
+-### The trade-off angle
+-
+-- A faithfulness-capacity frontier with a rank-indexed leakage bound is a narrow open sliver.
+-- Its shape is already owned: rate-distortion explanations (Macdonald et al. 2019), limits-of-explainability results, the CEM accuracy-explainability trade-off.
+-- A leakage measure for concept bottlenecks already exists.
+-
+-|||
+-
+-### The decisive problem
+-
+-- The concept-bottleneck leakage literature finds the opposite direction: smaller bottlenecks leak more.
+-- The wedge claims lower rank leaks less, which would need a contested argument that rank and width are different knobs.
+-- The project's own bound is partial, since the temporal head escapes it.
+----
+```
+
+### fed-faithful-ecg
+
+```diff
+-title: 'Does federated averaging break a glass-box ECG model''s explanation? On real ECG it did not'
++title: 'Does federated averaging break a glass-box ECG model''s explanation?'
+-hook: 'Block-term components are gauge-ambiguous, so averaging models from different hospitals could blend unrelated components and leave an accurate model with a wrong explanation; a synthetic pilot showed exactly that, and the real two-silo run did not.'
++hook: 'Averaging gauge-ambiguous components could blend unrelated ones; a synthetic pilot showed that, the real two-silo run did not.'
+-  plain: 'Each hospital trains a model that shows which part of the heartbeat it used; averaging them was expected to scramble that, but on real ECGs it did not, likely because both hospitals'' heartbeats share the same basic shapes.'
++  plain: 'Each hospital''s model shows which part of the heartbeat it used; averaging was expected to scramble that, on real ECGs it did not.'
+-  - { label: 'Stage', value: 'failed' }
+-  - 'A shift-add glass-box ECG backbone with a reconstruction term, one client per silo, non-IID and patient-grouped.'
+-  - 'Faithfulness by comprehensiveness gap, sufficiency AUROC and intervention consistency.'
++  - 'A shift-add glass-box ECG backbone with a reconstruction term, one client per silo; faithfulness by comprehensiveness, sufficiency and consistency.'
+-  - 'Centralized AUROC 0.824, comprehensiveness 0.162, consistency 0.244; FedAvg 0.838, 0.178, 0.468.'
+-  - 'FedAvg kept accuracy and kept faithfulness at or above centralized, so there was no gap to fix.'
+-  - 'Aligned averaging recovered nothing (0.834, 0.107, 0.341), because there was no gap.'
++  - 'AUROC, comprehensiveness, consistency: centralized 0.824, 0.162, 0.244; FedAvg 0.838, 0.178, 0.468; aligned 0.834, 0.107, 0.341: no gap to fix.'
++  - 'Synthetic pilot, 4 clients, 3 seeds: centralized 0.849, purity 0.940; FedAvg 0.812, 0.585; aligned 0.819, 0.670; it overstated the problem.'
+-
+----
+-kind: columns
+----
+-# Why the synthetic pilot overstated the problem, and the designs that failed first
+-
+-### Synthetic pilot, 4 clients, 3 seeds
+-
+-- Centralized AUROC 0.849, concept purity 0.940, 4.00 of 4 concepts covered.
+-- FedAvg 0.812, purity 0.585, 2.00 of 4: accuracy held while faithfulness roughly halved.
+-- Aligned averaging 0.819, purity 0.670, 3.00 of 4.
+-- The pilot gave each client random unrelated prototypes, which overstated the problem.
+-
+-|||
+-
+-### Failed pilot designs
+-
+-- Attribution-against-ablation correlation on an additive model reads about 1.0 by construction, and rose under FedAvg.
+-- A glass-box model on classification loss alone is not concept-identifiable: centralized purity about 0.46, 1 of 4 concepts.
+-- Adding a tied-weight reconstruction term fixed that, purity about 0.95.
+-- The loaders and the backbone carried forward to later ECG work.
+----
+```
+
+### jacobian-coupled-blockterm-dp
+
+```diff
+-title: 'Can whitened block scores make the inter-block gap lower a block-term model''s DP floor?'
++title: 'Can whitened block scores make the gap lower a block-term DP floor?'
+-hook: 'COVERT''s DP floor is generic because sequential deflation makes its coupling Jacobian block-diagonal; releasing whitened scores couples the blocks so the gap enters the floor, and at matched correlation a flat model gains just as much.'
++hook: 'Whitening couples the blocks so the gap enters the DP floor, and at matched correlation a flat model gains just as much.'
+-  purpose: 'Find a privacy advantage that only a block-structured model can give, tied to how well its blocks separate.'
+-  plain: 'Mixing the blocks'' outputs did make block separation matter for the privacy cost, but a model with no block structure got the same effect, so the gain belonged to the mixing step alone.'
++  purpose: 'Find a privacy advantage only a block-structured model can give.'
++  plain: 'Mixing the blocks'' outputs tied separation to privacy cost; a flat model got the same.'
+-  - { label: 'Data', value: 'synthetic standard-normal tensors' }
+-  - { label: 'Control', value: 'flat P3LS-style model at matched $\rho$' }
+-  - { label: 'Stage', value: 'failed' }
+-equation: 'S = T\,G^{-1/2}, \qquad G = T^{\top} T, \qquad t_{r,i} = \langle X_i, A_r B_r^{\top} \rangle'
+-  - 'Release the whitened score $S$ in place of the raw block scores $T$; the Jacobian then carries the spectrum of $G$.'
+-  - 'Floor $= \lVert J \rVert_F^2$ by finite differences over all factor entries, 12 to 16 seeds.'
+-  - 'Utility gate: test $R^2$ is identical raw and whitened, since $G^{-1/2}$ is invertible.'
++  - 'Floor $= \lVert J \rVert_F^2$ by finite differences, 12 to 16 seeds; test $R^2$ is identical raw and whitened.'
+-  - 'Raw floor flat in $\rho$ (about 14 at $R=2$, 22 at $R=3$); the whitened floor follows $\rho$.'
+-  - 'Below $\rho$ 0.3 the whitened floor is about 16 to 18% lower; it blows up 58 to 67 times at collinearity.'
+-  - 'At matched $\rho$, block-term $L=2$ tracks flat: 1.129 against 1.116 at $\rho$ 0.3, 1.715 against 1.753 at 0.6.'
+-  - 'Rank sweep $L=1$ to 4: $L \geq 2$ cluster on flat; only $L=1$ dips below 1, at $\rho$ 0.2 (0.988).'
++  - 'Raw floor flat in $\rho$; whitened 58 to 67 times higher at collinearity.'
++  - 'At matched $\rho$, $L=2$ tracks flat: 1.129 against 1.116 at 0.3.'
++  - 'The gap enters only through $G = T^{\top} T$, whatever the weight structure.'
++equation: 'S = T\,G^{-1/2}, \qquad G = T^{\top} T, \qquad t_{r,i} = \langle X_i, A_r B_r^{\top} \rangle'
+-
+----
+-kind: columns
+----
+-# Where the advantage went once correlation was matched
+-
+-### Matched-$\rho$ test, $R=2$, 16 seeds
+-
+-- The first favourable read came from the flat model sitting at a higher $\rho$.
+-- White-to-raw floor ratio, flat, $L=1$, $L=2$: 1.066, 0.971, 0.995 at $\rho$ 0.2.
+-- Above $\rho$ 0.2 whitening raises the floor for every model.
+-- The rank-1 edge, about 3% at $\rho$ 0.2, is gone by 0.3.
+-
+-|||
+-
+-### Root cause
+-
+-- The gap enters only through $G = T^{\top} T$, built from the $R$ scores whatever the weight structure.
+-- A flat multi-output model has the same score Gram and the same effect.
+-- The within-block multiway structure never enters the coupling.
+-- Left open: a model whose within-block structure enters the Jacobian, unproven.
+----
+```
+
+### ms-lipid-handshake
+
+```diff
+-hook: 'Myeloid cholesterol export does not rise with oligodendrocyte myelin rebuilding: on 632k nuclei the coupling is absent.'
++hook: 'On 632k nuclei myeloid cholesterol export does not rise with oligodendrocyte myelin rebuilding.'
+-  purpose: 'Find out whether the cells that clear myelin debris pass its cholesterol on to the cells that rebuild myelin.'
+-  plain: 'Score a cholesterol-export program in immune cells and a rebuild program in oligodendrocytes of the same samples, and see whether one rises with the other.'
+-equation: 'r_{ds} = \beta\, e_{ds} + \gamma_{s} + u_{d} + \varepsilon_{ds},\qquad u_{d} \sim \mathcal{N}(0, \sigma_u^{2})'
++  purpose: 'Do myelin-clearing cells pass cholesterol to myelin-rebuilding cells?'
++  plain: 'Does cholesterol export in immune cells rise with rebuilding in oligodendrocytes?'
+-  - { label: 'Pairs', value: '65 paired samples across 43 donors' }
+-  - { label: 'First cohorts', value: 'Absinta 66k and Jakel 18k nuclei' }
+-  - 'Score curated lipid-gene programs per donor and lesion stage.'
+-  - 'Fit rebuild $r$ on export $e$ with stage control and a donor random effect, and donor-bootstrap the slope $\beta$.'
+-  - 'Slope -0.061, LRT p = 0.732, donor-bootstrap 95% CI [-0.746, 0.143]: the criterion fails.'
+-  - 'The one significant raw signal is negative (Spearman rho -0.346, p = 0.005) and vanishes under donor and stage control.'
+-  - 'Underpowering is excluded at this size, so the transcriptomic handshake is not to be tried again.'
++  - 'Slope -0.061, p = 0.732, 95% CI [-0.746, 0.143]: the criterion fails.'
++  - 'The raw negative signal (rho -0.346, p = 0.005) vanishes under donor and stage control.'
++equation: 'r_{ds} = \beta e_{ds} + \gamma_s + u_d + \varepsilon_{ds}'
+-
+----
+-kind: project
+-title: 'Every other thread, and how it ended'
+-hook: 'The myelin-gene signal in myeloid cells (p = 8.6e-7) is likely ambient RNA contamination, and the uptake rise (p = 0.013) may track general myeloid activation, since its genes are activation markers.'
+-panels:
+-  - { figure: within_cohort_macnair.png, caption: 'The decisive test on Macnair 2024', explain: 'One dot per paired donor and stage sample: the myeloid export score shows no rising trend against the oligodendrocyte rebuild score.' }
+-results:
+-  - 'Small cohorts: BTD held-out RMSE 0.499 against CP 0.507 and Tucker 0.704; a parameter-matched sweep shows BTD''s edge over CP is negligible.'
+-  - 'Coupled cross-cohort factorization: r = 0.252, CI [-0.900, 0.954], permutation p = 0.258.'
+-  - 'Phagocytic load to efflux in 5432 single cells: slope -0.235, p = 0.0013, yet no outlier against 40 expression-matched genes (p = 0.15).'
+-  - 'Compositional pivot: +0.30, p = 0.002 in discovery, +0.003, p = 0.27 in validation.'
+----
+```
+
+### phd-thesis
+
+```diff
+-hook: 'Four journal papers lead to a multiway decoder that predicts single and coordinated finger trajectories from ECoG and trains in minutes.'
++hook: 'Four journal papers lead to a multiway decoder that predicts single and coordinated finger trajectories from ECoG.'
+-  plain: 'Keep the brain signal as a block of channels, frequencies and time, and fit it piece by piece so the decoder is quick to retrain.'
+-equation: '\mathbf{Y} = \sum_{k=1}^{K} \mathbf{t}_k b_k \mathbf{q}_k^{\top} + \mathbf{F},\qquad \underline{\mathbf{X}} = \sum_{k=1}^{K} \underline{\mathbf{G}}_k \times_1 \mathbf{t}_k \times_2 \mathbf{P}^{(2)}_k \cdots \times_N \mathbf{P}^{(N)}_k + \underline{\mathbf{E}}'
++  plain: 'Keep the brain signal as a block of channels, frequencies and time, and fit it piece by piece so it is quick to retrain.'
+-  - 'BTTR: deflation into blocks whose multilinear ranks are chosen automatically (ACE).'
+-  - 'eBTTR: one model for all five fingers, the unintended coactivations included.'
+-  - 'Before the ECoG work: Sparse eLORETA and neural-network connectivity for motor EEG sources.'
++  - 'BTTR: deflation into blocks $\mathbf{Y} = \sum_{k} \mathbf{t}_k b_k \mathbf{q}_k^{\top} + \mathbf{F}$, ranks chosen automatically (ACE).'
++  - 'eBTTR: one model for all five fingers, coactivations included. Earlier: Sparse eLORETA and neural-network connectivity for motor EEG sources.'
+-  - 'BTTR mean r 0.64, 0.46 and 0.67 for the three subjects, level with HOPLS and above the competition winner (0.42, 0.36, 0.46).'
+-  - 'Training takes about 3 min (BTTR) and 5 min (eBTTR) against about 14 h for HOPLS.'
+-  - 'eBTTR lifts subject 1 middle finger from 0.38 to 0.49.'
++  - 'BTTR mean r 0.64, 0.46, 0.67, level with HOPLS and above the winner (0.42, 0.36, 0.46); about 3 min (eBTTR 5) against about 14 h for HOPLS.'
++  - 'eBTTR lifts subject 1 middle finger from 0.38 to 0.49; 4 sign-language gestures in 5 patients above 0.70; LightGBM beats BTTR for subject 2 (0.493 against 0.46).'
++  - 'Sparse eLORETA: spatial spread 113.16 against 199.47 at correlation 0.9234 against 0.9537, in 1.05 s against 68.05 s for BC-VARETA.'
+-
+----
+-kind: columns
+----
+-# The four papers and what stays open
+-
+-### EEG sources and connectivity
+-
+-- Sparse eLORETA masks eLORETA with SSBL: spatial spread 113.16 against 199.47 at correlation 0.9234 against 0.9537 (far superficial, pink noise).
+-- It runs in 1.05 s against 68.05 s for BC-VARETA.
+-- Among the neural networks, LSTM-NUE obtains better sensitivity and precision; time-reversed Granger causality keeps the higher precision (0.71 against 0.37 on ground truth 2).
+-
+-|||
+-
+-### ECoG decoding and outlook
+-
+-- LightGBM performs better than BTTR for subject 2 (0.493 against 0.46); the introduction names rapid finger repetitions, hand gestures and sustained flexions as tasks where state-of-the-art decoders are still inadequate.
+-- A pilot decodes 4 sign-language gestures in 5 patients with eBTTR at mean r above 0.70.
+-- Finger abduction, which sign language needs, has not yet been attempted from ECoG.
+```
+
+### bachelor-network-ids
+
+```diff
+-title: 'Can machine learning on IP flows alone detect network intrusions out of the box?'
++title: 'Can machine learning on IP flows alone detect intrusions out of the box?'
+-hook: 'A data centre carries too much traffic to inspect every packet; IP flows keep only headers and counts, so the thesis tested seven learners on labelled botnet and honeypot flows and on unlabelled traffic from a university network and a datacentre.'
++hook: 'Seven learners on labelled botnet and honeypot flows and on unlabelled traffic from a university network and a datacentre.'
+-  plain: 'A program learns what past attacks looked like from connection summaries; the method that compares a new connection with its nearest known examples worked best.'
++  plain: 'A program learns what past attacks looked like from connection summaries; comparing with the nearest known examples worked best.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'Learners: KNN, decision tree, Gaussian naive Bayes, linear and RBF SVM, a neural network and a one-class SVM.'
+-  - 'Multi-class and binary F-scores over 10 runs, against a random and an all-normal baseline.'
++  - 'KNN, decision tree, Gaussian naive Bayes, linear and RBF SVM, neural network, one-class SVM; F-scores over 10 runs against random and all-normal.'
+-  - 'KNN is best: binary F 0.950 within CTU-13 and 0.963 across datasets, 0.986 and 0.992 with TCP flags.'
+-  - 'The Canberra distance gives the best multi-class F, 0.915; Euclidean the best binary F, 0.992.'
+-  - 'On 11.07M unlabelled real-world flows KNN reaches F 0.763; the decision tree falls to 0.0155.'
+-  - 'Naive Bayes barely beats the random baseline''s binary F of 0.465 across datasets; the one-class SVM cannot properly define the boundaries of its class.'
++  - 'KNN is best: binary F 0.950 within CTU-13, 0.963 across datasets, 0.986 and 0.992 with TCP flags; Canberra gives the best multi-class F, 0.915.'
++  - 'On 11.07M unlabelled real-world flows KNN reaches F 0.763; the decision tree falls to 0.0155, flagging every EDM flow as malicious.'
++  - 'Naive Bayes barely beats the random binary F of 0.465 across datasets; within CTU-13 the RBF SVM reaches F 0.046, the neural network 0.'
++  - 'Flows expose DDoS, scans, worms and botnets, while payload attacks stay hidden; the one-class SVM cannot properly define its class boundaries.'
+-
+----
+-kind: columns
+----
+-# How the other learners failed, and what flows cannot show
+-
+-### Failure modes
+-
+-- Decision tree: binary F 0.907 within CTU-13, yet it flagged every EDM flow as malicious.
+-- RBF SVM: binary F 0.046 within CTU-13, labelling most flows normal.
+-- Neural network: binary F 0 within CTU-13, underfitting on a few thousand samples per attack class.
+-- K-means: no way was found to check its clusters.
+-
+-|||
+-
+-### Limits and leads
+-
+-- Flows expose DDoS, scans, worms and botnets; attacks carried in the payload stay hidden.
+-- Country of origin had little impact, which could be because the data came mostly from one country.
+-- KNN trained for a binary answer alone reached 0.986 within CTU-13 and 0.993 across, over a few runs.
+-- Finding labelled data was a problem during the experiments.
+----
+```
+
+### icfp-src-abstract
+
+```diff
+-title: 'Can an explicitly typed core language make the Eff optimising compiler less error-prone?'
++title: 'Can an explicitly typed core language make optimised Eff less error-prone?'
+-hook: 'Eff infers effect types through subtyping, so every source-to-source optimisation has to rebuild types; the abstract proposes an explicitly typed core language with row-polymorphic effects, based on the calculus of Links, as the intermediate language.'
++hook: 'The abstract proposes an explicitly typed core language with row-polymorphic effects, based on the calculus of Links.'
+-  plain: 'Writing every type down inside the compiler lets each optimisation step be checked quickly, where today the types are worked out again after every step.'
++  plain: 'Writing every type down inside the compiler lets each optimisation step be checked quickly, in place of re-inferring types.'
+-equation: 'C, D ::= A \,!\, \Delta, \qquad \Delta ::= \{\mathrm{Op}_1, \dots, \mathrm{Op}_n\}'
+-  - 'Types are functions $A \to C$, handlers $C \Rightarrow D$, type variables and polytypes $\forall\alpha.C$ over dirty types.'
++  - 'Types are functions $A \to C$, handlers $C \Rightarrow D$, type variables and polytypes over dirty types $A \,!\, \Delta$, $\Delta = \{\mathrm{Op}_1, \dots, \mathrm{Op}_n\}$.'
+```
+
+### icfp-src-poster
+
+```diff
+-title: 'Can an explicitly typed core language with row-based effects make Eff''s optimising rewrites less error-prone?'
++title: 'Can explicit types with row-based effects make Eff''s rewrites less error-prone?'
+-hook: 'The poster introduces an explicitly typed core language with row-based effects for Eff, compares optimised Eff with regular OCaml, Multicore OCaml, Handlers in Action and Eff directly in OCaml, and shows a function-specialisation rewrite that has to handle the types of its copy of a function.'
++hook: 'The poster compares optimised Eff with regular OCaml, Multicore OCaml, Handlers in Action and Eff directly in OCaml.'
+-  plain: 'Effect handlers carry a runtime penalty, so the compiler rewrites them away; each rewrite has to keep the program typable, and explicit types in the core language make that less error-prone.'
++  plain: 'Handlers carry a runtime penalty, so the compiler rewrites them away; explicit core-language types keep each rewrite typable.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'Function specialisation copies a recursive function and brings the handler inside its body.'
++  - 'Function specialisation copies a recursive function, types included, and brings the handler inside its body.'
+-  - 'The new core language builds on the calculus of Links, with a row-polymorphic type-and-effect system.'
+-  - 'Optimisations still need to be added for edge cases.'
++  - 'The core builds on the calculus of Links, with a row-polymorphic type-and-effect system; optimisations still need adding for edge cases.'
+```
+
+### masters-algebraic-subtyping
+
+```diff
+-title: 'Can Dolan''s algebraic subtyping carry effect information and keep its properties?'
++title: 'Can Dolan''s algebraic subtyping carry effects and keep its properties?'
+-hook: 'Subtyping in Eff leaves unsolved constraints that made its optimising compiler fragile; EffCore extends Dolan''s algebraic subtyping with dirts built as a lattice of operations, so constraints are solved during inference and principal types survive.'
++hook: 'EffCore extends algebraic subtyping with dirts built as a lattice of operations, so constraints are solved during inference.'
+-  plain: 'The checker folds its side conditions into the types themselves, with "either" and "both" types, for effects as well as values.'
++  plain: 'The checker folds its side conditions into the types, with "either" and "both" types, for effects as well as values.'
+-  - { label: 'Stage', value: 'published' }
+-equation: '\Delta ::= \mathrm{Op} \mid \delta \mid \emptyset \mid \Delta_1 \sqcap \Delta_2 \mid \Delta_1 \sqcup \Delta_2, \qquad C ::= A \,!\, \Delta'
+-  - 'Dirts mirror types: operations, dirt variables, empty, intersection and union, under distributive-lattice equations.'
+-  - 'Polar types put intersections on inputs and unions on outputs; biunification solves each constraint as it arises.'
+-  - 'Type-&-effect automata extend type automata, so standard DFA minimisation simplifies types and effects together.'
++  - 'Dirts $\Delta ::= \mathrm{Op} \mid \delta \mid \emptyset \mid \Delta_1 \sqcap \Delta_2 \mid \Delta_1 \sqcup \Delta_2$ mirror types, under distributive-lattice equations.'
++  - 'Polar types: intersections on inputs, unions on outputs; biunification solves each constraint; type-&-effect automata allow DFA minimisation.'
+-  - 'Proved: instantiation, weakening, substitution, soundness by progress and preservation, principal inferred types.'
++  - 'Proved: instantiation, weakening, substitution, soundness by progress and preservation, principal inferred types; several proofs lean on Dolan''s.'
+-  - 'Parser and Queens are slower, 27387.7 and 6402.7 against 1177.2 and 753.5, without type simplification.'
+-  - 'A program standard Eff rejects is typed in EffCore through a union return type.'
++  - 'Parser and Queens are slower, 27387.7 and 6402.7 against 1177.2 and 753.5, without type simplification; growing types as the cause is a hypothesis.'
++  - 'A program standard Eff rejects is typed in EffCore through a union return type; biunification on the automata is not built.'
+-
+----
+-kind: columns
+----
+-# What the inferred types look like, and what is left open
+-
+-### Loop program types
+-
+-- Subtyping: the state handler carries five constraints, $\delta_1 \leqslant \delta_3$, $\delta_1 \leqslant \delta_2$ and three $\delta = \top$.
+-- EffCore unsimplified: the test function takes an intersection of 16 type variables with int.
+-- EffCore simplified by hand: $\mathrm{int} -(\mathrm{Get} \sqcup \mathrm{Put}) \to \mathrm{int}$, matching subtyping with no constraints left.
+-- Intersections sit on inputs and unions on outputs, as the polarity rule requires.
+-
+-|||
+-
+-### What Eff still lacks
+-
+-- Simplification is not implemented in Eff; growing types as the cause of the Parser and Queens slowdown is a hypothesis.
+-- Several proofs lean on Dolan's and are less rigorous than planned.
+-- Biunification run directly on type-&-effect automata is not built.
+-- An optimising compiler free of unsolved constraints is the next step.
+----
+```
+
+### masters-eeg-infotheory
+
+```diff
+-title: 'How much information does one cortical region share between abstract and concrete words?'
++title: 'How much information do abstract and concrete words share in one region?'
+-hook: 'Scalp EEG links are inflated by volume conduction, so the thesis measures entropy, mutual information and interaction information on source-reconstructed activity, with a Python framework built for it.'
++hook: 'Entropy, mutual information and interaction information on source-reconstructed activity, with a Python framework built for it.'
+-  - { label: 'Stage', value: 'published' }
+-equation: 'I(\mathrm{Abs},\mathrm{Con},\mathrm{Rest}) = I(\mathrm{Abs},\mathrm{Con}) - I(\mathrm{Abs},\mathrm{Con} \mid \mathrm{Rest})'
+-  - 'Data delivered source-reconstructed with sLORETA from 128-channel EEG on 600 Dutch nouns, cut to four regions active for both word classes.'
+-  - 'Equal-width binning with 90 bins, from the Freedman-Diaconis rule and an entropy curve that levels off near 100.'
+-  - 'Every measure is a sum of joint entropies over numpy histograms: mutual information, conditional MI, interaction information.'
++  - 'Source-reconstructed with sLORETA (128-channel EEG, 600 Dutch nouns, four regions); 90 equal-width bins from Freedman-Diaconis and an entropy curve.'
++  - '$I(\mathrm{Abs},\mathrm{Con},\mathrm{Rest}) = I(\mathrm{Abs},\mathrm{Con}) - I(\mathrm{Abs},\mathrm{Con} \mid \mathrm{Rest})$, every measure a sum of joint entropies over numpy histograms.'
+-  - 'The three-way term is -1 bit against 2 to 3 bits for $I(\mathrm{Abs},\mathrm{Con})$: rest adds synergy.'
+-  - 'Per subject, 10 trials leave most of the 90 bins empty; from 80 trials on the curves are clear.'
++  - 'The three-way term is -1 bit against 2 to 3 bits for $I(\mathrm{Abs},\mathrm{Con})$: rest adds synergy, hard to interpret.'
++  - 'Per subject, 10 trials leave most of the 90 bins empty, from 80 on the curves are clear; directed information is derived but not computed.'
+-
+----
+-kind: columns
+----
+-# What the measures show, and what is left open
+-
+-### Reading the measures
+-
+-- The results agree across all four regions; the figures show one.
+-- A Venn picture predicts +1 bit for the three-way term; the joint entropy is smaller than drawn, so the sign flips.
+-- Negative interaction information marks synergy and is hard to interpret.
+-- With 90 bins and 262 trials per subject, about 3 trials fall in each bin.
+-
+-|||
+-
+-### Measures still to compute
+-
+-- Directed information is derived but not computed.
+-- No comparison with Granger causality or another connectivity measure.
+-- Total correlation and dual total correlation are proposed as non-negative alternatives.
+-- The framework needs more measures and a clean-up before release as a package.
+----
+```
+
+### abstract-bci-meeting-2021
+
+```diff
+-title: 'Can a causal-discovery network seed a graph process model of directed links between EEG sources?'
++title: 'Can a causal-discovery network seed a graph model of EEG source links?'
+-hook: 'What scalp electrodes record is a mix of many brain sources; the abstract proposes finding directed links with an attention network and refining them in a Causal Graphical Process Model, checked on one simulated network.'
++hook: 'The abstract finds directed links with an attention network and refines them in a Causal Graphical Process Model.'
+-  plain: 'A network proposes who influences whom, a graph model fits how strongly, and a made-up brain network with known answers checks the result.'
++  plain: 'A network proposes who influences whom, a graph model fits how strongly, and a made-up network with known answers checks it.'
+-  - { label: 'Stage', value: 'published' }
+-equation: 'x_2(n) = 0.7\,x_2(n-1) - 0.5\,x_2(n-2) + 0.2\,x_1(n-1) + 0.25\,x_3(n-1) + w_2(n)'
+-  - 'The Temporal Causal Discovery Framework, an attention-based CNN with a causal validation step, proposes the causal links.'
+-  - 'Those links are the skeleton solution of a Causal Graphical Process Model.'
+-  - 'Simulation chain: sources with a set pattern, noise sources, forward model, sensor noise, inverse model, then the estimate.'
++  - 'The Temporal Causal Discovery Framework, an attention-based CNN, proposes the links that skeleton a Causal Graphical Process Model.'
+-  - 'Estimated $x_1$: own lags 0.5 and $-0.4$; terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$ and $0.2\,x_2(n-1)$.'
+-  - 'Estimated $x_2$: own lags 0.77 and $-0.28$, from $x_1$ 0.18 and from $x_3$ 0.31; estimated $x_3$: own lag 0.8.'
++  - 'True $x_2$: own lags 0.7, $-0.5$, from $x_1$ 0.2, from $x_3$ 0.25; estimated own lags 0.77, $-0.28$, from $x_1$ 0.18, from $x_3$ 0.31.'
++  - 'Estimated $x_1$: own lags 0.5 and $-0.4$; terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$ and $0.2\,x_2(n-1)$; estimated $x_3$: own lag 0.8.'
+```
+
+### source-localization
+
+```diff
+-title: 'Can screening the lead field with sparse Bayesian learning make eLORETA sparse and keep its signals?'
++title: 'Can sparse Bayesian screening of the lead field make eLORETA sparse?'
+-hook: 'eLORETA localizes well but spreads current smoothly over the cortex; Sparse eLORETA first screens the lead field with Structured Sparse Bayesian Learning, then runs eLORETA on the dipoles that remain.'
++hook: 'Sparse eLORETA screens the lead field with Structured Sparse Bayesian Learning, then runs eLORETA on the rest.'
+-  - { label: 'Stage', value: 'published' }
+-equation: 'P = \mathrm{eLORETA}\big(HM_{:,\,\mathcal{I}},\ \gamma\big), \qquad \mathcal{I} = \mathrm{smooth}\big(\mathrm{SSBL}(S_{vv}, HM),\ \kappa\, d\big)'
+-  - 'SSBL, taken from BC-VARETA, reads the data covariance and the head model and returns the dipoles likely to be active.'
+-  - 'A smoothing step on the cortex mesh prunes to a fraction $\kappa$ of all dipoles; the kept columns form a reduced lead field.'
++  - 'SSBL, from BC-VARETA, returns the dipoles likely to be active; smoothing on the cortex mesh prunes to a fraction $\kappa$, Pareto point about 0.08.'
+-  - 'Correlation with the true sources, far superficial, pink noise: LCMV 0.9867, eLORETA 0.9537, Sparse eLORETA 0.9234.'
+-  - 'Spatial spread drops from 199.47 to 113.16 (far superficial) and 9239.1 to 175.34 (far deep); BC-VARETA reaches 113.89 and 4.48.'
+-  - 'Close deep dipoles are hardest: correlations 0.8383, 0.6297 and 0.5991.'
+-  - 'Seconds per run: eLORETA 0.3567, Sparse eLORETA 1.0459, BC-VARETA 68.0538.'
++  - 'Correlation, far superficial, pink noise: LCMV 0.9867, eLORETA 0.9537, Sparse eLORETA 0.9234; close deep dipoles hardest: 0.8383, 0.6297, 0.5991.'
++  - 'Spread 199.47 to 113.16 (far superficial), 9239.1 to 175.34 (far deep); BC-VARETA 113.89, 4.48. Seconds: eLORETA 0.3567, ours 1.0459, BC-VARETA 68.0538.'
++  - 'Cuban EEG: no notable differences from BC-VARETA. Imagined right-hand movement: ERD in contralateral M1 and bilateral VLPFC, ERS in DLPFC.'
+-
+----
+-kind: project
+-title: 'Choosing the sparsity, and the real recordings'
+-hook: 'Correlation rises and spread grows with $\kappa$ until both level off at 0.12; the Pareto point at about 0.08 is used in the simulation and on the Cuban set.'
+-panels:
+-  - { figure: sparsity-acc-spread_norm.png, caption: 'Average correlation and complement of normalized spread against $\kappa$', explain: 'The Pareto-optimal solution is at the intersection, $\kappa \approx 0.08$, where neither metric improves without the other worsening.' }
+-results:
+-  - 'Cuban resting EEG, 300 bootstrap localizations: no notable differences between Sparse eLORETA and BC-VARETA, and the source space reduction shows against eLORETA.'
+-  - 'Imagined right-hand movement, subject ay: ERD in contralateral M1 and bilateral VLPFC, ERS in DLPFC, angular gyrus and superior PPC.'
+-  - 'There BC-VARETA finds only a few sources, and LCMV marks nearly all as ERS with no clusters.'
+-  - 'LCMV yields the best simulated correlation yet its dipoles are dispersed; some sources were not accurately located while their signals still correlated well.'
+----
+```
+
+### volga-finger-trajectories
+
+```diff
+-hook: 'Motor BCIs still lack control of individual fingers; the abstract fits Block-Term Tensor Regression to sensorimotor ECoG and predicts thumb, index and little-finger flexion and extension.'
++hook: 'The abstract fits Block-Term Tensor Regression to sensorimotor ECoG and predicts flexion and extension of three fingers.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'The abstract credits the automatic choice of parameters with increased flexibility and interpretability.'
+-  - 'One subject; flexions and extensions of three fingers.'
++  - 'The abstract credits the automatic choice of parameters with increased flexibility and interpretability; one subject, three fingers.'
+```
+
+### block-term-tensor-regression
+
+```diff
+-title: 'Can block-term tensor regression choose its own ranks and still decode single fingers from ECoG?'
+-sub: 'Single finger trajectory prediction from intracranial brain activity using Block-Term Tensor Regression with fast and automatic component extraction'
+-hook: 'Multiway decoders fit the space, frequency and time structure of ECoG but need ranks found by costly cross-validation; BTTR extracts each block with ranks chosen by BIC and deflates, so only the number of blocks is cross-validated.'
++title: 'Can block-term tensor regression choose its own ranks and decode fingers?'
++sub: 'Single finger trajectory prediction from intracranial activity by automatic BTTR'
++hook: 'BTTR extracts each block with ranks chosen by BIC and deflates, so only the number of blocks is cross-validated.'
+-  plain: 'The model cuts the brain data into a few blocks, each matched to the movement and each choosing its own size, so nobody tunes it by hand.'
++  plain: 'The model cuts the brain data into a few blocks that each choose their own size, so nobody tunes it by hand.'
+-  - { label: 'Stage', value: 'published' }
+-equation: '\underline{\mathbf{X}} = \sum_{k=1}^{K} \underline{\mathbf{G}}_k \times_1 \mathbf{t}_k \times_2 \mathbf{P}_k^{(2)} \cdots \times_N \mathbf{P}_k^{(N)} + \underline{\mathbf{E}}, \qquad \mathbf{y} = \sum_{k=1}^{K} \mathbf{t}_k b_k + \mathbf{f}'
+-  - 'mPSTD: a sparse Tucker decomposition of the ECoG-finger cross-covariance, pruned with a threshold $\tau$.'
+-  - 'ACE picks SNR and $\tau$ by BIC; ACCoS then keeps only the components that raise the R-squared with the finger.'
+-  - 'BTTR deflates block by block; gBTTR averages noisy refits of each block, a ridge-like guard against overfitting.'
+-  - 'Input tensor: samples by channels by 8 bands by 10 time points, from 1 s before each trial onset.'
++  - 'mPSTD: sparse Tucker of the ECoG-finger cross-covariance, pruned by $\tau$; ACE picks SNR and $\tau$ by BIC; ACCoS keeps components raising R-squared.'
++  - 'BTTR deflates block by block; gBTTR averages noisy refits of each block; input: 8 bands by 10 time points from 1 s before each trial onset.'
+-  - 'The competition winner, amplitude-modulation regression, gets 0.42, 0.36 and 0.46; LSTM gets 0.54, 0.39 and 0.62.'
+-  - 'Training takes about 3 min (ACE-BTTR) and 8 min (ACCoS-BTTR) against about 14 h for cross-validated HOPLS.'
+-  - 'Synthetic tensors: mPSTD reaches $C1 = 1$ against 0.81 for standard PSTD, and ACE sets SNR and $\tau$ with no manual tuning.'
++  - 'Competition winner (AM regression) 0.42, 0.36, 0.46; LSTM 0.54, 0.39, 0.62; LightGBM: better subject 1, worse 2, equal 3 (0.67 against 0.6775).'
++  - 'Training about 3 min (ACE-BTTR), 8 min (ACCoS-BTTR) against about 14 h for HOPLS; synthetic: mPSTD $C1 = 1$ against 0.81 for PSTD.'
+-
+----
+-kind: project
+-title: 'Where BTTR stands against the other decoders'
+-hook: 'On test data ACCoS-gBTTR performs better than ACE-gBTTR and HOPLS for subject 3; against the Riemannian LightGBM decoder ACE-BTTR performs better for subject 1, worse for subject 2 and equally for subject 3 (0.67 against 0.6775).'
+-panels:
+-  - { figure: image10.png, caption: 'Predicted ring-finger flexion of subject 1 against the data glove', explain: 'Actual and predicted flexion amplitudes (z-scores) over time; of the BTTR versions only the generalized gBTTR is shown.' }
+-results:
+-  - 'On test data BTTR and gBTTR do not differ significantly; on training data gBTTR scores lower, so it seemingly limits overfitting, mainly for ACCoS-BTTR.'
+-  - 'ACE-BTTR differs significantly from LSTM, AM, RF and LARS on the average for every subject; per finger, thumb and index show no significant difference to LSTM.'
+-  - 'The ring finger is left out of the averages, since it flexes along with the middle or little finger.'
+-  - 'BTTR still cross-validates the number of blocks $K$.'
+----
+```
+
+### connectivity-iris
+
+```diff
+-title: 'Can neural networks estimate directed connectivity between reconstructed EEG sources as well as Granger causality?'
++title: 'Can neural networks match Granger causality on directed EEG connectivity?'
+-hook: 'Granger-type estimators assume linearity and stationarity that EEG breaks; three networks (TCDF, LSTM-NUE and a proposed Conv2D) are set against time-reversed Granger causality on simulated sources reconstructed with eLORETA.'
++hook: 'TCDF, LSTM-NUE and a proposed Conv2D against time-reversed Granger causality on simulated sources.'
+-  purpose: 'Tell which brain region drives which from EEG traced back into the brain, without assuming the links are linear.'
+-  plain: 'Train a network to predict one region from the others; if leaving a region out makes the prediction worse, that region drives it.'
++  purpose: 'Tell which brain region drives which from EEG, without assuming the links are linear.'
++  plain: 'Train a network to predict one region from the others; a region whose removal worsens it drives that region.'
+-  - { label: 'Data', value: 'simulation, New York Head, 108 electrodes' }
+-  - { label: 'Stage', value: 'published' }
+-equation: '\mathrm{NNGC} = \mathrm{err}_{\mathrm{reduced}} - \mathrm{err}_{\mathrm{full}}'
++  - { label: 'Data', value: 'simulation, New York Head' }
+-  - 'Three sources over 1500 steps, pink-noise background, SNR 0.9 at sources and electrodes, eLORETA with $\gamma = 0.01$.'
+-  - 'Far-superficial and far-deep dipole placements; ground truth 2 adds a sender that moves over 1004 iterations.'
+-  - 'LSTM-NUE picks informative lags, then scores each link by the loss rise when its source is dropped.'
+-  - 'Baseline: conservative time-reversed Granger causality (TRGC), model order 2, FDR-corrected $\alpha = 0.05$.'
++  - 'Three sources, pink noise, SNR 0.9, eLORETA; ground truth 2 adds a moving sender.'
++  - 'LSTM-NUE scores links by $\mathrm{err}_{\mathrm{reduced}} - \mathrm{err}_{\mathrm{full}}$; baseline: time-reversed Granger (TRGC), order 2.'
+-  - 'Ground truth 1, median sensitivity: TRGC 1, LSTM-NUE 0.67, Conv2D with two predictors 0.67, TCDF 0.33.'
+-  - 'F1 far-superficial: TRGC and Conv2D 0.73, LSTM-NUE 0.70, TCDF 0.40; far-deep: TRGC 1, LSTM-NUE 0.75, Conv2D 0.47.'
+-  - 'Conv2D with three predictors collapses to sensitivity 0.13 and precision 0.40.'
+-  - 'TRGC repeats two false positives in the far-superficial case, where its precision falls to 0.58.'
++  - 'Ground truth 1 median sensitivity: TRGC 1, LSTM-NUE 0.67, Conv2D 0.67, TCDF 0.33; far-deep F1: TRGC 1, LSTM-NUE 0.75.'
++  - 'Ground truth 2: only LSTM-NUE and TRGC detect the link; precision TRGC 0.71, 0.70, LSTM-NUE 0.37, 0.43.'
++  - 'Every result is on simulated sources; dipole placement shows no significant effect.'
+-
+----
+-kind: columns
+----
+-# Ground truth 2 and the limits of the networks
+-
+-### One moving sender
+-
+-- Only LSTM-NUE and TRGC detect the single true link, both with sensitivity 1.
+-- Precision: TRGC 0.71 and 0.70, LSTM-NUE 0.37 and 0.43 (far-superficial, far-deep); the gap is significant.
+-- F1: TRGC 0.79 in both placements, LSTM-NUE 0.53 and 0.60.
+-- TCDF and both Conv2D models detect no connection at all.
+-
+-|||
+-
+-### Simulated sources and run cost
+-
+-- Every result is on simulated sources; real EEG is the next test.
+-- One dataset trains in 1048 s for Conv2D with two predictors.
+-- The networks vary more across runs than TRGC, most of all in the far-deep placement.
+-- Dipole placement shows no significant effect, which the authors call counterintuitive.
+----
+```
+
+### extended-bttr-note
+
+```diff
+-title: 'Can one tensor regression predict all five fingers at once, coactivations included?'
+-sub: 'Finger movement and coactivation predicted from intracranial brain activity using extended Block-Term Tensor Regression'
+-hook: 'BTTR predicts one scalar, so each finger needs its own model and what the fingers share is lost; eBTTR regresses a fingers matrix on the ECoG tensor block by block, with ranks still chosen automatically by ACE.'
++title: 'Can one tensor regression predict all five fingers at once?'
++sub: 'Finger movement and coactivation predicted from intracranial activity using extended BTTR'
++hook: 'eBTTR regresses a fingers matrix on the ECoG tensor block by block, with ranks still chosen automatically by ACE.'
+-  - { label: 'Data', value: 'BCI Competition IV dataset 4, 3 subjects' }
+-  - { label: 'Stage', value: 'published' }
+-equation: '\mathbf{Y} = \sum_{k=1}^{K} \mathbf{t}_k b_k \mathbf{q}_k^{T} + \mathbf{F}, \qquad \mathbf{w}_k = \big(\mathbf{P}_k^{(N)} \otimes \cdots \otimes \mathbf{P}_k^{(2)}\big)\,\mathrm{vec}(\underline{\mathbf{G}}_k)'
++  - { label: 'Data', value: 'BCI Competition IV, 3 subjects, 8 bands x 10 bins' }
+-  - 'ACE decomposes the cross-covariance of ECoG tensor and finger matrix with mPSTD, initialised by HOOI, and picks SNR and $\tau$ by BIC.'
+-  - 'Each block yields a score $\mathbf{t}_k$ and a finger loading $\mathbf{q}_k$; tensor and fingers are deflated before the next block.'
+-  - 'Tensor: 61, 46 and 63 curated channels by 8 bands by 10 bins; the glove is shifted one sample for its 37 ms lag.'
+-  - 'Only the number of blocks $K$ is set by 5-fold cross-validation.'
++  - 'ACE decomposes the ECoG-finger cross-covariance with mPSTD, initialised by HOOI, and picks SNR and $\tau$ by BIC; only $K$ is cross-validated.'
++  - 'Each block yields a score $\mathbf{t}_k$ and a finger loading $\mathbf{q}_k$; $\mathbf{Y} = \sum_k \mathbf{t}_k b_k \mathbf{q}_k^{T} + \mathbf{F}$.'
+-  - 'eBTTR and BTTR differ significantly in the middle finger of subjects 1 and 2: 0.49 against 0.38 and 0.33 against 0.27.'
+-  - 'eBTTR and HOPLS differ significantly for subjects 1 and 2, mainly through the middle finger.'
+-  - 'Training takes about 5 min, against 3 min for BTTR and 14 h for HOPLS.'
++  - 'eBTTR and BTTR differ significantly in the middle finger of subjects 1 and 2 (0.49 against 0.38, 0.33 against 0.27); eBTTR also differs from HOPLS.'
++  - 'About 5 min against 3 min for BTTR and 14 h for HOPLS; coactivations most likely not encoded by the ECoG (S1, thumb cued: index 0.72 against 0.05).'
+-
+----
+-kind: project
+-title: 'What the multi-output model adds: the fingers that move along'
+-hook: 'Non-cued fingers move with the cued one, in part through hand and forearm tendon anatomy and the divergent connections from cortical to spinal motor neurons; the paper reports eBTTR predicting these coactivations as well as the cued trajectories.'
+-panels:
+-  - { figure: ebttr_fig.jpeg, caption: 'eBTTR: each block pairs a core and loadings for the ECoG tensor with a finger loading for $\mathbf{Y}$', explain: 'The tensor and the finger matrix are both rebuilt as a sum of $K$ blocks plus residuals $\mathbf{E}$ and $\mathbf{F}$.' }
+-results:
+-  - 'The supplement gives eBTTR and BTTR accuracies for every non-cued finger and notes a significant difference between them; subject 1, thumb cued: index 0.72 against 0.05.'
+-  - 'Hand-avatar replays show eBTTR and HOPLS decoding joint movements better than BTTR and amplitude modulation.'
+-  - 'Coactivations are present in the glove data but most likely not encoded by the ECoG.'
+-  - 'The paper still renders them: the outcome looks more natural and could add sensory information when approaching an object.'
+----
+```
+
+### fbttr-strategies
+
+```diff
+-title: 'Can block-term tensor regression be trained across clients that never pool their ECoG data?'
++title: 'Can block-term regression be trained across clients without pooling ECoG?'
+-hook: 'BTTR needs every recording in one place; FBTTR runs ACE at each client, has the server agree on one component count, and averages the block parameters every round.'
++hook: 'FBTTR runs ACE at each client, has the server agree one component count, and averages the block parameters every round.'
+-  - { label: 'Stage', value: 'published' }
+-equation: 'W^{(t)} = \frac{1}{\sum_k N_k} \sum_{k=1}^{K} N_k\, \Delta W_k^{(t-1)}'
+-  - 'Each subject''s recording is split into five clients of 40 s; all share one channel, band and time-bin layout (horizontal FL).'
+-  - 'Every client runs ACE; the server fixes one component count, taking the median when clients disagree (under 5% of rounds).'
+-  - 'Clients fit the block with F-mPSTD and deflate; the server takes the sample-weighted mean of their parameters.'
+-  - 'Tensor of 61, 46 and 63 channels by 8 bands by 10 bins; $\tau$ searched in [90, 100], SNR in [1, 50].'
++  - 'Five clients of 40 s per subject; every client runs ACE; the server takes the median count when they disagree.'
++  - 'Clients fit with F-mPSTD and deflate; $W^{(t)}$ is the sample-weighted mean; FedAdagrad, FedYogi, FedProx each tested against FedAvg (Holm-Bonferroni).'
+-  - 'Cued-finger mean r (ring excluded), FBTTR against eBTTR: 0.64/0.66, 0.48/0.48 and 0.68/0.66 for subjects 1 to 3.'
+-  - 'Subject 3 thumb: 0.76 for FBTTR against 0.71 for eBTTR.'
+-  - 'FBTTR differs significantly from HOPLS for subjects 1 and 2, mainly in the middle finger: 0.45 against 0.36, 0.32 against 0.26.'
+-  - 'FBTTR outperforms the non-multilinear models AM, RF, LARS, CNN and LSTM.'
++  - 'Mean r against eBTTR: 0.64/0.66, 0.48/0.48, 0.68/0.66; above HOPLS for subjects 1 and 2, and above AM, RF, LARS, CNN and LSTM.'
++  - 'Subject means, FedAvg/FedAdagrad/FedYogi/FedProx: 0.64/0.63/0.62/0.63, 0.48/0.47/0.45/0.48, 0.68/0.67/0.65/0.68.'
++  - 'Ten rounds about 5 min, 2-5 MB per round; limits: synchronisation overhead, heterogeneous data, no privacy-preserving mechanism yet.'
+-
+----
+-kind: project
+-title: 'Which aggregation strategy to use'
+-hook: 'FedAvg, FedAdagrad, FedYogi and FedProx run on the same five clients per subject; each is tested against FedAvg with paired t-tests over the five test blocks and Holm-Bonferroni correction.'
+-panels:
+-  - { figure: model.png, caption: 'FBTTR parameters for subject 1: the first 30 blocks (rows) by thumb to pinky (columns)', explain: 'The paper reads the smooth transitions across blocks for each finger as FedAvg yielding stable parameters without large fluctuations.' }
+-results:
+-  - 'Subject means, FedAvg/FedAdagrad/FedYogi/FedProx: 0.64/0.63/0.62/0.63, 0.48/0.47/0.45/0.48, 0.68/0.67/0.65/0.68.'
+-  - 'FedAvg performs comparably or better; FedYogi shows slightly reduced performance, FedProx nearly matches FedAvg, FedAdagrad sits in between.'
+-  - 'Ten rounds take about 5 min, against 3 min for BTTR and 14 h for HOPLS, sending 2-5 MB per round.'
+-  - 'Limits the paper states: synchronisation overhead, possible degradation on highly heterogeneous data, and no privacy-preserving mechanism yet.'
+----
+```
+
+### fermat
+
+```diff
+-title: 'Does federated block-term tensor regression hold up on brain signals and on clinical records?'
+-sub: 'Applying Federated Learning to Block-Term Tensor Regression for Decentralised Data Analysis of Biomedical Data'
+-hook: 'BTTR assumes one central dataset; FBTTR keeps the data at each client, lets every client run ACE, fixes a shared component count at the server and merges the blocks with FedAvg.'
++title: 'Does federated block-term regression hold up on brain and clinical data?'
++sub: 'Applying Federated Learning to Block-Term Tensor Regression for biomedical data'
++hook: 'Data stay at each client; ACE runs there, the server fixes the factor dimensions, and blocks merge with FedAvg.'
+-  - { label: 'Venue', value: 'IEEE FLTA 2025' }
+-  - { label: 'Data', value: 'BCI Competition IV, Fed-Heart-Disease, Fed-TCGA-BRCA' }
+-  - { label: 'Stage', value: 'published; extended version arXiv:2412.06815' }
+-equation: 'W^{(t)} = \frac{1}{\sum_k N_k} \sum_{k=1}^{K} N_k\, \Delta W_k^{(t-1)}'
++  - { label: 'Venue', value: 'IEEE FLTA 2025; extended version arXiv:2412.06815' }
++  - { label: 'Data', value: 'BCI Competition IV ECoG, two clinical sets' }
+-  - 'Every client runs ACE on its own data; the server returns SNR and $\tau$ so that all clients share one set of factor dimensions.'
+-  - 'Clients fit and deflate each block locally; the server averages the block parameters, weighted by client size.'
+-  - 'ECoG: tensor of 61, 46 and 63 channels by 8 bands by 10 bins; $K$ set by 5-fold cross-validation.'
+-  - 'Clinical: Fed-Heart-Disease (740 records, 4 centres) and Fed-TCGA-BRCA (1,088 patients, 6 centres), set against the FL4E baselines.'
++  - 'Every client runs ACE; the server returns SNR and $\tau$ so all share factor dimensions; blocks are averaged, weighted by client size.'
++  - 'ECoG: 61, 46 and 63 channels by 8 bands by 10 bins. Clinical: Fed-Heart-Disease (740 records, 4 centres), Fed-TCGA-BRCA (1,088, 6 centres), against FL4E.'
+-  - 'Fed-Heart-Disease: AUC 0.872 and accuracy 0.772, against 0.874 and 0.783 for centralized BTTR; the accuracy gap is not significant.'
+-  - 'FBTTR outperforms the FL4E fully federated, hybrid and centralized runs on Fed-Heart-Disease in absolute numbers, most comparisons significant.'
+-  - 'Fed-TCGA-BRCA: C-index 0.775 against 0.737 for centralized BTTR, a significant gain.'
++  - 'Fed-Heart-Disease: AUC 0.872 against 0.874 centralized, gap not significant; Fed-TCGA-BRCA: C-index 0.775 against 0.737, a significant gain.'
++  - 'Limits: overhead of model synchronisation, possible degradation on heterogeneous data, no specific privacy-preserving mechanism.'
+-
+----
+-kind: columns
+----
+-# The clinical case studies
+-
+-### Fed-Heart-Disease
+-
+-- Class imbalance across the four clients: 164/139, 163/98, 1/45 and 29/101 records of class 0/1.
+-- The hybrid FBTTR run is on par with the fully federated model and significantly outperforms the local runs of the smaller clients (accuracy 0.63 and 0.72).
+-- The paper suggests that smaller clients with imbalanced data may benefit more from joining federation than from working alone.
+-- The paper notes that the larger clients can lose performance by joining federation: alone they reach AUC 0.89 and 0.92.
+-
+-|||
+-
+-### Fed-TCGA-BRCA, and the limits the paper states
+-
+-- FBTTR performs significantly better than centralized BTTR, which the paper reads as FBTTR leveraging the federated data.
+-- FBTTR implements only the FedAvg equivalent; FL4E's FedOpt and FedProx runs serve as the comparison.
+-- Limits: overhead of model synchronisation and possible degradation with highly heterogeneous data.
+-- No specific privacy-preserving mechanism is part of this work.
+----
+```
+
+### go-bttr
+
+```diff
+-title: 'Can one decoder track sign-language finger flexions by choosing, block by block, which fingers to regress together?'
+-sub: 'Decoding Sign Language Finger Flexions from high-density electrocorticography using Graph-Optimized Block Term Tensor Regression'
+-hook: 'BTTR decodes each finger alone and eBTTR all five jointly, with single-finger accuracy that can lapse as blocks are added; Go-BTTR runs a Causal Graph Process before each block and sends linked fingers to an eBTTR block, the rest to BTTR blocks.'
++title: 'Can one decoder choose, block by block, which fingers to regress together?'
++sub: 'Decoding sign language finger flexions from high-density ECoG using Graph-Optimized BTTR'
++hook: 'Go-BTTR runs a Causal Graph Process before each block; linked fingers go to an eBTTR block, the rest to BTTR blocks.'
+-  - { label: 'Data', value: 'Utrecht (subjects 2 to 5) and Leuven (2) ECoG patients' }
+-  - { label: 'Stage', value: 'published' }
+-equation: 'x[k] = w[k] + \sum_{i=1}^{M} \Big( \sum_{j=0}^{i} c_{ij} A^{j} \Big)\, x[k-i]'
++  - { label: 'Data', value: 'Utrecht and Leuven ECoG patients' }
+-  - 'Before each block, CGP fits a graph autoregression to the finger trajectories; links above 0.08 join fingers, the threshold at which CGP reconstructs the signal with at least 95% accuracy.'
+-  - 'Linked fingers share one eBTTR block, unlinked fingers get one BTTR block each; all deflate before the next CGP.'
+-  - 'Tensor: channels by 16 features (15 gamma bands from 60 to 130 Hz plus the LMP) by 10 time bins.'
+-  - 'Split 60/20/20 into training, validation (choosing $K$) and test; Wilcoxon tests over five test blocks.'
++  - 'Before each block a CGP links fingers above 0.08; linked fingers share one eBTTR block, the rest one BTTR block each; all deflate.'
++  - 'Tensor: channels by 15 gamma bands (60-130 Hz) plus the LMP by 10 time bins; split 60/20/20; Wilcoxon tests over five test blocks.'
+-  - 'Utrecht, 4 ASL letters, subjects 2 to 5: mean r over all fingers 0.73 for Go-BTTR, 0.719 for eBTTR, 0.70 for BTTR.'
+-  - 'Utrecht subject 5 pinky: 0.82 against 0.80 for eBTTR and 0.72 for BTTR.'
+-  - 'Leuven, 26 Flemish letters, 2 patients: 0.37, 0.34 and 0.33; eBTTR is significantly lower for subject 1''s middle finger and pinky, BTTR for subject 2''s index, ring and pinky.'
+-  - 'Leuven single-finger task: Go-BTTR beats eBTTR on index (0.55 against 0.45) and middle (0.48 against 0.12), and BTTR on ring (0.23 against 0.17).'
++  - 'Utrecht, 4 ASL letters, subjects 2 to 5: mean r 0.73 Go-BTTR, 0.719 eBTTR, 0.70 BTTR; subject 5 pinky 0.82 against 0.80 and 0.72.'
++  - 'Leuven, 26 Flemish letters, 2 patients: 0.37, 0.34, 0.33; single-finger Go-BTTR beats eBTTR on index (0.55 against 0.45) and middle (0.48 against 0.12).'
++  - 'Training 28 and 34 min against eBTTR 18 and 22, BTTR 13 and 16; Leuven below Utrecht, attributed to epidural against subdural grids.'
+-
+----
+-kind: project
+-title: 'How Go-BTTR assigns its blocks'
+-hook: 'As blocks are added, eBTTR''s index-finger correlation shows lapses in both datasets, while BTTR and Go-BTTR remain stable.'
+-panels:
+-  - { figure: gobttr.jpeg, caption: 'Go-BTTR: each iteration runs CGP on the five finger trajectories, then one block per finger group', explain: 'In iteration 1 fingers 1 and 2 are linked and share an eBTTR block; in iteration 2 no link remains and every finger gets a BTTR block.' }
+-results:
+-  - 'Training time, Utrecht and Leuven task 1: Go-BTTR 28 and 34 min, eBTTR 18 and 22, BTTR 13 and 16 (M1 MacBook Pro).'
+-  - 'Leuven correlations sit below Utrecht''s; the paper attributes this to epidural against subdural grids.'
+-  - 'Utrecht subject 1 is excluded because no electrode covered M1.'
+----
+```
+
+### abduction
+
+```diff
+-title: 'Can finger abduction, the sideways spreading of fingers, be decoded from ECoG as well as flexion?'
++title: 'Can finger abduction be decoded from ECoG as well as flexion?'
+-hook: 'Two patients with epidural grids performed cued flexions, the 26 letters of the Flemish sign alphabet and cued abductions, each decoded with eBTTR.'
++hook: 'Two epidural-grid patients performed cued flexions, the 26 Flemish sign letters and cued abductions, decoded with eBTTR.'
+-  - { label: 'Data', value: '2 patients, epidural ECoG, data glove' }
+-  - 'Features per electrode: 15 gamma bands (60-130 Hz) and the LMP, sampled at 10 time points over the last second.'
+-  - 'One eBTTR model per task, block count by 5-fold cross-validation; chance level from shuffled features (90th percentile).'
+-  - 'Baselines AM, RF, LARS, CNN and LSTM, Wilcoxon tests over five test blocks; subject 1 also flexes single fingers (150 trials).'
++  - 'Per electrode: 15 gamma bands (60-130 Hz), LMP, 10 time points over the last second; one eBTTR per task, blocks by 5-fold cross-validation.'
++  - 'Chance from shuffled features (90th percentile); baselines AM, RF, LARS, CNN, LSTM, Wilcoxon over five blocks; subject 1 also flexes single fingers.'
+-  - 'Abduction r, thumb-index to ring-pinky: 0.14, 0.32, 0.28, 0.22 (subject 1), 0.04, 0.36, 0.37, 0.37 (subject 2); flexion, subject 1: 0.31, 0.45, 0.12, 0.23, 0.16.'
+-  - 'Significantly above chance on every finger pair, better than or on par with the non-linear decoders; thumb abduction is lowest for both subjects, which the paper expects stems from gauging it with the glove.'
+-  - 'Trained on single fingers and tested on letters: significantly lower than trained on letters; the reverse seemed on par, which the paper reads as a call for all-finger decoders.'
+-  - 'Correlations came out lower than expected, attributed to epidural grids with lower amplitudes; limits: two facial-pain patients, somatomotor implants.'
++  - 'Abduction r, thumb-index to ring-pinky: 0.14, 0.32, 0.28, 0.22 (S1), 0.04, 0.36, 0.37, 0.37 (S2); flexion, S1: 0.31, 0.45, 0.12, 0.23, 0.16.'
++  - 'Significantly above chance on every finger pair, better than or on par with non-linear decoders; thumb lowest for both, expected from the glove.'
++  - 'Single-finger training on letters significantly lower; the reverse seemed on par. Correlations attributed to epidural grids; two facial-pain patients.'
+```
+
+### dongho-ecg-clustering
+
+```diff
+-title: 'Does the representation of an ECG, more than the clustering algorithm, decide whether clustering finds arrhythmia?'
+-sub: 'Which representation clusters? A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure'
+-hook: 'Five representations of PTB-XL strips, from raw samples to two frozen foundation models, are clustered by five algorithms to separate sinus rhythm from atrial fibrillation, and scored with chance-corrected ARI against a supervised ceiling.'
++title: 'Does the ECG representation, more than the algorithm, decide clustering?'
++sub: 'A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure'
++hook: 'Five representations of PTB-XL strips, five clusterers, scored by chance-corrected ARI against a supervised ceiling.'
+-  plain: 'Sixteen simple rhythm measurements sort normal rhythm from atrial fibrillation nearly as well as a model trained on ten million ECGs, and hold up better when data are lopsided or split across hospitals.'
++  plain: 'Sixteen rhythm measurements sort normal rhythm from AF nearly as well as a model trained on ten million ECGs.'
+-  - { label: 'Venue', value: 'Biomed. Signal Process. Control, accepted' }
++  - { label: 'Venue', value: 'BSPC 131, 111784' }
+-  - { label: 'Stage', value: 'accepted' }
+-equation: '\mathrm{ARI} = \frac{\mathrm{RI} - E[\mathrm{RI}]}{\max \mathrm{RI} - E[\mathrm{RI}]}'
+-  - 'Representations: raw flattening (1992-d), a conv autoencoder (32-d), 16 hand-crafted RR and P-wave features from lead II, HuBERT-ECG (768-d), ECGFounder (1024-d).'
+-  - 'Clusterers: $k$-means, Ward, spectral, GMM and HDBSCAN; ten seeds, patient-grouped, Yeo-Johnson power scaling.'
+-  - 'A supervised ceiling per representation (logistic regression and random forest) tells missing information apart from wrong geometry.'
+-  - 'Stress tests: a 9:1 SR:AF subsample, and federated $k$-means over ten simulated sites, IID and Dirichlet non-IID.'
++  - 'Representations: raw (1992-d), conv autoencoder (32-d), 16 hand-crafted features from lead II, HuBERT-ECG (768-d), ECGFounder (1024-d).'
++  - '$k$-means, Ward, spectral, GMM, HDBSCAN; ten seeds, patient-grouped; stress tests: a 9:1 SR:AF subsample, federated $k$-means over ten simulated sites.'
+-  - 'Best ARI: ECGFounder 0.885, hand-crafted 0.711, HuBERT-ECG 0.195, raw 0.013, conv-AE 0.008; only the last two intervals overlap.'
+-  - 'Supervised ceilings in the same order: 0.983, 0.942, 0.899, 0.519, 0.678; HuBERT-ECG holds the label yet clusters at 0.195.'
+-  - 'At 9:1 imbalance the hand-crafted features overtake ECGFounder: ARI 0.265 against 0.063.'
+-  - 'Non-IID federation: hand-crafted keeps 0.92 of its ARI (worst site draw 0.455), ECGFounder 0.69 (three draws at 0.132 or below).'
++  - 'Best ARI: ECGFounder 0.885, hand-crafted 0.711, HuBERT-ECG 0.195, raw 0.013, conv-AE 0.008; ceilings 0.983, 0.942, 0.899, 0.519, 0.678.'
++  - 'At 9:1 the hand-crafted features overtake ECGFounder, ARI 0.265 against 0.063; in non-IID federation they keep 0.92 of ARI against 0.69.'
++  - 'Robust scaling drops ECGFounder from 0.866 to 0.093; MIT-BIH N-vs-V: 21 morphology features 0.783. Limits: binary tasks, two foundation models.'
+-
+----
+-kind: project
+-title: 'Why the weak representations fail, and two cautions for practitioners'
+-hook: 'An axis fitted on other patients lifts HuBERT-ECG from 0.160 to 0.549 held-out ARI, so its label lies off the dominant axes; raw flattening moves from 0.000 to 0.001, so no such axis carries its label.'
+-panels:
+-  - { figure: dongho_silhouette.png, caption: 'Silhouette against ARI for every clustering solution; marker size is the largest-cluster fraction', explain: 'Raw flattening with Ward scores silhouette 0.81 at ARI 0.000, one cluster holding the cohort; the hand-crafted features score 0.28 at ARI 0.711.' }
+-results:
+-  - 'Scaler choice: hand-crafted mean ARI 0.629 standard, 0.606 power, 0.360 robust, 0.229 quantile; ECGFounder falls from 0.866 to 0.093 under robust.'
+-  - 'MIT-BIH N-vs-V beats: 21 morphology features reach 0.783, the conv-AE 0.127 at a 0.927 ceiling, raw beats 0.049.'
+-  - 'Cost per record: hand-crafted 28.3 ms and 364 MB, ECGFounder 434.7 ms and 1037.6 MB.'
+-  - 'Limits: binary tasks only, two foundation models, federation simulated on one dataset; ECGFounder sees upsampled 100 Hz (0.909 against 0.896 native).'
+----
+```
+
+### erp-signatures
+
+```diff
+-title: 'Do stimulus type and task structure change the ERP signatures of the N-Back task?'
++title: 'Do stimulus type and task structure change N-Back ERP signatures?'
+-hook: 'N-Back studies vary their stimuli and timing freely; nine variants crossing three stimulus types with three task structures test whether their N2 and P3 components can be compared at all.'
++hook: 'Nine variants crossing three stimulus types with three task structures test whether N2 and P3 can be compared.'
+-  purpose: 'Check whether brain responses to a working-memory test can be compared between labs that show different words, pictures or timings.'
++  purpose: 'Check whether brain responses to a working-memory test can be compared between labs that show different stimuli.'
+-  - { label: 'Stage', value: 'accepted' }
+-  - 'Three stimulus types (words, pictures, colours) crossed with three task structures (stimulus duration, ISI, response contingency).'
+-  - 'UCR: 36 participants doing 4 of the 9 variants each, so every variant has 16; the Leuven and Maribor sets are cut to 16.'
+-  - 'Whole-scalp cluster-based permutation tests on the N2 and P3 windows, widening an earlier midline-only analysis.'
+-  - 'Conditions are compared as independent groups of participant averages, which is conservative when the within-participant correlation is non-negative.'
++  - 'Words, pictures or colours crossed with stimulus duration, ISI or response contingency; UCR: 36 participants doing 4 of the 9 variants each, 16 per variant.'
++  - 'Whole-scalp cluster-based permutation tests on N2 and P3, conditions compared as independent groups, conservative for non-negative correlation.'
+-  - 'Changes in task structure shift the components less than the stimulus type does.'
+-  - 'N-Back ERP results are comparable only between studies with matched stimulus type.'
+-  - 'A re-check on the 8 participants held locally is a pipeline smoke test only: too few participants and a wrong trial definition.'
++  - 'Task structure shifts the components less than the stimulus type; results are comparable only between studies with matched stimulus type.'
++  - 'The re-check on 8 locally held participants is a pipeline smoke test only.'
+```
+
+### glassbox-decision-pipelines
+
+```diff
+-title: 'What happens to frozen ECG foundation models predicting one-year mortality when they are handed the patient''s age?'
+-sub: 'Transparent and Robust: Interpretable Inputs Improve Foundation Models in Mission-Critical Decision Pipelines'
+-hook: 'A gradient-boosted model over 165 named ECG features plus age is set against six frozen ECG foundation models under six corruptions and across two sites; the encoders never see age, and one age column changes the comparison.'
++title: 'What do frozen ECG foundation models gain from the patient''s age?'
++sub: 'Transparent and Robust: Interpretable Inputs Improve Foundation Models in Decision Pipelines'
++hook: 'A GBM over 165 named ECG features plus age against six frozen foundation models under six corruptions and two sites.'
+-  purpose: 'Check whether large pretrained ECG models predict who dies within a year better than a model built on named, readable measurements, also on noisy recordings.'
+-  plain: 'The large models do not keep the patient''s age in what they extract; adding the age as one extra number improves every one of them.'
++  purpose: 'Check whether large pretrained ECG models predict who dies within a year better than a model built on named measurements.'
++  plain: 'The large models do not keep the patient''s age in what they extract; adding it as one extra number improves every one of them.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'One-year all-cause mortality from one 12-lead ECG; 60/40 patient-level splits, prevalence 12.9% (MIMIC) and 4.3% (CODE-15).'
+-  - 'Named-feature model: gradient boosting over 165 named features (13 per lead, HRV, axis) plus age; every arm gets the same head.'
+-  - 'Encoders, frozen: ECGFounder, HuBERT-ECG, ECG-JEPA, xECG, ECG-FM, ST-MEM; six corruptions at three severities, applied to test data only.'
+-  - 'Paired DeLong intervals, TOST equivalence at a 0.02 AUROC margin fixed beforehand, five fits for sign stability.'
++  - 'One-year all-cause mortality from one 12-lead ECG, 60/40 patient-level splits; gradient boosting over 165 named features plus age; same head for every arm.'
++  - 'Encoders, frozen: ECGFounder, HuBERT-ECG, ECG-JEPA, xECG, ECG-FM, ST-MEM; paired DeLong, TOST at a 0.02 AUROC margin fixed beforehand.'
+-  - 'Gains are largest where the encoders lose most: HuBERT-ECG +0.113 under severe EMG and +0.160 under lead dropout, ECG-FM +0.117, xECG +0.119.'
+-  - 'At equal input the encoders lead in 28 of 28 settings; on CODE-15 under severe EMG, age alone scores 0.755 against 0.754 for the named model.'
++  - 'At equal input the encoders lead in 28 of 28 settings; named features without age lose everywhere. Limits: synthetic corruptions, one split, two datasets.'
+-
+----
+-kind: columns
+----
+-# The unequal-input comparison, and what did not hold
+-
+-### With age in the named arm only
+-
+-- CODE-15, severe EMG: the named arm holds 0.754 while ECG-JEPA falls from 0.812 to 0.614.
+-- MIMIC to CODE-15 transport: 0.772 against 0.755 clean, 0.753 against 0.687 under severe noise.
+-- Lead dropout reverses the order: the named arm falls to 0.677 and 0.745, ECG-JEPA holds 0.750 and 0.788.
+-- On MIMIC the severe-EMG difference, +0.010, covers zero and flips sign across fits; CODE-15 to MIMIC transport trails, 0.726 against 0.745 clean.
+-
+-|||
+-
+-### Dead ends and limits
+-
+-- Named features without age lose everywhere; a per-decision sufficiency certificate is near-empty at 4-13% prevalence.
+-- A named-feature novelty monitor detects corruption (AUROC up to 0.95) but predicts model errors at chance.
+-- Averaging the named and encoder predictions, both with age, gives no gain over the encoder with age.
+-- Synthetic corruptions, one fixed split, two datasets, one endpoint.
+----
+```
+
+### hcc-modality-poster
+
+```diff
+-title: 'Does a separate encoder head per MRI sequence group, over one shared backbone, predict HCC better than concatenating the sequences?'
++title: 'Does one encoder head per MRI sequence group predict HCC better?'
+-hook: 'Liver MRI comes as four physically different sequence groups; one network stem on their concatenation is set against a DINO-pretrained encoder head per group feeding one shared 3D ConvNeXt backbone.'
++hook: 'One stem on concatenated sequences against a DINO-pretrained encoder head per group feeding one shared 3D ConvNeXt.'
+-  - { label: 'Authors', value: 'A. Faes, M.M.J. Guichelaar, D.E. Bouman, S.M. van den Berg, M. Amir Haeri' }
++  - { label: 'Authors', value: 'A. Faes, M.M.J. Guichelaar, ..., M. Amir Haeri' }
+-  - { label: 'Stage', value: 'published' }
+-  - 'Four sequence groups per examination: DWI (b0 to b800), T1 in- and opposed-phase, T2 short and long TE, DCE (pre, arterial, delayed, venous).'
+-  - 'Each group has its own encoder head, pretrained with DINO on that group only and then frozen; contrastive views never cross groups.'
+-  - 'One 3D ConvNeXt backbone with the same weights runs once per group; the group embeddings are fused per time point.'
+-  - 'A Transformer encoder (4-6 layers, pre-LN, $\sqrt{t}$ positional encoding, CLS pooling) over the examinations gives P(HCC); AUROC over 5 folds and 3 seeds.'
++  - 'Four sequence groups per examination (DWI, T1-IOP, T2W, DCE); each has its own encoder head, pretrained with DINO on that group only and then frozen.'
++  - 'One 3D ConvNeXt, same weights, runs once per group, fused per time point; a Transformer over examinations gives P(HCC); AUROC over 5 folds, 3 seeds.'
+-  - 'All four groups: 0.844 AUROC with encoder heads, shared backbone and pretraining, against 0.772 for naive concatenation with pretraining (+0.072).'
+-  - 'Without pretraining the decomposition alone gives 0.787 against 0.734 (+0.053).'
+-  - 'Encoder heads mitigate the pretraining disparity: every group benefits from DINO pretrained per group; with naive concatenation the poster marks T1-IOP (0.720 to 0.690) and T2W (0.705 to 0.670) as degrading.'
+-  - 'Leaving one group out of the full system costs DWI 0.058, DCE 0.044, T1-IOP 0.028 and T2W 0.020 AUROC.'
++  - 'All four groups: 0.844 for heads, shared backbone and pretraining against 0.772 for concatenation (+0.072); without pretraining 0.787 against 0.734 (+0.053).'
++  - 'Single group: DWI 0.808, DCE 0.780, T1-IOP 0.753, T2W 0.738. With concatenation T1-IOP (0.720 to 0.690) and T2W (0.705 to 0.670) degrade.'
++  - 'Leaving one group out costs DWI 0.058, DCE 0.044, T1-IOP 0.028 and T2W 0.020 AUROC.'
+-
+----
+-kind: columns
+----
+-# Single sequence groups, cohort and training
+-
+-### One group at a time
+-
+-- Training with one group only: DWI 0.808, DCE 0.780, T1-IOP 0.753, T2W 0.738; all four combined 0.844.
+-- Multi-modal fusion provides a further gain over any single group.
+-- Encoder heads without pretraining: DWI 0.729, T1-IOP 0.731, T2W 0.714.
+-- Naive concatenation without and with pretraining: DWI 0.718 and 0.795, T1-IOP 0.720 and 0.690, T2W 0.705 and 0.670.
+-- DWI and DCE contribute most, in line with their clinical diagnostic value.
+-
+-|||
+-
+-### Cohort and training
+-
+-- Retrospective single-centre cohort from Medisch Spectrum Twente: about 240 patients, about 37 of them HCC-positive.
+-- AUROC over 5 folds and 3 seeds.
+-- Stage 1: each encoder head is pretrained with DINO on its group, then frozen.
+-- Stage 2: backbone and Transformer trained supervised on P(HCC); stage 3: the full system end to end, all parameters unfrozen.
+----
+```
+
+### hccnet-fl
+
+```diff
+-hook: 'HCCNet''s own ablation puts most of its gain in the label-free, self-supervised 3D backbone; component-aware federation (CAF) shares only that backbone and keeps the temporal Transformer, the head and every label at each site.'
++hook: 'HCCNet''s ablation puts its gain in the self-supervised backbone; CAF shares only that backbone, labels stay local.'
+-  purpose: 'Let hospitals train a liver-cancer warning model together on their MRI scans without any hospital sending out its patients'' scans or diagnoses.'
+-  plain: 'Hospitals share only the part of the model that learns what scans look like, which needs no diagnoses; each keeps its own part for the timing of its patients'' visits and the final prediction.'
++  purpose: 'Let hospitals train a liver-cancer warning model together on MRI scans without any hospital sending out scans or diagnoses.'
++  plain: 'Hospitals share only the part that learns what scans look like; each keeps its own part for visit timing and the final prediction.'
+-  - { label: 'Authors', value: 'A. Faes, M.M.J. Guichelaar, D.E. Bouman, S.M. van den Berg, M. Amir Haeri' }
++  - { label: 'Authors', value: 'A. Faes, M.M.J. Guichelaar, ..., M. Amir Haeri' }
+-  - { label: 'Cohort', value: 'Cirrhosis surveillance MRI: 243 patients, 37 HCC, 963 examinations' }
+-  - { label: 'Stage', value: 'accepted' }
++  - { label: 'Cohort', value: '243 patients, 37 HCC, 963 MRI examinations' }
+-  - 'Stage A: each site pretrains the 3D ConvNeXt backbone self-supervised on all its unlabelled scans; the server averages the backbones by sample count, 60 rounds of 1 local epoch.'
+-  - 'Stage B: the frozen shared backbone feeds a temporal Transformer encoder and head that each site trains on its own labels; labels and temporal parameters never leave the site.'
+-  - 'One single-centre cohort split by patient into 5 simulated silos, inside stratified 5-fold cross-validation; HCCNet-Pico (22.0M parameters, 13.8M in the backbone) on diffusion-weighted MRI.'
+-  - 'Compared with local-only, centralised, FedAvg, FedProx, FedBN and FedRep under one per-silo protocol, with AUPRC as the primary metric.'
++  - 'Sites pretrain the backbone on unlabelled scans, the server averages it, each site trains its own head; 5 simulated silos against FedAvg, FedProx, FedBN, FedRep.'
+-  - 'AUPRC 0.713 for CAF and 0.724 with local normalisation, against 0.677 for FedBN, the strongest baseline ($\Delta$ 0.036, 95% CI [0.011, 0.061], p = 0.006); centralised 0.744.'
+-  - 'At Dirichlet $\alpha$ = 0.1, where some silos hold no positives, worst-silo AUPRC is 0.566 for CAF against 0.274 for FedAvg and 0.280 for FedRep.'
+-  - 'Federating the encoder and personalising the backbone instead gives 0.574, below FedAvg''s 0.628.'
+-  - 'Per-round upload falls from 88.0 MB to 55.2 MB (37% less in total); CAF+FedBN lowers ECE from FedAvg''s 0.118 to 0.074.'
+-equation: '\theta^{(r+1)} = \sum_{k=1}^{K} \frac{n_k}{n}\,\theta_k^{(r)}'
++  - 'AUPRC 0.713 for CAF, 0.724 with local normalisation, against 0.677 for FedBN ($\Delta$ 0.036, 95% CI [0.011, 0.061], p = 0.006); centralised 0.744.'
++  - 'At Dirichlet $\alpha$ = 0.1 worst-silo AUPRC is 0.566 for CAF against 0.274 for FedAvg and 0.280 for FedRep.'
++  - 'Per-round upload falls from 88.0 MB to 55.2 MB; federating the encoder and personalising the backbone instead gives 0.574, below FedAvg''s 0.628.'
++  - 'Limits: silos simulated from one centre, 37 positives, backbone parameters sent in the clear, the released harness not re-run on the cohort.'
+-
+----
+-kind: columns
+----
+-# Heterogeneity axes, ablations and limits
+-
+-### Axes and ablations
+-
+-- Label skew: as $\alpha$ falls to 0.1, CAF mean AUPRC goes from 0.713 to 0.671 and FedAvg from 0.628 to 0.503.
+-- Cadence: CAF 0.718 on dense and 0.694 on sparse silos, worst silo 0.671; FedAvg 0.641, 0.583 and 0.547; FedBN worst silo 0.601.
+-- Dominant modality: worst-silo AUPRC 0.351 local-only, 0.408 FedAvg, 0.489 CAF.
+-- Federated supervised training without pretraining reaches 0.402; the federated self-supervised backbone alone reaches 0.701.
+-
+-|||
+-
+-### Simulated silos and the released harness
+-
+-- The silos are simulated from one centre; scanner field strength (1.5 T and 3 T) is not used as an axis.
+-- With 37 positives the worst-silo estimates carry the largest fold variance; at $\alpha$ = 0.1 on average 2.6 of 5 silos are evaluable.
+-- Backbone parameters are sent in the clear; secure aggregation and differential privacy are not applied.
+-- The harness in `code/` is an independent re-implementation of the pipeline that produced the published numbers, and has not been re-run on the cohort.
+----
+```
+
+### algebraic-subtyping
+
+```diff
+```
+
+### connectivity-motor-imagery
+
+```diff
+-title: 'Can an attention network and a graph process recover directed connectivity between reconstructed EEG sources?'
++title: 'Can an attention network and a graph process recover EEG source links?'
+-hook: 'Scalp EEG mixes activity from many sources; the draft fed a Temporal Causal Discovery Framework graph into a Causal Graph Process and validated it on one simulated three-source network before the journal paper was dropped.'
++hook: 'The draft fed a TCDF graph into a Causal Graph Process and validated it on one simulated three-source network.'
+-  plain: 'A neural network first guesses which regions talk to each other, and a graph model then fits how strongly, on signals traced back from the scalp into the brain.'
++  plain: 'A neural network first guesses which regions talk to each other, and a graph model then fits how strongly.'
+-  - { label: 'Stage', value: 'stopped' }
+-equation: 'x[k] = w[k] + \sum_{i=1}^{M} \Big( \sum_{j=0}^{i} c_{ij} A^j \Big)\, x[k-i]'
+-  - 'Causal Graph Process: an autoregressive model whose lag matrices are polynomials in one graph $A$, fit with $\ell_1$ penalties on $A$ and $c$.'
+-  - 'The Temporal Causal Discovery Framework, an attention CNN with causal validation, gives a first graph $\mu$; a term $\lambda_3 \lVert A - \mu \rVert_1$ ties the fit to it.'
+-  - 'The same network drops nodes with no incoming or outgoing link, which shortens the graph fit.'
++  - 'Causal Graph Process: $x[k] = w[k] + \sum_i (\sum_j c_{ij} A^j) x[k-i]$, lag matrices polynomial in one graph $A$, $\ell_1$ penalties on $A$ and $c$.'
++  - 'TCDF, an attention CNN with causal validation, gives a first graph $\mu$; $\lambda_3 \lVert A - \mu \rVert_1$ ties the fit to it; unlinked nodes are dropped.'
+-  - '3 brain sources and 500 noisy sources, SNR 0.9 at sources and at sensors, projected to the scalp and reconstructed.'
+-  - 'The New York Head Model serves as the forward model from brain sources to the scalp.'
++  - '3 brain sources and 500 noisy sources, SNR 0.9 at sources and at sensors, projected with the New York Head Model and reconstructed.'
++  - 'True: $x_1$ own lags 0.5, $-0.7$, from $x_2$ 0.25; $x_2$ 0.7, $-0.5$, from $x_1$ 0.2, $x_3$ 0.25; $x_3$ 0.8, no inputs.'
++  - 'Recovered: $x_1$ 0.5, $-0.4$, terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$, $0.2\,x_2(n-1)$; $x_2$ 0.77, $-0.28$, from $x_1$ 0.18, $x_3$ 0.31; $x_3$ 0.8.'
+-  - 'Its conclusion: the work shows the applicability of the Temporal Causal Discovery Framework on source-reconstructed scalp EEG.'
+-
+----
+-kind: columns
+----
+-# The simulated network and the coefficients the method recovered
+-
+-### Ground truth (Omidvarnia et al. 2011 pattern)
+-
+-- $x_1$: own lags 0.5 and $-0.7$; from $x_2$ at lag 1, 0.25.
+-- $x_2$: own lags 0.7 and $-0.5$; from $x_1$ 0.2 and from $x_3$ 0.25, both at lag 1.
+-- $x_3$: own lag 0.8; no inputs.
+-
+-|||
+-
+-### Recovered from reconstructed sources
+-
+-- $x_1$: own lags 0.5 and $-0.4$; terms $0.14\,x_2(n-1)$, $0.14\,x_3(n-2)$ and $0.2\,x_2(n-1)$.
+-- $x_2$: own lags 0.77 and $-0.28$; from $x_1$ 0.18 and from $x_3$ 0.31.
+-- $x_3$: own lag 0.8.
+----
+```
+
+### flkit
+
+```diff
+-title: 'How can health and life-science researchers be brought onto federated learning?'
+-sub: 'Development and Design of FLKit: A Structured Onboarding Toolkit for Federated Learning in Health and Life Sciences'
+-hook: 'FLKit treats the adoption of federated learning in health and life sciences as an onboarding and usability problem, and bundles environment setup, client and server orchestration, and worked examples.'
++title: 'How can health researchers be brought onto federated learning?'
++sub: 'FLKit: A Structured Onboarding Toolkit for Federated Learning in Health and Life Sciences'
++hook: 'FLKit treats federated-learning adoption as an onboarding problem, bundling setup, orchestration and worked examples.'
+-  plain: 'FLKit is a kit with set-up steps for the environment, the programs that orchestrate the clients and the server, and worked examples.'
++  plain: 'FLKit is a kit with environment set-up steps, programs that orchestrate clients and server, and worked examples.'
+-  - { label: 'Code', value: 'UHasselt-BiomedicalDataSciences/federated-learning-toolkit' }
+-  - { label: 'Stage', value: 'submitted' }
++  - { label: 'Code', value: 'federated-learning-toolkit' }
+-  - 'Environment setup for the participating sites.'
+-  - 'Client and server orchestration for a federated run.'
++  - 'Environment setup for the participating sites; client and server orchestration for a federated run.'
+```
+
+### chi-household-survival
+
+```diff
+-title: 'What happens when a broom, a fan, a vacuum cleaner and a mousetrap become the weapons of a room-sized game?'
++title: 'A broom, a fan, a vacuum cleaner and a mousetrap as room-game weapons'
+-hook: 'Household Survival is a floor-projected tower-defence game in which four tracked household objects fend off enemy bots; in RoomAlive players use touch, instrumented pointing devices or standard controllers, and iCon does not consider an object''s real-life purpose, while here each object''s virtual attributes represent its real-world function.'
+-tag: { class: design, text: 'Game prototype' }
++hook: 'A floor-projected tower-defence game in which four tracked household objects keep their real-world function.'
++tag: { class: design, text: 'Student Game Competition' }
+-  plain: 'You sweep enemies away with a real broom, blow them off with a real fan, suck them up with a real vacuum cleaner and catch them in a real mousetrap, while the game is projected on the floor.'
++  plain: 'You sweep, blow, suck up and trap enemies with real household objects while the game is projected on the floor.'
+-  - { label: 'Venue', value: 'CHI EA 2016, Student Game Competition, pp. 168-171' }
++  - { label: 'Venue', value: 'CHI EA 2016, pp. 168-171' }
+-  - { label: 'Stage', value: 'published' }
+-  - 'Reflective markers on each object; an OptiTrack motion-capture system tracks them as rigid bodies against the playing field.'
+-  - 'Two fixed rigid bodies mark the field extremities for calibration; an Android app fine-tunes the field and object calibration.'
+-  - 'A physics engine in a Unity game turns each object''s motion into its real-world effect; a ceiling-mounted short-throw projector draws the scene on the floor.'
++  - 'OptiTrack tracks reflective markers on each object; a physics engine in Unity turns its motion into its real-world effect, projected on the floor.'
+-  - 'Broom: drags bots precisely to a chosen spot. Fan: scatters them along the airflow, without fine control of direction.'
+-  - 'Vacuum cleaner: pulls nearby bots into the tube and destroys them. Mousetrap, built from K''nex: catches bots only while loaded, shown by a projected overlay.'
++  - 'Broom drags bots precisely; fan scatters them along the airflow; vacuum cleaner pulls them into the tube; K''nex mousetrap catches them only while loaded.'
+-  - 'Developed as a student project for a university-level course; it is still used in university courses as a teaching example.'
++  - 'Developed as a student project for a university course; it is still used in university courses as a teaching example.'
+```
+
+### chi-purpose-centric
+
+```diff
+-title: 'Should an everyday object used as a game controller do in the game what it does in real life?'
++title: 'Should a game controller do in the game what it does in real life?'
+-hook: 'Earlier work maps the affordances of an everyday object to an analogous digital input, a bottle cap to a knob; purpose-centric appropriation gives each object a virtual rendition that mimics its real-world purpose and function.'
+-tag: { class: design, text: 'Interaction concept' }
++hook: 'Purpose-centric appropriation gives each everyday object a virtual rendition that mimics its real-world purpose.'
++tag: { class: design, text: 'Student Game Competition concept' }
+-  - { label: 'Venue', value: 'CHI EA 2016, Student Game Competition, pp. 2744-2750' }
+-  - { label: 'Testbed', value: 'Household Survival, a room-sized tower-defence game' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Venue', value: 'CHI EA 2016, pp. 2744-2750' }
++  - { label: 'Testbed', value: 'Household Survival' }
+-  - 'Affordance-centric mapping, as in iCon, shows what can be done with an object; purpose-centric mapping also shows what the action will do in the game.'
+-  - 'Testbed weapons: a floor mop or broom, a pedestal fan, a vacuum cleaner and a K''nex mousetrap, each defending the players'' towers against spawning bots.'
+-  - 'Motion capture tracks the objects, a physics engine takes each object''s physical characteristics into account, and the scene is projected onto the floor.'
+-  - 'Design extensions: bottles and mugs pour and collect, a pen clicker draws boundaries and paths, an iron smooths terrain, a hair dryer blows and dries.'
++  - 'Affordance-centric mapping (iCon) shows what can be done with an object; purpose-centric mapping also shows what the action does in the game.'
++  - 'Testbed: a floor mop or broom, pedestal fan, vacuum cleaner and K''nex mousetrap; motion capture, a physics engine and floor projection.'
++  - 'Design extensions: bottles and mugs pour and collect, a pen clicker draws paths, an iron smooths terrain, a hair dryer blows and dries.'
+-  - 'No formal evaluation; usability, learnability and immersion against standard controllers are left to later studies.'
+-  - 'One game style, tower defence, and four objects were built.'
++  - 'No formal evaluation against standard controllers; one game style, tower defence, and four objects were built.'
+```
+
+### algebraic-effects-compilation
+
+```diff
+-title: 'Can programs written with algebraic effect handlers run as fast as hand-written OCaml?'
++title: 'Can algebraic effect handler code run as fast as hand-written OCaml?'
+-hook: 'Most handler-based programs are still much slower than hand-written code; an optimising compiler from Eff to OCaml removes handlers at compile time, guided by the type-and-effect system.'
++hook: 'An optimising compiler from Eff to OCaml removes handlers at compile time, guided by the type-and-effect system.'
+-  plain: 'The compiler rewrites the program so that the costly effect machinery disappears where it can, and turns the parts without side effects into plain code.'
++  plain: 'The compiler removes the costly effect machinery where it can and turns the side-effect-free parts into plain code.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'Source-to-source rewrite rules push handlers inward and drop them; each rule preserves observational equivalence (Theorem 4.1).'
+-  - 'Recursive functions are specialised for the handler applied to them; non-tail recursion is generalised over the return case, a selective CPS transform.'
+-  - 'Basic translation: effectful Eff computations become OCaml values of a free monad, with types preserved (Theorem 5.1).'
+-  - 'Purity-aware translation: computations with an empty effect set compile to plain OCaml, let in place of bind, also type-preserving (Theorem 6.2).'
++  - 'Rewrite rules push handlers inward and drop them (Theorem 4.1); recursive functions are specialised for their handler, a selective CPS transform.'
++  - 'Effectful Eff becomes OCaml free-monad values, types preserved (Theorem 5.1); empty-effect computations compile to plain OCaml (Theorem 6.2).'
+-  - 'Loop benchmarks: basic compilation is 25x to 50x slower than hand-written OCaml.'
+-  - 'Rewriting or purity-aware code alone has varying success in narrowing the gap; only both together are competitive with hand-written OCaml (1x to 1.5x), and they remove every trace of handlers and the free monad.'
+-  - 'N-Queens, all solutions: optimised Eff is consistently the fastest of the OCaml-based effect systems tested and competitive with hand-written OCaml.'
+-  - 'N-Queens, first solution: optimised Eff is 25-30% faster than Multicore OCaml, the closest competitor.'
+-equation: '\mathrm{handle}\ f\,v\ \mathrm{with}\ h \;\leadsto\; \mathrm{let\ rec}\ f''\,x = \mathrm{handle}\ c_f\ \mathrm{with}\ h\ \mathrm{in}\ f''\,v'
++  - 'Loops: basic compilation is 25x to 50x slower than hand-written OCaml; only rewriting plus purity-aware code is competitive (1x to 1.5x).'
++  - 'Run time, % of basic, rewriting / purity-aware / both / hand-written: pure loop 78.5, 35.4, 2.4, 2.3; state 34, 85, 3.3, 2.3.'
++  - 'N-Queens: optimised Eff is the fastest OCaml-based effect system tested, competitive with hand-written OCaml; first solution 25-30% faster than Multicore OCaml.'
+-
+----
+-kind: columns
+----
+-# Benchmarks, design choices and future work
+-
+-### Loop run time, % of basic compilation
+-
+-- Pure loop: rewriting 78.5, purity-aware 35.4, both 2.4, hand-written 2.3.
+-- Latent operation, in the same order: 74.3, 37.4, 2, 1.9.
+-- Increment operation: 56, 62.3, 5.5, 3.8.
+-- State with Get and Put: 34, 85, 3.3, 2.3.
+-
+-|||
+-
+-### Design choices and future work
+-
+-- Specialisation can diverge; termination is enforced by never re-specialising a specialised function.
+-- Every higher-order function is compiled as taking impure arguments; optimising complex patterns such as nested handlers is future work.
+-- The system comparison runs as bytecode, since DelimCC has no native compilation; the Links backend, 20 times slower than OCaml, is left out.
+-- All runs on one MacBook Pro (2.5 GHz Core i7, 16 GB) with OCaml 4.02.2.
+----
+```
+
+### http2-best-practices
+
+```diff
+-title: 'Should web developers keep concatenating, embedding and sharding when they move to HTTP/2?'
++title: 'Do concatenation, embedding and sharding still make sense in HTTP/2?'
+-hook: 'Earlier HTTP/2 studies contradict each other, and most use a single server package, browser, network setup and metric; the Speeder framework runs many setup permutations to tell protocol behaviour from implementation behaviour.'
++hook: 'The Speeder framework runs many setup permutations to tell protocol behaviour from implementation behaviour.'
+-  plain: 'Bundling files and spreading them over several servers still pay off; HTTP/2 is mostly as fast as the old protocol, and where it is slower the cause is mainly inefficient software.'
++  plain: 'Bundling files and spreading them over several servers still pay off; HTTP/2 is mostly as fast as the old protocol.'
+-  - { label: 'Setup', value: 'NGINX, Chrome via Webpagetest, dynamic cellular network model' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Setup', value: 'NGINX, Chrome via Webpagetest' }
+-  - 'Speeder: Docker-deployed servers (Apache, NGINX, NodeJS), browsers (Chrome, Firefox), test drivers and network emulators combined into setup permutations.'
+-  - 'HTTPS/2 compared with HTTPS/1.1 and cleartext HTTP/1.1 under a dynamic cellular loss model (NoLoss to VeryPoor) and a fixed model.'
+-  - 'Metrics: loadEventEnd and SpeedIndex; each point aggregates 10 to 100 page loads, and each experiment ran at least five times.'
+-  - 'Synthetic cases per best practice (images, CSS, JS; 1 to 500 files; sharding over 4 hosts), then nine image-heavy real websites.'
++  - 'HTTPS/2 against HTTPS/1.1 and cleartext HTTP/1.1 under a dynamic cellular loss model; loadEventEnd and SpeedIndex over 10 to 100 page loads.'
++  - 'Synthetic cases per best practice (1 to 500 files; sharding over 4 hosts), then nine image-heavy real websites, all in Docker-deployed Speeder setups.'
+-  - 'HTTP/2 rarely beats HTTP/1 by much, can be much slower than cleartext HTTP/1.1, and often starts rendering later.'
+-  - 'HTTP/2 underperforms mainly through inefficient implementations; with large files, packet loss impacts its single connection more.'
++  - 'HTTP/2 rarely beats HTTP/1 by much, can be much slower than cleartext HTTP/1.1 and underperforms mainly through inefficient implementations.'
+-
+----
+-kind: columns
+----
+-# Per best practice, and the limits of the setup
+-
+-### Per best practice
+-
+-- Images: with 380 small icons, HTTP/2 beats HTTP/1 on separate files; one sprite is two to five times faster and brings the two near par.
+-- CSS and JS: HTTP/2 takes the lead from about 30-40 simple CSS files and about 100 complex JS files.
+-- Embedding and Push: small gains bound by the 14 KB initial TCP window; pushing assets in the wrong order slows the page.
+-- Sharding lowers the effectiveness of HPACK header compression by 25% to 50%.
+-
+-|||
+-
+-### Testbed and browser caveats
+-
+-- A virtualised setup on two Dell PowerEdge R420 machines; load times are compared between setups, all equally affected.
+-- Push runs on Apache, since NGINX did not support Push; an Apache priority bug sent the font after the images.
+-- Chrome blocks rendering on every CSS file and Firefox applies even head CSS progressively, which shifts SpeedIndex.
+-- The nine real websites show how hard measurements are to read; the paper draws no definitive conclusion from them.
+----
+```
+
+### http2-web-performance
+
+```diff
+-title: 'Which of HTTP/2''s four performance features actually speed up page loads over HTTP/1.1?'
++title: 'Which HTTP/2 features speed up page loads over HTTP/1.1?'
+-hook: 'HTTP/2 adds a single multiplexed connection, prioritisation, Server Push and HPACK header compression; this study tests each in isolation and then on two corpora of real pages.'
++hook: 'One multiplexed connection, prioritisation, Server Push and HPACK tested in isolation, then on two corpora of real pages.'
+-  plain: 'Sending everything over one connection matters most, and it can stall on bad networks; the other new features matter less, and most of the slowness seems to come from immature browser and server software.'
++  plain: 'One connection matters most and can stall on bad networks; most of the slowness seems to come from immature browser and server software.'
+-  - { label: 'Corpora', value: 'A: 9 landing pages; B: 40 Alexa and Moz pages' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Corpora', value: 'A: 9 pages, 10+ loads; B: 40 pages, 20+ loads' }
+-  - 'The Speeder framework, extended with the H2O server, Chrome up to v60, Firefox up to v54 and the H2Vis packet and priority-tree visualiser.'
+-  - 'HTTPS/2 against HTTPS/1.1 and cleartext HTTP/1.1 on a dynamic cellular network model, scored by loadEventEnd and SpeedIndex.'
++  - 'Speeder extended with H2O, Chrome up to v60, Firefox up to v54 and the H2Vis visualiser; loadEventEnd and SpeedIndex on a dynamic cellular model.'
+-  - 'Corpus A loaded at least 10 times per page and corpus B at least 20 times; medians reported.'
+-  - 'The single connection has by far the largest effect: with 30 large images, packet loss alone makes HTTP/2 almost 80% slower while HTTP/1 barely changes.'
+-  - 'Round Robin, the default of the HTTP/2 specification, clearly worsens SpeedIndex on Poor networks; otherwise the prioritisation scheme matters little.'
+-  - 'HPACK cuts header bytes by more than a factor of five for 400 JS files, arguably too little to change a single page load.'
++  - 'The single connection has by far the largest effect: with 30 large images, packet loss alone makes HTTP/2 almost 80% slower.'
++  - 'Round Robin, the HTTP/2 default, clearly worsens SpeedIndex on Poor networks; HPACK cuts header bytes by more than a factor of five for 400 JS files.'
+-
+----
+-kind: columns
+----
+-# Implementation problems and scope
+-
+-### Implementation problems found
+-
+-- Requests through a Service Worker lose their priority: Chrome falls back to first-come-first-served, Firefox to Round Robin.
+-- Firefox treats async and defer scripts as normal high-priority JS, where Chrome marks them Low.
+-- Chrome applies HTTP/2 JavaScript in groups of 50 to 300 files, so rendering starts later than over HTTP/1.
+-- Using several connections also helps HTTP/2 on bad networks, where its problems are largest.
+-
+-|||
+-
+-### Scope and related work
+-
+-- Server Push is shown on one example page; a full evaluation is outside the paper's scope.
+-- Networks are emulated; the paper cannot confirm the more positive HTTP/2 results of work that loads pages directly over the internet.
+-- Corpus A is small, so the causes of HTTP/2's uneven Poor-network results could not be pinned down on it.
+-- The QUIC protocol, on UDP, might help HTTP/2 overcome its single-connection problems.
+----
+```
+
+### coordinated-fingers-ecnr
+
+```diff
+-title: 'Can high-density EEG tell individual and coordinated finger movements of one hand apart?'
+-sub: 'Individual and Coordinated Finger Movements Decoding from High-Density EEG and Its Implications in Hand Exoskeleton Control'
+-hook: 'An EEG-controlled hand exoskeleton needs finger-level decoding, which EEG studies rarely address; four participants performed eight cued finger movements under a 62-electrode cap.'
++title: 'Can high-density EEG tell individual and coordinated finger movements apart?'
++sub: 'Individual and Coordinated Finger Movements Decoding from High-Density EEG'
++hook: 'Four participants performed eight cued finger movements under a 62-electrode cap, for EEG-controlled hand exoskeletons.'
+-  purpose: 'Find out whether a scalp brain recording can tell which finger movement a person makes, to steer a robotic glove for paralysed hands.'
+-  plain: 'A grasp and a pinch can be told apart from the brain signal, single fingers hardly; the slow brain signal can show when a movement starts.'
++  purpose: 'Find out whether scalp EEG can tell which finger movement a person makes, to steer a robotic glove for paralysed hands.'
++  plain: 'A grasp and a pinch can be told apart from the brain signal, single fingers hardly; a slow signal shows when movement starts.'
+-  - { label: 'Data', value: '4 healthy participants, 62 electrodes, data glove' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Data', value: '4 healthy participants, data glove' }
+-  - 'Eight cued movements: the five single fingers, pinch, three-finger pinch and grasp.'
+-  - 'Active electrodes over the hemisphere contralateral to the dominant hand; a data glove records the hand.'
+-  - 'Offline pairwise classification on 8-30 Hz power after movement onset.'
+-  - 'Movement-related cortical potentials (MRCP) examined in the 0.3-3 Hz band.'
++  - 'Eight cued movements: five single fingers, pinch, three-finger pinch and grasp; active electrodes over the hemisphere contralateral to the dominant hand.'
++  - 'Offline pairwise classification on 8-30 Hz power after movement onset; movement-related cortical potentials (MRCP) examined in the 0.3-3 Hz band.'
+-  - 'Grasp against either pinch: pairwise accuracy reaches 80%.'
+-  - 'Single fingers against each other: just above the 50% chance level.'
+-  - 'The MRCP falls from about 0.5 s before movement onset and rebounds after it, but differs too little between movements to classify them, unlike one earlier report.'
++  - 'Grasp against either pinch: pairwise accuracy reaches 80%. Single fingers against each other: just above the 50% chance level.'
++  - 'The MRCP falls from about 0.5 s before onset and rebounds after it, but differs too little between movements to classify them, unlike one earlier report.'
+```
+
+### ecog-frequency-features
+
+```diff
+-title: 'Which ECoG frequency features carry finger movement, and does decoding from only those beat the whole spectrum?'
++title: 'Which ECoG frequency features carry finger movement?'
+-hook: 'Comparable prior work decodes fingers from the entire ECoG spectrum; splitting a trajectory into movement dynamics and movement events shows that two features, one per state, decode better.'
++hook: 'Splitting a trajectory into movement dynamics and movement events shows that two features, one per state, decode better.'
+-  plain: 'Fast brain rhythms show when a finger moves and the slow signal shows how it bends; a decoder using just those two follows the finger better and makes fewer false movements at rest.'
++  plain: 'Fast rhythms show when a finger moves and the slow signal how it bends; a decoder on just those two follows the finger better.'
+-  - { label: 'Data', value: 'Stanford ECoG, 9 participants, 38-64 electrodes' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Data', value: 'Stanford ECoG, 38-64 electrodes' }
+-  - 'Eight features per channel at 20 Hz: the local motor potential (LMP) and power in seven bands from delta (0-5 Hz) to high gamma (100-200 Hz).'
+-  - 'Ordinary least squares per participant and finger on a one-second tap-delay window, forward selection of up to 10 channels, 3-fold cross-validation.'
+-  - 'Each feature is scored on movement dynamics, on movement events and on the original trajectory.'
+-  - 'Decoder: LMP plus high gamma predicts the trajectory, and a high-gamma-only regressor sets rest samples to a constant $c$.'
++  - 'Eight features per channel at 20 Hz (LMP, seven power bands); OLS per participant and finger, up to 10 channels forward-selected, scored on dynamics and events.'
++  - 'Decoder: LMP plus high gamma give $Y_1$, high gamma alone gives $Y_2$; the output is a constant $c$ where $Y_2 \le th$, otherwise $Y_1$.'
+-  - 'LMP decodes movement dynamics best and high gamma decodes movement events best (paired t-tests over 45 participant-finger pairs).'
+-  - 'Average correlation with the true trajectory is 0.5, against 0.45 for the whole-spectrum linear decoder of Liang and Bougrain run under the same protocol.'
+-  - 'Variance during rest is significantly lower than for that decoder.'
+-  - 'The best LMP cut-off follows movement rate: 1.5 Hz for slow and 3.5 Hz for fast movers.'
+-equation: 'Y_3 = \begin{cases} c, & Y_2 \le th \\ Y_1, & Y_2 > th \end{cases}'
++  - 'LMP decodes dynamics best, high gamma events best (paired t-tests over 45 pairs); the best LMP cut-off is 1.5 Hz for slow and 3.5 Hz for fast movers.'
++  - 'Average correlation with the true trajectory 0.5, against 0.45 for the whole-spectrum decoder of Liang and Bougrain; rest variance significantly lower.'
++  - 'Limits: LMP falls short separating movement from rest and cued from co-activated fingers; rest variance stays above zero; repetitive flexions only.'
+-
+----
+-kind: columns
+----
+-# Feature analysis and limits
+-
+-### Temporal and spatial analysis
+-
+-- High gamma contributes mostly in the 250 ms before the predicted sample; LMP contributions spread wider and vary with movement rate.
+-- Longer windows help high gamma steadily, LMP less consistently.
+-- LMP decodes well from more channels than high gamma, most of all for thumb, index and pinky.
+-- Participant 9, movement dynamics: an LMP cut-off of 1.5 Hz gives 0.4 and 3.5 Hz gives 0.46.
+-
+-|||
+-
+-### Where LMP and high gamma fall short
+-
+-- LMP falls short in discriminating movement from rest, and a cued finger from involuntary co-activation by other fingers.
+-- Rest variance stays above zero because high-gamma event detection is imperfect.
+-- Splitting high gamma into 60-100 Hz and above 100 Hz gives similar results from both bands.
+-- Repetitive flexions only; a check for high-gamma decline during repetition was inconclusive.
+----
+```
+
+### modulation-lmp-bci
+
+```diff
+-title: 'Can gamma-band event detection steady finger trajectories decoded from ECoG?'
++title: 'Can gamma-band event detection steady ECoG finger trajectories?'
+-hook: 'Finger trajectories decoded from ECoG wander between movements; a second decoder on high-gamma activity detects the movement events and gates the trajectory decoded from the local motor potential.'
++hook: 'Trajectories wander between movements; a high-gamma decoder gates the local motor potential (LMP) decoder.'
+-  plain: 'One model follows how the finger moves and a second decides whether it is moving at all; together they make the decoded finger steadier at rest.'
++  plain: 'One model follows how the finger moves and a second decides whether it moves at all.'
+-  - { label: 'Stage', value: 'published' }
+-  - 'Two Block-Term Tensor Regression models: one on LMP (< 3.5 Hz) ECoG against data-glove trajectories, one on high-gamma (> 60 Hz) ECoG against binarised trajectories.'
+-  - 'Where the gamma estimate exceeds a threshold, the LMP trajectory is multiplied by it; elsewhere the output is a constant $C$.'
+-  - '$C$ and the threshold are set per participant and finger by cross-validation on the trajectory correlation.'
++  - 'Two Block-Term Tensor Regression models: LMP (< 3.5 Hz) to data-glove trajectories, high gamma (> 60 Hz) to binarised trajectories.'
++  - 'Where the gamma estimate exceeds a threshold, the LMP trajectory is multiplied by it; elsewhere the output is a constant $C$, set by cross-validation.'
+-equation: 'y(t) = \begin{cases} C, & x_\gamma(t) \le \mathrm{threshold} \\ x_{\mathrm{lmp}}(t)\, x_\gamma(t), & x_\gamma(t) > \mathrm{threshold} \end{cases}'
+```
+
+### highgamma-event-detection
+
+```diff
+-title: 'Does detecting movement events in high-gamma ECoG keep decoded fingers still at rest?'
++title: 'Does high-gamma event detection keep decoded fingers still at rest?'
+-hook: 'Even state-of-the-art finger decoders show instabilities between movement events; the LMP trajectory is multiplied by a thresholded high-gamma event estimate and held at a constant below the threshold.'
++hook: 'State-of-the-art finger decoders show instabilities between movement events; a thresholded event estimate holds the output.'
+-  plain: 'A detector for when the finger moves switches the trajectory decoder on and off, which steadies the prediction while the hand rests.'
++  plain: 'A detector for when the finger moves switches the trajectory decoder on and off.'
+-  - { label: 'Venue', value: 'Proc. 10th International BCI Meeting 2023' }
++  - { label: 'Venue', value: '10th International BCI Meeting 2023' }
+-  - { label: 'Stage', value: 'published' }
+-  - 'Trajectory model: block-term tensor regression from ECoG below 3.5 Hz to the data-glove signal.'
+-  - 'Event model: block-term tensor regression from ECoG above 60 Hz to a binarised copy of that signal.'
+-  - 'Above the threshold the two estimates are multiplied, below it the output is held at $C$; both are tuned per subject and finger on cross-validated cross-correlation.'
+-  - 'Tested on rapid single-finger repetitions, Dataset 4 of BCI Competition IV.'
++  - 'Block-term tensor regression twice: ECoG below 3.5 Hz to the data-glove signal, ECoG above 60 Hz to a binarised copy of it.'
++  - 'Above the threshold the two estimates are multiplied, below it the output is held at $C$; both tuned per subject and finger on cross-correlation.'
+-  - 'The stability improvement suggests that high gamma distinguishes rapid finger movements from rest and that the LMP codes the trajectory.'
+-equation: 'y(t) = f\big(x_{\mathrm{lmp}}(t), x_\gamma(t)\big) = \begin{cases} C, & x_\gamma(t) \le \mathrm{threshold} \\ x_{\mathrm{lmp}}(t) \times x_\gamma(t), & x_\gamma(t) > \mathrm{threshold} \end{cases}'
++  - 'The improvement suggests that high gamma distinguishes rapid finger movements from rest and that the LMP codes the trajectory.'
+```
+
+### editorial-bigdata-ai-ms
+
+```diff
+-hook: 'MS differs from patient to patient in symptoms, progression and treatment response; this editorial opens a Frontiers in Immunology Research Topic on how data and AI can support personalised care.'
++hook: 'MS differs from patient to patient; this editorial opens a Research Topic on how data and AI can support personalised care.'
+-  - { label: 'Collection', value: 'Research Topic on big data and AI in MS' }
+-  - { label: 'Stage', value: 'published' }
+-  - 'Examples: the CLAIMS project for an AI decision-support platform, AI to diversify treatment regimens, and AI brain volumetry set against neuropsychological tests in clinically isolated syndrome.'
+-  - 'Future trends: trustworthy machine learning, patient-reported outcome measures at scale, and European data initiatives such as EHDS, DARWIN-EU, OHDSI, EBRAINS and ELIXIR.'
+-  - 'Modalities: AI for MRI, digital remote monitoring with wearables and smartphones, and AI on serum, blood and cerebrospinal-fluid biomarkers.'
++  - 'Examples: the CLAIMS decision-support platform, AI to diversify treatment regimens, AI brain volumetry against neuropsychological tests.'
++  - 'Future trends: trustworthy machine learning, patient-reported outcome measures at scale, European data initiatives (EHDS, DARWIN-EU, OHDSI, EBRAINS, ELIXIR).'
++  - 'Modalities: AI for MRI, digital remote monitoring with wearables and smartphones, AI on serum, blood and cerebrospinal-fluid biomarkers.'
+-  - 'The domain is expanding rapidly.'
+-  - 'Open issues: trustworthy and reliable AI models, consistent multidimensional longitudinal data, the patient perspective, and alignment with regulation such as EHDS.'
+-  - 'A systematic review in the Topic finds most AI biomarker papers in MS published within the past four years, still some distance from clinical use.'
+-  - 'The Topic gathers reviews, perspectives and original research articles.'
++  - 'Open issues: trustworthy and reliable AI models, consistent multidimensional longitudinal data, the patient perspective, alignment with regulation such as EHDS.'
++  - 'The domain is expanding rapidly; a systematic review finds most AI biomarker papers in MS within the past four years, still some distance from clinical use.'
+```
+
+### pfl-ms-npj
+
+```diff
+-title: 'Can federated learning predict MS disability progression when every country holds different data?'
+-sub: 'Personalized federated learning for predicting disability progression in multiple sclerosis using real-world routine clinical data'
+-hook: 'One global federated model fits 32 very different country partitions of MSBase poorly; letting each client keep its own extension layers, or fine-tune the global model, lifts ROC-AUC from 0.78 to 0.84.'
++title: 'Can federated learning predict MS progression across differing countries?'
++sub: 'Personalized federated learning for predicting disability progression in multiple sclerosis'
++hook: 'Each of 32 MSBase country partitions keeps its own extension layers or fine-tunes the global model: ROC-AUC 0.78 to 0.84.'
+-  purpose: 'Predict which people with multiple sclerosis will get worse within two years, using hospital records that stay in each country.'
+-  plain: 'Every country trains a shared part of the model together and keeps a private part tuned to its own patients, which predicts better than one model shared by all.'
++  purpose: 'Predict which people with multiple sclerosis will get worse within two years, with hospital records staying in each country.'
++  plain: 'Every country trains a shared part of the model together and keeps a private part tuned to its own patients.'
+-  - { label: 'Cohort', value: '283,115 episodes, 26,246 patients, 146 centres' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Cohort', value: '283,115 episodes, 26,246 patients' }
+-  - 'Episodes from the MSBase registry: baseline EDSS, full prior history, and a label for confirmed progression within 2 years; split by country into 32 clients, each 60/20/20.'
+-  - 'Baseline: a 42-input MLP with 5 layers of 512, trained over 350 rounds with FedAVG, FedProx, FedAdagrad, FedYogi and FedAdam, 10 repeats.'
+-  - 'AdaptiveDualBranchNet adds up to 5 local extension layers of 64 units by client size (none below about 2000 samples, all above about 25000); only the other layers are aggregated.'
+-  - 'Fine-tuning retrains the final global model on each client; centralized and local models are the comparators.'
++  - 'MSBase episodes labelled for confirmed progression within 2 years; 32 country clients; a 42-input MLP over 350 rounds with five federated optimisers, 10 repeats.'
++  - 'AdaptiveDualBranchNet adds up to 5 local extension layers by client size; only the other layers are aggregated; fine-tuning retrains the global model per client.'
+-  - 'AUC-PR rises from 0.4081 for baseline FedProx to 0.5346 adaptive, against 0.4605 centralized.'
+-  - 'Adaptive models lead in 11 countries, fine-tuned in 6, centralized in 5, local in 3 and baseline federated in none.'
+-  - 'The adaptive gains cost training time: adaptive FedProx takes 217.51 min against 171.77 for baseline FedProx, 27% longer.'
+-equation: '\Phi_f = \sum_{k=1}^{K} \frac{n_k}{n}\Big(\Theta''^{\,\mathrm{input}}_{k,f} + \Theta''^{\,\mathrm{core}}_{k,f} + \Theta''^{\,\mathrm{combine}}_{k,f} + \Theta''^{\,\mathrm{output}}_{k,f}\Big)'
++  - 'AUC-PR rises from 0.4081 for baseline FedProx to 0.5346 adaptive, against 0.4605 centralized; adaptive leads in 11 countries, fine-tuned in 6.'
++  - 'Adaptive FedProx takes 27% longer (217.51 against 171.77 min); federation is simulated on country partitions; calibration needs further work.'
+-
+----
+-kind: columns
+----
+-# Where personalization helps, and the limits the paper states
+-
+-### Client size
+-
+-- Federated beats local in five of the six largest countries, which hold 82% of the data.
+-- The federated-to-local gap correlates moderately with dataset size (Spearman $\rho = -0.503$, $p = 0.010$), the federated-to-centralized gap strongly ($\rho = -0.761$, $p < 0.001$).
+-- Fine-tuning gives the most consistent improvements for clients with intermediate data volumes; small clients risk overfitting and unstable evaluation.
+-
+-|||
+-
+-### Limits the paper states
+-
+-- Federation is simulated on country partitions, so network variability, system heterogeneity and dropout are not captured.
+-- Scores are test-size-weighted averages over clients, which may favour the larger ones.
+-- Current performance may support cohort-level monitoring; calibration needs further work before high-stakes clinical decisions.
+-- Led by Ashkan Pirmani; A. Faes is a middle co-author.
+```
+
+### proprioception-exoskeleton
+
+```diff
+-title: 'Can EEG still tell what the user intends while a hand exoskeleton moves the fingers?'
+-sub: 'On the Impact of Proprioception in EEG Representations and Decoding during Human-Hand Exoskeleton Interaction'
+-hook: 'An exoskeleton moving the fingers evokes strong alpha and beta desynchronization in sensorimotor EEG, and the EEG is then similar whether or not the user also imagines the movement.'
++title: 'Can EEG read intention while an exoskeleton moves the fingers?'
++sub: 'On the Impact of Proprioception in EEG Representations and Decoding during Exoskeleton Interaction'
++hook: 'An exoskeleton moving the fingers evokes strong alpha and beta desynchronization, with or without imagined movement.'
+-  purpose: 'Find out whether a brain-controlled glove can keep reading what the wearer wants once the glove itself starts moving the hand.'
+-  plain: 'Feeling the fingers being moved changes the brain signals strongly, and that change looks similar whether or not the person also imagines the movement.'
++  purpose: 'Find out whether a brain-controlled glove can still read the wearer''s intent while it moves the hand.'
++  plain: 'Feeling the fingers being moved changes the brain signals strongly, whether or not the person also imagines the movement.'
+-  - { label: 'Subjects', value: '25 right-handed, 62-channel EEG' }
+-  - { label: 'Stage', value: 'published' }
++  - { label: 'Subjects', value: '25, 62-channel EEG' }
+-  - 'Three modalities with a cable-driven hand exoskeleton: imagined (IM), passive (PM), and imagined with passive (IPM) flexion of thumb, index or the other three fingers.'
+-  - 'Alpha (8-13 Hz) and beta (13-30 Hz) ERSP over the scalp and at C3 and C4, compared with repeated-measures ANOVA and Bonferroni correction.'
+-  - 'Four binary FgMDM classifiers on 1-s segments in 4-40 Hz: IM, PM and IPM against rest, and IPM against PM, under 10 $\times$ 5-fold cross-validation.'
++  - 'Cable-driven exoskeleton: imagined (IM), passive (PM), imagined with passive (IPM) flexion of thumb, index or the other three.'
++  - 'Alpha and beta ERSP at C3 and C4 (repeated-measures ANOVA); four binary FgMDM classifiers on 1-s segments, 10 $\times$ 5-fold CV.'
+-  - 'PM and IPM give significantly stronger alpha and beta desynchronization than IM at C3 and C4; PM and IPM do not differ.'
+-  - 'Assisted movement against rest: 0.80 $\pm$ 0.07 for IPM and 0.72 $\pm$ 0.10 for PM.'
+-  - 'IPM against PM reaches 0.61 $\pm$ 0.09, slightly above chance and significantly below IM against rest at 0.73 $\pm$ 0.08.'
+-  - 'Subjects reported that refraining from imagery during PM was hard, which the paper reads as a need for subject training and better decoders.'
+-equation: '\mathrm{ERSP}(c,f,t) = \frac{1}{S}\sum_{s=1}^{S}\frac{1}{N}\sum_{n=1}^{N}\Big(F_{s,n,c}(f,t) - F^{\mathrm{baseline}}_{s,n,c}(f)\Big)'
++  - 'PM and IPM give significantly stronger desynchronization than IM at C3 and C4; PM and IPM do not differ.'
++  - 'Against rest: 0.80 $\pm$ 0.07 for IPM, 0.72 $\pm$ 0.10 for PM and 0.73 $\pm$ 0.08 for IM.'
++  - 'IPM against PM reaches 0.61 $\pm$ 0.09, slightly above chance; refraining from imagery during PM was hard.'
+```
+
+### individual-reference-intervals
+
+```diff
+```
+
+### adapter-format-theory
+
+```diff
+-hook: 'A format risk ordering proved for spectral operators may carry to adapter weight updates, if those updates are block-banded along the layer axis.'
++hook: 'A risk ordering proved for spectral operators may carry to adapter updates that are block-banded along the layer axis.'
+-  - 'No results yet: the gate has not run.'
+-  - 'Open slot: no risk ordering across formats for weight updates, and no format selector with a proved oracle inequality.'
++  - 'No results yet: the gate has not run. Open slot: no risk ordering across formats for updates, no format selector with a proved oracle inequality.'
+```
+
+### asthma-geo-tensor
+
+```diff
+```
+
+### attention-scoped-instructions
+
+```diff
+-hook: 'Every rule in a long policy sees every other rule, so an edit to one section shifts behaviour in another; a declared visibility graph compiled to an attention mask would make that impossible.'
++hook: 'An edit to one section of a long policy shifts another; a visibility graph compiled to an attention mask would prevent it.'
+-  - 'Nothing built yet: no code, no runs, no manuscript.'
+-  - 'The problem is measured elsewhere: leakage at Cohen''s d 0.63 (Instruction Bleed), long-policy strict pass rate at most 36.2% (HANDBOOK.md).'
++  - 'No code, no runs, no manuscript. Measured elsewhere: leakage at Cohen''s d 0.63 (Instruction Bleed), long-policy strict pass rate at most 36.2% (HANDBOOK.md).'
+```
+
+### block-term-nca
+
+```diff
+-hook: 'Write a cellular automaton''s learned local rule as block-term pieces, one per mechanism, and serial scans give each patient numbers for how a lesion grows.'
++hook: 'Block-term pieces of a learned local rule, one per mechanism, give each patient numbers for how a lesion grows.'
+-  - 'Nothing built: no code, no runs, no manuscript.'
++  - 'Nothing built: no code, no runs, no manuscript. A six-search scan found no block-term or tensor-decomposed NCA update rule; that is not yet a novelty check.'
+-  - 'A six-search scan found no block-term or tensor-decomposed NCA update rule; that is not yet a novelty check.'
+```
+
+### brecht-fl-partitioning
+
+```diff
+-title: 'Federated ECG arrhythmia models break on label skew, and global accuracy hides it'
++title: 'Federated ECG models break on label skew, and global accuracy hides it'
+-hook: 'Across six ways of splitting MIT-BIH over simulated hospitals, class skew does the damage while size skew barely matters, and a near-flat global accuracy masks it.'
++hook: 'Across six splits of MIT-BIH over simulated hospitals, class skew does the damage and size skew barely matters.'
+-  plain: 'Give every simulated hospital all heartbeat types and unequal sizes barely matter; give some hospitals only some types and the rare types are lost, while the headline accuracy still looks fine.'
++  plain: 'Unequal hospital sizes barely matter; give some hospitals only some heartbeat types and the rare types are lost while accuracy looks fine.'
+-  - { label: 'Data', value: 'MIT-BIH Arrhythmia Database' }
+-  - { label: 'Training', value: 'Flower, FedAvg; CNN and CNN-LSTM' }
++  - { label: 'Setup', value: 'MIT-BIH; Flower, FedAvg; CNN and CNN-LSTM' }
+-  - 'Balanced and size-skewed splits match the centralized baseline closely.'
+-  - 'Limits: one dataset and FedAvg only; novelty is unverified.'
++  - 'Balanced and size-skewed splits match the centralized baseline closely. Limits: one dataset and FedAvg only; novelty is unverified.'
+```
+
+### btd-autoencoder
+
+```diff
+-  - 'Not started: no model spec, no benchmark protocol, no code.'
++  - 'Not started: no model spec, no benchmark protocol, no code. Novelty is unverified until a cited literature check.'
+-  - 'Novelty is unverified until a cited literature check.'
+```
+
+### cirrhosis-digital-twin
+
+```diff
+-hook: 'Cardiovascular and liver risks in cirrhosis are managed by separate specialties; one model over the same clinical record could predict both and compare treatments.'
++hook: 'One model over the same clinical record could predict cardiovascular and liver risk and compare treatments.'
+-  plain: 'Read lab values, GP visits, medication and imaging over time, and estimate both kinds of risk from the same history, with and without a given therapy.'
++  plain: 'Read lab values, GP visits, medication and imaging over time, and estimate both risks from the same history, with and without a therapy.'
+-  - { label: 'Lead', value: 'Maureen Guichelaar (MST hepatology) and Axel Faes' }
+-  - { label: 'Stage', value: 'scoping, grant not chosen' }
+-  - { label: 'Candidate cohort', value: 'MST chronic liver disease, about 400 patients' }
+-  - { label: 'Grant routes', value: 'PIHC (joint UT and MST, Maureen as PI); SSH Explore 2027 or ENW-XS 27-2 (one applicant); ENW-M with a tenured main applicant' }
++  - { label: 'Lead', value: 'Maureen Guichelaar (MST) and Axel Faes' }
++  - { label: 'Cohort', value: 'MST chronic liver disease, about 400' }
++  - { label: 'Grants', value: 'PIHC; SSH Explore 2027; ENW-XS 27-2; ENW-M' }
+-  - 'Competing risks: cardiovascular events against decompensation, HCC and death.'
+-  - 'Treatment-effect estimation from observational records, liver-directed against metabolic therapy.'
++  - 'Competing risks: cardiovascular events against decompensation, HCC, death; treatment effects from records, liver-directed against metabolic therapy.'
+-  - 'Nothing built and no data requested yet.'
+-  - 'It starts from a 2025 multi-organ digital-twin proposal by the hepatology lead, which names no method for per-patient treatment effects.'
+-  - 'Novelty unchecked: the claim that a multi-organ digital twin is unexplored is not verified.'
++  - 'Nothing built and no data requested yet. Novelty unchecked: the claim that a multi-organ digital twin is unexplored is not verified.'
++  - 'Starts from the 2025 iDT proposal (M. Guichelaar main applicant; Axel not an applicant), which names no method for per-patient treatment effects.'
++  - 'iDT: MASLD test case, about 400 MST patients in a Saxion dataspace, a prospective study of 250; its 2025 outcome is not stated.'
+-
+----
+-kind: columns
+----
+-# The 2025 PIHC proposal the idea starts from
+-
+-### The proposal
+-
+-- Title: "iDT: Pioneering a Multi-Organ Integrated Digital Twin (iDT) for the Future of Preventive Medicine", a technological pioneering voucher.
+-- Applicants: M. Guichelaar (MST, main), H. Aktas and P.J. Hilbers (ZGT), M. Amir Haeri and J. Wolterink (UT), E. Bakker and C. Graat (MST), W. Teeuw (Saxion); Axel was not an applicant.
+-- Test case MASLD; data from about 400 MST patients (laboratory, ECG, liver and heart ultrasound, pharmacy) in a Saxion dataspace, and a prospective study of 250.
+-- Outcome of the 2025 submission: not stated in the email or the proposal.
+-
+-|||
+-
+-### Its plan
+-
+-- Phase 1 builds the dataspace; phase 2 a hybrid of clinical and physiological models with machine learning, and a library of interventions for in silico testing.
+-- Evaluation by AUROC, sensitivity, specificity, calibration and SHAP.
+-- 12-month milestone: a first prototype for liver decompensation, HCC and major cardiovascular events.
+-- Budget: one AI junior researcher at MST across MST and ZGT, with two Saxion PhD researchers; follow-up from NWO, Horizon Europe or Health Holland.
+```
+
+### clinical-ai-eval-artifacts
+
+```diff
+-  - 'Gate-pending: no protocol run yet.'
+-  - 'Target: the reported gain shrinks or vanishes on that benchmark under the protocol.'
++  - 'Gate-pending: no protocol run yet. Target: the reported gain shrinks or vanishes on that benchmark under the protocol.'
+```
+
+### concept-bottleneck-hcc
+
+```diff
+-hook: 'Read readable liver concepts at every scan, compose their trajectories with a sparse model, and the risk depends on the images only through those concepts.'
++hook: 'Risk that depends on the images only through readable liver concepts, read at every scan and composed by a sparse model.'
+-  - 'Nothing trained yet.'
+-  - 'Premise check: the label files hold one LI-RADS integer per observation (0, 1, 2: 685, 174, 104 of 963) and no feature fields, so the LI-RADS concepts are not annotated there.'
++  - 'Nothing trained yet. Main risk: concept lossiness caps accuracy at what the concepts capture.'
++  - 'Label files hold one LI-RADS integer per observation (0, 1, 2: 685, 174, 104 of 963), no feature fields: concepts not annotated there.'
+-  - 'Main risk: concept lossiness caps accuracy at what the concepts capture.'
+```
+
+### conformal-tensor-factors
+
+```diff
+-hook: 'Block-term factors are defined only up to permutation, sign and within-block rotation, which breaks the exchangeability conformal prediction needs; a gauge-invariant conformity score restores it.'
++hook: 'Gauge (permutation, sign, within-block rotation) breaks exchangeability; a gauge-invariant conformity score restores it.'
+-  - 'No prototype has run.'
+-  - 'First number: empirical marginal coverage on held-out calibration of an existing block-term model, against the nominal level.'
++  - 'No prototype has run. First number: empirical marginal coverage on held-out calibration of an existing block-term model, against the nominal level.'
+```
+
+### ecg-af-fair
+
+```diff
+-title: 'Atrial fibrillation from a sinus-rhythm ECG, with explanations or privacy a CNN lacks'
++title: 'Hidden atrial fibrillation from a normal-rhythm ECG on the Gruwez cohort'
+-hook: 'The task is established by a black-box CNN (Gruwez 2023, AUROC 0.87, AUPRC 0.48); this project has its exact cohort and must match it while adding readable factors or multi-site privacy.'
++hook: 'The published CNN on this exact cohort reaches AUROC 0.87, AUPRC 0.48; Directions 1 and 2 are novelty-checked.'
+-  plain: 'A neural network already does this but cannot say why; an interpretable tensor model, or one trained across hospitals without pooling ECGs, would add what it lacks.'
++  plain: 'Either a score that stays stable between a patient''s ECGs, or a model that treats ''no AF'' as possibly undiagnosed.'
+-  - { label: 'Stage', value: 'exploring, lead hook open' }
++  - { label: 'Stage', value: 'exploring, concept note made' }
+-  - 'Candidate 1: a block-term model of leads x time x frequency whose factors are the explanation, with faithfulness measured.'
+-  - 'Candidate 2: federated AF risk across hospitals, where the privacy mechanism is the contribution.'
+-  - 'Splits by patient, since the label rides on the patient and most have several ECGs.'
++  - 'Direction 1: a score that stays stable between a patient''s ECGs and separates patients of the same age.'
++  - 'Direction 2: a model trained on whole patients that treats ''no AF'' as possibly undiagnosed.'
++  - 'Direction 3: a block-term layer that separates what persists across a patient''s ECGs from what changes per recording.'
+-  - 'No model has run on the cohort yet.'
+-  - 'The inventory confirms the delivered file is Gruwez''s exact training set, so the comparison is head-to-head.'
+-  - 'No event date and no follow-up column: time-to-AF needs a diagnosis date from the hospital.'
+-  - 'The lead hook and the cited novelty check are still open.'
+-mechanism: 'Interpretable or federated AF risk from SR-ECG'
+-headline: 'Idea: choose one hook, then match AUROC 0.87'
++  - 'No model has run on the cohort yet. No event date and no follow-up column: time-to-AF needs a diagnosis date from the hospital.'
++  - 'Age and sex logistic on the first ECG: AUROC 0.788, AUPRC 0.242, prevalence 0.0886; number of ECGs alone: AUROC 0.686.'
++  - 'Within-age AUROC of age and sex: 0.662, 0.64, 0.619, 0.582, 0.553; mean ECGs 5.99 (label 1) against 3.23.'
++mechanism: 'Stable within-patient score, or a whole-patient objective for possibly undiagnosed AF'
++headline: 'Idea: choose a direction, then reproduce the published CNN'
+```
+
+### engram
+
+```diff
+-title: 'Locating and excising a memorised patient record inside a clinical language model'
++title: 'Locating and excising a memorised record inside a clinical language model'
+-hook: 'A model trained on clinical notes memorises some of them, and erasing one patient today erodes what it knows about other patients with the same condition; components that carry one record would make targeted erasure possible.'
++hook: 'Erasing one patient today erodes other patients with the same condition; components carrying one record would target it.'
+-  plain: 'Plant fake records at known rates, train small models from scratch, split their internal activity into a few parts, and remove the part that carries a record to see whether the record stops coming out.'
++  plain: 'Plant fake records at known rates, train small models, split their internal activity into parts, and remove the part that carries a record.'
+-  - { label: 'Stage', value: 'exploring; gate not run' }
+-  - 'Ablate the ranked components: extraction drop against perplexity cost, as a curve.'
+-  - 'Baselines: K-FAC curvature editing, a plain weight SVD and neuron-level ablation; the SVD is the bar.'
+-  - 'If the components are real, erase one actual patient''s records and check retention on patients sharing a condition.'
++  - 'Ablate ranked components: extraction drop against perplexity cost. Baselines: K-FAC editing, neuron-level ablation, a plain weight SVD (the bar).'
+-  - 'Instrument built and cluster-verified: nine stages, 102 tests, 274k tok/s at 12M on an L40S (145k on an A40, 74k at 72M, 6k on Apple MPS); all numbers are from a 12M model on a synthetic corpus, one canary per cell, one seed.'
+-  - 'Sampled exposure caps at $\log_2 N$ references: 8 of 16 cells still pinned at 8192; a fitted normal resolves them, agreeing to 0.06 bits.'
+-  - 'Identifier dose-response 3.2, 15.8, 21.3, 25.8 bits at 1, 4, 16, 64 copies; identifiers 25.8 to 26.8 bits at 64 copies against 12.0 to 12.5 for free text.'
+-  - 'Instruction tuning moves exposure by under 0.3 bits in all 16 cells.'
++  - 'Instrument cluster-verified: nine stages, 102 tests, 274k tok/s at 12M on an L40S; from a 12M model, synthetic corpus, one canary per cell, one seed.'
++  - 'Identifier dose-response 3.2, 15.8, 21.3, 25.8 bits at 1, 4, 16, 64 copies; at 64 copies 25.8 to 26.8 bits against 12.0 to 12.5 for free text.'
++  - 'Exposure caps at $\log_2 N$ references: 8 of 16 cells pinned at 8192; a fitted normal resolves them (0.06 bits), its assumption unverified.'
++  - 'Instruction tuning moves exposure under 0.3 bits in all 16 cells; if the decomposition only ties the SVD, the fallback is a duplication findings paper.'
+-
+----
+-kind: columns
+----
+-# What the instrument settled, what is open, and what is unchecked
+-
+-### Settled and open
+-
+-- Document-level deduplication never touches a canary; the default 50-token substring threshold is longer than the canaries.
+-- A dictionary provenance index costs 190 MB per million tokens (158 GB for MIMIC against 48 GB); a sorted posting table brings that to 32 MB.
+-- Decided against: PPO, GRPO and a reward model; the Pile; a control-panel UI; more reference candidates (512 to 8192 is 16x compute for 4 bits, half the grid still pinned); a skew-normal fit unless the normal one fails.
+-- Open off the main chain: a path without a cluster, a third corpus with real patient timelines (PMC-Patients has one summary per patient, so the within-patient arm runs only on MIMIC), a federated arm, an external-instruction loader, and a deposit.
+-
+-|||
+-
+-### Unchecked, and the fallback
+-
+-- The normal fit sits beneath half of every reported cell, and its assumption is unverified on real reference distributions.
+-- The free-text arm is not monotone in multiplicity; one draw per cell cannot separate signal from noise. The 27 GB merge peak at full MIMIC scale is a projection from a linear fit and has not been measured.
+-- Freezing MLPs drops synthetic memorisation from 100% to 19%, against 69% for frozen query and key; a prior for where to look only.
+-- If the decomposition only ties the weight SVD, the fallback is a controlled-duplication findings paper on the deduplication, tokenizer and fine-tuning arms.
+----
+```
+
+### faithful-interpretability-position
+
+```diff
+-title: 'Measured, not asserted: faithful interpretability for structured-tensor clinical models'
++title: 'Measured faithful interpretability for structured-tensor clinical models'
+-hook: '"The structure is the explanation" counts only when faithfulness is measured by a probe and an intervention, which almost no interpretable clinical model does.'
++hook: '"The structure is the explanation" counts only with a measured probe and intervention, which almost no model has.'
+-  - 'Not drafted.'
+-  - 'Revisit once a good share of that work is accepted.'
++  - 'Not drafted; revisit once a good share of that work is accepted.'
+```
+
+### fed-duplication-limits
+
+```diff
+-hook: 'Once a memorised record is held by $k$ of $n$ sites, attribution becomes set-valued with an impossibility boundary, and one site''s deletion can only bound what the others still let be extracted.'
++hook: 'At $k$ of $n$ sites attribution has an impossibility boundary and one site''s deletion only bounds what the others leak.'
+-  - 'No code and no runs yet.'
+-  - 'If attribution and the floor are both flat in $k$, there is no frontier and no paper.'
++  - 'No code and no runs yet. If attribution and the floor are both flat in $k$, there is no frontier and no paper.'
+```
+
+### fed-neural-operators
+
+```diff
+-title: 'One neural operator trained across silos that see the field at different resolutions'
++title: 'One neural operator trained across silos with different field resolutions'
+-hook: 'An operator is defined on functions, so clients on different grids can aggregate coherently where fixed-dimension FedAvg cannot, and block-term factors are cheap to send.'
++hook: 'Clients on different grids can aggregate operators coherently where fixed-dimension FedAvg cannot; factors are cheap to send.'
+-  - 'Nothing prototyped yet.'
+-  - 'Real only if it is both cheaper to communicate and accurate where a fixed-dimension baseline cannot aggregate.'
++  - 'Nothing prototyped yet. Real only if it is both cheaper to communicate and accurate where a fixed-dimension baseline cannot aggregate.'
+```
+
+### fedbtd
+
+```diff
+-hook: 'A block term is identifiable only up to permutation, a within-block subspace transform and scale, so naive averaging of factors mixes mismatched blocks; the alignment idea was pre-empted.'
++hook: 'Averaging factors naively mixes mismatched blocks: a block is identifiable only up to permutation, transform and scale.'
+```
+
+### federated-protocol-agents
+
+```diff
+-title: 'Keeping a multi-site study faithful to one protocol without moving patient data'
++title: 'Keeping a multi-site study faithful to one protocol without moving data'
+-hook: 'Hospitals store the same concept differently, so one study plan silently becomes several studies; agents at each site compare only aggregates, repair the definition errors and leave true differences alone.'
++hook: 'Hospitals store concepts differently; agents at each site compare aggregates, repair definition errors, leave true differences.'
+-  - 'Nothing built; only a novelty check has run, and it is unfinished.'
+-  - 'Risk: attrition alone may not identify the cause of a 5% against 15% difference.'
++  - 'Nothing built; only a novelty check has run, unfinished. Risk: attrition alone may not identify the cause of a 5% against 15% difference.'
+```
+
+### fedlink
+
+```diff
+-title: 'FedLink: which gene cluster makes which antibiotic, learned across private strain collections'
++title: 'FedLink: which gene cluster makes which antibiotic?'
+-hook: 'The link between a gene cluster and a metabolite is co-occurrence across strains, and no single lab has enough strains; a federated coupled tensor pools that signal without moving genomes or spectra.'
++hook: 'No lab has enough strains for gene-molecule co-occurrence; a federated tensor pools it without moving genomes or spectra.'
+-  - { label: 'Baseline', value: 'NPOmix, KNN on strain-paired fingerprints' }
+-  - 'A coupled tensor with a shared strain mode over BGC features, MS features and activity.'
+-  - 'Strain factors stay local; only the component dictionaries are aggregated.'
++  - 'A coupled tensor with a shared strain mode over BGC, MS and activity features; strain factors stay local, only component dictionaries are aggregated.'
+-  - 'No model has run.'
+-  - 'A cited check (21 sources, 25 claims adversarially verified) found the federated multimodal application unoccupied; the public data stack is confirmed.'
+-  - 'Gate: a centralized coupled tensor must beat NPOmix on held-out links before any federation work.'
++  - 'A cited check (21 sources, 25 claims adversarially verified) found the federated multimodal application unoccupied; public data stack confirmed.'
++  - 'No model has run. Gate: a centralized coupled tensor must beat NPOmix (KNN on strain-paired fingerprints) on held-out links first.'
+```
+
+### fl-privacy-auditing
+
+```diff
+-hook: 'Hospitals and regulators will ask how much a deployed federated model leaks; today the answer is a set of one-off attacks, with no standard report that ties measured leakage to the guarantee the model claims.'
++hook: 'Today the answer on leakage is one-off attacks; no standard report ties measured leakage to the guarantee the model claims.'
+-  - 'Gate pending: a novelty lit-check to fix the auditing angle; the attack code is reusable.'
++  - 'Gate pending: a novelty check of the membership-inference, gradient-inversion and DP-auditing literature fixes the angle; the attack code is reusable.'
+-  - 'Gate: a novelty check of the membership-inference, gradient-inversion and DP-auditing literature, to fix the angle first.'
+```
+
+### florank-personalization
+
+```diff
+-sub: 'FLoRank, a collaborator''s adaptive low-rank adapter, carried into imaging or generalized to a block-term adapter'
+-hook: 'Under clinical site heterogeneity personalization is essential; FLoRank''s per-center low-rank adapter beat FedAVG and plain LoRA on tabular MS data, and the open question is whether it carries to imaging and whether a multilinear adapter does better than a flat one.'
++sub: 'FLoRank, a collaborator''s low-rank adapter, carried into imaging or to a block-term adapter'
++hook: 'FLoRank''s per-center adapter beat FedAVG and LoRA on tabular MS data; does it carry to imaging, or to a multilinear form?'
+-  - { label: 'Seed method', value: 'FLoRank, Pirmani et al., ECTRIMS 2025' }
+-  - { label: 'Seed cohort', value: 'MSBase, about 26k MS patients, 146 centers' }
++  - { label: 'Seed', value: 'FLoRank, Pirmani et al., ECTRIMS 2025; MSBase, about 26k MS patients, 146 centers' }
+-  - { label: 'Stage', value: 'scoping, collaboration idea' }
+-equation: 'y = xW + b + \mathrm{Scale}\left[\mathrm{GELU}(xBA)\right]'
+-  - 'The seed: a frozen global layer plus a center adapter $BA$, trained in Pre, Warmup and Post phases.'
+-  - 'Branch A: FLoRank adapters personalize the federated HCCNet imaging backbone per hospital.'
+-  - 'Branch B: a sum of low-multilinear-rank Tucker blocks replaces the matrix adapter, with LoRA as its rank-$(1,1)$ case.'
+-  - 'Win conditions: A beats FedAVG-HCCNet on the worst silos at matched communication; B beats the matrix adapter at a matched parameter budget.'
++  - 'The seed: $y = xW + b + \mathrm{Scale}[\mathrm{GELU}(xBA)]$, a frozen global layer plus a center adapter $BA$, trained in Pre, Warmup and Post phases.'
++  - 'Branch A: FLoRank adapters on the federated HCCNet backbone. Branch B: Tucker blocks replace the matrix adapter (LoRA is rank-$(1,1)$).'
++  - 'Wins: A beats FedAVG-HCCNet on the worst silos at matched communication; B beats the matrix adapter at matched parameters.'
+-  - 'A cited scan found no block-term adapter anywhere in parameter-efficient fine-tuning.'
+-  - 'FacT (AAAI 2023) already casts LoRA as a special case, and FedRot-LoRA pre-empts factor-alignment claims.'
++  - 'A cited scan found no block-term adapter in fine-tuning; FacT (AAAI 2023) casts LoRA as a special case, FedRot-LoRA pre-empts factor alignment.'
+```
+
+### harmonop
+
+```diff
+-hook: 'GAN and ComBat harmonizers are tied to their training grid and their training scanners; an operator defined on functions can be trained at one resolution, applied at another, and carried to a scanner it never saw.'
++hook: 'An operator defined on functions can be trained at one resolution, applied at another, and carried to an unseen scanner.'
+-  - 'No harmonization operator has been trained on any site yet.'
+-  - 'Gate: a 2D prototype between two BraTS sites at appearance parity with a CycleGAN.'
++  - 'No operator trained on any site yet. Gate: a 2D prototype between two BraTS sites at appearance parity with a CycleGAN.'
+```
+
+### hccnet-fl-sweden
+
+```diff
+-hook: 'Data from a Dutch and a Swedish hospital cannot be pooled, and the two sites are expected to hold different MRI sequence sets; a federation that assumes shared modalities breaks there, so each site has to use everything it has.'
++hook: 'The sites cannot pool data and are expected to hold different MRI sequence sets, so each site has to use everything it has.'
+-  - 'Gate pending; the Link<o umlaut>ping data-use, ethics and GDPR agreement is the critical path.'
+-  - 'The novelty check is pending, so no novelty is claimed.'
++  - 'Gate pending; the Link<o umlaut>ping data-use, ethics and GDPR agreement is the critical path. Novelty check pending: no novelty is claimed.'
+```
+
+### hccnet-pathology
+
+```diff
+-hook: 'A monolithic HCC-risk network overfits 243 patients with 37 cancers and cannot say which liver condition drives a patient''s risk; four small networks, one per pathology, give a stronger prior at fewer parameters and a per-patient attribution.'
++hook: 'A monolithic network overfits 243 patients with 37 cancers; four small pathology networks give a stronger prior and attribution.'
+-  plain: 'Four small models each watch one problem in the liver (scarring, inflammation, fat, iron) over several scans, and a final model weighs them for each patient.'
++  plain: 'Four small models each watch one problem (scarring, inflammation, fat, iron) over several scans, and a final model weighs them for each patient.'
+-  - { label: 'Stage', value: 'scoping, gate pending' }
+-  - 'Stage 1: fibrosis, inflammation, steatosis and iron nets, each per-modality encoders and a small 3D CNN emitting a per-visit score; about 9M parameters in all against 12.4M for HCCNet-F.'
+-  - 'Steatosis and iron are anchored on the Dixon fat fraction and the iron index, a signal floor nothing has to learn.'
+-  - 'Stages 2 and 3: score trajectories plus clinical variables feed a Transformer with soft MoE gating, then a classification head.'
+-  - 'Training: DINO pretraining on all 963 exams, each pathology net on P(HCC), then end-to-end fine-tuning.'
++  - 'Fibrosis, inflammation, steatosis and iron nets, each a per-visit score: about 9M parameters against 12.4M for HCCNet-F.'
++  - 'Steatosis and iron anchored on Dixon fat fraction and iron index; a Transformer with soft MoE gating; DINO pretraining on all 963 exams.'
+-  - 'Gate pending; the design is the transcribed architecture_v3.'
++  - 'Gate pending; the design is the transcribed architecture_v3. Gate: equal or better AUPRC than HCCNet-F on identical folds, plus validated attribution.'
+-  - 'Gate: equal or better AUPRC than HCCNet-F on identical folds, plus validated attribution.'
+-  - 'The claim is the composition; each single-pathology MRI measure has its own literature, and the novelty check is pending.'
++  - 'Baselines: HCCNet-F and HCCNet-Pico, a late-fusion CNN, radiomics with XGBoost. Ablations: physics off, MoE to mean pooling, one shared net.'
++  - 'The claim is the composition; the novelty check is pending. With 37 positives: stage-wise training, bootstrapped CIs and paired tests.'
+-
+----
+-kind: columns
+----
+-# Baselines, open checks and cheaper training
+-
+-### Baselines and checks
+-
+-- Baselines: monolithic HCCNet-F and HCCNet-Pico, a late-fusion multimodal CNN, and radiomics with XGBoost as a cheap lower bound.
+-- Ablations: physics features off, MoE gating replaced by mean pooling, and one shared net replacing the modular nets.
+-- Pathology labels: weak labels (FibroScan or biopsy, MR-PDFF, R2$^*$) for a supervised head, post-hoc validation against them, or no pathology names at all.
+-- With 37 positives: stage-wise training, bootstrapped CIs and paired tests; the 3-year horizon against next-scan is fixed up front with a lead-time analysis.
+-
+-|||
+-
+-### Less data, faster training (proposed, none measured)
+-
+-- Pre-train the reader once on all 963 exams, freeze it and train later models on stored per-visit embeddings; pre-training takes about 27 h on one GPU, fine-tuning about 4 h.
+-- One shared frozen reader with small per-condition heads, replacing the four 3D networks.
+-- Condition scores trained on reference measures (elastography, biopsy, MR fat fraction, R2$^*$) where many patients have them, beyond the 37 HCC cases.
+-- A small sequence model on about ten numbers per visit, and a liver crop at lower resolution for a first pass; each proposal is measured by trainable parameters, hours per run and AUPRC on identical folds.
+----
+```
+
+### modality-dropping-btf
+
+```diff
+-title: 'Federated multimodal fusion where a hospital missing a modality drops that mode'
++title: 'Federated fusion where a hospital missing a modality drops that mode'
+-hook: 'Real hospitals do not hold the same modalities, and imputation or zero-filling fills in data they do not have; a block-term fusion whose modes are the modalities lets a site drop what it lacks and still borrow a shared cross-modal factor from richer sites.'
++hook: 'With modalities as block-term modes, a site drops what it lacks and borrows a shared cross-modal factor from richer sites.'
+-  plain: 'The model is built from pieces, each tied to a set of data types; a hospital uses only the pieces whose data it has, and the pieces everyone has learn from everyone.'
++  plain: 'Each piece of the model is tied to a set of data types; a hospital uses only the pieces whose data it has.'
+-  - { label: 'Venue', value: 'IEEE J-BHI as a fusion method, MedIA or IEEE TMI as a network study' }
+-  - { label: 'Stage', value: 'nascent, gate pending' }
++  - { label: 'Venue', value: 'IEEE J-BHI (fusion), MedIA or IEEE TMI (network study)' }
+-  - 'Prediction as a sum of $R$ Tucker-$(L_r,\dots,L_r,1)$ blocks, each over a subset of modality modes.'
+-  - 'A site lacking modality $m$ keeps only the blocks not supported on $m$: a strict sub-model, with no imputation.'
+-  - 'The server averages each modality factor only across the sites that hold it.'
+-  - 'A local residual head per site is a minor part; the shared and personal split alone is pre-empted.'
++  - 'Sum of $R$ Tucker-$(L_r,\dots,L_r,1)$ blocks over modality subsets; a site lacking $m$ keeps the blocks off $m$, no imputation.'
++  - 'The server averages each modality factor across the sites holding it; a local residual head is minor, the shared-personal split alone being pre-empted.'
+-  - 'Nothing has run; a cited four-lane scan is done.'
+-  - 'Gate 1: read TenMFL (IEEE TCE 2024), which could pre-empt the tensor-fusion core.'
+-  - 'Gate 2: beat BLOSSOM-style late fusion at matched parameter budget on real data; a tie makes it a clinical demo.'
++  - 'Nothing has run; a cited four-lane scan is done. Gate 1: read TenMFL (IEEE TCE 2024), which could pre-empt the tensor-fusion core.'
++  - 'Gate 2: beat BLOSSOM-style late fusion at matched budget on real data; a tie makes it a clinical demo.'
+```
+
+### multiway-biosignal-fm
+
+```diff
+-hook: 'Every EEG and ECG foundation model tokenizes the signal, so nothing in them means the same thing across electrode layouts; a pretraining objective on the mode-wise factors is the one place where multiway structure is more than a cheaper layer.'
++hook: 'Tokenizing EEG and ECG models mean nothing across electrode layouts; a pretraining objective on mode-wise factors would.'
+-  plain: 'Treat a recording as a grid of sensors by time by frequency, split it into a few shared patterns, and train the model so each pattern means the same thing in every dataset.'
++  plain: 'Treat a recording as a grid of sensors by time by frequency, split it into shared patterns, and train so each pattern means the same everywhere.'
+-  - { label: 'Stage', value: 'scoping, gate pending' }
+-  - 'Backbone: a multilinear map on the (channel, time, frequency) array, pretrained across datasets with heterogeneous montages.'
+-  - 'Objective, the open design and the contribution: a masked target on the mode-wise factors, or a loss enforcing factor identifiability across datasets.'
+-  - 'Datasets chosen by montage diversity; candidates include mimic-iv-ecg and code15.'
++  - 'Backbone: a multilinear map on the (channel, time, frequency) array, pretrained across montages (candidates include mimic-iv-ecg and code15).'
++  - 'Objective, the contribution: a masked target on the mode-wise factors, or a loss enforcing factor identifiability across datasets.'
+-  - 'None of the swept models carries a Tucker, CP or block-term factorization of the data tensor.'
+-  - 'Gate 1: reach a tokenizing baseline downstream at matched parameters and pretraining budget.'
+-  - 'Gate 2: factor-level pretraining transfers across montages better than a tokenizing model.'
+-  - 'No code, no runs, no manuscript.'
++  - 'None of the swept models carries a Tucker, CP or block-term factorization of the data tensor. No code, no runs, no manuscript.'
++  - 'Gate 1: reach a tokenizing baseline at matched parameters and budget. Gate 2: factor-level pretraining transfers across montages better.'
++  - 'Taken: block-term attention to 0.16B (NeurIPS 2019), CP tensor attention to 1.5B (TPA, NeurIPS 2025), factorized experts (NeurIPS 2024).'
++  - '$R$ rank-$(L,L,1)$ terms have CP-rank at most $RL$: no representational claim, only statistical or identifiability claims; scale is the main risk.'
+-
+----
+-kind: columns
+----
+-# What the cited scan found taken, and what limits the claim
+-
+-### Already taken
+-
+-- Block-term attention (Ma et al., NeurIPS 2019) at most 0.16B, the ceiling for block-term anywhere; factorized experts (Multilinear Mixture of Experts, NeurIPS 2024); CP tensor attention to 1.5B (TPA, NeurIPS 2025).
+-- Other multiway structure: axial parameter sharing (Axial Neural Networks, NeurIPS 2025), Tucker and CP operator weights (MG-TFNO), and an amortized variational LL1 method on one dataset.
+-- Near misses in biosignals: B[FM]$^2$ uses separable convolution, MST independent per-frequency maps.
+-- BTT already names Block Tensor-Train (ICML 2024), so the abbreviation is not used.
+-
+-|||
+-
+-### Limits on what can be claimed
+-
+-- A sum of $R$ rank-$(L,L,1)$ terms has CP-rank at most $RL$, so no representational claim; only statistical or identifiability claims.
+-- Title-and-abstract search cannot see a factorization buried in an architecture appendix.
+-- Tuformer (ICLR 2022) and Hypoformer (COLING 2022) could not be opened.
+-- Scale is the main risk: the claim has to rest on structure and transfer at about 100M.
+----
+```
+
+### neurosde
+
+```diff
+-title: 'One shared stochastic cortical dynamics for decoding a new subject''s ECoG'
++title: 'One shared stochastic cortical dynamics to decode a new subject''s ECoG'
+-hook: 'Every patient''s electrode grid sits differently, and deterministic cross-subject decoders return a point estimate with no confidence; a latent SDE shared by all subjects lets the noise term absorb the variability between people and gives the decoder calibrated uncertainty.'
++hook: 'A latent SDE shared by all subjects lets the noise absorb between-person variability and gives calibrated uncertainty.'
+-  plain: 'All patients share one model of how brain activity evolves, with randomness built in; each new patient only needs a small personal translator in and out of it.'
++  plain: 'All patients share one model of brain activity with randomness built in; each new patient needs only a small personal translator.'
+-  - { label: 'Compute', value: 'small enough to run without HPC' }
+-  - 'Trained by variational inference over trajectories.'
+-  - 'Transfer freezes the shared SDE and fits only the new subject''s thin maps.'
++  - 'Trained by variational inference over trajectories; transfer freezes the shared SDE and fits only the new subject''s thin maps.'
+-  - 'No SDE has been fitted to the ECoG recordings yet.'
+-  - 'A cited check found latent SDEs for neural dynamics and shared-latent cross-subject decoding separately, but not their combination.'
++  - 'No SDE fitted to the ECoG yet. A cited check found latent SDEs and shared-latent cross-subject decoding separately, but not their combination.'
+-  - 'The problem space is active, so the SDE variant is confirmed absent from the closest preprints first; the Stanford gesture and motor-imagery paradigms then test that it is not specific to finger flexion.'
++  - 'The SDE variant is confirmed absent from the closest preprints first; Stanford gesture and motor-imagery paradigms then test beyond finger flexion.'
+```
+
+### old-charges-stemmatology
+
+```diff
+-sub: 'A stemmatology of the manuscript constitutions of English and Scottish freemasonry, c.1390 to the 18th century'
+-hook: 'About 130 copies of one text survive, sorted into families by hand since Begemann 1888 and contested since; a reconstructed tree can show which copies mix two sources, date the undated ones and place the unclassified.'
++sub: 'A stemmatology of English and Scottish masonic manuscript constitutions, c.1390 to the 18th century'
++hook: 'About 130 copies of one text survive, sorted into families by hand since Begemann 1888; a tree can show copies mixing sources.'
+-  plain: 'Every copy changed a few words; the methods biologists use to build family trees from DNA differences can build the family tree of the copies from those word changes.'
++  plain: 'Every copy changed a few words; the methods biologists use for DNA family trees can rebuild the family tree of the copies.'
+-  - { label: 'Benchmark', value: 'Heinrichi artificial tradition, with contamination' }
+-  - { label: 'Stage', value: 'scoping, pilot-gated' }
++  - { label: 'Benchmark', value: 'Heinrichi artificial tradition' }
+-  - 'Fix the witness set and a justified, varied spelling normalisation; collate into variation units.'
+-  - 'Fit a parsimony tree, a NeighborNet split network and a Bayesian tree (BEAST 2), and compare with the hand families and the McLeod codes.'
+-  - 'Assess contamination explicitly, since a tree cannot show a witness with two exemplars.'
+-  - 'Date undated witnesses with copy date and content date kept apart.'
++  - 'Collate; fit parsimony, NeighborNet and Bayesian (BEAST 2) trees; compare with the hand families and McLeod codes.'
++  - 'Assess contamination, since a tree cannot show a witness with two exemplars; date undated witnesses, copy date and content date kept apart.'
+-  - 'No result: the gate has not run, and no code exists.'
+-  - 'Gate: collate 15 to 20 witnesses and measure the conflict between split signals, the one number no source gives.'
+-  - 'No computational study found with the queries run; Scholar, Scopus, WoS and the full AQC index are not yet searched.'
+-  - 'Candidate contribution: a contamination-aware model with exemplar mixing per witness; its novelty is not checked.'
++  - 'No result: the gate has not run, no code. Gate: collate 15 to 20 witnesses and measure the conflict between split signals, which no source gives.'
++  - 'No computational study found with the queries run; Scholar, Scopus, WoS, full AQC index not searched. Exemplar mixing: novelty unchecked.'
++  - 'Dead ends: a lodge by occupation by decade tensor; periodical topic modelling. Constraints: no TEI or plain-text corpus; old-charges.org is all rights reserved.'
+-
+----
+-kind: columns
+----
+-# What was set aside, and what the texts allow
+-
+-### Dead ends and prior art
+-
+-- A lodge by occupation by decade tensor: FactGrid fills 7,607 of about 10.1 million cells, and the data cannot carry a multiway analysis.
+-- Periodical topic modelling: noisy OCR over about 75,000 pages and a low methodological bar.
+-- Taking the hand families as ground truth: both Begemann's and McLeod's schemes are contested, so they serve only as a comparison.
+-- Prior art: phylogenetic stemmata of Dante's Monarchia (20 manuscripts plus the editio princeps) agree closely with the traditional ones; on the Heinrichi benchmark Neighbour-Joining scores 67.9% skeleton and 58.5% orientation; McCollum and Turnbull 2024 leave simultaneous contamination out of scope.
+-
+-|||
+-
+-### Corpus constraints, and a second corpus
+-
+-- No TEI or plain-text diplomatic corpus exists; old-charges.org holds the only complete set, all rights reserved.
+-- Counts of known versions differ by source and by what is counted: 32 (Hughan 1872), about 115 (Knoop and Jones 1941), 131 entries on old-charges.org.
+-- About 330 years of copying, 13 to 15 lost witnesses, copyists who altered passages on purpose, and contamination nobody has measured.
+-- Second paper: the same pipeline on the 18th-century printed exposures (Prichard 1730, Three Distinct Knocks, Jachin and Boaz).
+----
+```
+
+### paleogenomics-tensor
+
+```diff
+-hook: 'Ancient-DNA data is three-way, populations by loci by time period, and two-way PCA or ADMIXTURE flattens the time axis; a coupled block-term model could recover admixture more cleanly and federate across institutions that cannot share raw genotypes.'
++hook: 'Two-way PCA or ADMIXTURE flattens the time axis; a coupled block-term model could recover admixture more cleanly.'
+```
+
+### pathology-tensor-mil
+
+```diff
+-title: 'Whole-slide pathology read through block-term tissue signatures whose faithfulness is measured'
++title: 'Whole-slide pathology read through block-term tissue signatures'
+-hook: 'Attention MIL pools a slide''s patches with maps that are spatially imprecise and never tested for being causal; a block-term decomposition of the patch grid gives localized tissue signatures, and ablating a block shows whether it drives the prediction.'
++hook: 'Attention MIL maps are imprecise and never tested as causal; block-term signatures are localized and testable by ablation.'
+-  plain: 'Lay the slide''s small image tiles out on their grid, split the grid into a few tissue patterns each tied to one region, and check each pattern by removing it and watching whether the answer changes.'
++  plain: 'Split the slide''s tile grid into a few tissue patterns tied to regions, and check each by removing it and watching the answer.'
+-  - { label: 'Data', value: 'CAMELYON16/17 benchmark (region annotations); TCGA-LIHC for the headline' }
++  - { label: 'Data', value: 'CAMELYON16/17 (region annotations), TCGA-LIHC; frozen UNI or CONCH embeddings' }
+-  - { label: 'Features', value: 'frozen UNI or CONCH patch embeddings' }
+-equation: '\mathcal{T} \in \mathbb{R}^{X \times Y \times \text{feature}}, \qquad \mathcal{T} \approx \sum_{r=1}^{R} (A_r B_r^{\top}) \circ c_r'
+-  - 'Tile the slide, embed patches with a frozen pathology foundation model, and assemble the per-slide grid tensor.'
+-  - 'Rank-$(L,L,1)$ block-term decomposition; block activations map to the slide label.'
+-  - 'Faithfulness by probe and intervention, as in BTTN: ablating a block must move the prediction if and only if it is causal.'
+-  - 'Baselines on the same splits: ABMIL, TransMIL and DTFD-MIL.'
++  - 'Tile the slide, embed patches with a frozen pathology foundation model, assemble the per-slide grid tensor.'
++  - 'Rank-$(L,L,1)$ decomposition $\mathcal{T} \approx \sum_{r} (A_r B_r^{\top}) \circ c_r$; block activations map to the slide label.'
++  - 'Faithfulness by probe and intervention: ablating a block must move the prediction if and only if causal. Baselines: ABMIL, TransMIL, DTFD-MIL.'
+```
+
+### physics-tensor-hcc
+
+```diff
+-hook: 'HCCNet''s own ablation shows naive fusion adds little over the best single modality; with 37 positives a dense fusion layer overfits, and the four DWI b-values are one decay curve treated as four channels.'
++hook: 'HCCNet''s ablation: naive fusion adds little; four DWI b-values are one decay curve treated as four channels.'
+-equation: 'S(b)/S_0 = f\,e^{-bD^*} + (1-f)\,e^{-bD}, \qquad \mathrm{FF} = (S_{in}-S_{out})/(2\,S_{in})'
+-  - 'Physics: IVIM collapses b = 0, 150, 400, 800 into $D$, $D^*$ and $f$; Dixon turns the T1 in/out pair into a fat fraction.'
++  - 'IVIM $S(b)/S_0 = f e^{-bD^*} + (1-f) e^{-bD}$ collapses b = 0, 150, 400, 800 into $D$, $D^*$, $f$; Dixon gives $\mathrm{FF} = (S_{in}-S_{out})/(2 S_{in})$.'
+-  - 'Nothing has run; first the parameter maps are checked against known physical ranges.'
++  - 'Nothing has run; first the parameter maps are checked against known physical ranges. With 37 positives a dense fusion layer overfits.'
+```
+
+### quantum-tensor-fl
+
+```diff
+-hook: 'Quantum ML is crowded and hype-heavy, so a generic quantum plus tensor or quantum plus FL paper carries little; the bar is a specific angle that builds on block-term and federated methods and beats a classical baseline.'
++hook: 'Quantum ML is crowded; the bar is a specific angle on block-term and federated methods that beats a classical baseline.'
+-  plain: 'Either borrow the tensor networks physicists use for quantum systems, or add quantum parts to federated training, and keep it only if it beats the ordinary version.'
++  plain: 'Either borrow tensor networks from quantum physics or add quantum parts to federated training; keep it only if it beats the ordinary version.'
+-  - { label: 'Stage', value: 'nascent, lowest priority; one paper at most, opportunistic or post-tenure' }
++  - { label: 'Stage', value: 'nascent, lowest priority; opportunistic or post-tenure' }
+-  - 'One branch only, chosen after the literature check; capped at one paper and pursued opportunistically.'
++  - 'One branch only, chosen after the check; capped at one paper, kept only if the quantum angle gives a positive over a classical baseline.'
+-  - 'Gate pending: a lit-check decides between the two branches.'
+-  - 'Gate: a cited check of the quantum-ML, quantum-FL and quantum tensor-network spaces that pins an unoccupied angle.'
+-  - 'Kept only if the quantum angle gives a positive over a classical baseline.'
++  - 'Gate pending: a cited check of the quantum-ML, quantum-FL and quantum tensor-network spaces pins an unoccupied angle and decides the branch.'
+```
+
+### serial-ecg-af
+
+```diff
+-title: 'Predicting future AF from how a patient''s atrial substrate changes across serial ECGs'
++title: 'Predicting future AF from atrial substrate change across serial ECGs'
+-hook: 'One ECG shows only the atrial substrate''s current state, so single-ECG models sit near a ceiling; serial ECGs see remodeling velocity, and every serial-ECG AF model so far is a black box.'
++hook: 'One ECG shows only the current substrate; serial ECGs see remodeling velocity, in black-box models so far.'
+-  plain: 'Track a few readable heart-rhythm patterns from one ECG to the next and watch how fast they change; the change itself is the warning sign and the explanation.'
++  plain: 'Track readable heart-rhythm patterns from one ECG to the next; how fast they change is the warning sign and the explanation.'
+-  - { label: 'Stage', value: 'exploring, gate pending' }
+-  - 'Couple each patient''s per-visit factor scores across the series, with irregular intervals as the continuous variable.'
+-  - 'Predict future-onset AF from the trajectory, a new objective on the series.'
++  - 'Couple each patient''s per-visit factor scores across the series, irregular intervals continuous; predict future-onset AF from the trajectory.'
+-  - 'No results: the join of dated future-AF outcomes from MIMIC-IV to the serial ECGs is not done.'
+-  - 'Serial ECGs beat single ECGs for new-onset AF (Sun et al., JAHA 2024), with black-box models only.'
++  - 'No results: the outcome join to the serial ECGs is not done. Serial beat single ECGs for new-onset AF (Sun et al., JAHA 2024), black-box only.'
+```
+
+### ssm-longitudinal
+
+```diff
+-hook: 'HCCNet''s Transformer pads irregular follow-up to fixed steps; a state-space model whose dynamics depend on the actual $\Delta t$ between scans treats screening cadence as the continuous variable it is.'
++hook: 'HCCNet''s Transformer pads irregular follow-up to fixed steps; a state-space model uses the actual $\Delta t$ between scans.'
+-  - 'Gate pending: beat the HCCNet baseline; no new data and no collaborator gate are needed.'
+-  - 'Gate: a head-to-head against the HCCNet CNN-Transformer on the same cohort and endpoints, with CIs, before more effort.'
++  - 'Gate pending: a head-to-head against the HCCNet CNN-Transformer on the same cohort and endpoints, with CIs; no new data and no collaborator gate needed.'
+-  - 'It would be the temporal backbone of the imaging foundation-model idea, if that becomes feasible; irregular-time sequences also arise in EHR and wearables, and the line sits in Flanders'' imaging-AI strength.'
++  - 'It would be the temporal backbone of the imaging foundation-model idea, if feasible; irregular-time sequences also arise in EHR and wearables.'
+```
+
+### strokeop
+
+```diff
+-title: 'Ischemic tissue fate learned as an operator from baseline perfusion to final infarct'
++title: 'Ischemic tissue fate learned as an operator, perfusion to final infarct'
+-hook: 'Stroke tissue-fate models are CNNs that segment a static mask on their training grid and cannot answer what-if questions; an operator with reperfusion as a control input is resolution-invariant and can be run counterfactually.'
++hook: 'An operator with reperfusion as a control input is resolution-invariant and can answer what-if questions counterfactually.'
+```
+
+### xsub-ecog-framework
+
+```diff
+-title: 'Does one cross-subject ECoG transfer framework hold across tasks and datasets?'
++title: 'Does one cross-subject ECoG framework hold across tasks and datasets?'
+-hook: 'Every patient''s electrode grid sits differently, and the foundation models that handle mismatched grids are not interpretable and mostly do not do motor decoding; the idea is one interpretable, minimal-calibration cross-subject transfer framework, tested across behaviors and datasets.'
++hook: 'Foundation models for mismatched grids are not interpretable and mostly skip motor decoding; this framework would do both.'
+-  - 'Test minimal-calibration cross-subject transfer across non-corresponding grids on BCI Competition IV dataset 4 (3 subjects, finger flexion), which tests dataset generalization.'
++  - 'Minimal-calibration transfer across non-corresponding grids on BCI Competition IV dataset 4 (3 subjects, finger flexion) tests dataset generalization.'
+-  - 'Not started; it needs new runs.'
+-  - 'Gate: minimal-calibration transfer holds on BCI-IV-4, then on a different task.'
++  - 'Not started; it needs new runs. Gate: minimal-calibration transfer holds on BCI-IV-4, then on a different task.'
+```
+
+### bt-operator-theory
+
+```diff
+-title: 'Why does a block-term spectral kernel generalize better than CP at the same expressivity?'
++title: 'Why does a block-term spectral kernel generalize better than CP?'
+-hook: 'A sum of $R$ rank-$(L,L,1)$ block terms is a subclass of CP-rank-$RL$, so both formats reach the same operators; the gap is statistical, because CP fits a free frequency profile per rank-one term where a band-structured target needs one per band.'
++hook: 'Both formats reach the same operators; CP fits a frequency profile per rank-one term, a band target needs one per band.'
+-  purpose: 'Explain why one way of compressing the weights of a network that learns physics makes fewer mistakes on new data.'
+-  plain: 'Both ways can express the same functions, but one has fewer knobs for the noise to push around when the problem splits into separate frequency bands, so it learns more from the same examples.'
++  purpose: 'Explain why one way of compressing a physics-learning network''s weights makes fewer mistakes on new data.'
++  plain: 'Both ways express the same functions, but one has fewer knobs for noise to push around when the problem splits into bands.'
+-  - { label: 'Authors', value: 'A. Faes' }
+-  - { label: 'Target', value: 'JMLR' }
++  - { label: 'Authors', value: 'A. Faes, M. Amir Haeri' }
++  - { label: 'Target', value: 'Neural Networks' }
+-  - { label: 'Stage', value: 'revision' }
+-  - 'By Parseval the data-averaged operator metric is a spectrally weighted Frobenius norm, which reduces the risk to counting free frequency directions: $RLK$ for CP, $\mu_{\mathrm{band}}K$ for block-term.'
+-  - 'Least-squares excess risk is $\sigma^2\dim/n$ on each model manifold, with the conditioning constant $\kappa$ made explicit.'
+-  - 'Extensions: a variance ordering of CP, Tucker, TT and block-term, a penalized format selector, depth amplification, and the proportional regime.'
++  - 'By Parseval the risk reduces to counting free frequency directions: $RLK$ for CP, $\mu_{\mathrm{band}}K$ for block-term.'
+-  - 'Separation $\Theta((RL-\mu_{\mathrm{band}})K\sigma^2/n)$; the risk ratio tends to $RL/\mu_{\mathrm{band}}$ ($RL$ for disjoint bands), and the gap stays positive under any band overlap exactly when $L>1$.'
++  - 'Separation $\Theta((RL-\mu_{\mathrm{band}})K\sigma^2/n)$; the risk ratio tends to $RL/\mu_{\mathrm{band}}$; the gap is positive under any band overlap exactly when $L>1$.'
+-  - 'Proportional regime: the ratio diverges near CP''s threshold $n = RLK$ (about 60 against the classical 6 in the synthetic), and block-term avoids CP''s double-descent peak.'
+-  - 'The companion PDEBench study measures a 33% smaller generalization gap at five families (0.0178 to 0.0120) and a tie on one family.'
+-equation: '\mathrm{Risk}(\mathrm{CP}) - \mathrm{Risk}(\mathrm{BT}) = \Theta\Big(\frac{(RL-\mu_{\mathrm{band}})K}{n}\,\sigma^2\Big) \ge \Theta\Big(\frac{R(L-1)K}{n}\,\sigma^2\Big) > 0'
++  - 'Proportional regime: the ratio diverges near CP''s threshold $n = RLK$, and block-term avoids CP''s double-descent peak.'
+-kind: columns
++kind: project
++title: 'What do the checks show, and what is the reach of the claim?'
++sub: 'Self-contained synthetics and the scope of the separation'
++hook: 'Four self-contained synthetics check the theory inside the paper''s own Gaussian model.'
++tag: { class: proof, text: 'Checks and scope' }
++eli5:
++  purpose: 'Show that the theory''s numbers come out in its own model, and say how far it reaches.'
++  plain: 'The numbers match the theory; the advantage is an inductive bias.'
++specs:
++  - { label: 'Code', value: 'four synthetic scripts' }
++method:
++  - 'Four self-contained synthetic scripts.'
++results:
++  - 'L-gating at full overlap: ratio [1.0, 1.99, 2.79, 4.34] against theory [1, 2, 3, 4].'
++  - 'Depth: the dimension gap is exactly $92D$ through $D=4$.'
++  - 'An oracle reaches the rate within CP, so no minimax separation; the companion PDEBench study: a 33% smaller gap at five families, a tie on one.'
++equation: '\mathrm{Risk}(\mathrm{CP}) - \mathrm{Risk}(\mathrm{BT}) = \Theta\Big(\frac{(RL-\mu_{\mathrm{band}})K}{n}\,\sigma^2\Big) \ge \Theta\Big(\frac{R(L-1)K}{n}\,\sigma^2\Big) > 0'
++headline: 'The synthetic checks match the theory; the gap is an inductive-bias result'
+-# Checks in the paper's own model, and the reach of the claim
+-
+-### Four self-contained synthetics
+-
+-- L-gating at full overlap: ratio [1.0, 1.99, 2.79, 4.34] against theory [1, 2, 3, 4], an exact tie at $L=1$.
+-- Disjoint bands with $R=4$, $L=3$, $K=16$: ratio 10.15 against the asymptotic 12, the gap the exact finite-$K$ formula predicts.
+-- Depth: the CP-minus-block-term dimension gap is exactly $92D$ through $D=4$ and saturates at the predicted $D^\star = 4$.
+-
+-|||
+-
+-### Scope
+-
+-- Estimator-level: an oracle that knows the band support reaches the block-term rate within CP, so there is no minimax separation.
+-- Block-term has no representational edge over CP; the advantage is inductive bias.
+-- On approximately band-structured targets the gain is a bias-variance trade-off, and the absolute constants are unoptimized.
+-- PDEBench agrees in sign, direction, diversity gating and the $L>1$ requirement; the constants are not claimed to match.
+```
+
+### btfno
+
+```diff
+-title: 'Does factorizing a Fourier operator''s spectral weight into block terms make one operator generalize across PDE families?'
++title: 'Do block-term spectral weights help one operator span PDE families?'
+-hook: 'The factorization of an FNO''s spectral weight acts as a prior on how frequencies couple to channels; block terms sit between the shipped CP and Tucker forms, and a routed mixture of them serves five PDEBench families at once.'
++hook: 'A routed mixture of block-term experts, between the shipped CP and Tucker forms, serves five PDEBench families at once.'
+-  plain: 'Each expert stores its frequencies in small blocks that share one frequency pattern, so it has less room to memorise the training data, and a router sends every input to the experts that suit it.'
++  plain: 'Each expert stores frequencies in small blocks sharing one pattern, and a router sends each input to the experts that suit it.'
+-  - { label: 'Venue', value: 'AAAI 2027, rejected; revising' }
++  - { label: 'Venue', value: 'AAAI 2027 rejected; targeting MLST' }
+-  - { label: 'Code', value: 'TheAxeC/block-term-neural-operator (private)' }
+-  - 'Spectral weight as $R$ rank-$(L,L,1)$ block terms with channel factors $A_r$, $B_r$, core $G_r$ and frequency profile $c_r$; $L=1$ gives CP, $R=1$ with $L=C$ gives Tucker; one einsum, no dense tensor.'
+-  - 'MoBTE-SM: an always-on shared block-term expert plus 8 routed experts, softmax-gated from the radial log-energy spectrum of the input.'
+-  - 'Two-frame input, matched real degrees of freedom against CP, Tucker and dense layers, 3 seeds, two-sided Welch $t$-tests.'
+-  - 'A least-squares separation under a Gaussian spectral-operator model: gap $\Theta(\sigma^2 R(L-1)K/n)$, risk ratio tending to $L$, zero at $L=1$.'
++  - 'Spectral weight as $R$ rank-$(L,L,1)$ block terms; $L=1$ gives CP, $R=1$ with $L=C$ gives Tucker; one einsum, no dense tensor.'
++  - 'MoBTE-SM: a shared block-term expert plus 8 routed experts, softmax-gated from the input spectrum; matched real degrees of freedom, 3 seeds, Welch $t$-tests.'
+-  - 'At matched parameters the block-term expert''s generalization gap is 33% below the CP expert''s (0.0120 against 0.0178, $p=0.015$), while the CP expert fits training better.'
+-  - 'All compressible flow: a 31% smaller gap ($p=0.0005$); a single family: a tie (0.0083 against 0.0085, $p=0.44$).'
+-  - 'In raw test error the two expert kinds separate only marginally ($p=0.053$ and $p=0.082$).'
+-equation: 'W_{i,j,k}=\sum_{r=1}^{R}\Big(\sum_{p,q} A_{r,ip}\,G_{r,pq}\,B_{r,jq}\Big)\,c_r(k)'
++  - 'At matched parameters the block-term expert''s generalization gap is 33% below the CP expert''s (0.0120 against 0.0178, $p=0.015$); the CP expert fits training better.'
++  - 'All compressible flow: a 31% smaller gap ($p=0.0005$); a single family: a tie (0.0083 against 0.0085, $p=0.44$); raw test error only $p=0.053$ and $0.082$.'
+-headline: 'Block-term experts generalize 33% better than CP experts at equal fit on five PDE families'
++headline: 'Block-term experts show a 33% smaller generalization gap than CP experts on five PDE families'
+-hook: 'The raw diversity gain belongs to mixing; the block-term expert''s own contribution is the smaller generalization gap.'
+-panels:
+-  - { figure: fig_mechanism.png, caption: 'Learned block profiles and frequency roughness', explain: 'Left, the learned block frequency profiles of one layer; right, the block-term kernel varies least across frequency (0.715, Tucker 0.797, CP 0.924), which the paper reports as a correlate only.' }
++sub: 'Diversity, the theorem at $L=1$, and scope as the paper states it'
++hook: 'The raw diversity gain belongs to mixing; the block-term expert adds a smaller gap.'
++tag: { class: mixed, text: 'Theorem, diversity and scope' }
++eli5:
++  purpose: 'What the mixture adds, and what the block terms add.'
++  plain: 'Any mixture gains; block terms add a smaller gap.'
++specs:
++  - { label: 'Code', value: 'TheAxeC/block-term-neural-operator (private)' }
++  - { label: 'AAAI 2027', value: 'rejected in Phase 1, ratings 4 and 5' }
++  - { label: 'Scope', value: 'one benchmark, no external mixture-of-experts system run' }
++method:
++  - 'A least-squares theorem and a diversity sweep.'
+-  - 'From two to five families the block-term mixture gains 0% to +14.7% over one block-term operator; a CP-expert mixture rises along the same curve to +8.5%.'
+-  - 'At $L=1$ the theorem predicts no advantage, yet the gap stops at 0.0160 against the CP expert''s 0.0179: an 11% residual ($p=0.040$) the theorem does not account for.'
+-  - 'Rejected at AAAI 2027 in Phase 1 (ratings 4 and 5); the reviews ask for MoE-POT, NESTOR, MPP and AM-FNO baselines, a second benchmark and the Tucker side of the theory.'
+-  - 'Scope as the paper states it: an internal factorization comparison at about 670k parameters on one benchmark, with no external mixture-of-experts operator system run.'
++  - 'Theorem: gap $\Theta(\sigma^2 R(L-1)K/n)$, zero at $L=1$, where an 11% residual remains ($p=0.040$).'
++  - 'Two to five families: block-term mixture 0% to +14.7% over one operator; CP-expert mixture up to +8.5%.'
++equation: 'W_{i,j,k}=\sum_{r=1}^{R}\Big(\sum_{p,q} A_{r,ip}\,G_{r,pq}\,B_{r,jq}\Big)\,c_r(k)'
++headline: 'The theorem''s gap is zero at $L=1$; the scope is one benchmark'
+```
+
+### bttd-source-eeg
+
+```diff
+-title: 'Can one decomposition of evoked EEG return each generator''s location, time course and trial loading together?'
+-sub: 'Jointly Localized Spatiotemporal Components of Evoked EEG via a Lead-Field-Constrained Block-Term Decomposition'
+-hook: 'Distributed inverses return one map per time sample, and reading a generator''s time course off those maps mixes in leakage; folding the lead field into a block-term decomposition makes every block a cortical source map with its own dynamics.'
++title: 'Can one decomposition localize evoked EEG generators and their dynamics?'
++sub: 'Jointly Localized Spatiotemporal Components of Evoked EEG via a Lead-Field-Constrained BTD'
++hook: 'Folding the lead field into a block-term decomposition makes every block a cortical source map with its own dynamics.'
+-  plain: 'The method only keeps patterns that come back across time and across trials, and it forces every pattern to be one the brain could actually have produced at the scalp.'
++  plain: 'The method keeps patterns that return across time and trials and that the brain could have produced at the scalp.'
+-  - { label: 'Tensor', value: 'channels x time x trials' }
+-  - 'Rank-$(L_r,L_r,1)$ blocks whose spatial factor is the lead field times a row-sparse source map $\mathbf{G}_r$, with temporal factor $\mathbf{B}_r$ and trial loading $\mathbf{c}_r$; $L_r=2$.'
+-  - 'Greedy deflation as in block-term tensor regression (BTTR): least-squares updates for $\mathbf{B}_r$ and $\mathbf{c}_r$, ISTA with a row group threshold for $\mathbf{G}_r$.'
+-  - 'Simulated evoked EEG with 500 background dipoles and white sensor noise on a 64-channel sphere, a BEM on fsaverage and the New York head; 8 seeds, paired Wilcoxon tests.'
+-  - 'Baselines: MNE, sLORETA, eLORETA, LCMV, Champagne and CP followed by eLORETA.'
++  - 'Rank-$(L_r,L_r,1)$ blocks whose spatial factor is the lead field times a row-sparse source map $\mathbf{G}_r$; $L_r=2$; channels by time by trials.'
++  - 'Greedy deflation; simulated evoked EEG on sphere, BEM and New York head; against MNE, sLORETA, eLORETA, LCMV, Champagne, CP then eLORETA.'
+-  - 'Recovered time courses correlate 0.93 $\pm$ 0.09 with the truth on the sphere, against 0.98 to 0.99 for MNE, sLORETA and eLORETA.'
+-  - 'Spread 13.4 $\pm$ 4.2 mm, the most focal of the classical solvers (MNE 14.5, eLORETA 17.4, sLORETA 21.8); the margin over eLORETA is not significant ($p=0.055$).'
+-  - 'On the BEM eLORETA is more focal (22.1 against 26.8 mm), and on the New York head the spread is 23 to 33 mm against 17 to 22.'
+-  - 'Champagne is sharper on these point sources (spread about 0.1 mm, correlation about 1.00), under the matched sparse prior it assumes.'
+-panels:
+-  - { figure: fig2_source_maps.png, caption: 'Source maps on the sphere at 0 dB', explain: 'Blue crosses mark the true sources; the block-term components sit on the generators, next to Champagne, CP followed by eLORETA, MNE, sLORETA, eLORETA and LCMV.' }
+-equation: '\mathcal{M}\approx\sum_{r=1}^{R}\big[(\mathbf{L}\mathbf{G}_r)\,\mathbf{B}_r^{\top}\big]\circ\mathbf{c}_r'
++  - 'Time courses correlate 0.93 $\pm$ 0.09 with the truth on the sphere, against 0.98 to 0.99 for MNE, sLORETA and eLORETA.'
++  - 'Spread 13.4 $\pm$ 4.2 mm, the most focal of the classical solvers (MNE 14.5, eLORETA 17.4, sLORETA 21.8); margin over eLORETA not significant ($p=0.055$).'
++  - 'On the BEM eLORETA is more focal (22.1 against 26.8 mm); New York head 23 to 33 mm against 17 to 22; Champagne is sharper (about 0.1 mm).'
+-hook: 'On the open MNE sample data a stimulus in one visual hemifield localizes to occipital cortex in the opposite hemisphere, with time courses flat before onset.'
+-panels:
+-  - { figure: real_contralateral.png, caption: 'Retinotopic check on real evoked EEG', explain: 'Left-field stimulation peaks in right lateral-occipital cortex and right-field stimulation in left lateral-occipital cortex.' }
++sub: 'Retinotopy on the open MNE sample data, correlated sources and scope'
++hook: 'A stimulus in one visual hemifield localizes to the opposite occipital cortex, flat before onset.'
++tag: { class: measured, text: 'Real EEG and limits' }
++eli5:
++  purpose: 'Check the method on real evoked EEG and find where it stops.'
++  plain: 'Real data agree with the expected side of the brain; the method needs phase-locked responses.'
++specs:
++  - { label: 'Correlated, LCMV', value: 'spread 17 to 53 mm, AUC 1.00 to 0.73' }
++  - { label: 'Correlated, components', value: '17 to 18 mm, AUC 0.93 to 0.90' }
++method:
++  - 'Visual-hemifield stimuli on the open MNE sample data.'
+-  - 'Correlated sources: LCMV''s spread rises from 17 to 53 mm and its AUC falls from 1.00 to 0.73, while the components stay at 17 to 18 mm and AUC 0.93 to 0.90; the linear inverses and Champagne are also robust.'
+-  - 'Phase-locked data only: on non-phase-locked sources the time-course correlation falls to 0.16 $\pm$ 0.07, against 0.85 $\pm$ 0.05 for per-trial eLORETA.'
+-  - 'No multi-source recovery advantage: under a readout-agnostic top-$K$ count the components recover 1.6 of 3 sources, the fewest of the methods.'
+-  - 'Block count and rank are set by hand, and deep sources degrade for every method.'
++  - 'Phase-locked data only: non-phase-locked correlation falls to 0.16 $\pm$ 0.07, against 0.85 $\pm$ 0.05 for per-trial eLORETA.'
++  - 'No multi-source recovery advantage: 1.6 of 3 sources under a top-$K$ count, the fewest of the methods; block count and rank are set by hand.'
++equation: '\mathcal{M}\approx\sum_{r=1}^{R}\big[(\mathbf{L}\mathbf{G}_r)\,\mathbf{B}_r^{\top}\big]\circ\mathbf{c}_r'
++headline: 'Real visual EEG localizes to the opposite occipital cortex; the method needs phase-locked data'
+```
+
+### bttn-incident-af
+
+```diff
+-title: 'Can an interpretable ECG model predict atrial fibrillation before its first episode?'
+-sub: 'An Interpretable Block-Term Tensor Network for Incident Atrial-Fibrillation Prediction from the Sinus-Rhythm 12-Lead ECG and Clinical Risk Factors'
+-hook: 'BTTN reads a frequency by time by lead spectrogram through blocks with readable frequency and lead factors, and adds clinical risk factors outside those blocks.'
++title: 'Can an interpretable ECG model predict atrial fibrillation before onset?'
++sub: 'Block-Term Tensor Network for incident AF from the sinus-rhythm 12-lead ECG'
++hook: 'BTTN reads a frequency-time-lead spectrogram through blocks with readable factors; clinical factors sit outside them.'
+-  - { label: 'Code', value: 'TheAxeC/bttn-incident-af' }
+-  - 'Spectrogram of about 21 frequencies, 40 frames and 12 leads; $K=12$ blocks with factors $A_k$, $C_k$, temporal convolutions and attention pooling.'
+-  - 'Cox loss over batch risk sets; clinical factors enter as $\eta=\eta_{\mathrm{ECG}}+\mathbf{w}^{\top}\mathbf{c}$, zero at the start of training.'
++  - 'About 21 frequencies, 40 frames, 12 leads; $K=12$ blocks under a Cox loss; clinical factors enter as $\eta=\eta_{\mathrm{ECG}}+\mathbf{w}^{\top}\mathbf{c}$.'
+-  - 'One-year AUROC: ECG-only 0.747, matched CNN 0.734, clinical baseline 0.760; fused 0.778 [0.767, 0.789], paired +0.019 [+0.014, +0.024], and 0.794 at five years.'
++  - 'One-year AUROC: ECG-only 0.747, CNN 0.734, clinical 0.760, fused 0.778 [0.767, 0.789]; paired +0.019 [+0.014, +0.024]; five-year 0.794.'
+-  - 'Recalibrated to 4.25% incidence: 20.7-fold risk gradient across deciles, Brier 0.039, 7.7 patients monitored per AF case at a top-5% flag rate.'
++  - 'Recalibrated to 4.25% incidence: 20.7-fold risk gradient across deciles, Brier 0.039, 7.7 monitored per AF case at a top-5% flag rate.'
+-hook: 'Occlusion places future-AF risk in the P-wave band near 2 Hz and a 4 to 8 Hz atrial band, in leads I, II, V1 and V5.'
++hook: 'Risk sits in the P-wave band near 2 Hz, a 4 to 8 Hz atrial band and leads I, II, V1 and V5.'
+-  purpose: 'Check which parts of the ECG carry the risk signal, and on which other cohorts it can be tested.'
+-  plain: 'Masking a frequency band or a lead and watching the drop shows where the model looks; the same pattern recurs on CODE-15.'
++  purpose: 'Which ECG parts carry the risk, and where can it be tested?'
++  plain: 'Masking a band or a lead shows where the model looks.'
++specs:
++  - { label: 'CODE-15, PTB-XL', value: 'identification 0.829, detection 0.980, 0.983' }
++  - { label: 'AUROC', value: 'block-term, full-rank 0.729, CP 0.728' }
++  - { label: 'Dead ends', value: 'tensor 0.675, boosted BTTR 0.620, attention 0.61, two-branch, warm start' }
++method:
++  - 'Occlusion; probe label-blind 0.973, trained 0.976.'
+-  - 'Below the one-year AUROC of 0.85 reported by Raghunath et al. on a far larger cohort; the five-year 0.794 is in-distribution, 0.77 of Jabbour et al. is external.'
+-  - 'A label-blind block layer recovers 0.973 under the probe, the trained one 0.976; block-term, full-rank and CP layers tie on AUROC (0.729, 0.729, 0.728).'
+-  - 'CODE-15 and PTB-XL test AF identification (0.829) and detection (0.980, 0.983) only: no external cohort has dated onset, and competing risks await death dates.'
+-  - 'Dead ends on earlier report labels: beat by time by lead tensor 0.675, boosted BTTR 0.620, attention head 0.61, two-branch input 0.731 against 0.754, cross-covariance warm start 0.744 against 0.758; a risk rise toward onset did not replicate.'
++  - 'One-year 0.778, below 0.85 of Raghunath et al. (far larger cohort); five-year 0.794 in-distribution, 0.77 of Jabbour et al. external.'
++  - 'No external cohort has dated onset; no rise toward onset replicated; competing risks await death dates.'
++headline: 'Occlusion places the risk in the P-wave and atrial bands; no external cohort has dated onset'
+```
+
+### clinical-hccnet
+
+```diff
+-title: 'Can MRI of the liver parenchyma alone predict hepatocellular carcinoma years before diagnosis?'
++title: 'Can liver parenchyma MRI alone predict HCC years before diagnosis?'
+-hook: 'Published HCC risk scores lean on laboratory markers of liver-disease severity; this model reads one block of left-lobe tissue on routine surveillance MRI, with no contrast agent and no clinical or laboratory variable.'
++hook: 'One block of left-lobe tissue on routine surveillance MRI, with no contrast agent and no clinical or laboratory variable.'
+-  purpose: 'Tell which patients with advanced chronic liver disease are likely to develop liver cancer in the coming years, so that MRI surveillance goes to those at high risk.'
+-  plain: 'A computer looks at a small block of liver tissue on each of a patient''s MRI scans, in order, and learns the tissue changes that come before cancer, changes too diffuse for the eye to see.'
++  purpose: 'Tell which patients with advanced chronic liver disease are likely to develop liver cancer, so MRI goes to those at high risk.'
++  plain: 'A computer reads a small block of liver tissue on each MRI scan in order, and learns changes too diffuse for the eye.'
+-  - { label: 'Cohort', value: '243 patients, 947 MRI examinations' }
+-  - { label: 'Input', value: 'Left-lobe parenchyma, no contrast' }
++  - { label: 'Cohort', value: '243 patients; 804 of 947 MRI analysed' }
+-  - 'A CNN encodes a left-lobe region of interest on each examination and a Transformer reads the examinations in order; two self-supervised stages (DINO, then examination order and interval) precede fine-tuning on HCC.'
+-  - 'One model per sequence (DW, T1 in- and out-of-phase, T2, T1 contrast-enhanced); the fusion model averages the contrast-free sequence models a patient has.'
+-  - 'Horizons of 1, 2 and 3 years before the endpoint; AUROC with patient-level bootstrap intervals, and Firth logistic regression adjusted for age, sex and etiology.'
++  - 'A CNN per examination, a Transformer over the series, DINO then examination-order pre-training; fusion averages the contrast-free sequence models.'
+-  - 'Fusion AUROC 0.966 (0.922 to 0.996) at 1 year, 0.893 (0.777 to 0.981) at 2 years and 0.829 (0.653 to 0.969) at 3 years.'
+-  - 'In the 58 held-out patients: 0.899 at 1 year (4 HCC), 0.881 at 2 years (3 HCC) and 0.929 at 3 years (1 HCC).'
+-  - 'Adjusted for age, sex and etiology, the odds ratio per SD of the fusion log-odds is 12.96, 5.19 and 3.34 at 1, 2 and 3 years; every interval excludes 1.'
+-  - 'HCC developed in 37 patients (15.2%); at diagnosis 13 were at BCLC stage 0 and 16 at stage A, and 27 received curative treatment.'
+-panels:
+-  - { figure: fusion_over_time.png, caption: 'Fusion model AUROC by horizon', explain: 'Bars give the AUROC 1, 2 and 3 years before diagnosis, with patients and HCC under each bar; at 3 years, 72 patients with 10 HCC.' }
++  - 'Fusion AUROC 0.966 (0.922 to 0.996) at 1 year, 0.893 (0.777 to 0.981) at 2 years, 0.829 (0.653 to 0.969) at 3 years.'
++  - 'In the 58 held-out patients: 0.899 at 1 year (4 HCC), 0.881 at 2 years (3 HCC), 0.929 at 3 years (1 HCC).'
++  - 'Adjusted odds ratio per SD: 12.96 (4.84 to 66.58), 5.19 (2.52 to 14.22), 3.34 (1.50 to 9.93) at 1, 2, 3 years.'
+-title: 'Per sequence, and the limitations'
+-hook: 'In this cohort the prediction did not rest on the contrast-enhanced sequence: T1 contrast-enhanced MRI on its own reached an AUROC of 0.690 at 2 years and 0.433 at 3 years.'
+-panels:
+-  - { figure: sequences_by_horizon.png, caption: 'AUROC per MRI sequence by horizon', explain: 'DW-MRI reaches 0.922, 0.855 and 0.813, and T1 in- and out-of-phase MRI 0.936, 0.852 and 0.741, at 1, 2 and 3 years.' }
++title: 'How does each sequence perform, and what limits the result?'
++sub: 'Per-sequence AUROC, the HCC cases, limitations and dead ends'
++hook: 'In this cohort T1 contrast-enhanced MRI on its own reached an AUROC of 0.690 at 2 years and 0.433 at 3 years.'
++tag: { class: measured, text: 'Sequences and limits' }
++eli5:
++  purpose: 'Show how each MRI sequence scores alone and where the evidence stops.'
++  plain: 'Each sequence is scored on its own; one centre and no external validation yet.'
++specs:
++  - { label: 'HCC', value: '37 patients (15.2%)' }
++method:
++  - 'One model per sequence: DW, T1 in- and out-of-phase, T2 and T1 contrast-enhanced; horizons of 1, 2 and 3 years before the endpoint.'
+-  - 'The whole-cohort values include the development patients that trained the models, and each sequence''s encoder size was chosen on the held-out patients.'
+-  - 'One centre, an ethnically homogeneous population, mostly MASLD and ALD, and no external validation yet; 10 HCC at 3 years in the whole cohort and 1 in the held-out patients.'
+-  - 'Results by etiology, sex and age were taken out of the paper: the subgroups are too small for the statistics.'
+-  - 'Dead ends: combining sequences by rank, fixed weights or an any-sequence rule did not beat the plain average; combined-sequence models did not beat DW-MRI; scoring a truncated full history gave scores that rose with distance from diagnosis.'
++  - 'DW-MRI 0.922, 0.855, 0.813; T1 in- and out-of-phase 0.936, 0.852, 0.741 at 1, 2 and 3 years.'
++  - 'At diagnosis 13 patients were at BCLC stage 0 and 16 at stage A; 27 received curative treatment.'
++  - 'Whole-cohort values include development patients; one centre, mostly MASLD and ALD, 10 HCC at 3 years in the whole cohort, 1 held out.'
++  - 'Dead ends: rank, fixed weights or an any-sequence rule did not beat the plain average; combined-sequence models did not beat DW-MRI.'
++headline: 'Per-sequence AUROC and the limits of a single-centre cohort'
+```
+
+### covert-applied
+
+```diff
+-title: 'COVERT: block-term regression across parties that hold different modalities of the same patients'
++title: 'COVERT: block-term regression across parties holding different modalities'
+-hook: 'ECG, labs and vitals of one patient sit with different parties; only a cohort-sized score and a residual cross between them, and the federated fit equals the centralized one.'
++hook: 'Only a cohort-sized score and a residual cross between the parties, and the federated fit equals the centralized one.'
+-  plain: 'Each department turns its own data into one number per patient; only the sum of those numbers is shared, with privacy noise, and every department keeps its model parts at home.'
+-equation: '\mathcal{L}\big(\{\theta^{(p)}\},\mathbf{q},d\big)=\Big\|\mathbf{F}-d\,\Big(\sum_p\mathbf{t}^{(p)}\Big)\mathbf{q}^{\top}\Big\|_F^2+\sum_p\lambda_p\big\|\mathcal{G}^{(p)}\big\|_1'
++  plain: 'Each department turns its own data into one number per patient; only the noisy sum is shared, model parts stay at home.'
+-  - { label: 'MIMIC-IV-ECG', value: '5,000 inpatients, 3 parties, 1-yr mortality 14.1%' }
+-  - { label: 'Liver MRI', value: '400 studies, 163 patients, 2 imaging parties' }
+-  - { label: 'Model', value: 'coupled rank-$(L_r,L_r,1)$ block terms, sparse cores' }
++  - { label: 'MIMIC-IV-ECG', value: '5,000 inpatients, 3 parties' }
++  - { label: 'Liver MRI', value: '400 studies, 163 patients, 2 parties' }
+-  - 'Orthogonal masking cannot keep a thresholded sparse core: only signed permutations commute with soft-thresholding, and they conceal nothing.'
+-  - 'So each party fits its sparse factors locally in the clear; secure aggregation sums the partial scores.'
+-  - 'Gaussian noise on the clipped score and residual gives patient-level DP independent of $\prod_n I_n$.'
++  - 'Each party fits sparse rank-$(L_r,L_r,1)$ factors locally in the clear; secure aggregation sums the partial scores; Gaussian noise gives patient-level DP.'
+-  - 'MIMIC AUROC 0.745, equal to centralized and equivalent to P3LS 0.743 (TOST +0.0014, 95% CI [+0.0001, +0.0026]).'
+-  - 'Fusion beats the best single party (0.721) by +0.024 across all seed-folds.'
+-  - 'Liver MRI: 0.585, equal to centralized, +0.036 over P3LS (95% CI [+0.019, +0.053]) on 17 patient-level positives.'
+-  - 'Route B keeps an 87%-sparse core and sends 0.20 MB per round against 4.8 MB for masked dense tensors.'
++  - 'MIMIC AUROC 0.745, equal to centralized, equivalent to P3LS 0.743 (TOST +0.0014, 95% CI [+0.0001, +0.0026]); fusion +0.024 over the best party (0.721).'
++  - 'Liver MRI: 0.585, equal to centralized, +0.036 over P3LS (95% CI [+0.019, +0.053]) on 17 positives; fusion does not beat the best party (0.572, p = 0.64).'
++  - 'Route B: an 87%-sparse core, 0.20 MB per round against 4.8 MB masked; score-only DP 0.748 at $\varepsilon$ = 0.23, both channels 0.711 at $\varepsilon \approx$ 4.8.'
++  - 'Limits: naive concatenation ties on MIMIC (0.745, p = 0.31); accuracy flat in block rank; data split by modality within one source.'
+-
+----
+-kind: columns
+----
+-# What the design buys, and the limits on accuracy
+-
+-### Privacy and cost on MIMIC
+-
+-- Privatizing the score channel alone: 0.748 AUROC at $\varepsilon$ = 0.23.
+-- Both channels: 0.711 at $\varepsilon \approx$ 4.8, a plateau of 0.669 below $\varepsilon$ = 1.
+-- At 8x the feature dimension Route B stays at 0.20 MB per round while masked dense tensors grow to 38.1 MB.
+-- Loadings of the ECG party reproduce at 0.95 against a 0.34 label-permutation null.
+-
+-|||
+-
+-### Accuracy limits and scope
+-
+-- Naive concatenation ties COVERT on MIMIC (0.745, p = 0.31).
+-- Accuracy is flat in the block rank, 0.745 from $L$ = 1 to 4; a logistic link did not revive $L > 1$.
+-- On the liver MRI cohort fusion does not beat the best single party (0.572, p = 0.64).
+-- Both cohorts split data by modality within one source; no cross-institution deployment is evaluated.
+----
+```
+
+### covert-theory
+
+```diff
+-hook: 'Put the differential-privacy noise on the short shared score that couples the parties, and the prediction''s privacy cost no longer grows with the size of any party''s data.'
++hook: 'With noise on the short shared score, the prediction''s privacy cost no longer grows with the size of any party''s data.'
+-  purpose: 'Let institutions that hold different measurements of the same patients learn one model, with a privacy guarantee and a known price for it.'
+-  plain: 'Only one short list of numbers per patient crosses between institutions; blur that list, and the accuracy lost depends on the number of patients, never on how much data each institution holds.'
+-equation: '\min_{k<K}\mathbb{E}\|\mathcal{G}^k\|^2\le\frac{4(\mathcal{L}^0-\mathcal{L}^\star)}{\eta^2\gamma K}+\frac{4\kappa^2(m\sigma^2+\|\boldsymbol{\beta}\|^2)}{\eta^2\gamma^2}'
++  purpose: 'One model across institutions, with a known privacy price.'
++  plain: 'Only one short list per patient crosses, and it alone is blurred.'
+-  - { label: 'Iteration', value: 'perturbed PALM under the KL property' }
+-  - { label: 'Mechanism', value: 'Gaussian $(\varepsilon,\delta)$-DP on the score, clip $c$' }
+-  - { label: 'Instance', value: 'vertical sparse block-term tensor regression' }
++  - { label: 'Mechanism', value: 'Gaussian DP on the score, clip $c$' }
+-  - 'No-go: among orthogonal masks only signed permutations preserve a thresholded support, and they hide the core magnitudes from no one.'
+-  - 'So parties decompose locally and share only the score, released once per round under the Gaussian mechanism.'
+-  - 'The coupling noise is bounded as a gradient error whose constant does not depend on $\prod_n I_n$.'
++  - 'Parties share only the score; the noise is a gradient error independent of $\prod_n I_n$.'
+-  - 'At $\sigma = 0$ the whole sequence converges to a critical point; under a fixed budget the iterates reach an $O(\sigma)$ neighborhood.'
+-  - 'Excess prediction risk depends on the score length $m$ and the regression curvature, independent of $\prod_n I_n$.'
+-  - 'A lower bound makes the cost order-optimal in $(c, \varepsilon)$; privatizing once removes the factor $P$ that per-message noise pays.'
+-  - 'To the authors'' knowledge, the first convergence-and-utility theory for DP block-coordinate descent with coupling-variable noise, and the first for block-term decomposition.'
++  - 'At $\sigma = 0$ the sequence converges; under a fixed budget the iterates reach $O(\sigma)$.'
++  - 'Excess risk independent of $\prod_n I_n$, order-optimal in $(c, \varepsilon)$.'
++  - 'Not claimed: tightness in $m$, a block-term-specific separation.'
++equation: '\min_{k<K}\mathbb{E}\|\mathcal{G}^k\|^2\le\frac{4(\mathcal{L}^0-\mathcal{L}^\star)}{\eta^2\gamma K}+\frac{4\kappa^2(m\sigma^2+\|\boldsymbol{\beta}\|^2)}{\eta^2\gamma^2}'
+-
+----
+-kind: columns
+----
+-# What the synthetic check measured, and what is not claimed
+-
+-### Predicted against measured, 20 seeds
+-
+-- Stationarity floor against $\sigma^2$: slope 1.00 (predicted 1).
+-- Excess risk across a 100x rise in $\prod_n I_n$: ratio 1.03 (predicted 1).
+-- Floor against $1/\varepsilon^2$: slope 0.97 (predicted 1).
+-- Measured floor over the lower-bound prediction: 1.1.
+-
+-|||
+-
+-### Outside the result
+-
+-- The match in $m$ holds only in the per-coordinate-sensitivity regime; under the joint $\ell_2$ clip the bounds need not be tight in $m$.
+-- The $\Omega(\sigma)$ floor constant is generic, so there is no block-term-specific separation.
+-- No rate to the floor and no whole-sequence convergence under noise.
+-- Private recovery of the high-dimensional factors stays dimension-dependent.
+----
+```
+
+### dries-bttr-ecg
+
+```diff
+-title: 'Can a model whose parameters are readable maps identify atrial fibrillation from a sinus-rhythm ECG?'
+-sub: 'An interpretable tensor model for identifying atrial fibrillation in sinus-rhythm ECG: block-term tensor regression on PTB-XL, benchmarked against deep and foundation models'
+-hook: 'The models that find atrial fibrillation in a sinus-rhythm ECG are usually deep networks on private cohorts that do not show what they use; block-term tensor regression fits time-by-lead weight maps to the label, so the fitted maps are the decision.'
++title: 'Can a model of readable maps identify AF from a sinus-rhythm ECG?'
++sub: 'An interpretable tensor model for identifying atrial fibrillation in sinus-rhythm ECG'
++hook: 'Block-term tensor regression fits time-by-lead weight maps to the label, so the fitted maps are the decision.'
+-  purpose: 'Find patients with atrial fibrillation from an ECG recorded while their heart beats normally, and show which leads and which part of the heartbeat the model used.'
+-  plain: 'The average heartbeat of each lead is lined up on its main spike and stacked into a block of numbers; the model learns eight simple patterns over time and lead, and those patterns are the whole model.'
++  purpose: 'Find atrial fibrillation from an ECG in normal rhythm, and show which leads and part of the heartbeat the model used.'
++  plain: 'Median beats of each lead are stacked; the model learns eight simple patterns over time and lead, and those are the whole model.'
+-  - { label: 'Venue', value: 'Med. Biol. Eng. Comput., revision resubmitted' }
++  - { label: 'Venue', value: 'MBEC, revision resubmitted' }
+-  - { label: 'Code', value: 'TheAxeC/bttr-af-ecg' }
+-  - 'PTB-XL 1.0.3: a sinus-rhythm record is positive when an AFIB record (or AFIB or flutter) follows within 31 days, median 5 days; controls are matched 1:3 on sex and nearest age, and age alone scores 0.500.'
+-  - 'R-peak-aligned median beats from $-250$ to $+400$ ms at 100 Hz form a records by 65 by 12 tensor.'
+-  - 'BTTR: $K=8$ rank-$(L_2,L_3,1)$ blocks fit to a $\pm 1$ target by deflation, with the ranks chosen inside each training fold.'
+-  - 'Baselines: clinical features, an Attia-style CNN, a rank-8 CP surrogate and frozen HuBERT-ECG probes; ten control draws, patient-grouped 5-fold cross-validation and a pooled paired bootstrap.'
++  - 'PTB-XL 1.0.3: a sinus record is positive when an AFIB record (or AFIB or flutter) follows within 31 days; controls matched 1:3 on sex and nearest age.'
++  - 'BTTR: $K=8$ rank-$(L_2,L_3,1)$ blocks on median beats; against clinical features, a CNN, a CP surrogate and HuBERT-ECG probes; ten control draws.'
+-  - 'Against the tuned HuBERT-ECG probe and clinical features the CIs include zero, and the CP surrogate on the same tensor is comparable (+0.004 and +0.009).'
+-  - 'The per-lead weight profile reproduces across draws at Pearson $r=0.857$; the weight spreads over the beat, 0.374 in the T window and 0.161 in the atrial window.'
+-panels:
+-  - { figure: forest_auroc.png, caption: 'AUROC on the seed-0 draw with 95% CIs', explain: 'Every method on both cohorts; this draw is the best of the ten for BTTR on AFIB, so the ten-draw means are the primary summary.' }
++  - 'Against the tuned HuBERT-ECG probe and clinical features the CIs include zero; the CP surrogate is comparable (+0.004 and +0.009).'
+-title: 'Where the weight sits, what alignment does, and the limits'
+-hook: 'Without R-peak registration BTTR falls to chance, 0.490 and 0.457 against 0.597 and 0.643 aligned: a pooled paired gain of +0.107 and +0.186.'
+-panels:
+-  - { figure: interpret_afsr_afibonly_blocks.png, caption: 'The eight BTTR block maps, seed-0 AFIB fit', explain: 'Each panel is one block''s 65-sample by 12-lead weight map, ordered by the size of its coefficient $b$; colour is the signed weight.' }
++title: 'Where does the weight sit, what does alignment do, what are the limits?'
++sub: 'Weight maps, R-peak alignment, limits and dead ends'
++hook: 'Without R-peak registration BTTR falls to chance, 0.490 and 0.457 against 0.597 and 0.643 aligned.'
++tag: { class: measured, text: 'Weight maps and limits' }
++eli5:
++  purpose: 'Show where the model puts its weight and how far the evidence goes.'
++  plain: 'Lining up the beats on the main spike lifts the score; the result is feasibility-level.'
++specs:
++  - { label: 'Code', value: 'TheAxeC/bttr-af-ecg' }
++method:
++  - 'Alignment ablation: the same pipeline with and without R-peak registration, pooled paired gain +0.107 and +0.186.'
+-  - 'Concurrent identification within 31 days, a feasibility-level AUROC on one small public database, and no external validation yet; PTB-XL has no follow-up for future onset.'
+-  - 'The CNN stays near chance aligned and unaligned, so the ablation carries no conclusion on alignment for the CNN.'
+-  - 'With unmatched controls age alone reached an AUROC of about 0.75 and the black-box baselines rode on it; the matching is now the design.'
+-  - 'Dead ends: about 18 variants (regularised and group-lasso BTTR, a Fisher discriminant, fusion, multibeat, spectral, Riemannian and others) did not beat plain BTTR at 42 positives; RR pseudo-leads are dead weight in sinus-rhythm records (0.471 and 0.548); a single-seed 0.667 against 0.509 did not survive re-drawn controls.'
++  - 'Per-lead weight profile reproduces across draws at Pearson $r=0.857$; 0.374 of the weight in the T window and 0.161 in the atrial window.'
++  - 'Identification within 31 days, one small public database, no external validation; PTB-XL has no follow-up for future onset.'
++  - 'Dead ends: about 18 variants did not beat plain BTTR at 42 positives; a single-seed 0.667 against 0.509 did not survive re-drawn controls.'
++headline: 'Without R-peak registration BTTR falls to chance; the AUROC is feasibility-level'
+```
+
+### ecg-readable-substrate
+
+```diff
+-title: 'Does an ECG foundation model predict one-year mortality better than named ECG measurements?'
++title: 'Do ECG foundation models beat named measurements on one-year mortality?'
+-hook: 'ECG foundation models are credited with prognostic signal that named measurements cannot capture; a gradient-boosted model on 231 named features is set against the best frozen-embedding probe of six published encoders, each comparison tagged for pretraining overlap.'
++hook: 'Gradient boosting on 231 named features against the best frozen-embedding probe of six published encoders.'
+-  purpose: 'Check whether a large pretrained ECG model is needed to tell who will die within a year, or whether measurements a doctor can name do as well.'
+-  plain: 'One model uses about 231 measurements with names, such as heart rate and the QT interval, plus age; the others use what six large pretrained ECG models extract. All are scored on the same patients from two health systems.'
++  purpose: 'Check whether a large pretrained ECG model is needed to tell who will die within a year.'
++  plain: 'One model uses about 231 named measurements, such as heart rate and QT, plus age; the others use six pretrained ECG models.'
+-  - { label: 'Code', value: 'TheAxeC/named-ecg-vs-foundation-models' }
+-  - 'One ECG per patient and one-year all-cause mortality: MIMIC-IV-ECG (prevalence 0.129) and CODE-15 (0.141), with patient-disjoint training, validation and held-out sets.'
+-  - 'Named model: gradient boosting on 231 to 235 NeuroKit features (intervals, rate, time-domain HRV, amplitudes, band powers) and age.'
+-  - 'Six frozen encoders (ECGFounder, ECG-FM, HuBERT-ECG, ECG-JEPA, xECG, ST-MEM), each scored by the better of a linear and a boosted probe; paired patient bootstrap, TOST margin 0.01, Bonferroni over 12 comparisons.'
+-  - 'A cross-cohort arm on 227 shared features, and a per-patient sufficient-reason certificate at $\delta=0.9$.'
++  - 'One ECG per patient, one-year all-cause mortality, patient-disjoint sets; gradient boosting on 231 to 235 NeuroKit features and age.'
++  - 'Six frozen encoders, each scored by the better of a linear and a boosted probe; paired bootstrap, TOST margin 0.01, Bonferroni over 12 comparisons.'
+-  - 'Named AUROC 0.811 on CODE-15 and 0.773 on MIMIC, calibration slope 1.02 and 1.01: 7 wins, 5 ties (ECG-JEPA and ST-MEM on both cohorts, ECGFounder on MIMIC) and no loss.'
++  - 'Named AUROC 0.811 on CODE-15 and 0.773 on MIMIC, calibration slope 1.02 and 1.01: 7 wins, 5 ties and no loss.'
+-  - 'Over age alone the named features add +0.062 (CODE-15) and +0.105 (MIMIC); waveform features without age reach 0.781 against 0.749 for age.'
+-  - 'The certificate has median length 1 and coverage 0.96, and holds age for every patient.'
++  - 'Over age alone named features add +0.062 (CODE-15) and +0.105 (MIMIC); the certificate has median length 1 and coverage 0.96.'
+-kind: columns
++kind: project
++title: 'What changes when the encoders also get age, and what limits the result?'
++sub: 'The comparison at equal input, margins, scope and dead ends'
++hook: 'Giving each encoder the named arm''s covariates turns 7 wins, 5 ties and 0 losses into 5 wins, 1 tie and 6 losses.'
++tag: { class: measured, text: 'Equal input and limits' }
++eli5:
++  purpose: 'See how the comparison changes when the encoders get the same age input.'
++  plain: 'With age, several encoders move ahead of the named model.'
++specs:
++  - { label: 'Code', value: 'TheAxeC/named-ecg-vs-foundation-models' }
++method:
++  - 'A cross-cohort arm on 227 shared features, with age and sex given to the encoders.'
++results:
++  - 'With age, ECG-JEPA (0.016), ST-MEM (0.013), ECG-FM (0.006) beat the named model on CODE-15; ECGFounder (0.008), ECG-JEPA and ST-MEM (0.013) on MIMIC.'
++  - 'Transfer becomes 2 wins, 1 tie, 3 losses (MIMIC to CODE-15) and 2, 2, 2 (CODE-15 to MIMIC); the named model still beats HuBERT-ECG and xECG.'
++  - 'One endpoint, frozen embeddings only, ten-second HRV. Dead ends: a sparse-dictionary substrate, federated transport, a residual as a leakage signature.'
++headline: 'At equal input the count turns to 5 wins, 1 tie and 6 losses'
+-# The comparison at equal input, and the limits
+-
+-### When the encoders also get age
+-
+-- Giving each encoder the named arm's covariates turns 7 wins, 5 ties and 0 losses into 5 wins, 1 tie and 6 losses.
+-- With age, ECG-JEPA (by 0.016), ST-MEM (0.013) and ECG-FM (0.006) beat the named model on CODE-15, and ECGFounder (0.008), ECG-JEPA and ST-MEM (0.013 each) on MIMIC.
+-- The named model still beats HuBERT-ECG and xECG on both cohorts and ECG-FM on MIMIC.
+-- Transfer becomes 2 wins, 1 tie, 3 losses (MIMIC to CODE-15) and 2, 2, 2 (CODE-15 to MIMIC) with age and sex given to the encoders.
+-
+-|||
+-
+-### Margins, scope and dead ends
+-
+-- ECG-JEPA edges the named model from CODE-15 to MIMIC (+0.013), and ST-MEM by a margin whose interval includes zero.
+-- A leakage-clean encoder adds +0.013 on CODE-15 and +0.002 on MIMIC to the named model.
+-- One endpoint, frozen embeddings only, ten-second HRV, and NeuroKit delineation as a possible confounder.
+-- Dead ends: a sparse-dictionary substrate (pre-empted), federated transport (no stable gap) and a residual as a leakage signature (pre-empted, and the residual does not behave as one).
+```
+
+### fed-multicellular-immune
+
+```diff
+-title: 'Can multicellular immune programs be recovered across institutions that never share cells?'
+-sub: 'Privacy-preserving federated tensor decomposition of single-cell immune data: recovering multicellular programs across institutions'
+-hook: 'Tensor decomposition of donor by cell-type by gene single-cell data finds programs that span cell types, but it needs the cells pooled; here each site sends a truncated summary of its program subspace, and a stacked SVD after global-mean centering approximates the pooled result.'
++title: 'Can multicellular immune programs be recovered without sharing cells?'
++sub: 'Privacy-preserving federated tensor decomposition of single-cell immune data'
++hook: 'Each site sends a truncated program summary; a stacked SVD after global-mean centering approximates the pooled result.'
+-  purpose: 'Find the coordinated immune patterns that separate patients with a disease from healthy people, using single-cell data held at several institutions that cannot pool it.'
+-  plain: 'Each institution sends only a short summary of the patterns in its own data, never the cells; combining the summaries gives nearly the same patterns as pooling everything, and an attack test measures how much the summaries reveal about who took part.'
++  purpose: 'Find the coordinated immune patterns separating patients from healthy people, in single-cell data that cannot be pooled.'
++  plain: 'Each institution sends a short summary of its patterns; combining them gives nearly the patterns of pooling everything.'
+-  - { label: 'Venue', value: 'Comput. Methods Programs Biomed., under review' }
++  - { label: 'Venue', value: 'CMPB, under review' }
+-  - { label: 'Code', value: 'TheAxeC/federated-multicellular-tensor' }
+-  - 'Pseudobulk tensor of donors, cell types and 1,500 genes, standardized within each cell type; the programs are the top $K=10$ right singular vectors of the donor-mode unfolding.'
+-  - 'Complete panels: sites centre on the federated global mean and send rank-$L$ loadings $M_s$; the coordinator takes the top-$K$ vectors of the stacked $M$.'
+-  - 'Incomplete panels (vertical FL): sites holding different cell types for shared donors send donor Gram blocks, whose sum equals the centralized Gram.'
+-  - 'A reconstruction-residual membership-inference attack over 30 splits, run on each release object.'
++  - 'Pseudobulk donors by cell types by 1,500 genes; programs are the top $K=10$ right singular vectors; sites send rank-$L$ loadings $M_s$.'
++  - 'Incomplete panels: donor Gram blocks, whose sum equals the centralized Gram; a membership-inference attack over 30 splits on each release object.'
+-  - 'Lupus (261 donors): federated against centralized SLE AUC 0.958, $\Delta$AUC 0.000 [$-0.004$, +0.012], subspace correlation 0.967; label-free CV AUC 0.960.'
+-  - 'Three original COVID-19 sites (61, 45 and 11 donors): correlation 0.989; global-mean centering holds AUC 0.957 under 90% case skew, where per-site centering falls to 0.861.'
+-  - 'Cell-type-incomplete sites: correlation 1.000, exact by construction, where fixed-feature federated PCA cannot run.'
++  - 'Lupus (261 donors): SLE AUC 0.958, $\Delta$AUC 0.000 [$-0.004$, +0.012], subspace correlation 0.967; label-free CV AUC 0.960.'
++  - 'Three COVID-19 sites: correlation 0.989; global-mean centering holds AUC 0.957 under 90% case skew, per-site centering 0.861; incomplete sites 1.000.'
+-equation: '\left\| X_c^{\top} X_c - M^{\top} M \right\|_2 \leq \sum_{s=1}^{S} \sigma_{L+1}^2(X_{s,c})'
+-kind: columns
++kind: project
++title: 'Where does multicellularity pay, and what is not solved?'
++sub: 'Lung and liver gains, privacy limits and the merge'
++hook: 'Lung ILD reaches 0.959 against 0.910 for the best single compartment, and the gain survives federation.'
++tag: { class: measured, text: 'Gains and privacy limits' }
++eli5:
++  purpose: 'Say where one program across cell types beats one cell type, and what stays open.'
++  plain: 'Lung and liver gain; no secure protocol is implemented for the merge.'
++specs:
++  - { label: 'Code', value: 'TheAxeC/federated-multicellular-tensor' }
++  - { label: 'Liver PSC/PBC, 16 donors', value: 'CV AUC 0.975, $p=0.005$' }
++  - { label: 'Released program reveals', value: 'ancestry (AUC 0.81), sex (0.65)' }
++method:
++  - 'Programs scored against the best single compartment.'
++results:
++  - 'Lung ILD (109 donors): gap +0.049 [+0.006, +0.101], correlation 0.981.'
++  - 'No secure stacked-SVD protocol is implemented.'
++  - 'Differential privacy collapses recovery at these sizes (correlation 0.029 on lupus); it needs about 900 donors at $\varepsilon=4$.'
++equation: '\left\| X_c^{\top} X_c - M^{\top} M \right\|_2 \leq \sum_{s=1}^{S} \sigma_{L+1}^2(X_{s,c})'
++headline: 'Lung ILD gains +0.049 over the best compartment; the secure merge stays unsolved'
+-# Where multicellularity pays, and what is not solved
+-
+-### When the program beats one cell type
+-
+-- Lung ILD (109 donors): 0.959 against 0.910 for the best single compartment, gap +0.049 [+0.006, +0.101], and it survives federation (correlation 0.981).
+-- Liver PSC/PBC (16 donors): nested CV AUC 0.975, permutation $p=0.005$; a small cohort with 6 controls and no open replication.
+-- Comparable elsewhere: SLE +0.013, COVID severity $-0.064$, Crohn's gut +0.008, kidney +0.024 (CI includes zero), heart $-0.015$.
+-
+-|||
+-
+-### Privacy limits and the replaced stitch
+-
+-- Additive secure aggregation does not compute the stacked merge, and no secure stacked-SVD protocol is implemented.
+-- The released program reveals ancestry (AUC 0.81) and sex (0.65); site-subspace leakage rises to 0.98 at 20 donors per site.
+-- Differential privacy collapses recovery at these cohort sizes (correlation 0.029 on lupus) and needs about 900 donors at $\varepsilon=4$ for a 30-gene program.
+-- A gene-mode stitch for incomplete panels reached correlation 0.654 and was replaced by the donor-Gram coupling.
+```
+
+### hccnet-revision
+
+```diff
+-sub: 'HCCNet: a self-supervised 3D ConvNeXt and Transformer for longitudinal MRI, applied to HCC surveillance in cirrhosis'
+-hook: 'Cirrhosis patients are screened by MRI for years at irregular intervals, yet earlier models read one scan; HCCNet encodes every examination and lets a Transformer read the series, with the time to the reference examination as its position.'
++sub: 'HCCNet: a self-supervised 3D ConvNeXt and Transformer for longitudinal MRI'
++hook: 'Every examination is encoded; a Transformer reads the series with the time to the reference examination as its position.'
+-  purpose: 'Warn earlier which cirrhosis patients will develop liver cancer, using all the MRI scans they already had during routine surveillance.'
+-  plain: 'A network first learns what liver MRI looks like from unlabelled scans, then learns the order of a patient''s visits; after that it is trained on which patients later developed cancer and reads the full history of scans at once.'
++  purpose: 'Warn earlier which cirrhosis patients will develop liver cancer, using all the MRI scans they already had.'
++  plain: 'A network learns what liver MRI looks like from unlabelled scans, then reads the full history of scans at once.'
+-  - { label: 'Code', value: 'TheAxeC/hccnet' }
+-  - 'Each examination goes through a 3D ConvNeXt backbone; a Pre-LN Transformer with a [cls] token reads the sequence of embeddings.'
+-  - 'Position is the elapsed time in years to the prediction reference examination, set from examination dates alone and never from the outcome.'
+-  - 'Two-stage self-supervised pre-training: DINO on the backbone with MRI series of one contrast as augmentations, then sequence-order prediction on the Transformer.'
+-  - 'Five variants (12.4M to 72.4M parameters), patient-level 5-fold CV with ten seeded models per fold, ensembled.'
++  - 'Two-stage self-supervised pre-training: DINO on the 3D ConvNeXt backbone, then sequence-order prediction on the Transformer.'
++  - 'Position set from examination dates alone, never from the outcome; five variants, patient-level 5-fold CV, ten seeded models per fold.'
+-  - 'Diffusion-weighted MRI, mean over the five variants: AUPRC 0.614, AUROC 0.901; best variant HCCNet-T 0.725 $\pm$ 0.103 and 0.936 $\pm$ 0.026.'
++  - 'DW-MRI, mean over five variants: AUPRC 0.614, AUROC 0.901; best variant HCCNet-T 0.725 $\pm$ 0.103 and 0.936 $\pm$ 0.026.'
+-equation: '\mathrm{PE}(\Delta t, 2k) = \sin\!\left(\frac{\Delta t}{10000^{2k/H}}\right), \quad \mathrm{PE}(\Delta t, 2k+1) = \cos\!\left(\frac{\Delta t}{10000^{2k/H}}\right)'
+-panels:
+-  - { figure: figure_outline.png, caption: 'The HCCNet modelling approach for one patient.', explain: 'Each raw MRI passes through the **CNN backbone**; time-based positional encodings are added to the embeddings, the **Transformer encoder** reads them, and the last hidden state of the **[cls] token** gives the prediction.' }
+-title: 'Where the pre-training gain comes from, and what fusion and calibration show'
+-hook: 'An ablation on HCCNet-Pico separates the two pre-training stages, a calibration analysis compares baseline and pre-trained models, and an exploratory fusion test combines modalities.'
++title: 'Where does the pre-training gain come from, and what does fusion show?'
++sub: 'HCCNet-Pico ablation, calibration and exploratory fusion'
++hook: 'An ablation separates the two pre-training stages; a calibration analysis compares the models.'
++eli5:
++  purpose: 'Find which training stage helps and how trustworthy the probabilities are.'
++  plain: 'Sequence-order pre-training adds little; no fused input beats diffusion MRI alone.'
+-  - { label: 'Ablation', value: 'HCCNet-Pico, per pre-training stage' }
+-  - { label: 'Ties', value: 'Differences within one SD across folds' }
++  - { label: 'Code', value: 'TheAxeC/hccnet' }
++  - { label: 'Pre-training lowers ECE', value: '56.0% DW-MRI, 37.0% contrast T1, 12.1% T1 in/out with T2' }
+-  - 'Pre-train only the CNN backbone, only the Transformer encoder, both, or neither, then fine-tune identically.'
+-  - 'Fuse modalities by channel concatenation: DW with contrast-enhanced T1, DW with T1 in/out-of-phase and T2, and all three.'
++  - 'Pre-training ablation on HCCNet-Pico, then identical fine-tuning.'
+-  - 'DW-MRI ablation AUPRC: backbone only 0.672, both stages 0.588 (within one SD), Transformer only 0.310, none 0.308; sequence-order prediction adds little.'
+-  - 'Pre-training lowers expected calibration error by 56.0% on DW-MRI, 37.0% on contrast-enhanced T1 and 12.1% on T1 in/out-of-phase with T2.'
+-  - 'No fused input beats DW-MRI alone (AUPRC 0.588, AUROC 0.894); the best fusion reaches 0.587 and 0.891, all within one SD.'
+-  - 'Single centre (Medisch Spectrum Twente, 2011 to 2022) and no external validation yet.'
+-panels:
+-  - { figure: calibration.png, caption: 'Reliability diagrams, baseline against pre-trained, for every variant and modality group.', explain: 'Accuracy per confidence bin: **blue bars** are the pre-trained and fine-tuned models, **green bars** the randomly initialized baselines, and the striped region is perfect calibration; each legend gives the ECE.' }
++  - 'DW-MRI ablation AUPRC: backbone only 0.672, both stages 0.588 (within one SD), Transformer only 0.310, none 0.308.'
++  - 'No fused input beats DW-MRI alone (AUPRC 0.588; best fusion 0.587, within one SD); single centre, no external validation yet.'
++equation: '\mathrm{PE}(\Delta t, 2k) = \sin\!\left(\frac{\Delta t}{10000^{2k/H}}\right), \quad \mathrm{PE}(\Delta t, 2k+1) = \cos\!\left(\frac{\Delta t}{10000^{2k/H}}\right)'
+```
+
+### meseret-cirrhosis
+
+```diff
+-sub: 'Competing-risks modelling of the Mayo PBC cohort: recovering the transplant outcome and cause-specific risk'
+-hook: 'The 418-patient Mayo PBC cohort is widely analysed as three-class classification of its end-of-follow-up status, though it is right-censored with death and transplantation competing; recast as competing-risks survival, the transplant risk becomes recoverable.'
++sub: 'Competing-risks modelling of the Mayo PBC cohort: recovering the transplant outcome'
++hook: 'The 418-patient cohort is right-censored with death and transplantation competing; recast, the transplant risk is recoverable.'
+-  purpose: 'Give patients with this liver disease a time-resolved risk of dying and of receiving a transplant, from a public dataset that many studies treat as a sorting exercise.'
+-  plain: 'A patient still alive at the last visit is not a negative case, and one who got a new liver can no longer die of the old one; models that respect this track each patient''s true risk, while sorting patients into three labels loses the transplant signal.'
++  purpose: 'Give patients a time-resolved risk of dying and of receiving a transplant, from a dataset often treated as a sorting exercise.'
++  plain: 'A patient still alive at the last visit is not a negative case; models that respect this track each patient''s true risk.'
+-  - { label: 'Data', value: 'Mayo PBC, 418 patients (161 deaths, 25 transplants)' }
+-  - { label: 'Code', value: 'TheAxeC/cirrhosis-competing-risks' }
++  - { label: 'Data', value: 'Mayo PBC, 161 deaths, 25 transplants' }
+-  - 'Simulation fitted to the cohort: cause-specific Weibull hazards for death and transplant, 200 replicates at $n$ = 418, 1000 and 4000, scored against the true 5-year cumulative incidence.'
+-  - 'Cause-specific Cox, Fine-Gray and two-event DeepHit, with Aalen-Johansen cumulative incidence and competing-risks decision curves.'
+-  - 'Seven survival models against the five-variable Mayo score under leakage-free repeated stratified cross-validation.'
+-  - 'Status-label baseline: random forest and gradient boosting, each with and without SMOTE, scored by F1.'
++  - 'Simulation fitted to the cohort: cause-specific Weibull hazards, 200 replicates at $n$ = 418, 1000 and 4000, scored against true 5-year incidence.'
++  - 'Cause-specific Cox, Fine-Gray and DeepHit, seven survival models against the Mayo score; status-label baseline: forests and boosting, with and without SMOTE.'
+-  - 'Simulation at $n$ = 418: random forests rank the true transplant risk at Spearman 0.56 (0.59 with SMOTE); multinomial logistic 0.91, cause-specific Cox 0.92, Fine-Gray 0.90.'
++  - 'Simulation at $n$ = 418: random forests rank the true transplant risk at Spearman 0.56; multinomial logistic 0.91, cause-specific Cox 0.92, Fine-Gray 0.90.'
+-  - 'Transplant as a competing event: C 0.822 [0.799, 0.843] from 25 events; Fine-Gray 5-year competing-risks C 0.842 for death and 0.807 for transplant.'
+-  - 'Age acts in opposite directions: cause-specific HR 1.36 per SD for death and 0.74 for transplant; subdistribution HR 1.52 and 0.32.'
+-equation: 'H_k(t \mid x) = \exp\left(b_k + x^{\top}\beta_k\right) t^{\rho_k}, \quad k \in \{\mathrm{death}, \mathrm{transplant}\}'
++  - 'Transplant as a competing event: C 0.822 [0.799, 0.843]; age: cause-specific HR 1.36 per SD for death, 0.74 for transplant.'
+-panels:
+-  - { figure: fig_simulation.png, caption: 'Recovery of the true transplant risk in the simulation.', explain: 'Left: **Spearman correlation** between each approach''s transplant risk and the true 5-year cumulative incidence; right: **Harrell''s C** against the truth. Means and 2.5 to 97.5 percentiles over 200 replicates per training size, on a fixed test set of 5000.' }
+-title: 'The static ceiling, and what updated measurements add'
+-hook: 'Seven model families, deep networks included, sit at the Mayo score''s discrimination; repeated biomarker measurements on the serial cohort carry the signal a single baseline snapshot loses.'
++title: 'Where is the static ceiling, and what do updated measurements add?'
++sub: 'Discrimination ceiling, landmark analysis and external transport'
++hook: 'Seven model families sit at the Mayo score''s discrimination.'
++eli5:
++  purpose: 'Do complex models or repeated measurements help?'
++  plain: 'No model exceeds the simple score.'
+-  - { label: 'Serial cohort', value: '312 patients, 1945 measurements' }
+-  - { label: 'External', value: 'SUPPORT cirrhosis subgroup, 508 patients' }
++  - { label: 'SUPPORT transport', value: 'C 0.823 internal, 0.558 external' }
++  - { label: 'Latest over baseline', value: '$\Delta$C +0.139 [+0.116, +0.162]' }
++method:
++  - 'Landmark analysis on 312 patients, 1945 measurements.'
+-  - 'Harrell''s C 0.806 to 0.833 across seven models; none exceeds the Mayo score (0.833, integrated Brier 0.143), and Cox and Fine-Gray match its net benefit for 5-year death.'
+-  - 'Baseline death-risk concordance falls from 0.87 to 0.64 over six years; the latest measurement holds 0.89 to 0.78, $\Delta$C +0.139 [+0.116, +0.162] at 6 years.'
+-  - 'On three single-event datasets complexity gains are consistent with a sample-size pattern: +0.008 on METABRIC ($n$ = 1904), +0.014 on GBSG ($n$ = 2232), up to +0.046 on SUPPORT ($n$ = 8873).'
+-  - 'The PBC model does not transport to acutely ill SUPPORT patients (C 0.823 internal, 0.558 external); transplant rests on 25 events and prothrombin violates proportional hazards ($p$ = 0.002).'
+-panels:
+-  - { figure: meseret_landmark.png, caption: 'Landmark analysis on the serial cohort.', explain: 'Three-year death-risk discrimination at each landmark: the **baseline measurement** decays as it ages, the **most recent measurement** restores it, and the advantage widens with follow-up.' }
++  - 'Harrell''s C 0.806 to 0.833 across seven models; Mayo score 0.833, integrated Brier 0.143.'
++  - 'Baseline concordance falls from 0.87 to 0.64 over six years; the latest holds 0.89 to 0.78.'
++  - 'No transport to SUPPORT patients; transplant rests on 25 events.'
++equation: 'H_k(t \mid x) = \exp\left(b_k + x^{\top}\beta_k\right) t^{\rho_k}, \quad k \in \{\mathrm{death}, \mathrm{transplant}\}'
+```
+
+### raw-pls
+
+```diff
+-title: 'RAW-PLS: tensor-PLS for tumours that sit in a different place in every patient'
++title: 'RAW-PLS: tensor-PLS for tumours in a different place in every patient'
+-hook: 'Each lesion is transported onto one learnable cross-subject template by fused Gromov-Wasserstein, so no voxel has to match across patients.'
++hook: 'Each lesion is transported onto one learnable cross-subject template by fused Gromov-Wasserstein, no voxel matched.'
+-  plain: 'Treat each tumour as a loose cloud of voxels, softly match the cloud to a shared learned set of atoms, and predict from how the voxels land on them.'
+-equation: 'T_\varepsilon(\mu,\Theta)=\arg\min_{T\in U(a,b)}(1-\alpha)\langle M,T\rangle+\alpha\sum_{i,i'',k,l}\big(C_{ii''}-C^{\mathrm{ref}}_{kl}\big)^2T_{ik}T_{i''l}-\varepsilon H(T)'
++  plain: 'Treat each tumour as a loose cloud of voxels, softly match it to a shared set of atoms, and predict from how voxels land on them.'
+-  - { label: 'Template', value: 'K=16 atoms, S=5 x J=25 unrolled Sinkhorn' }
+-  - 'Up to 4000 tumour voxels per lesion, four channels each, centred per case and never registered.'
+-  - 'Barycentric projection gives atom masses and mean features; a rank-6 geometry readout adds how the atoms are arranged.'
+-  - 'A PLS-covariance term trains template, transport and head jointly; the unrolled transport is the estimand.'
++  - 'Up to 4000 tumour voxels per lesion, four channels, never registered; $K=16$ atoms, $S=5 \times J=25$ unrolled Sinkhorn.'
++  - 'Barycentric projection and a rank-6 geometry readout; a PLS-covariance term trains template, transport and head jointly.'
+-  - 'Grade AUC 0.935 against 0.834: margin +0.101, p = 7.6e-10; AUPRC 0.975 against a 0.793 prevalence.'
+-  - 'DeepSets (-0.337, 0.890) and a Set Transformer (-0.007, 0.734) lose on both targets.'
++  - 'Grade AUC 0.935 against 0.834: margin +0.101, p = 7.6e-10; DeepSets (-0.337, 0.890) and a Set Transformer (-0.007, 0.734) lose on both.'
+-panels:
+-  - { figure: fig2_results.png, caption: 'Synthetic warp, both BraTS targets, and the ablation', explain: 'Under warp only RAW-PLS stays flat near 0.67; it is the only positive method on the structural target and the best on grade.' }
+-title: 'What holds against registration, and what did not hold'
+-hook: 'A lesion-cropped registered radiomics baseline is far stronger than the whole-brain grid, and RAW-PLS still beats it in all four settings.'
+-panels:
+-  - { figure: synthetic_upgrades.png, caption: 'Ablations and the invariance test', explain: 'Both necessity margins stay positive in all seven synthetic regimes; an isometry changes the representation by 4.2e-16 against 1.40 for the grid.' }
++title: 'What holds against registration, and what did not hold?'
++sub: 'Radiomics baseline, real warps and dead targets'
++hook: 'RAW-PLS beats a lesion-cropped registered radiomics baseline in all four settings.'
++tag: { class: mixed, text: 'Registration and dead targets' }
++eli5:
++  purpose: 'A stronger registered baseline, and the targets that fail.'
++  plain: 'Two clinical targets stay near chance or below.'
++specs:
++  - { label: 'Real warps', value: '120 lesions, 3% at $\eta$ = 0.427' }
++  - { label: 'Dead targets', value: 'MGMT AUC 0.50 against 0.53, survival -0.087 against -0.049' }
++method:
++  - 'Lesion-cropped radiomics, registered affine and SyN.'
+-  - 'Radiomics margins: structural +0.030 (affine) and +0.053 (SyN), grade +0.039 and +0.012, all p < 0.05; most of the grid''s deficit was rasterization.'
+-  - 'Real non-isometric warps on 120 lesions move the representation 3% at $\eta$ = 0.427.'
+-  - 'Dead targets: MGMT is near chance for every method (AUC 0.50 against 0.53) and survival is negative for both (-0.087 against -0.049).'
+-  - 'Not shown empirically: the $\sqrt{N}$ rate stayed flat in three attempts and remains a theorem; four external datasets gave no clean win over radiomics.'
++  - 'Radiomics margins, affine and SyN: structural +0.030, +0.053; grade +0.039, +0.012; all p < 0.05.'
++  - '$\sqrt{N}$ rate: a theorem, flat in three attempts; no clean radiomics win on four external datasets.'
++equation: 'T_\varepsilon(\mu,\Theta)=\arg\min_{T\in U(a,b)}(1-\alpha)\langle M,T\rangle+\alpha\sum_{i,i'',k,l}\big(C_{ii''}-C^{\mathrm{ref}}_{kl}\big)^2T_{ik}T_{i''l}-\varepsilon H(T)'
++headline: 'Margins hold over registered radiomics; MGMT and survival are dead targets'
+```
+
+### ward-bttr-crosssubject
+
+```diff
+-sub: 'Behavior-supervised alignment for cross-subject neural decoding across non-corresponding electrode grids'
+-hook: 'Every ECoG implant places a different grid over different cortex, so two patients share no channel and no geometry; each grid is projected onto axes defined by finger movement, and one shared decoder reads those axes for every patient.'
++sub: 'Behavior-supervised alignment for cross-subject decoding across non-corresponding electrode grids'
++hook: 'Each grid is projected onto axes defined by finger movement, and one shared decoder reads those axes for every patient.'
+-  purpose: 'Let a brain-computer interface that decodes finger movements start working in a new patient after a few minutes, by reusing what it learned from earlier patients.'
+-  plain: 'For each patient, the electrodes are summarized by how strongly they follow each finger; those summaries mean the same thing in every brain, so one decoder trained on earlier patients can read a new one after a short calibration.'
++  purpose: 'Let a finger-decoding brain-computer interface start in a new patient after minutes, reusing what it learned from others.'
++  plain: 'Electrodes are summarized by how strongly they follow each finger; those summaries mean the same thing in every brain.'
+-  - { label: 'Data', value: 'Stanford fingerflex ECoG, leave-one-subject-out' }
+-  - { label: 'Code', value: 'TheAxeC/behavior-aligned-ecog-transfer' }
++  - { label: 'Data', value: 'Stanford fingerflex ECoG' }
+-  - 'Per finger, the first filter is the correlation of each electrode''s high-gamma envelope with that finger''s flexion; three more filters span the finger-driven subspace, giving $D=20$ shared components.'
+-  - 'A dilated causal TCN, trained on the pooled source patients, reads the 20 components across 24 bands from 2 to 300 Hz.'
+-  - 'The target alignment always uses labelled target movement; minimal calibration also fine-tunes the decoder, and frozen-decoder does not.'
++  - 'Per finger, filters from each electrode''s high-gamma correlation with flexion give $D=20$ shared components; a dilated causal TCN reads them across 24 bands.'
++  - 'Leave-one-subject-out; minimal calibration fine-tunes the decoder on labelled target movement, frozen-decoder does not.'
+-  - 'Under the CORTEG foundation model''s own protocol on nine patients: 0.530 (SD 0.157) against its published 0.554, one accuracy band; ridge on the rebuilt inputs 0.380 against its 0.336.'
+-  - 'Calibration reaches that band at about four to five minutes, 80 to 90% of the 5.6-minute calibration set; CORTEG reports ten to thirty minutes under another protocol.'
++  - 'Under CORTEG''s own protocol on nine patients: 0.530 (SD 0.157) against its published 0.554; calibration reaches that band at about four to five minutes.'
+-equation: 'f_i = g \circ \varphi_i, \qquad \varphi_i(X_i) = W_i \, \Phi(X_i)'
+-panels:
+-  - { figure: pipeline_flowchart.png, caption: 'The pipeline from raw recordings to predicted trajectories.', explain: 'Grids enter as **24-band envelope features**; a private **behavior-aligned filter** projects each grid onto the shared finger-motor space; one **shared TCN decoder** outputs the trajectories. Target labels estimate the target filter in both regimes and update the decoder only under minimal calibration.' }
+-title: 'The alignment carries the transfer, and where it stops'
+-hook: 'A same-protocol ablation changes only the correspondence scheme or the alignment head, and an independent cursor-tracking cohort repeats the test with a different behavior and different grids.'
++title: 'Does the alignment carry the transfer, and where does it stop?'
++sub: 'Same-protocol ablation, cursor-tracking replication and dead ends'
++hook: 'A same-protocol ablation changes only the correspondence scheme or the alignment head.'
++eli5:
++  purpose: 'Test whether the alignment is what makes the transfer work.'
++  plain: 'Permuting or replacing the alignment lowers the transfer.'
+-  - { label: 'Ablation', value: 'Decoder, features and seeds held fixed' }
+-  - { label: 'Replication', value: '4 cursor-tracking patients, none in fingerflex' }
++  - { label: 'Cursor cohort, n = 4', value: '76.7% of within-subject ceiling aligned, 7.9% without' }
+-  - 'Compared: behavior-aligned axes, permuted axes, the first 43 channels, Euclidean Alignment and an anatomical grid; then fixed, learned linear, nonlinear and random-init alignment heads.'
+-  - 'Dead ends: block-term tensor decoders underfit across patients (ridge 0.354 against BTTR 0.156 on identical features); AJILE12 decodes near zero within subject, and on scalp EEG the alignment adds nothing (0.402 against 0.411 permuted).'
++  - 'Frozen-decoder ablation; a cursor-tracking cohort repeats the test.'
+-  - 'Frozen-decoder $r$: behavior-aligned 0.371, axes permuted 0.162, first 43 channels 0.042, with Euclidean Alignment 0.037, anatomical grid 0.071 (behavior against Euclidean $p$ = 0.016).'
+-  - 'A random-init head of the same capacity falls to 0.319 with calibration; a nonlinear behavior-supervised head lifts frozen-decoder transfer from 0.353 to 0.517 (7 of 7).'
+-  - 'Cursor cohort: frozen-decoder transfer recovers 76.7% of the within-subject ceiling aligned and 7.9% without, against 72.1% and 8.2% on fingerflex; $n$ = 4, no significance claim, one patient goes the other way.'
+-  - 'Needs electrodes over the driven cortex and producible movement: 6 of 12 clinical-monitoring patients met the coverage condition.'
+-panels:
+-  - { figure: finger_spatial_maps.png, caption: 'The rank-1 forward map of each finger on the cortex.', explain: 'Each map is the per-electrode correlation with one finger, a **forward pattern**; the maps localize over **sensorimotor cortex** in a gross finger order. Only these rank-1 axes are read as anatomy, never the other filters or the decoder.' }
++  - 'Frozen-decoder $r$: behavior-aligned 0.371, permuted 0.162, first 43 channels 0.042, Euclidean Alignment 0.037, anatomical 0.071 ($p$ = 0.016).'
++  - 'Cursor cohort: no significance claim, one patient goes the other way.'
++  - 'Dead ends: block-term decoders underfit across patients; AJILE12 decodes near zero; on scalp EEG the alignment adds nothing.'
++equation: 'f_i = g \circ \varphi_i, \qquad \varphi_i(X_i) = W_i \, \Phi(X_i)'
+```
+

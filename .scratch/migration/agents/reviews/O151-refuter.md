@@ -410,3 +410,165 @@ Cases:
 - C9: the orchestrator's measured fit.
 
 Reviewer usage: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min.
+
+## Repair round 2, refuted
+
+Worktrees: oculus `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O151-2` (O), base 3d5b3da7d; hub `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O151` (H). Round 2 snapshot of the hub: `.../migration-O151-round-2` (B).
+
+```
+$ (O, TMPDIR unset, PATH node v24.21.0) npm run diagrams   # tail: docs/diagrams/writes.svg; git status --short afterwards lists no docs/ path
+$ (O, TMPDIR unset) npm run test:quick
+test:quick: 8 changed file(s), from git since HEAD
+ok prettier (1.3 s): All matched files use Prettier code style!
+ok ASCII gate (1.4 s)
+ok svelte-kit sync (2.7 s)
+ok eslint (2.5 s)
+ok svelte-check (8.8 s): ... COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok vitest (11.7 s) | ok vitest checks (36.2 s)
+test:quick: 39.0 s; every command passed
+(not covered, its own line: tests reaching no changed file within the import depth, other than tests/checks/source and tests/checks/tree; the build; the lint of unchanged files)
+
+$ (O) LC_ALL=C perl ASCII gate over the four files: exit 0, nothing printed; LC_ALL=C grep -n '[^ -~]' over the four files: 0 lines
+$ (H) find projects -path '*/present/*' \( -name '*.md' -o -name '*.yml' \) -print0 | xargs -0 env LC_ALL=C grep -n '[^ -~]'
+projects/ideas/modality-dropping-btf/present/main.md:10 ... Link<o umlaut>ping
+projects/ideas/hccnet-fl-sweden/present/main.md:4, :11, :19 ... Link<o umlaut>ping
+(4 lines, each the place name)
+
+$ (O) sh utils/unused-exports.sh | diff - .../worktrees/O151-2-base/unused-exports.txt   # diff exit=0, nothing printed
+$ (O) node utils/outside-paths.mjs .scratch/migration/agents/briefs/O151.md 3d5b3da7d
+.scratch/migration/agents/briefs/O151-round2.md
+.scratch/migration/agents/reviews/O151-oculus-before-round-2.patch
+.scratch/migration/plan.md
+src/lib/views/academic/present/parts/project/Project.svelte
+(Project.svelte is named by the round brief's path list; plan.md and the two others are orchestrator ledger files.)
+$ (H) git status --short | wc -l   # 143
+$ (H) git status --short | grep -v '/present/' | wc -l   # 11 (the round 1 README records)
+$ (H) diff -rq each of the 95 present/ folders against O151-hub-base: 95 folders differ; only in base 0; only in worktree 163; files differ 50
+$ (H) cmp of the 11 README.md against B: same for all 11
+$ (H) grep -c '^kind:' per deck: 82 decks one slide, 13 decks two (108 slides); grep 'kind: columns': 0
+$ grep -c '<<<<<<<\|>>>>>>>' over the four oculus files: 0 for each
+$ C5 (source lines 1300-1409 of O151-report.md, worktree path replaced, fed by stdin, research.txt regenerated from project.yml tier): folders with present.yml: 95 of 95; 0 fault lines; 13 "slide 2:" lines
+$ C6 (O) OCULUS_TEST_HUB=<H> npx vitest run tests/checks/config/integrity.test.ts -t "deck|equation|portfolio"
+ Tests 7 passed | 7 skipped (14)
+ <check mark> real hub deck row 1830ms, equation row 558ms, portfolio row 143ms; load average 8.72 6.02 5.79
+$ C10 (source lines 1417-1471 of the report): lines repeated across decks: 36
+$ node numbers check over all 95 decks (numbers on slides against README, CLAUDE.md, project.yml, manuscript .tex and PDF text): printed only fed-faithful-ecg, phd-thesis 1.05, bachelor-network-ids, icfp-src-poster, masters-algebraic-subtyping, bttn-incident-af 30,000, raw-pls -- see below
+$ per-deck new numbers (comm -23 of each deck against B): linfoot-estimator, dongho-ecg-clustering, ecg-af-fair, clinical-hccnet only (agrees with the report)
+```
+
+### Verdicts
+
+Rulings of `O151-round2.md`:
+
+- Ruling 1, one slide per deck: violated. The counts hold (82 and 13 decks; the report names the 13 with why). The clause "A fact the one slide has no room for is not dropped silently: item 2 of the brief still holds, so a fact that cannot stand on one slide is the reason for a second slide" is not met: Spec 1, Spec 4.
+- Ruling 2, a second slide looks like the first: violated, Spec 2.
+- Ruling 3, every slide fits: not verifiable by this review (the measurement is the session's, under "Declined to judge").
+- Ruling 4, slides from the material only: violated, Spec 6.
+- Ruling 5, every deck checked again against all 17 issues: violated, Spec 5.
+- Ruling 6, up to date and proper: holds for the decks read: linfoot-estimator, clinical-hccnet, btfno, bt-operator-theory, ecg-af-fair, dongho-ecg-clustering each trace to the live sources (numbers below). One point on bt-operator-theory's README is the user's, under "Declined to judge".
+- Ruling 7, kept as they stand: violated at R1-S3 and R1-S4, Spec 3. Held: the 11 README records (cmp same against B; no README changed); R1-S1 (no "spun out" sentence); R1-S2 (no bold-reading line in extended-bttr-note); R1-S5 (no body headings remain); R1-S6; R1-P1; R1-T1 (no `, not X` in the listed decks).
+- Ruling 8, every changed line reported, before and after, with its source: violated in part, Spec 7.
+
+Items of the brief's "What to build":
+
+- 1: holds. C5 95 of 95; each read deck comes from its own sources; C4 below; round 1 rulings 3, 4, 5 of `O151-round1.md` hold (`xsub-ecog-framework`, serial-ecg-af has no BTTN number, fed-faithful-ecg FedProx "benchmarks still to run").
+- 2: violated, Spec 1 and Spec 4 (the "no fact is dropped for room", "Nothing is hidden" and `equation` clauses). Held: titled slides, shape checks (C5), C6, no finding of the deck reader, equation floor at 13.
+- 3: holds. `slide.css` `--slide-design-facts: 0.9375cqw`, `--slide-design-facts-label: 0.78125cqw`, rice `0.859375cqw` and `0.703125cqw`; `Facts.svelte` sets the strip from them, dot 0.75em; `Project.svelte:149` `{#if right}`; markers 0; comments state fractions, no px size; `Slide.svelte` only its comment changed.
+
+Cases:
+
+- C1: met, `ideas/clinical-ai-eval-artifacts` read; the "project" slide follows its README and manifest.
+- C2: met, `archive/phd/phd-thesis` read against the thesis and manifest; 1.05 is the 1.0459 rounding already accepted.
+- C3: met for what the case asks: ms-lipid-handshake states "Disproved: slope -0.06, p = 0.73 on 632k nuclei"; algebraic-subtyping unchanged (cmp same) and says "Stopped before a standalone paper"; raw-pls slide 2 chip "Dead targets" holds MGMT and survival. The loss of ms-lipid's other threads is under Spec 1.
+- C4: met. `grep -n -i -e covert -e '\bPCD\b' -e 'coupled descent'`: covert-theory only its own title lines; covert-applied its title only.
+- C5: met (rerun above).
+- C6: met (rerun above).
+- C7: partial. Spec 8: the round's new numbers carry no file and line in the report. The numbers themselves check out at the lines listed in the Spec 8 entry.
+- C8: met by reading. 12 and 10 at 1; 11 and 9 under rice; 18 and 15 at 1.5; 8.4 and 7 at 0.7; 19.2 and 16 at 1.6; dot 9 at 1 (0.75em of the value size).
+- C9: not verifiable here; the session's page measurement.
+- C10: met (rerun, 36 lines, all short labels, venue, stage or shared author and title strings of the kinds the report lists; no body heading remains).
+
+### Decks read, and the 17 issues (task point 2)
+
+Read in full (36): the 13 two-slide decks (`active/linfoot-estimator`, `manuscripts/` bt-operator-theory, btfno, bttd-source-eeg, bttn-incident-af, clinical-hccnet, dries-bttr-ecg, ecg-readable-substrate, fed-multicellular-immune, hccnet-revision, meseret-cirrhosis, raw-pls, ward-bttr-crosssubject); the decks the builder names as cut most (manuscripts/covert-theory, archive/failed/ms-lipid-handshake, archive/failed/jacobian-coupled-blockterm-dp); the decks with new numbers beyond those (archive/published/2026/dongho-ecg-clustering, ideas/ecg-af-fair); and a sample of 18: archive/published/2026/hcc-modality-poster, 2025/fermat, 2022/extended-bttr-note, active/novel-math-primitives, ideas/clinical-ai-eval-artifacts, 2026/abduction, 2025/go-bttr, 2025/fbttr-strategies, 2026/glassbox-decision-pipelines, 2026/hccnet-fl, archive/phd/phd-thesis, archive/failed/fed-faithful-ecg, active/loewner, ideas/engram, active/sandpile-operator, ideas/xsub-ecog-framework, manuscripts/covert-applied, 2022/block-term-tensor-regression.
+
+Not read (59, numbers check and repeat check only): active/eeg-saad-challenge; archive/failed/faithful-block-term-layer; archive/published/2016/bachelor-network-ids, 2017/icfp-src-abstract, 2017/icfp-src-poster, 2018/masters-algebraic-subtyping, 2018/masters-eeg-infotheory, 2021/abstract-bci-meeting-2021, 2021/source-localization, 2021/volga-finger-trajectories, 2022/connectivity-iris, 2026/erp-signatures; archive/stopped/algebraic-subtyping, archive/stopped/connectivity-motor-imagery; coauthor (14): flkit, chi-household-survival, chi-purpose-centric, algebraic-effects-compilation, http2-best-practices, http2-web-performance, coordinated-fingers-ecnr, ecog-frequency-features, modulation-lmp-bci, highgamma-event-detection, editorial-bigdata-ai-ms, pfl-ms-npj, proprioception-exoskeleton, individual-reference-intervals; ideas (31): adapter-format-theory, asthma-geo-tensor, attention-scoped-instructions, block-term-nca, brecht-fl-partitioning, btd-autoencoder, cirrhosis-digital-twin, concept-bottleneck-hcc, conformal-tensor-factors, faithful-interpretability-position, fed-duplication-limits, fed-neural-operators, fedbtd, federated-protocol-agents, fedlink, fl-privacy-auditing, florank-personalization, harmonop, hccnet-fl-sweden, hccnet-pathology, modality-dropping-btf, multiway-biosignal-fm, neurosde, old-charges-stemmatology, paleogenomics-tensor, pathology-tensor-mil, physics-tensor-hcc, quantum-tensor-fl, serial-ecg-af, ssm-longitudinal, strokeop.
+
+The 17 issues over the 36 decks read, in ruling 5's order: (1) critiques: none found; a grep for critique words over every deck printed nothing. (2) statements the sources do not give: Spec 6. (3) another project's result as a bar: none in the 36 (bt-operator-theory's companion-study line is its manuscript's own). (4) numbers from an unnamed file: none; fed-faithful's pilot numbers are in `code/results/pilot_mechanism/summary.md`, which `README.md:33` names. (5) student work framed as Axel's: none. (6) claims no source makes: Spec 6. (7) version disagreement not listed: none new; the report lists them. (8) chart values read off a picture: not re-rendered (Declined). (9) a paper's fault on a slide: none. (10) fact dropped, overstated or added: Spec 1, Spec 6. (11) repeated lines: C10 holds. (12) another project's materials: none. (13) banned prose: `, not X` grep over every deck printed one line, in linfoot (a closed route, no contrast). (14) unreported changes: Proof 2, Behaviour 1. (15) unapproved programs: Spec 9. (16) too tall: the session's. (17) empty right-hand column: holds, `Project.svelte:149`.
+
+Numbers: the numbers check found every number of the 36 decks read in their named sources except, in the read set, raw-pls -0.087 and MGMT 0.50/0.53 (in `RESULTS.md:15` and `:36`, which the check did not include, named by item 1) and bttn 30,000 (`30{,}000` at `manuscript/main.tex:174`); fed-faithful-ecg's six are in the named `summary.md` lines 7-9. Claims: the 36 decks were read against the sources on every line the round changed (Spec 5 lists what round 2 rewrote); the unchanged lines were compared to the sources only where a reading raised doubt.
+
+### Facts in the round 1 snapshot, absent now (task point 3)
+
+For every fact below ruling 1 requires the same thing: it stands on the one slide, or it is the reason for a second slide named in the report. Neither happened for these. "N1" and "N4": named in NOT-done item 1 or item 4 of the Round 2 report. "D": present only as a `-` line in "Every changed line", not named as cut.
+
+- bttn-incident-af: two-branch 0.731/0.754 and warm-start 0.744/0.758 AUROC pairs (N1). "On the earlier ECG-report labels" for the dead-end AUROCs (D, also Spec 6). Figures pipeline_overview and bttn_interpret (D, not among N4's nine).
+- meseret-cirrhosis: Spearman 0.59 with SMOTE; Fine-Gray 5-year C 0.842, 0.807; subdistribution HR 1.52, 0.32; METABRIC +0.008, GBSG +0.014, SUPPORT up to +0.046 with sizes 1904, 2232, 8873; prothrombin PH violation p = 0.002; SUPPORT 508 patients; net benefit (D). Figures (N4).
+- ward-bttr-crosssubject: ridge 0.354 against BTTR 0.156; CORTEG ridge 0.380 against 0.336; random-init head 0.319; nonlinear head 0.353 to 0.517; EEG 0.402 against 0.411; fingerflex 72.1 and 8.2; 6 of 12 coverage (D). Figures (N4).
+- hccnet-revision: variant parameter counts 12.4M to 72.4M; fusion AUROC 0.894 and 0.891; Medisch Spectrum Twente 2011 to 2022 (D). Figures (N4).
+- dries-bttr-ecg: RR pseudo-leads dead end 0.471, 0.548; age alone 0.75 with unmatched controls; age 0.500 with matched; median-beat window; CNN near chance aligned and unaligned, no alignment conclusion for CNN (D). Figures (N4).
+- bttd-source-eeg: Champagne under the matched sparse prior; correlated-source robustness of linear inverses and Champagne; deep sources degrade; 500 background dipoles (D). Figures (N4).
+- fed-multicellular-immune: comparable or below elsewhere SLE +0.013, COVID -0.064, Crohn's +0.008, kidney +0.024, heart -0.015; liver 6 controls and no replication; additive aggregation does not compute the merge; site-subspace leakage 0.98 at 20 donors; gene-mode stitch 0.654 replaced (D).
+- raw-pls: AUPRC 0.975 against 0.793; "most of the grid's deficit was rasterization"; isometry 4.2e-16 against 1.40 (D). Figures (N4).
+- btfno: frequency roughness 0.715, 0.797, 0.924; the gap values 0.0160 and 0.0179 at L = 1; the reviews' request for MoE-POT, NESTOR, MPP, AM-FNO, a second benchmark and the Tucker side (D). Figure (N4).
+- bt-operator-theory: disjoint-band ratio 10.15 against 12; threshold about 60 against 6; gap values 0.0178 to 0.0120; selector and depth extensions; no representational edge; approximate band-structure trade-off (D).
+- ecg-readable-substrate: prevalences; waveform no-age 0.781 against 0.749; ECG-JEPA +0.013 and ST-MEM's interval; leakage-clean encoder adds +0.013 and +0.002; NeuroKit delineation as a possible confounder; reasons for the dead ends (D).
+- clinical-hccnet: "each sequence's encoder size was chosen on the held-out patients" (`manuscript/main.tex:142`; D; the held-out AUROCs stay on slide 1); ethnically homogeneous population; subgroup results removed; truncated-history dead end; every interval excludes 1 (D). Figures (N4).
+- linfoot-estimator: figure (N4); closed routes' numbers (four arms 0.062, six levers 1.8 percent), MIST 0.33 nats, August estimator 0.0624 against 0.0799, margin spread 0.0142 to 0.2501 (D; all superseded lines of the old manifest aside).
+- covert-theory: PALM no-go, the "first" claim, floor checks 1.00, 1.03, 0.97, 1.1 at 20 seeds (N1); limits (no rate to the floor, private recovery dimension-dependent) (D).
+- ms-lipid-handshake: 65 pairs and 43 donors, Absinta and Jakel cohorts, ambient RNA p = 8.6e-7, BTD 0.499 and 0.507 and 0.704 (N1); uptake 0.013, phagocytic -0.235, compositional pivot, coupled factorization r 0.252, the method's fit (D). Figure (D).
+- jacobian-coupled-blockterm-dp: Control chip, "some numbers" (N1); raw floor 14 and 22, 16 to 18 percent lower, L = 1 at 0.988, 1.715 against 1.753, white-to-raw ratios (D).
+- dongho-ecg-clustering: HuBERT axis 0.160 to 0.549, raw 0.000 to 0.001; scaler table; cost 28.3 ms and 434.7 ms; conv-AE 0.127; ECGFounder 0.909 against 0.896; worst-site draws (D). Figure (D).
+- ecg-af-fair: earlier Candidate 1 and 2 lines superseded by the three directions; "split by patient" (D).
+- hcc-modality-poster: naive concatenation DWI 0.718 and 0.795 (D, also Spec 3); encoder heads without pretraining 0.729, 0.731, 0.714; about 37 positives; stage 2 and 3 training (D).
+- fermat: larger clients lose performance, alone AUC 0.89 and 0.92 (D, also Spec 3); accuracy 0.772 and 0.783; class imbalance per client; local runs 0.63 and 0.72 (D).
+- extended-bttr-note: channels 61, 46, 63; 37 ms lag; hand-avatar comparison; paper renders coactivations anyway (D). Figure (D).
+- novel-math-primitives, clinical-ai-eval-artifacts, xsub-ecog-framework, sandpile-operator, block-term-tensor-regression, covert-applied, loewner, engram, phd-thesis, go-bttr, fbttr-strategies, abduction, glassbox, hccnet-fl, fed-faithful-ecg: lines cut (each D): for instance sandpile's deep-equilibrium plan, engram's decided-against list and 190 MB index cost, glassbox's dead ends (sufficiency certificate, novelty monitor, averaging), hccnet-fl's heterogeneity axes and FedSL 0.402 against 0.701, covert-applied's masking no-go and 38.1 MB, phd-thesis's Granger precision and abduction-not-attempted; block-term's significance and non-difference lines; go-bttr, fbttr, abduction, block-term figures (D).
+- The sample of the facts is by reading. "Many coauthor decks lost minor numbers" (N1) names no deck; the coauthor decks are in the unread list.
+
+### Findings
+
+**1. Spec**
+
+- Spec 1. `O151-report.md` Round 2, "NOT done" item 1: "Facts were cut from slides to fit, and they were not given a second slide. Ruling 1 says a fact that cannot stand on one slide is the reason for a second slide"; the facts above. What is wrong: ruling 1 and item 2 ("no fact is dropped for room") ask for one slide or a named second slide; the round gave neither for the facts it cut. The 13 kept second slides were chosen by the same reason the table gives ("the first slide has no room") that the other 82 decks equally meet; all 12 of `manuscripts/` that keep a second slide and linfoot keep one, while hccnet-fl, glassbox, fermat, abduction and the theses, whose same kind of fact was cut, do not. Failure scenario: a reader of the fermat deck reads "Level with centralized BTTR" with the paper's stated cost to the larger clients gone; a reader of fed-multicellular-immune sees where multicellularity pays and not the cohorts where it does not; a reader of clinical-hccnet reads held-out AUROCs without the fact that encoder sizes were chosen on those patients. Verdict: ruling 1 and item 2 violated. The collision of "rare" with "no fact dropped" is named under "Declined to judge".
+- Spec 2. `projects/manuscripts/*/present/main.md`, second slides: 10 of the 13 second slides carry `equation` and no first slide of those decks does (`node` listing of keys per slide). The report ("Same `kind: project` layout") and `Project.svelte:73` and `:149` show the first slide one column and the second two columns (`right` true only with an equation). Headline form: title statement on slide 1 and question on slide 2 in hccnet-revision, meseret-cirrhosis, ward-bttr-crosssubject and raw-pls; question on slide 1 and statement on slide 2 in bttd-source-eeg ("Correlated sources, real visual EEG, and where the method stops"), against the report's "a question or statement title of the first slide's form". Parts: method 2 bullets against 1, specs 3 against 1 to 3 (the report's NOT-done items 2 and 3 state part of this). What is wrong: ruling 2 says "the same layout, the same headline form, the same parts". Failure scenario: a reader sees the second slide of 10 decks as a different page layout from the first. Verdict: ruling 2 violated.
+- Spec 3. `archive/published/2026/hcc-modality-poster/present/main.md` and `archive/published/2025/fermat/present/main.md`: the line "Naive concatenation without and with pretraining: DWI 0.718 and 0.795, ..." and the line "The paper notes that the larger clients can lose performance by joining federation: alone they reach AUC 0.89 and 0.92." stand in snapshot B and are gone. `grep -n "0.718\|0.795"` and `grep -n "0\.89\|0\.92\|lose performance\|decrease"` print 0. What is wrong: ruling 7 keeps "the fixes made at landing in the hub worktree (a review's findings R1-S1 to R1-S6, R1-P1 and R1-T1)"; these two are the fixes of R1-S3 and R1-S4. Failure scenario: the two facts the review had restored are gone again and the report's ruling 7 row says they stand. Verdict: ruling 7 violated.
+- Spec 4. All decks: `node` key count: decks with `equation` 43 in B, 13 now, exactly the floor of `REAL_FLOORS`; 30 decks whose snapshot carried one have none (fermat, go-bttr, abduction, block-term-tensor-regression, hccnet-fl and others), and the 10 two-slide decks that keep one moved it off the first slide. Report's Round 2: "Equation floor | `grep -c '^equation'` ... prints 13". What is wrong: item 2 says the first slide carries "`equation` where its sources give them" and names the project's defining formula where its manuscript or README states one. The report does not say 30 were removed. Failure scenario: a reader of the abduction deck sees no eBTTR equation though the paper states it and the snapshot drew it. Verdict: item 2 violated.
+- Spec 5. Report, "Per deck: the check of the 17 issues": "every line a deck holds now is a line, a shortening or a recombination of lines that stood in that deck after round 1 and were checked against its project's sources there". What is wrong: ruling 5 says "Every deck is checked again against all 17 issues". For the source issues the round substituted the round 1 check; the rows say "none" with issue 10 excluded. The check did not catch the statements of Spec 6. Failure scenario: a reader trusts "none" for a deck whose rewritten line says something its source does not. Verdict: ruling 5 violated.
+- Spec 6. Recombined lines that change what the source says; each new this round.
+  - `manuscripts/ward-bttr-crosssubject/present/main.md` slide 2: "Euclidean Alignment 0.037, anatomical 0.071 ($p$ = 0.016)". Snapshot: "(behavior against Euclidean $p$ = 0.016)"; `README.md:24` "Behavior-vs-Euclidean Wilcoxon p=0.016". The p value now reads as the anatomical comparison.
+  - `archive/published/2025/fermat/present/main.md`: "Fed-Heart-Disease: AUC 0.872 against 0.874 centralized, gap not significant". `main_work.tex:464` says the accuracy difference is not statistically significant and "practically no difference in the ROC-AUC"; the snapshot's "accuracy gap" became a gap on the AUC.
+  - `archive/published/2022/extended-bttr-note/present/main.md`: "coactivations most likely not encoded by the ECoG (S1, thumb cued: index 0.72 against 0.05)". The two were separate statements; the parenthesis (eBTTR against BTTR accuracy for a non-cued finger) now reads as evidence for the claim it stood beside, and its comparison is unlabelled.
+  - `manuscripts/bttn-incident-af/present/main.md` slide 2 chip "Dead ends": the qualifier "on the earlier ECG-report labels" is gone, so the AUROCs sit against the 0.778 of a different label set.
+  What is wrong: ruling 4 and the source rule; ruling 5 issue 10 (overstated). Failure scenario: a reader cites the wrong comparison for a p value, or reads a dead-end AUROC against a headline measured on other labels. Verdict: ruling 4 violated.
+- Spec 7. Report, "Every changed line": "The source of each line is given above the record: a `+` line that is a shortening or a recombination of `-` lines takes its source from those lines". What is wrong: ruling 8 asks "before and after, with its source". One sentence for the whole section gives no source per line; a `+` line such as "Sequence-order pre-training adds little; no fused input beats diffusion MRI alone." has no file and line. Failure scenario: a reader cannot check a rewritten line against its source without redoing the trace. Verdict: ruling 8 violated in part.
+- Spec 8. Report, "Up to date": new numbers named with a source file but no line ("every one of those numbers was then found by `grep -l -F` in that project's live source"). What is wrong: C7 asks each number with file and line. Reproduced: linfoot `manuscript/main.tex:41`, `:66`, `:265`, `:310`; clinical `manuscript/main.tex:148`, `:269`; dongho live `project.yml:15`; ecg-af-fair `README.md:21`. Failure scenario: as Spec 7. Verdict: C7 partial.
+- Spec 9. Report, "How the rules met": "The section 'Every changed line' was generated with `diff -U0` and a shell redirect into this report". What is wrong: the round brief approves one program, and `agents/spec.md` makes a shell redirect that changes a file a script needing approval; it is named, not approved. Failure scenario: none to the product. Verdict: no item or case.
+- Spec 10. Second-slide chips stripped of what they say: `bt-operator-theory` slide 2 `{ label: 'Code', value: 'four synthetic scripts' }` (the first slide's chip Code is the repository); `raw-pls` slide 2 `{ label: 'Real warps', value: '120 lesions, 3% at $\eta$ = 0.427' }` (snapshot: "move the representation 3%"); `bttn-incident-af` slide 2 `{ label: 'AUROC', value: 'block-term, full-rank 0.729, CP 0.728' }`. What is wrong: item 2, "A second slide ... is drawn as carefully as the first". Failure scenario: a reader cannot tell what the 3% or the Code chip states. Verdict: no item or case.
+
+**2. Proof**
+
+- Proof 1. Report, NOT-done item 1: "together hold 1210 removed and 799 added lines against the round 1 state (`diff -U0` ...)". The table of the same section sums to 1210 and 799 (eeg-saad row "17 / 8"), but the report's own "Every changed line" holds 1764 `-` lines and 799 `+` lines (eeg-saad 34 and 8), and my `diff -U0` of H against B over every deck prints 1792 removed and 810 added. The decision resting on it: how much was cut, which the coordinator reads to decide whether to send the round back. Failure scenario: the stated scale of the cut is low by a third. Verdict: ruling 1.
+- Proof 2. Report, NOT-done item 4: "The panels no longer drawn:" names nine decks. `grep -c "figure:"` over B prints 19 decks; over H, 0. Not named: bttn-incident-af, ms-lipid-handshake, block-term-tensor-regression, extended-bttr-note, fbttr-strategies, go-bttr, dongho-ecg-clustering, abduction, source-localization, sandpile-operator. Failure scenario: the reader takes nine for the list and looks for figures on ten decks that have none.
+
+**3. Standards**
+
+- Standards 1. Report, Round 2, first paragraph: "Nothing the round brief asks for is left unbuilt." then item 1. What is wrong: `agents/spec.md` Report, "First line: anything NOT done". The first sentence says nothing is undone and item 1 under it says facts were cut contrary to ruling 1. Failure scenario: a reader who stops at the first sentence takes the round as complete. Verdict: ruling 1.
+
+**4. Behaviour**
+
+- Behaviour 1. All 95 decks draw no figure now (`grep -c "figure:"` over H: 0; over B: 19 decks, 26 panels). The report states this for nine decks, without saying no deck draws a figure. Failure scenario: at the look, the portfolio deck and every project slide are text only, and the report does not say to expect that. Verdict: none on its own; see Proof 2.
+
+### Declined to judge
+
+- Ruling 3, C9 and the report's measurements (first 115, final 0): the fit on a page is the session's, and this review starts no server and opens no page.
+- Whether the Chrome and scratch server are stopped: settled only by a port or process check on 8796 and 9340, which the limits bar.
+- The collision inside ruling 1 between "a second slide is rare" and "a fact that cannot stand on one slide is the reason for a second slide" over 82 fact-dense decks, and whether 13 second slides is rare enough: the user's call.
+- bt-operator-theory: `README.md:83` records "Blocking corrections" to Theorem 1 and the ordering (`next:` in the manifest repeats it), while the slide states the manuscript's factor and the ordering. The brief's precedence gives the manuscript and the report lists the disagreement; whether ruling 6's "the project's current framing" overrides that is the user's.
+- Whether a slide may keep second-slide reasons by folder rather than need (Spec 1) beyond what the report states: the user's.
+- Claims on the 36 read decks were compared with sources line by line only for the lines round 2 changed and where a doubt arose; the unchanged lines rest on round 1's trace.
+- Numbers the check left unresolved in unread decks (bachelor-network-ids, icfp-src-poster chart values, masters-algebraic-subtyping): not traced by hand; the poster chart values need a render.
+- Whether the five `plan.md` line additions in the worktree are the orchestrator's: `git log` is outside the git this review runs; they are Ruling lines and O173/O174, not builder work by their text.
+- The report's "every line read" statement for the 17 issues (its wording) against the unread decks: not checkable from here beyond the 36.
+
+Reviewer usage: a6bfcba59bb3a80aa, claude-opus-5-5, 379076 tokens, 54 tool uses, 15.1 min.

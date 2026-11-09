@@ -34,8 +34,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a69da2be8a76365d5 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O151-report.md
-  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min; build under the round-0 rulings: 353934 tokens, 1300 tool uses, 161.4 min; repair round 1: 320238 tokens, 675 tool uses, 68.3 min
-  reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min
+  builder_usage: first run (hand-back, .scratch/migration/agents/reviews/O151-first-run.md): 152174 tokens, 27 tool uses, 6.7 min; build under the round-0 rulings: 353934 tokens, 1300 tool uses, 161.4 min; repair round 1: 320238 tokens, 675 tool uses, 68.3 min; repair round 2: 337137 tokens, 740 tool uses, 107.2 min
+  reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min; over round 2: a6bfcba59bb3a80aa, claude-opus-5-5, 379076 tokens, 54 tool uses, 15.1 min
   round: 2 (.scratch/migration/agents/briefs/O151-round2.md; snapshots .agents/worktrees/migration-O151-2-round-2 in oculus and .agents/worktrees/migration-O151-round-2 in the hub); round 1 .scratch/migration/agents/briefs/O151-round1.md (snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
 ```
@@ -187,7 +187,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 735 (2026-11-09, the review over O151's round 2, `agents/reviews/O151-refuter.md`). A rule clash: Axel's ruling that a second slide is rare (`plan.md` Rulings, open item 730) against the brief's clause that no fact is dropped for room (`agents/briefs/O151.md` item 2, repeated in ruling 1 of `agents/briefs/O151-round2.md`). The builder kept 82 decks at one slide by cutting: decks drawing a figure 19 to 0, decks holding an equation 43 to 13, 1437 lines removed and 810 added over the `present/main.md` files against the round 2 snapshot. Findings beyond the clash: Spec 3 (two fixes of the first review undone), Spec 6 (four lines changed in meaning), Spec 2 (second slides differ from first slides). Recommended, a judgment: (a) one last round for O151, by Axel's exception to `repair_rounds`: rarity wins and the no-drop clause is narrowed to secondary numbers, each one named per deck; back on the one slide come the defining equation where the sources state one, the costs and limits a paper states, and a figure where it fits; Spec 2, 3, 6, 7, 8 and 10 closed. Landing as built with only the small fixes is the lazy option. The orchestrator's measurement of every deck is not taken.
 
 ## Closed items
 
@@ -871,6 +871,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O151 refuted over round 2). The review over round 2 (a6bfcba59bb3a80aa) is appended to `agents/reviews/O151-refuter.md`. Open item 735 holds the rule clash; O151 waits for Axel's ruling, `landing: not-started`, its worktrees and uncommitted hub work kept. In flight (0 of 6). Queued: O151. Open items: 735.
 - 2026-11-09 (O173 landed). O173, the `tiers` block of a `required_files` row, landed (booking in `plan.md`, `agents/reviews/O173-landing.md`), with one fix at landing: a word block's name stands at the block's top (`Cards.svelte`, `.field.tall`). O174's worktree and branch are removed. In flight (1 of 6): O151, repair round 2 running. Queued: none. Next: O151's review over round 2 when its builder reports. The hub row `{ file: present/present.yml, tiers: { words: [research] } }` of open item 733 waits for O151's hub commit and Axel's word. Open items: none.
 - 2026-11-09 (O174 landed). The cut of a long field ends at the last line or block that fits whole. O173's review over round 1 found nothing; its landing is next. O151's round 2 runs. In flight (2 of 6): O151, O173. Open items: none.
 - 2026-11-09 (O173 repair round 1 sent). O173's review (`agents/reviews/O173-refuter.md`) holds every item and meets every case but C9, the look; three Standards findings are ruled in `agents/briefs/O173-round-1.md` and go to builder aca21d5a391ac3483. O174 was prepared in parallel (base abe602359), its first review running. O151's round 2 runs. In flight (3 of 6): O151, O173, O174. Open items: none.

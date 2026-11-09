@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use):
-- O151 (a deck for every research project): repair round 2 running, its builder fitting every deck on its own scratch server.
+In flight (0 of 6 slots in use): none.
 
-Queued: none.
+Queued:
+- O151 (a deck for every research project): waits for your ruling on open item 735.
 
 Owed looks: none.
 
 Landed, newest first:
-- O173 (the audit asks every research project for a deck), 2026-11-09.
+- O173 (the audit asks every research project for a deck), 2026-11-09, 776672fc0.
 - O174 (a cut long field shows no sliced block), 2026-11-09, f86845e78.
 - O170 (Literature and Present said and drawn plainly), 2026-11-08, 3d5b3da7d.
 - O172 (a long field drawn with its newlines and paragraphs), 2026-11-08, 014cc1c0d.
