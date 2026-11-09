@@ -25,7 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
   - step: O178
-    landing: preparing
+    base: a2928dd16
+    worktree: .agents/worktrees/migration-O178
+    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O178
+    hub_base: 29e47d50f
+    executor: agent
+    worker: claude:opus
+    session_id: a3e426484f4e3af8e (claude-opus-5-5)
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O178-report.md
+    round: 0
+    landing: not-started
     brief_check: .scratch/migration/agents/reviews/O178-brief-check.md (a68f29698156160cf, claude-opus-5-5, 226791 tokens, 22 tool uses, 528 s)
 ```
 
@@ -869,6 +879,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O178 building). Prepared at a2928dd16, hub worktree at 29e47d50f; builder a3e426484f4e3af8e (claude-opus-5-5) launched. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 prepared). Open items 738 and 739 ruled (a). O178's brief check closed in the brief under its Closed heading. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 stopped at its preparation). Open item 738 ruled (a); step O178 booked; `/spec migration O178` stopped on open item 739, the keys of the record fields and the period words. In flight (0 of 6). Open items: 739.
 - 2026-11-09. O176 landed: oculus booking 5976da035, its 25 decks at hub commit 83b3034df on Axel's word, the hub worktrees removed. In flight (0 of 6). Open items: none.
