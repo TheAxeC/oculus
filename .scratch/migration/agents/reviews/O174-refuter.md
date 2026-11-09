@@ -169,4 +169,144 @@ none
 - The report's statement that the list ran twice, the first time red on an eslint line, and its other run counts: nothing here can rerun a past run, and the second run is allowed by the rules file's section "Token discipline" for a red line in a changed file.
 - The first run of C1 to C14 on the unchanged tree was not rerun; the grep of the base copy for `clampCut` prints nothing, so a call there has no function to reach, as the report prints.
 
-Reviewer usage: <the session fills this from the completion notice: agent id, served model, tokens, tool uses, minutes>.
+Reviewer usage: a257a7ef987bda9ae, claude-opus-5-5, 164479 tokens, 14 tool uses, 9.6 min.
+
+## Repair round 1, refuted
+
+```
+(unset TMPDIR; npm run test:quick -- src/lib/views/shared/card/text/Clamp.svelte src/lib/views/shared/card/card-layout.ts)   [verify item 1]
+test:quick: 2 changed file(s), from the given paths
+test:quick: 9 test file(s)
+ok      prettier (1.0 s): All matched files use Prettier code style!
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.7 s)
+ok      eslint (2.0 s)
+ok      svelte-check (10.3 s): 1794182714625 COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (43.9 s): Duration  31.02s (transform 13.82s, setup 0ms, import 27.83s, tests 42.22s, environment 2ms)
+test:quick: 46.6 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+
+Verify item 5: the two changed comments, Clamp.svelte:10-18 and :166-171, read against spec.md and against clampCutHeight (card-layout.ts:35-52). One departure, Findings 1.
+
+Round's delta:
+diff -u ../migration-O174-round-1/src/lib/views/shared/card/card-layout.ts src/lib/views/shared/card/card-layout.ts
+(no line) exit 0
+diff -u ../migration-O174-round-1/src/lib/views/shared/card/text/Clamp.svelte src/lib/views/shared/card/text/Clamp.svelte
+two hunks, every changed line a comment line: the head comment's paragraph (:10-18) and the .text.cut comment (:166-171)
+
+git status --short (after the checks)
+ M src/lib/views/shared/card/card-layout.ts
+ M src/lib/views/shared/card/text/Clamp.svelte
+?? .scratch/migration/agents/briefs/O174-round-1.md
+?? .scratch/migration/agents/reviews/O174-refuter.md
+?? .scratch/migration/agents/reviews/O174-report.md
+
+Commands the round's report quotes as evidence:
+awk 'length > 100 {print FILENAME":"FNR}' Clamp.svelte card-layout.ts
+(no line) exit 0
+wc -l Clamp.svelte card-layout.ts
+177 and 130
+git show abe602359:<path> | wc -l
+105 and 104
+npm run diagrams: not run, see Declined to judge
+
+Other reruns for the verdicts:
+node --input-type=module - (clampCutHeight called from stdin, no file written; node v24.21.0)
+C1: 76 (want 76) ok
+C2: 57 (want 57) ok
+C3: 38 (want 38) ok
+C4: 70 (want 70) ok
+C5: 76 (want 76) ok
+C6: 64 (want 64) ok
+C7: 76 (want 76) ok
+C8: 57 (want 57) ok
+C9: 75.4 (want 75.4) ok
+C10: 76 (want 76) ok
+C11: 57 (want 57) ok
+C12: 70 (want 70) ok
+C13: 40 (want 40) ok
+C14: 76 (want 76) ok
+extra: first box 13-78, 65 tall, clamp 75.4: 75.4
+
+grep -rn "clamp-lines" src tests docs
+(no line) exit 1
+
+grep -rn "clamp-lines\|--clamp-cut\|clampCutHeight\|ClampBox" src tests docs
+card-layout.ts:33 and :43; Clamp.svelte:12, :26, :29, :62, :64, :113, :137, :174. The ten hits the report lists, at the lines it gives.
+
+git diff abe602359 | grep -nE "^\+.*\b(before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package)\b"
+10:+// before the rest go behind the More menu, whether a description is longer than its clamp, at what
+11:+// height its cut ends, and which measurement is still wanted once a newer one has started or the
+211:+       which keeps the cut at four lines. The height is set before this class first applies. Its
+(None compares with an earlier state of the code. The report's line numbers 8, 9 and 153 come from git diff -U0, a form this review does not run.)
+
+git diff abe602359 | grep -nE "^\+.*(\bO[0-9]+\b|20[0-9][0-9]-[0-9][0-9])"
+(no line) exit 1
+
+LC_ALL=C grep -n '[^ -~]' Clamp.svelte card-layout.ts
+(no line) exit 1
+
+diff -rq ../O174-base/<d> <d> for src docs tests utils
+Files ../O174-base/src/lib/views/shared/card/card-layout.ts and src/lib/views/shared/card/card-layout.ts differ
+Files ../O174-base/src/lib/views/shared/card/text/Clamp.svelte and src/lib/views/shared/card/text/Clamp.svelte differ
+
+ls .agents/scratch
+ls: .agents/scratch: No such file or directory
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. `card-layout.ts:43-52` is the rule as written: `inside` at :44-45 tests each edge by more than the pixel, the filter at :46-48 keeps bottoms no more than a pixel past the clamp, :49 answers the clamp with no such bottom, and :51-52 turns an answer within the pixel into the clamp. The run above gives each expected answer. `card-layout.ts` has no change in the round.
+- 2: holds by reading; what a page shows is C15. `drawnBoxes` at `Clamp.svelte:62` runs at :113, between the `setProperty` at :111 and the `removeProperty` at :114. `WHOLE` at :48 names the five kinds the item names and `NO_LINE` at :54 is tested at :74. A line's box is one line height centred on the rectangle (:75, :79-80). `origin` at :63 adds `scrollTop`. The value is `$state` at :95, written through `style=` at :137.
+- 3: holds. `Clamp.svelte:174` is `max-height: var(--clamp-cut)`, and the `clamp-lines` grep prints nothing.
+- 4: holds as built. The plain `div` is at `Clamp.svelte:140`, the `ResizeObserver` on it at :121-122, the `MutationObserver` on the box at :123-124. The item's sentence that the `div` does not change size when the cut does is wrong on a field of several blocks, as the report says under "What in the brief was wrong", since `.text.cut` sets `--field-gap: 0` at :173. That costs one more `measure`, which writes the same values.
+- 5: holds. `overflowsClamp` changes only by naming its literal 1 as `ROUNDING`, value 1 (`card-layout.ts:14`, :29). `clampControl`, the open state and both callers have no change: `diff -rq` against the base copy lists only the two files.
+- 6: violated, Findings 1. The head comment of `card-layout.ts` and the rest of both comments of `Clamp.svelte` are true. The exception the round added to the two comments of `Clamp.svelte` names a narrower condition than the code's.
+
+Cases of the brief's "Cases":
+
+- C1 Plain lines: met, the run above answers 76.
+- C2 A display formula crossing: met, 57.
+- C3 A table: met, 38.
+- C4 A whole block inside: met, 70.
+- C5 The first box taller than the clamp: met, 76.
+- C6 A tall inline line: met, 64.
+- C7 A box ending exactly at the clamp: met, 76.
+- C8 Boxes out of order and overlapping: met, 57.
+- C9 A line whose rounding drifts: met, 75.4.
+- C10 A first block opening below its margin: met, 76.
+- C11 Space before a crossing box: met, 57.
+- C12 The clamp in a gap: met, 70.
+- C13 A line bottom inside a taller formula on its line: met, 40.
+- C14 No boxes: met, 76.
+- C15 On a page: not verifiable, since a reviewer runs no page; the look at landing settles it, with the views and states the report's "Host- or user-visible changes" table names.
+
+Closures the round claims:
+
+- The one finding of the first review (Standards 1, item 6) is closed for what it named: both comments now state that a text opening with a block taller than the cut is still cut at four lines. The closure is a change of comment text, as the round's brief asked. It removes no check and changes no code (`card-layout.ts` is identical to the snapshot, and every changed line of `Clamp.svelte` is a comment line). The clause it adds is narrower than the code's condition, Findings 1.
+- The fix reaches no further than the finding. The rest of each paragraph is rewrapped, which `spec.md` requires of an edited comment, and "and it is set before" became its own sentence to take the inserted clause, with its meaning kept.
+
+### Findings
+
+- `src/lib/views/shared/card/text/Clamp.svelte:13-14` and `:168-169`: "except where the first box itself is taller than the cut, which keeps the cut at four lines"; under Standards. What is wrong: the report's verify 5 says each comment "says what the code does, including the case where no box fits whole", and the read does not reproduce that. The code's condition is that no box fits whole, which `clampCutHeight`'s doc comment says in those words at `card-layout.ts:40-41` and which `:46-49` computes: a bottom more than a pixel past the clamp is dropped, whatever the box's height. A first box that opens below the top can be shorter than the cut and still end past it, and that is the case C10 names: `.katex-display` keeps `margin: 1em 0` (`katex.css:1209-1213`), which `--field-gap` does not reset. The inline run above gives it: a box 13-78, 65 px tall, against a clamp of 75.4, answers 75.4, so the cut slices that box by 2.6 px although it is shorter than the cut. With C10's top of 13 and C9's clamp of 75.4, the window is a first box between about 63.4 and 75.4 px tall. The wording is the round brief's own, which says it is "in the terms of `clampCutHeight`'s own comment"; that comment's terms are "no box fits whole". Failure scenario: a note opens with a display formula 65 px tall and its bottom strip is cut off above Show more. A maintainer reads that only a first box taller than the cut is sliced, sees a box shorter than the cut sliced, takes it for a mismeasurement in `drawnBoxes` and changes the measurement or the no-fit answer. Verdict: item 6 violated. The change is the same clause in two comments, inside the brief, and no code.
+
+### Declined to judge
+
+- What the page shows for C15 in light and dark, at the widths and the text sizes: a reviewer runs no page, and the look at landing settles it. That look also settles whether a particular note's first formula falls in the window of Findings 1; the height window above is arithmetic from C9 and C10.
+- `npm run diagrams`, which the round's report quotes as run before the list: not rerun, since it writes the committed diagrams and this review changes nothing. `git status --short` lists no diagram path as modified.
+- Verify item 3 (`sh utils/unused-exports.sh` against the base's list): not rerun, since the round names items 1 and 5 and the round's delta is comment lines only, so no export changed in it.
+- The report's statement that the list ran once in the round: nothing here can rerun a past run.
+- The first run of C1 to C14 on the unchanged tree: not rerun; the first review read the base copy for the function's name and the base's tree has no `clampCutHeight`, by `git diff abe602359` adding it at `card-layout.ts:43`.
+- Carried from the first review, each settled only on a page: a collapsed `details` giving no box, whether a cut at a `tr`'s bottom removes that row's collapsed border, and whether a plain text's rectangle rounding stays inside the pixel at every `--text-scale`.
+
+Reviewer usage: a0e1476e76fe926b1, claude-opus-5-5, 130236 tokens, 15 tool uses, 4.0 min.
+
+## Closed
+
+- First review, Standards 1 (item 6): closed in repair round 1, both comments of `Clamp.svelte` state the exception.
+- Repair round 1, Findings 1 (item 6): fixed at landing, small and inside the brief. Both comments now say "except where no box fits whole", the condition `clampCutHeight` computes.

@@ -99,9 +99,9 @@ C14 No boxes: 76 (want 76) ok
 | Item | State | Proof |
 | --- | --- | --- |
 | 1 The rule, `clampCutHeight` in `card-layout.ts:43` | DONE | The case run above: every line ends `ok`, the last `C14 No boxes: 76 (want 76) ok` |
-| 2 The measurement, `drawnBoxes` at `Clamp.svelte:61`, called at `:112` with `--field-gap` at 0, kept in `$state` `cutHeight` at `:94` and written at `:136` | DONE by reading; on a page at the look | `svelte-check` line below; what the page does is the look on landing, as `spec.md` says for a behaviour that needs a DOM |
-| 3 `.text.cut` uses `max-height: var(--clamp-cut)` at `Clamp.svelte:172`; `--clamp-lines` gone | DONE | `grep -rn "clamp-lines" src tests docs` prints nothing |
-| 4 A plain wrapping `div` at `Clamp.svelte:139`, the `ResizeObserver` on it at `:121`, the `MutationObserver` kept on the box at `:123` | DONE by reading; on a page at the look | Read in the diff; the look on landing |
+| 2 The measurement, `drawnBoxes` at `Clamp.svelte:62`, called at `:113` with `--field-gap` at 0, kept in `$state` `cutHeight` at `:95` and written at `:137` | DONE by reading; on a page at the look | `svelte-check` line below; what the page does is the look on landing, as `spec.md` says for a behaviour that needs a DOM |
+| 3 `.text.cut` uses `max-height: var(--clamp-cut)` at `Clamp.svelte:174`; `--clamp-lines` gone | DONE | `grep -rn "clamp-lines" src tests docs` prints nothing |
+| 4 A plain wrapping `div` at `Clamp.svelte:140`, the `ResizeObserver` on it at `:122`, the `MutationObserver` kept on the box at `:124` | DONE by reading; on a page at the look | Read in the diff; the look on landing |
 | 5 Show more, Show less, the open state and the callers are unchanged | DONE | `overflowsClamp` and `clampControl` compute what they did (the literal 1 is the constant `ROUNDING`, value 1); `diff -rq` against the base copy lists only the two files |
 | 6 Comments: head comment and `.text.cut` comment of `Clamp.svelte`, head comment of `card-layout.ts` | DONE | Read against `spec.md`, listed below; `comment-width.test.ts` and `history.test.ts` ran in the list |
 | C1 to C14 | DONE | The case run above |
@@ -147,13 +147,13 @@ Grep of `clamp-lines` and the new names, `grep -rn "clamp-lines\|--clamp-cut\|cl
 src/lib/views/shared/card/card-layout.ts:33:export type ClampBox = { top: number; bottom: number };
 src/lib/views/shared/card/card-layout.ts:43:export function clampCutHeight(boxes: readonly ClampBox[], clamp: number): number {
 src/lib/views/shared/card/text/Clamp.svelte:12:    // clampCutHeight), so no line, formula, table row, code block or image is sliced above the
-src/lib/views/shared/card/text/Clamp.svelte:25:        clampCutHeight,
-src/lib/views/shared/card/text/Clamp.svelte:28:        type ClampBox
-src/lib/views/shared/card/text/Clamp.svelte:61:    function drawnBoxes(node: HTMLElement): ClampBox[] {
-src/lib/views/shared/card/text/Clamp.svelte:63:        const boxes: ClampBox[] = [];
-src/lib/views/shared/card/text/Clamp.svelte:112:            cutHeight = clampCutHeight(drawnBoxes(node), line * CLAMP_LINES);
-src/lib/views/shared/card/text/Clamp.svelte:136:        style={`--clamp-cut: ${cutHeight}px`}
-src/lib/views/shared/card/text/Clamp.svelte:172:        max-height: var(--clamp-cut);
+src/lib/views/shared/card/text/Clamp.svelte:26:        clampCutHeight,
+src/lib/views/shared/card/text/Clamp.svelte:29:        type ClampBox
+src/lib/views/shared/card/text/Clamp.svelte:62:    function drawnBoxes(node: HTMLElement): ClampBox[] {
+src/lib/views/shared/card/text/Clamp.svelte:64:        const boxes: ClampBox[] = [];
+src/lib/views/shared/card/text/Clamp.svelte:113:            cutHeight = clampCutHeight(drawnBoxes(node), line * CLAMP_LINES);
+src/lib/views/shared/card/text/Clamp.svelte:137:        style={`--clamp-cut: ${cutHeight}px`}
+src/lib/views/shared/card/text/Clamp.svelte:174:        max-height: var(--clamp-cut);
 ```
 
 Each hit is true; `clamp-lines` has no hit left. `--clamp-cut` is empty of any other use, so it collides with no configured or reserved name.
@@ -181,14 +181,14 @@ Grep of the added lines for the comparing words, `git diff -U0 | grep -nE "^\+.*
 ```
 8:+// before the rest go behind the More menu, whether a description is longer than its clamp, at what
 9:+// height its cut ends, and which measurement is still wanted once a newer one has started or the
-151:+       nothing is sliced above the control, and it is set before this class first applies. Its
+153:+       which keeps the cut at four lines. The height is set before this class first applies. Its
 ```
 
-Each judged: lines 8 and 9 are the head comment's words rewrapped ("before the rest go behind", "still wanted"), describing an order of actions and a wanted measurement. Line 151 says the value is written ahead of the class in the order of one measurement. None compares with an earlier state of the code.
+Each judged: lines 8 and 9 are the head comment's words rewrapped ("before the rest go behind", "still wanted"), describing an order of actions and a wanted measurement. Line 153 says the value is written ahead of the class in the order of one measurement. None compares with an earlier state of the code.
 
 Helper grep, before writing `drawnBoxes`, `grep -rn "createTreeWalker\|getClientRects\|drawnBoxes" src tests`: the other hits are `getClientRects().length` tests of whether an element is drawn (`FoldRun.svelte:70`, `Toolbar.svelte:109`, `FrameLayer.svelte:95`, `keys.ts:52`), so there was nothing to reuse. `grep -rn "clampCut\|ClampBox\|cutHeight" src tests docs` printed nothing before the names were added.
 
-Keys and asynchronous paths: the one new name is the custom property `--clamp-cut`, set only on the component's own box. A measurement after the component is gone or superseded is refused by `gate.current(token)`, as it was (`Clamp.svelte:108`). An effect teardown disconnects both observers.
+Keys and asynchronous paths: the one new name is the custom property `--clamp-cut`, set only on the component's own box. A measurement after the component is gone or superseded is refused by `gate.current(token)`, as it was (`Clamp.svelte:109`). An effect teardown disconnects both observers.
 
 No test was added or changed, as the brief says: no assertion, allow list or predicate was edited.
 
@@ -198,7 +198,7 @@ No test was added or changed, as the brief says: no assertion, allow list or pre
 
 | Path | Lines before | Lines after | In the write list |
 | --- | --- | --- | --- |
-| `src/lib/views/shared/card/text/Clamp.svelte` | 105 | 175 | yes |
+| `src/lib/views/shared/card/text/Clamp.svelte` | 105 | 177 | yes |
 | `src/lib/views/shared/card/card-layout.ts` | 104 | 130 | yes |
 | `.scratch/migration/agents/reviews/O174-report.md` | none | new | yes |
 
@@ -240,3 +240,45 @@ Sharp edges, by reading and not measured:
 - A table's row box comes from `getBoundingClientRect` of the `tr`, so where borders collapse the cut can fall on a row's border to within a pixel. Not verified on a page.
 - A block taller than the cut, opening the text, is still sliced at four lines, as the brief's C5 and C10 name.
 - A collapsed `details` draws no rectangles and gives no box.
+
+## Repair round 1
+
+Brief: `.scratch/migration/agents/briefs/O174-round-1.md`. Its one item is done.
+
+What changed: two comments in `src/lib/views/shared/card/text/Clamp.svelte`, no code.
+
+- Head comment, `:12-14`, before: "so no line, formula, table row, code block or image is sliced above the control." After: "so no line, formula, table row, code block or image is sliced above the control, except where the first box itself is taller than the cut, which keeps the cut at four lines."
+- `.text.cut` comment, `:167-169`, before: "so nothing is sliced above the control, and it is set before this class first applies." After: "so nothing is sliced above the control except where the first box itself is taller than the cut, which keeps the cut at four lines. The height is set before this class first applies."
+
+Each comment's paragraph is rewrapped at 100 columns. `Clamp.svelte` is 177 lines (`wc -l`), and the `file:line` citations and the line count earlier in this report are taken after this change.
+
+Verify item 1, `npm run diagrams` and then `npm run test:quick -- src/lib/views/shared/card/text/Clamp.svelte src/lib/views/shared/card/card-layout.ts` with `TMPDIR` unset, run once after the last change, exit 0:
+
+```
+test:quick: 2 changed file(s), from the given paths
+test:quick: 9 test file(s)
+        tests/checks/source/catalog-file-keys.test.ts: scans the source text of a changed file
+        tests/checks/source/comment-width.test.ts: scans the source text of a changed file
+        tests/checks/source/history.test.ts: scans the source text of a changed file
+        tests/checks/source/html-sites.test.ts: scans the source text of a changed file
+        tests/checks/source/keys.test.ts: scans the source text of a changed file
+        tests/checks/source/strip-types.test.ts: scans the source text of a changed file
+        tests/checks/tree/boundaries.test.ts: scans the source text of a changed file
+        tests/checks/tree/duplication.test.ts: scans the source text of a changed file
+        tests/checks/tree/size.test.ts: scans the source text of a changed file
+ok      prettier (1.7 s): All matched files use Prettier code style!
+ok      ASCII gate (1.8 s)
+ok      svelte-kit sync (3.2 s)
+ok      eslint (12.9 s)
+ok      svelte-check (13.0 s): 1794182558589 COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (50.3 s): Duration  35.10s (transform 14.04s, setup 0ms, import 28.39s, tests 47.55s, environment 2ms)
+test:quick: 53.5 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+Verify item 5, the two changed comments read against `spec.md` and against `clampCutHeight`'s doc comment at `card-layout.ts:40-41`: each says what the code does, including the case where no box fits whole; no step number or date; ASCII; 100 columns (`comment-width.test.ts` and `history.test.ts` ran in the list above, and `awk 'length > 100'` over `Clamp.svelte` printed nothing). No comment departs from the standards page.
+
+In round 1 the list ran once and no whole-suite command ran. No test, no code and no other file changed: `git status --short` lists the two source files as modified, and the round's brief, the review and this report as new under `.scratch/`.

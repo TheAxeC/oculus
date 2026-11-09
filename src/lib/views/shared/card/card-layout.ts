@@ -1,13 +1,17 @@
 // Layer 3, view helpers. The measured rules of a card's layout, as arithmetic over numbers the
 // components read from the page: where a card's actions go and how many fit on their one line
-// before the rest go behind the More menu, whether a description is longer than its clamp, and
-// which measurement is still wanted once a newer one has started or the component has gone.
+// before the rest go behind the More menu, whether a description is longer than its clamp, at what
+// height its cut ends, and which measurement is still wanted once a newer one has started or the
+// component has gone.
 //
 // They are apart from the components so the rules can be read without a DOM; the components only
 // measure and hand the numbers in.
 
 /** How many lines a card's description shows before its Show more control. */
 export const CLAMP_LINES = 4;
+
+/** The pixel of rounding a clamp allows, since lines stack at fractions of a pixel. */
+const ROUNDING = 1;
 
 /** What a clamp offers: the control that opens it, the one that closes it, or none. */
 export type ClampControl = 'more' | 'less' | null;
@@ -22,7 +26,29 @@ export function overflowsClamp(
     lines: number = CLAMP_LINES
 ): boolean {
     if (!(lineHeight > 0)) return false;
-    return height > lineHeight * lines + 1;
+    return height > lineHeight * lines + ROUNDING;
+}
+
+/** One box a description draws: its top and its bottom in px from the top of the text. */
+export type ClampBox = { top: number; bottom: number };
+
+/**
+ * The height a description's cut ends at, so that it slices no line or block. `boxes` are what the
+ * text draws, in any order and overlapping where an inline formula sits on a line of words, and
+ * `clamp` is the line height times CLAMP_LINES. The answer is the bottom of the last box that fits:
+ * the largest bottom no more than a pixel past the clamp and more than a pixel inside no box. One
+ * within a pixel of the clamp is the clamp, so a plain text is cut at exactly its lines. Where no
+ * box fits whole, or there are no boxes, the answer is the clamp.
+ */
+export function clampCutHeight(boxes: readonly ClampBox[], clamp: number): number {
+    const inside = (edge: number): boolean =>
+        boxes.some((box) => edge > box.top + ROUNDING && edge < box.bottom - ROUNDING);
+    const ends = boxes
+        .map((box) => box.bottom)
+        .filter((bottom) => bottom <= clamp + ROUNDING && !inside(bottom));
+    if (ends.length === 0) return clamp;
+    const last = Math.max(...ends);
+    return Math.abs(last - clamp) <= ROUNDING ? clamp : last;
 }
 
 /** The control a clamp draws: none for a text that fits, else the one that changes its state. */
