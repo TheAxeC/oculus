@@ -50,6 +50,8 @@ dispatch:           # steps in flight, up to six (Z632)
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O177-report.md
     round: 0
+    round: 1 (.scratch/migration/agents/briefs/O177-round-1.md; snapshot .agents/worktrees/migration-O177-round-1)
+    reviewer_report: .scratch/migration/agents/reviews/O177-refuter.md (ab2166d2af0bc3b1a, claude-opus-5-5, 219077 tokens, 37 tool uses, 815 s)
     landing: not-started
     brief_check: .scratch/migration/agents/reviews/O177-brief-check.md (a602a835ac6d57075, claude-opus-5-5, 227351 tokens, 28 tool uses, 664 s)
 ```
@@ -201,6 +203,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 737 (2026-11-09), O177: the builder's case-run program for the colours also searched for the hue the three themes everforest, synthwave and kanagawalotus needed, and the three `--c-blue` values in their sheets are its output; the brief approved only programs that print a case's result. Every open-layout pair measures 10 or more in all 49 themes. (a) Keep the three values, the recommendation; (b) choose the three by hand and measure them again, which costs more and changes nothing a reader sees. Neither leaves work undone, so neither is the lazy option.
 - Open item 736 (2026-11-09), O176: the builder made the C8 table with two read-only `grep`/`sed`/`cut` loops, which no ruling approved. (a) Their output is discarded and the table is made again by reading in repair round 1, the recommendation; (b) approve them, and the table stands. (b) is the lazy option.
 
 
@@ -887,6 +890,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O177 repair round 1 sent). The review is `agents/reviews/O177-refuter.md`; two findings go to the builder, one is left as built by the no-breakage rule, one is open item 737. O176's round runs. In flight (2 of 6): O176, O177. Open items: 736, 737.
 - 2026-11-09 (O176 repair round 1 sent). The review (`agents/reviews/O176-refuter.md`) and the 22 slides measured too tall are in `agents/briefs/O176-round-1.md`. In flight (2 of 6): O176, O177. Open items: 736.
 - 2026-11-09 (O175 landed). The Overview draws its tiles a few at a time (booking in `plan.md`, `agents/reviews/O175-landing.md`), with five fixes at landing. In flight (2 of 6): O176 and O177, each built and awaiting its review. Next: `/refute migration O177` and `/refute migration O176`. Open items: none.
 - 2026-11-09 (O151 landed). O151's four oculus files are on main (booking in `plan.md`, `agents/reviews/O151-landing.md`), landed as built by Axel's ruling on open item 735, with six wrong deck lines restored at landing in the hub worktree. 95 decks fit (0 too tall, my measurement). The hub's decks and README records are committed in the hub, 76cf0c5f9 on Axel's word (224 paths, not pushed); the hub worktree is removed and `.agents/worktrees/migration-O151-round-2` in the hub stays until the figures are decided. The audit row is in the hub, Axel's commit f085e8d1a. No deck draws a figure; Axel reads the slides and rules what changes. Look flaw: the portfolio Overview froze the page. In flight (0 of 6). Queued: none. Open items: none.
