@@ -25,7 +25,21 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
   - step: O179
+    base: 48b25ff64
+    worktree: .agents/worktrees/migration-O179
+    executor: agent
+    worker: claude:opus
+    session_id: aca00b7eae3f12ce2
+    builder_usage: ""
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O179-report.md
+    round: 0
+    reviewer_report: ""
+    landing: not-started
+    brief_check: ".scratch/migration/agents/reviews/O179-brief-check.md (a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s)"
+  - step: O180
     landing: preparing
+    brief_check: "running: af5af1f8f126742f6"
 ```
 
 ## The standing demands (from Axel, in force)

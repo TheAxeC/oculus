@@ -1,7 +1,8 @@
-In flight (1 of 6 slots in use):
-- O179 (an absent list told from an empty one), preparing.
+In flight (2 of 6 slots in use):
+- O179 (an absent list told from an empty one), builder running.
+- O180 (the fields of a paper on the website come from configuration), preparing.
 
-Queued: O180 (the fields of a paper on the website come from configuration).
+Queued: none.
 
 Owed looks: none.
 
