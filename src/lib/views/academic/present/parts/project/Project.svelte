@@ -12,8 +12,10 @@
     // the slide has no text. While the room is measured the text takes the room's width and no
     // figure is drawn. The room is as tall as the layout, or as the lowest figure's box where that
     // ends lower (`place.depth`), so a slide whose figures run past its frame is measured too tall.
-    // A slide with no figure draws its text as it is, the lists and the equation in two columns;
-    // one that draws its Markdown alone marks the body as its room (`data-room`), the room a
+    // A slide with no figure draws its text as it is: the callout and the lists in one column, and
+    // beside them a right-hand column only while it holds the equation, a diagram or the name of a
+    // missing figure, so a slide with none of these draws its text across the box's whole width.
+    // One that draws its Markdown alone marks the body as its room (`data-room`), the room a
     // Markdown image is held to. Every size here is a fraction of the frame's width (`cqw`), as
     // every size inside a slide is (themes/slide.css), and a hairline is a shadow, an outline or a
     // rule laid over the element's edge, one pixel wide, which takes no room.
@@ -144,7 +146,7 @@
                     </ul>
                 {/if}
             </div>
-            {#if right || !pictured}
+            {#if right}
                 <div class="right">
                     {#if slide.equation !== undefined}
                         <Equation {slide} />
@@ -272,9 +274,11 @@
         min-width: 0;
     }
 
-    /* The method and the results side by side wherever the text's box holds two columns of at
-       least 23.4375 hundredths of the frame's width, as the reading width does; the narrower text
-       beside a column of figures holds one. */
+    /* The left column and the right-hand column side by side wherever the text's box holds two
+       columns of at least 23.4375 hundredths of the frame's width, as the reading width does; the
+       narrower text beside a column of figures holds one. With no right-hand column the left one
+       is the grid's only item, and the tracks `auto-fit` leaves empty collapse, so it takes the
+       box's whole width. */
     .cols {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(23.4375cqw, 100%), 1fr));

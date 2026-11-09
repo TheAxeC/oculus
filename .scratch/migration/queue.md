@@ -1,11 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
-Queued:
-- O151 (a deck for every research project): waits for your ruling on open item 735.
+Queued: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O151 (a deck for every research project), 2026-11-09; its hub changes wait on your word.
 - O173 (the audit asks every research project for a deck), 2026-11-09, 776672fc0.
 - O174 (a cut long field shows no sliced block), 2026-11-09, f86845e78.
 - O170 (Literature and Present said and drawn plainly), 2026-11-08, 3d5b3da7d.

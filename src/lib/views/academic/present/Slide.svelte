@@ -34,16 +34,16 @@
     // their words, the room under a heading, the formulas' fit) is screen/drawn-slide.ts's; the
     // search and the state it sets are here.
     //
-    // The slide's foot, under its content, holds the strip of a project's facts at the frame's own
-    // type scale, across the frame's whole inner width, which is wider than the reading column (90
-    // hundredths of the frame's width against 81.25). A slide that comes from a project's deck
-    // (`row.project`) carries the strip of that project's facts (`deck.projects`, read by
-    // `slideFacts`, no strip for a project with none), on every surface that draws a slide, its
-    // words shown by the pane's Project facts toggle (`facts`) and hidden, their room kept, when it
-    // is off. The strip wraps to as many lines as its facts need, so its height differs from one
-    // project to the next; the layout measures the foot as drawn each time it runs and takes the
-    // content's room above it, so a taller strip leaves the content less room and never lies over
-    // it.
+    // The slide's foot, under its content, holds the strip of a project's facts in the strip's own
+    // sizes at the frame's factor 1 (themes/slide.css), across the frame's whole inner width, which
+    // is wider than the reading column (90 hundredths of the frame's width against 81.25). A slide
+    // that comes from a project's deck (`row.project`) carries the strip of that project's facts
+    // (`deck.projects`, read by `slideFacts`, no strip for a project with none), on every surface
+    // that draws a slide, its words shown by the pane's Project facts toggle (`facts`) and hidden,
+    // their room kept, when it is off. The strip wraps to as many lines as its facts need, so its
+    // height differs from one project to the next; the layout measures the foot as drawn each time
+    // it runs and takes the content's room above it, so a taller strip leaves the content less
+    // room and never lies over it.
 
     import { flushSync, untrack } from 'svelte';
     import Grid from './parts/Grid.svelte';

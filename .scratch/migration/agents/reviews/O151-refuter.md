@@ -572,3 +572,14 @@ For every fact below ruling 1 requires the same thing: it stands on the one slid
 - The report's "every line read" statement for the 17 issues (its wording) against the unread decks: not checkable from here beyond the 36.
 
 Reviewer usage: a6bfcba59bb3a80aa, claude-opus-5-5, 379076 tokens, 54 tool uses, 15.1 min.
+
+## Closed
+
+Dispositions of the review over round 2, under Axel's ruling on open item 735 (2026-11-09): "Lets do the landing first. After that, I can see the slides myself and see what I want to be changed".
+
+- Spec 1 (facts cut), Spec 2 (second slides differ from first slides), Spec 4 (equations 43 to 13 decks), Spec 10 (second-slide chips), Behaviour 1 and Proof 2 (no deck draws a figure; 27 panels on 19 decks by `grep 'figure:'` over the round 2 snapshot, the report names nine decks): closed by that ruling; the decks land as built and Axel reads the slides and rules what changes.
+- Spec 3 (R1-S3 and R1-S4 undone): fixed at landing in the hub worktree; the hcc-modality-poster line carries the concatenation numbers 0.718 and 0.795 again, and the fermat deck the larger clients' cost (AUC 0.89 and 0.92).
+- Spec 6 (four lines changed in meaning): fixed at landing in the hub worktree; ward "behavior against Euclidean $p$ = 0.016"; fermat "the accuracy gap is not significant" with both accuracies; extended-bttr-note's 0.72 against 0.05 stands as its own line, the supplement's; bttn-incident-af's Dead ends chip says "on the earlier ECG-report labels".
+- Spec 5, Spec 7, Spec 8, Proof 1, Standards 1 (report statements: the 17 issues by round 1's check, no source per line, new numbers without a line, 1210 and 799 low against 1792 and 810, the first sentence of the round): the report stands as the builder's; the booking carries the corrected counts and names these statements as not reproduced. No deck line changes for them.
+- Spec 9 (a report section made with `diff -U0` and a shell redirect): closed under the ruling "Unapproved builder scripts"; the breach is recorded here and in the booking; the output is the report's section only and no product file comes from it.
+- Declined to judge: the collision named there is closed by the ruling on open item 735, since "no fact is dropped for room" is the brief's text and no ruling of Axel's; 13 second slides and which deck keeps one are his to read on the slides.

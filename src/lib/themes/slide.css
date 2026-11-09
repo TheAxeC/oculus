@@ -17,13 +17,23 @@
    title, the headings, the body and the small sizes move together, and so do the app's type steps
    the slide's chips and table are set in. The frame itself and the slide's foot under the content
    (the strip of a project's facts) keep the factor 1. The design sizes are the sizes at the factor
-   1, each times the app's text size (`--text-scale`). */
+   1, each times the app's text size (`--text-scale`).
+
+   The strip of a project's facts has two sizes of its own, smaller than the slide's small type so
+   the strip stays below the slide's text: 0.9375 hundredths of the frame's width for its values
+   and 0.78125 hundredths for its labels at the design size (parts/project/Facts.svelte). They are
+   times the text size alone, never the content's factor, since the strip stands outside the
+   content. */
 .slide-frame {
     --slide-design-title: 4.375cqw;
     --slide-design-h: 2.8125cqw;
     --slide-design-sub: 2.1875cqw;
     --slide-design-body: 1.875cqw;
     --slide-design-small: 1.40625cqw;
+    --slide-design-facts: 0.9375cqw;
+    --slide-design-facts-label: 0.78125cqw;
+    --slide-fs-facts: calc(var(--slide-design-facts) * var(--text-scale, 1));
+    --slide-fs-facts-label: calc(var(--slide-design-facts-label) * var(--text-scale, 1));
     --slide-ui-xs: calc(0.859375cqw * var(--text-scale, 1));
     --slide-ui-sm: calc(0.9375cqw * var(--text-scale, 1));
     --slide-ui-md: calc(1.015625cqw * var(--text-scale, 1));
@@ -82,17 +92,20 @@ body.rice:where(:not(.rice-sans)) .slide-frame {
     font-family: var(--font-mono);
 }
 
-/* Under a rice theme the slide's design sizes are the default ones times 12/13, the chip and table
-   steps 0.78125, 0.859375 and 0.9375 hundredths of the frame's width, each smaller than the
-   default one as the rice steps of `themes.css` are, and the corners those of rice, square but
-   for a trace. The rule sits here because the sizes are declared on `.slide-frame` itself,
-   where a declaration on `body.rice` does not reach. */
+/* Under a rice theme the slide's design sizes are the default ones times 12/13, the strip's two
+   sizes 0.859375 and 0.703125 hundredths of the frame's width, the chip and table steps 0.78125,
+   0.859375 and 0.9375 hundredths, each smaller than the default one as the rice steps of
+   `themes.css` are, and the corners those of rice, square but for a trace. The rule sits here
+   because the sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does
+   not reach. */
 body.rice .slide-frame {
     --slide-design-title: calc(4.375cqw * 12 / 13);
     --slide-design-h: calc(2.8125cqw * 12 / 13);
     --slide-design-sub: calc(2.1875cqw * 12 / 13);
     --slide-design-body: calc(1.875cqw * 12 / 13);
     --slide-design-small: calc(1.40625cqw * 12 / 13);
+    --slide-design-facts: 0.859375cqw;
+    --slide-design-facts-label: 0.703125cqw;
     --slide-ui-xs: calc(0.78125cqw * var(--text-scale, 1));
     --slide-ui-sm: calc(0.859375cqw * var(--text-scale, 1));
     --slide-ui-md: calc(0.9375cqw * var(--text-scale, 1));

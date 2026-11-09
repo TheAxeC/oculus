@@ -21,10 +21,12 @@
     // A rule runs across the strip above its first line, in a mix of the muted text colour and
     // the hairline colour, so it shows on the slide's frame under every theme. The facts wrap to
     // as many lines as they need, every fact drawn and none broken across two lines. The strip is
-    // set in the slide's small type (`--slide-fs-small`, themes/slide.css) at the frame's factor
-    // 1, so it scales with the text size and the theme, outside the content's factor. With the
-    // pane's Project facts toggle off its words and its rule are hidden and its room is kept, so
-    // the slide is laid out and measured the same either way.
+    // set in its own two sizes (`--slide-fs-facts` for the values and `--slide-fs-facts-label` for
+    // the labels, themes/slide.css), 0.9375 and 0.78125 percent of the frame's width, below the
+    // slide's small type so the strip stays under the slide's text. They follow the text size and
+    // the theme and keep the frame's factor 1, outside the content's factor. With the pane's
+    // Project facts toggle off its words and its rule are hidden and its room is kept, so the
+    // slide is laid out and measured the same either way.
 
     import Dot from '../Dot.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -149,21 +151,20 @@
 </div>
 
 <style>
-    /* The strip is set in the slide's small type, and every measure below is in that type: the
-       rule above it and the room between the rule and the first line of facts, the gap between
-       two facts on a line and between two lines, the gap between a label and its value and the
-       label's size. The dot before a hued value is as wide as half the strip's type, 0.703125
-       hundredths of the frame's width at the design size. */
+    /* The strip's values are set in the strip's own value size, and every measure below is in that
+       type: the room between the rule and the first line of facts, the gap between two facts on a
+       line and between two lines, and the gap between a label and its value. The labels are set in
+       the strip's own label size. The dot before a hued value is three quarters of the value type,
+       0.703125 hundredths of the frame's width at the design size. */
     .facts {
-        --fact-label: 0.72em;
         --fact-gap: 1em;
         --fact-between: 0.4em;
-        --dot-size: 0.5em;
+        --dot-size: 0.75em;
 
         padding-top: 0.6em;
         box-shadow: inset 0 1px 0 0
             color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
-        font-size: var(--slide-fs-small);
+        font-size: var(--slide-fs-facts);
         line-height: 1.3;
     }
 
@@ -220,7 +221,7 @@
     .label {
         flex: none;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fact-label);
+        font-size: var(--slide-fs-facts-label);
         letter-spacing: 0.04em;
         text-transform: uppercase;
     }
