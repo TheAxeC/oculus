@@ -1,8 +1,7 @@
-In flight (2 of 6 slots in use):
-- O179 (an absent list told from an empty one), builder running.
-- O180 (the fields of a paper on the website come from configuration), preparing.
+In flight (1 of 6 slots in use):
+- O179 (an absent list told from an empty one), under review.
 
-Queued: none.
+Queued: O180 (the fields of a paper on the website come from configuration), waiting for open item 745.
 
 Owed looks: none.
 

@@ -30,16 +30,13 @@ dispatch:           # steps in flight, up to six (Z632)
     executor: agent
     worker: claude:opus
     session_id: aca00b7eae3f12ce2
-    builder_usage: ""
+    builder_usage: "153116 tokens, 38 tool uses, 536 s"
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O179-report.md
     round: 0
     reviewer_report: ""
     landing: not-started
     brief_check: ".scratch/migration/agents/reviews/O179-brief-check.md (a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s)"
-  - step: O180
-    landing: preparing
-    brief_check: "running: af5af1f8f126742f6"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -186,6 +183,8 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
+
+- Open item 745 (2026-11-09, step O180, three website words still fixed in `papers.ts` that ruling 744 did not name. **What the tree shows.** `website.paper_fields` makes the fields of a paper configurable. Three other words of the publications file stay in code: the key that holds a section's list, `papers` (`papers.ts:176`); the name of the code link, `Code` (`papers.ts:28`); and the words for the user's place among the authors, `first`, `senior` and `coauthor` (`papers.ts:54-56`). The report is `agents/reviews/O180-brief-check.md`, finding F1. **The choice**, each built inside O180, with the values written into the hub's `.oculus/config.yml` so today's file is unchanged, and oculus shipping none of them. (a) Three keys under `website:`: `paper_list: papers`, `code_link_name: Code`, `author_places: { lead: first, supervisor: senior, collaborator: coauthor }`. Pro: each word has one plain place and the rows of `paper_fields` keep one shape. Con: three more keys, each needing the empty case handled. (b) The two words go on the rows that use them, `{ key: links, from: links_with_code, name: Code }` and `{ key: order, from: author_place, words: { lead: first, supervisor: senior, collaborator: coauthor } }`, and `paper_list: papers` is one key. Pro: a word sits beside the field it belongs to. Con: a row's fields differ by its `from`, and the Settings card shows `name` and `words` on every row. **Recommendation:** (a), as a judgment: one shape per row and one place per word. Leaving the three words in code is the lazy option and breaks the rule on hardcoding, so it is not offered.
 
 
 
