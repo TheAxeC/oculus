@@ -32,7 +32,11 @@
     // its room as tall as its lowest figure, which a measuring Stage reports as too tall. What the
     // layout reads off the drawn slide (its figures, their frames and gaps, the least width of
     // their words, the room under a heading, the formulas' fit) is screen/drawn-slide.ts's; the
-    // search and the state it sets are here.
+    // search and the state it sets are here. A slide given `turns` (the Overview's tiles,
+    // screen/layout-turns.ts) waits on that queue for every layout: the first, and those of a font
+    // load, a probe change and an image's load or failure, one that is already waiting not being
+    // queued again and one whose slide goes away being dropped. A slide given none lays out at
+    // once.
     //
     // The slide's foot, under its content, holds the strip of a project's facts in the strip's own
     // sizes at the frame's factor 1 (themes/slide.css), across the frame's whole inner width, which
@@ -72,6 +76,7 @@
         type Layout,
         type SlidePlace
     } from './screen/slide-layout';
+    import type { LayoutTurns } from './screen/layout-turns';
     import { slideFacts, tagToneOf } from '$lib/state/life/present';
     import type { Deck, DeckSlide } from '$lib/state/life/present';
 
@@ -82,9 +87,11 @@
         facts: boolean;
         /** Told each time the slide has been laid out: the print page waits for every slide. */
         onlaid?: () => void;
+        /** The queue every layout of this slide waits on, an Overview tile's; none: at once. */
+        turns?: LayoutTurns;
     };
 
-    let { row, deck, facts, onlaid }: Props = $props();
+    let { row, deck, facts, onlaid, turns }: Props = $props();
 
     /**
      * How many times, at most, a factor's figures are laid out again with the heights measured
@@ -313,10 +320,22 @@
         onlaid?.();
     }
 
+    /** Lay the slide out at once, or at its turn on the queue of a slide given one. */
+    function askLayout(): void {
+        if (turns === undefined) layOutSlide();
+        else turns.ask(layOutSlide);
+    }
+
     /** An image of the slide that loads or fails changes what the slide holds. */
     function imageSettled(event: Event): void {
-        if (event.target instanceof HTMLImageElement) layOutSlide();
+        if (event.target instanceof HTMLImageElement) askLayout();
     }
+
+    $effect(() => {
+        // A slide that goes away while it waits for its turn runs nothing.
+        const queue = turns;
+        return () => queue?.drop(layOutSlide);
+    });
 
     $effect(() => {
         // What is drawn is read so that a change of the slide or its strip runs the effect again;
@@ -325,6 +344,10 @@
         untrack(() => {
             failed = [];
         });
+        if (turns !== undefined) {
+            turns.ask(layOutSlide);
+            return;
+        }
         let gone = false;
         queueMicrotask(() => {
             if (!gone) layOutSlide();
@@ -362,14 +385,14 @@
             }
             if (seen !== null && !moved(now, seen)) return;
             seen = now;
-            layOutSlide();
+            askLayout();
         });
         observer.observe(element);
         const fonts = document.fonts;
-        fonts.addEventListener('loadingdone', layOutSlide);
+        fonts.addEventListener('loadingdone', askLayout);
         return () => {
             observer.disconnect();
-            fonts.removeEventListener('loadingdone', layOutSlide);
+            fonts.removeEventListener('loadingdone', askLayout);
         };
     });
 </script>

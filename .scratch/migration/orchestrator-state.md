@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-  - step: O175
-    base: 266bf0c0e
-    worktree: .agents/worktrees/migration-O175
-    executor: agent
-    worker: claude:opus
-    session_id: a7f944bcd13b21980 (claude-opus-5-5)
-    builder_usage: 183581 tokens, 61 tool uses, 981 s
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O175-report.md
-    round: 1 (.scratch/migration/agents/briefs/O175-round-1.md; snapshot .agents/worktrees/migration-O175-round-1)
-    reviewer_report: .scratch/migration/agents/reviews/O175-refuter.md (adb90dccc11ae0293, claude-opus-5-5, 177393 tokens, 29 tool uses, 1144 s)
-    landing: not-started
-    brief_check: .scratch/migration/agents/reviews/O175-brief-check.md (aecd7b11c26c70e4a, claude-opus-5-5, 155635 tokens, 19 tool uses, 370 s)
   - step: O176
     base: f5e4fa700
     worktree: .agents/worktrees/migration-O176
@@ -44,6 +31,7 @@ dispatch:           # steps in flight, up to six (Z632)
     executor: agent
     worker: claude:opus
     session_id: aa5d402b0228d31d1 (claude-opus-5-5)
+    builder_usage: 280678 tokens, 220 tool uses, 1928 s
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O176-report.md
     round: 0
@@ -56,6 +44,7 @@ dispatch:           # steps in flight, up to six (Z632)
     executor: agent
     worker: claude:opus
     session_id: ad215e14fdd46d365 (claude-opus-5-5)
+    builder_usage: 96637 tokens, 129 tool uses, 1801 s
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O177-report.md
     round: 0
@@ -894,6 +883,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O175 landed). The Overview draws its tiles a few at a time (booking in `plan.md`, `agents/reviews/O175-landing.md`), with five fixes at landing. In flight (2 of 6): O176 and O177, each built and awaiting its review. Next: `/refute migration O177` and `/refute migration O176`. Open items: none.
 - 2026-11-09 (O151 landed). O151's four oculus files are on main (booking in `plan.md`, `agents/reviews/O151-landing.md`), landed as built by Axel's ruling on open item 735, with six wrong deck lines restored at landing in the hub worktree. 95 decks fit (0 too tall, my measurement). The hub's decks and README records are committed in the hub, 76cf0c5f9 on Axel's word (224 paths, not pushed); the hub worktree is removed and `.agents/worktrees/migration-O151-round-2` in the hub stays until the figures are decided. The audit row is in the hub, Axel's commit f085e8d1a. No deck draws a figure; Axel reads the slides and rules what changes. Look flaw: the portfolio Overview froze the page. In flight (0 of 6). Queued: none. Open items: none.
 - 2026-11-09 (O151 refuted over round 2). The review over round 2 (a6bfcba59bb3a80aa) is appended to `agents/reviews/O151-refuter.md`. Open item 735 holds the rule clash; O151 waits for Axel's ruling, `landing: not-started`, its worktrees and uncommitted hub work kept. In flight (0 of 6). Queued: O151. Open items: 735.
 - 2026-11-09 (O173 landed). O173, the `tiers` block of a `required_files` row, landed (booking in `plan.md`, `agents/reviews/O173-landing.md`), with one fix at landing: a word block's name stands at the block's top (`Cards.svelte`, `.field.tall`). O174's worktree and branch are removed. In flight (1 of 6): O151, repair round 2 running. Queued: none. Next: O151's review over round 2 when its builder reports. The hub row `{ file: present/present.yml, tiers: { words: [research] } }` of open item 733 waits for O151's hub commit and Axel's word. Open items: none.

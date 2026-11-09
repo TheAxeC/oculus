@@ -1,10 +1,11 @@
-In flight (3 of 6 slots in use): O175 (the portfolio Overview usable at 110 tiles), O176 (the decks repaired after O151), O177 (the stage umbrella).
+In flight (2 of 6 slots in use): O176 (the decks repaired after O151), O177 (the stage umbrella).
 
 Queued: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O175 (the portfolio Overview usable at 110 tiles), 2026-11-09.
 - O151 (a deck for every research project), 2026-11-09, a6dfb9555; hub 76cf0c5f9.
 - O173 (a row of the audit's required files takes a tiers block), 2026-11-09, 776672fc0.
 - O174 (a cut long field shows no sliced block), 2026-11-09, f86845e78.

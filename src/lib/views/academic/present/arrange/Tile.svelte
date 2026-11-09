@@ -3,9 +3,18 @@
     // measured (screen/Framed.svelte, at the size of the tile) with its place and its title under
     // it, or, for a deck that draws no slide, a title tile naming the deck. The tile carries the
     // hue of the project the slide belongs to on its left edge, the hairline of the slide in force,
-    // the shell's card cursor through its card, the Too tall mark beside its place while the
-    // Present store holds the slide as taller than its frame, with the finding's message as its
-    // tooltip, and the menu of the slide and of its arranging acts on a right-click.
+    // the shell's card cursor through its card, the Too tall mark beside its place once its slide
+    // has been laid out and while the Present store holds the slide as taller than its frame, with
+    // the finding's message as its tooltip, and the menu of the slide and of its arranging acts on
+    // a right-click.
+    //
+    // The tile's shape, place, title, menu and drag are drawn at once. Its slide is mounted at the
+    // tile's turn on the Overview's queue (screen/layout-turns.ts), flushed inside that turn so its
+    // cost counts against the queue's budget, and every layout of the slide waits on that queue
+    // too, so a deck of many tiles leaves the page answering while they arrive. Until then the shot
+    // holds the slide's shape, empty. A tile's turn does not depend on its being on screen, so
+    // every slide is drawn and measured once the queue has emptied. The shot is contained, so the
+    // forced layouts of one slide do not lay out the rest of the page.
     //
     // The drawn slide is inert: nothing inside it takes a press or the focus, so a press anywhere
     // on the tile is the tile's press, which shows the slide, and the keyboard presses the card's
@@ -14,6 +23,7 @@
     // card cursor opens. The drag a tile takes part in is the Overview's (arrange.svelte.ts); the
     // tile is its source and its target.
 
+    import { flushSync } from 'svelte';
     import Card from '$lib/ui/frame/card/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
@@ -21,6 +31,7 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Framed from '../screen/Framed.svelte';
+    import { layoutTurns } from '../screen/layout-turns';
     import { t } from '$lib/state/shared/words/text';
     import { SLIDE_SHAPE, slideTone, type DeckSlide } from '$lib/state/life/present';
     import type { TileView } from '$lib/state/life/arrange';
@@ -71,11 +82,34 @@
     const tone = $derived(row === null ? undefined : slideTone(row));
 
     const {
-        present: { tooTall }
+        present: { tallMark }
     } = useState();
 
+    const turns = layoutTurns();
+
+    /** Whether the slide is mounted, which waits for the tile's turn on the Overview's queue. */
+    let mounted = $state(false);
+    /** Whether the slide has been laid out once, before which the tile carries no mark. */
+    let laid = $state(false);
+
+    /** Whether the tile draws a slide, read apart from `row` so a new row asks for no new turn. */
+    const drawsSlide = $derived(row !== null);
+
+    $effect(() => {
+        if (!drawsSlide) return;
+        const mount = (): void => {
+            flushSync(() => {
+                mounted = true;
+            });
+        };
+        turns.ask(mount);
+        return () => turns.drop(mount);
+    });
+
+    /** The slide's mark, found apart from its reading so that the reading tracks it. */
+    const mark = $derived(row === null ? null : tallMark(view.deck, row.key));
     /** The finding of a slide measured taller than its frame, which the tile's mark carries. */
-    const tall = $derived(row === null ? '' : tooTall(view.deck, row.key));
+    const tall = $derived(mark === null || !laid ? '' : mark.message);
 
     /** The row's hue as a custom property, so the edge below names a token and not a colour. */
     const toneStyle = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
@@ -108,7 +142,15 @@
     >
         {#if row !== null}
             <div class="shot" inert style:aspect-ratio="{SLIDE_SHAPE.width} / {SLIDE_SHAPE.height}">
-                <Framed {row} deck={view.deck} facts={view.facts} />
+                {#if mounted}
+                    <Framed
+                        {row}
+                        deck={view.deck}
+                        facts={view.facts}
+                        {turns}
+                        onlaid={() => (laid = true)}
+                    />
+                {/if}
             </div>
         {/if}
         <Card
@@ -166,9 +208,11 @@
         outline-offset: 1px;
     }
 
-    /* The shot keeps the slide's shape, set on the element. */
+    /* The shot keeps the slide's shape, set on the element, and is contained, so a layout inside
+       its slide does not lay out the rest of the page. */
     .shot {
         min-width: 0;
+        contain: strict;
     }
 
     .at {

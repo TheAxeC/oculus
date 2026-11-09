@@ -126,3 +126,120 @@ Usage: adb90dccc11ae0293, claude-opus-5-5, 177393 tokens, 29 tool uses, 1144 s
 
 - Spec 1: left as built. The brief's decision 2 is read as a job asked again after it has run; a job still waiting keeps its place, so that tiles keep arriving top to bottom.
 - Standards 1 and Behaviour 1: repair round 1.
+
+# Repair round 1, refuted
+
+Review of repair round 1 of step O175. No finding in any of the four headings. Both findings the round was sent are closed by reading, and verify items 1 to 4 reproduce. C7 to C10 are still owed at the look.
+
+## Verification lines, verbatim
+
+Run from the worktree root, node v24.21.0 first on `PATH`, `TMPDIR` unset, `GIT_CEILING_DIRECTORIES` set to the worktree's `.agents/scratch`.
+
+1. `npm run test:quick`:
+```
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      ASCII gate (1.4 s)
+ok      svelte-kit sync (3.2 s)
+ok      eslint (2.7 s)
+ok      svelte-check (10.9 s): 1794222723839 COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (30.3 s): Duration  17.51s (transform 29.82s, setup 0ms, import 50.65s, tests 2.42s, environment 251ms)
+ok      vitest slow (36.2 s): Duration  23.24s (transform 13.01s, setup 0ms, import 16.80s, tests 6.29s, environment 0ms)
+ok      vitest checks (55.6 s): Duration  42.53s (transform 12.97s, setup 0ms, import 28.92s, tests 90.97s, environment 3ms)
+test:quick: 58.9 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source, tests/checks/tree and
+            tests/checks/imports, which run for any change under src, tests or
+            utils; the build, the lint of unchanged files
+```
+
+2. ASCII gate, the `perl` command of `agents/spec.md`:
+```
+find: bin: No such file or directory
+perl exit 0
+ls: bin: No such file or directory
+```
+No file line was printed. The `find` line is the absence of a `bin` folder, which the report also says.
+
+3. C1 to C6, by the report's program with an absolute import, at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o175-round1-cases.mjs` (`node --no-warnings`):
+```
+C1 frames=[["j1","j2","j3","j4"],["j5","j6","j7","j8"],["j9","j10"]] perFrame=[4,4,2]
+C2 frames=[["slow"],["a","b"]]
+C3 frames=[["twice","after"]]
+C4 frames=[["first","behind"]]
+C5 frames=[["self","other"],["third","self"]] frameLeftPending=false
+C6 frames=[["before","throws","after"]] consoleError=["boom"]
+```
+
+4. `sh utils/unused-exports.sh | diff - /Users/axelfaes/workspace/oculus/.agents/worktrees/O175-base/unused-exports.txt`: printed nothing, `diff exit 0`.
+
+Other commands the round's report quotes, compared:
+- `grep -rn 'laidOf' src tests`: no line, exit 1.
+- `wc -l`: `layout-turns.ts` 94, `Slide.svelte` 516, `Framed.svelte` 98, `Tile.svelte` 221, `Overview.svelte` 285, `present.svelte.ts` 768, as reported.
+- `LC_ALL=C grep -n '[^ -~]'` over `Framed.svelte`: no line, exit 1.
+- History words over the comment lines of `Framed.svelte`: no line, exit 1.
+- `awk 'length($0)>100'` over `Framed.svelte`: nothing.
+- Greedy-wrap check over `Framed.svelte:17-24`: no line short; lengths 97 98 96 100 99 95 93 71.
+- `git status --short` printed the five modified source files, the new module, the report and the orchestrator's two files. It was the same after every command I ran.
+- `diff -u` of each path of `files.txt` against the snapshot: only `src/lib/views/academic/present/screen/Framed.svelte` differs, as the report says. No path is changed outside `files.txt` except the three `.scratch` files.
+
+`npm run diagrams` was not run; see "Declined to judge".
+
+## Verdict per item of "What to build", whole diff since 266bf0c0e
+
+1. Tile work takes turns: holds. `layout-turns.ts:39-81` has closure state only, and `TURNS` is an immutable Symbol. C1, C2, C4, C5 and C6 reproduce. Hidden-tab behaviour holds by reading: jobs stay in the Set and frames resume.
+2. Only tiles use it: holds. The layout paths go through `askLayout` or `turns.ask` (`Slide.svelte:331`, `:348`, `:388`, `:392`). `Tile.svelte:148` alone sets the prop. The print page (`routes/present/print/+page.svelte:195`) draws `Slide` with `onlaid` and no `turns`.
+3. Slide mounted at its turn: holds. `Tile.svelte:100-105`, flushed inside the job.
+4. Containment: holds. `Tile.svelte:213`.
+5. A waiting slide: holds. `.waiting` is unchanged, and `pressed` does not depend on `mounted`.
+6. A tile not yet laid out writes no measure: holds, closing the part the first review found violated. `Framed.svelte:70-73` and `:76-82`. Every layout path passes through `watched.ask` (`:61-64`), so `asked` covers every trigger. Reasoning for the first layout and the probe change is under Behaviour.
+7. Repeats collapse: holds (C3, Set).
+8. A queue entry that goes away is dropped: holds. Teardowns at `Tile.svelte:106` and `Slide.svelte:337`; a queue left with no job cancels its frame.
+9. Every tile drawn and measured: holds by reading; no path skips a tile. A tile hidden when its job runs is laid out when shown again (see Behaviour).
+10. `tooTall`: holds. `present.svelte.ts:429-451` and `:584`. The round did not touch it, and the first review's reading stands against the same text (`diff` printed nothing for this file).
+11. Comments: holds, closing the first review's Standards 1. The head comment of `Framed.svelte:17-24` now says what `report` and `settled` do. The head comments of `Slide.svelte:35-39`, `Tile.svelte:2-17` and `Overview.svelte` say what the code does.
+
+## Verdict per case
+
+- C1 met. C2 met. C3 met. C4 met. C5 met. C6 met.
+- C7 not verifiable. Settled by the portfolio deck in the Overview with a `PerformanceObserver` for long tasks, and again after a reload with the Overview open.
+- C8 not verifiable. Settled by a scratch deck with a slide known too tall: read the tile and Findings while tiles wait and after the queue empties.
+- C9 not verifiable. Settled by switching the theme with the Overview open: the page keeps answering, every tile ends laid out in the new theme, and no tile gains or loses a mark or Findings row until its own layout has run.
+- C10 not verifiable. Settled by choosing another deck while tiles arrive.
+
+## Spec
+
+None. Over the delta: only `Framed.svelte` changed, on the write list. The way `Slide.svelte` tells `Framed.svelte` of an ask was left to the builder by the round's brief. Spec 1 of the first review was ruled "left as built" and is unchanged.
+
+## Proof
+
+None. Every closure the report claims reproduces by the rerun above or by reading, including its six numbered cases of what the code does.
+
+## Standards
+
+None.
+
+## Behaviour
+
+None. The points named for this review, each read and without a finding:
+
+- **A check removed rather than fixed.** The round removes `laidOf !== drawing`. What it guarded is still guarded. A change of `row` re-runs the effect at `Slide.svelte:343`, which asks at `:348` and sets `asked`. A `drawing` that changes while a measure is held is covered by the `of` tag at `Framed.svelte:71` and `:80`.
+- **`asked` set on an ask whose job is then dropped and asked again.** The only drop sites are teardowns (`Slide.svelte:337`, `Tile.svelte:106`). `Slide.svelte:337` depends only on `turns`, so it runs at destroy, when `asked` no longer matters. The same reasoning covers a `watched` that never changes (next point).
+- **`watched` being a new object.** It is one object for the life of a `Framed`. `turns` comes from a plain `const` in `Tile.svelte:88`, so the derived has no signal dependencies, and `node_modules/svelte/src/internal/client/reactivity/deriveds.js:414-417` says "deriveds without dependencies should never be recomputed". The two effects in `Slide.svelte` that read `turns` therefore never re-run for it. If it did change, `:337` would drop and `:348` would re-ask, losing no job.
+- **A hidden slide, an early return.** `layOutSlide` returning at `Slide.svelte:173-174` leaves `asked` true, but the next show re-asks. At zero width `sizeOf` returns null (`:369-375`), so the probe's observer sets `seen = null` (`:382-384`), and when the slide is drawn again `:386` passes and `:388` asks. A tile mounted while hidden starts with `seen` null and takes the same path. So measures are held only while hidden, when the Stage reports nothing anyway (`Stage.svelte:70`).
+- **A thrown layout.** `asked` stays true and held measures stay unwritten until that tile's next completed layout, and only for that tile. That is what item 6 and the round's brief ask for a layout that has not run. `grep -n throw` over `slide-layout.ts` and `drawn-slide.ts` prints nothing, so only a child's render error reaches it.
+- **A change of `drawing` while a measure is held.** Effects run in creation order (`batch.js:493-515` traverses the tree in order), and `Slide`'s user effects are created before `Stage`'s (`context.js:197-207`, `pop`). So the ask comes first and the new observer fires after it. A measure of the old `drawing` is dropped at `:80`, and the new observer's first report supplies the new one.
+- **Order of the probe's observer and the Stage's.** The closure of Behaviour 1 rests on this order for a text size or theme change. The probe's `ResizeObserver` is constructed before the Stage's, for the same creation-order reason, and observers are notified in construction order under the ResizeObserver specification (from the specification, not run). So `asked` is set before the Stage's callback runs in the same delivery.
+- **An ask during the slide's own job.** The report says no path reaches it. By reading that holds: the effects flushed inside the job do not re-run the effect at `Slide.svelte:343`, and image, font and observer events arrive in other tasks.
+
+## Declined to judge
+
+- C7 to C10, and the real cost of a layout: no page may be opened here.
+- The order of `document.fonts` `loadingdone` against the Stage's observer, for a font that loads after the queue has emptied and does not move the probe by `PROBE_DRIFT` (a heading font, for example).
+  - If the observer runs first, the measure reaches the store with `asked` false, then `loadingdone` asks, and a false mark can stay until that tile's turn.
+  - The round's rule is literally met, since no layout had been asked yet.
+  - The order is the browser's and I have not observed it. The look would settle it by watching marks while such a font loads on a fully laid-out Overview.
+- Whether `contain: layout paint style` without size containment reduces the forced-layout cost: only the look's long-task numbers settle it.
+- `npm run diagrams`: not run, because it writes `.dot` and `.svg` files into the worktree. The report says it ran it before the list, and the list passed here without it.
+- How many times the builder ran the list in this round: the report says once, and nothing here can check that.
+
+Usage: a57800376f8d13f5b, claude-opus-5-5, 159360 tokens, 24 tool uses, 452 s

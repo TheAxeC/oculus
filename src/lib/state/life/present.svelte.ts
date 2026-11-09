@@ -40,6 +40,7 @@
 // kept list they were told and draw the strip of a project's facts by the toggle they were told,
 // and the print page asks the exporting pane for both (`exportKeep`).
 
+import { untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
@@ -167,6 +168,9 @@ type Held = {
     ended: boolean;
 };
 
+/** A slide's Too tall mark: the finding's message, or the empty string for a slide that fits. */
+export type TallMark = { readonly message: string };
+
 export type PresentStore = {
     /**
      * Take what a Stage measured of a slide of a deck: how far it runs past its frame, as a
@@ -183,8 +187,12 @@ export type PresentStore = {
      * another pane draws a version of the deck without it.
      */
     drawing: (pane: string, deck: Deck | null) => void;
-    /** The message of a slide too tall in a deck, or the empty string for one that fits. */
-    tooTall: (deck: Deck, key: string) => string;
+    /**
+     * The mark of a slide of a deck: its `message` is the finding's, or the empty string for a
+     * slide that fits. A mark is looked up in a `$derived` of its own and its `message` is read in
+     * another, since a reaction does not track a signal made while it runs.
+     */
+    tallMark: (deck: Deck, key: string) => TallMark;
     /** One finding for each slide too tall in a deck, at the slide's file and line. */
     findings: () => Finding[];
     /** The portfolio deck, null when the configuration names none. */
@@ -419,9 +427,42 @@ export function createPresent(
      */
     const tall = new SvelteMap<string, TooTall>();
 
+    /**
+     * One reactive cell per slide a tile's mark has read, holding that slide's finding's message
+     * (empty for none) under the key of `tall`, so a tile's mark runs again only when its own slide
+     * gains or loses a finding: reading an absent key of `tall` would subscribe the tile to every
+     * slide's. A cell lives as long as the store, since a live mark holds on to it.
+     */
+    const marks = new Map<string, { message: string }>();
+
     /** The key of a slide of a deck in `tall`. */
     function tallKey(deck: Deck, key: string): string {
         return JSON.stringify([deck.root, deck.path, key]);
+    }
+
+    /** The cell of a slide's mark, made from what `tall` holds the first time it is read. */
+    function markOf(key: string): { message: string } {
+        const held = marks.get(key);
+        if (held !== undefined) return held;
+        let message = $state.raw(untrack(() => tall.get(key)?.message ?? ''));
+        const cell = {
+            get message() {
+                return message;
+            },
+            set message(next: string) {
+                message = next;
+            }
+        };
+        marks.set(key, cell);
+        return cell;
+    }
+
+    /** Put a slide's finding (null for none) in `tall` and in the cell of its mark. */
+    function holdTall(key: string, next: TooTall | null): void {
+        if (next === null) tall.delete(key);
+        else tall.set(key, next);
+        const cell = marks.get(key);
+        if (cell !== undefined) cell.message = next?.message ?? '';
     }
 
     /** The deck each pane draws, by the pane's instance id. */
@@ -466,7 +507,7 @@ export function createPresent(
         for (const [key, one] of tall) {
             if (savedOf(one.root, one.path, arriving).some((deck) => holds(deck, one))) continue;
             if ([...drawnBy.values()].some((deck) => holds(deck, one))) continue;
-            tall.delete(key);
+            holdTall(key, null);
         }
     }
 
@@ -495,7 +536,7 @@ export function createPresent(
     function measured(deck: Deck, row: DeckSlide, over: number): void {
         const key = tallKey(deck, row.key);
         if (over <= TOO_TALL) {
-            tall.delete(key);
+            holdTall(key, null);
             return;
         }
         const percent = Math.max(1, Math.round(over * 100));
@@ -507,18 +548,26 @@ export function createPresent(
             source: row.source,
             message
         };
-        if (JSON.stringify(tall.get(key)) !== JSON.stringify(next)) tall.set(key, next);
+        if (JSON.stringify(tall.get(key)) !== JSON.stringify(next)) holdTall(key, next);
     }
 
-    /** The findings of the slides too tall whose source file's root the page knows. */
-    const tallFindings = $derived(
-        [...tall.values()].flatMap((one): Finding[] => {
+    /**
+     * The findings of the slides too tall whose source file's root the page knows, one per place
+     * in a source file: a slide drawn in two decks, its project's and the portfolio, is measured
+     * in each and is written once.
+     */
+    const tallFindings = $derived.by((): Finding[] => {
+        const byPlace = new Map<string, Finding>();
+        for (const one of tall.values()) {
             const dir = one.source === undefined ? undefined : rootDir(one.source.root);
-            if (one.source === undefined || dir === undefined) return [];
+            if (one.source === undefined || dir === undefined) continue;
             const file = joinPath(dir, one.source.path);
-            return [{ file, key: one.key, line: one.source.line, message: one.message }];
-        })
-    );
+            const place = `${file}:${one.source.line}`;
+            if (byPlace.has(place)) continue;
+            byPlace.set(place, { file, key: one.key, line: one.source.line, message: one.message });
+        }
+        return [...byPlace.values()];
+    });
 
     function rootDir(key: string): string | undefined {
         return roots().find((one) => one.key === key)?.dir;
@@ -555,7 +604,7 @@ export function createPresent(
     return {
         measured,
         drawing,
-        tooTall: (deck, key) => tall.get(tallKey(deck, key))?.message ?? '',
+        tallMark: (deck, key) => markOf(tallKey(deck, key)),
         findings: () => tallFindings,
         portfolio: () => portfolio,
         projectDecks: () => projectDecks,

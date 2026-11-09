@@ -21,6 +21,12 @@
     // keeps and counts them, and a move made while it is in force writes the group's whole list,
     // the decks it hides kept in their places. The Add tile lists the decks the group's `find:`
     // matches and does not hold, which the filter does not narrow.
+    //
+    // The Overview makes one queue of its own (screen/layout-turns.ts) and hands it through context
+    // to every tile drawn inside it, those of its groups included. Each tile mounts and lays out
+    // its slide on that queue, a time budget's worth per frame, so the page goes on answering while
+    // the tiles of a large deck arrive; the queue goes with the Overview, and a tile that goes
+    // away leaves nothing on it.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -30,6 +36,7 @@
     import Tile from './Tile.svelte';
     import { createArrange, createOpener } from './arrange.svelte';
     import { isArrange, isAct, tileMenu } from '../acts/menu';
+    import { createLayoutTurns, provideLayoutTurns } from '../screen/layout-turns';
     import {
         deckHues,
         overviewRuns,
@@ -71,6 +78,23 @@
         entities: { config },
         writes: { writeDeckSlides }
     } = useState();
+
+    /**
+     * How long the tiles' work may take of one animation frame, in milliseconds: about half of a
+     * frame at 60 Hz, which leaves the other half to input and painting.
+     */
+    const TURN_BUDGET = 8;
+
+    provideLayoutTurns(
+        createLayoutTurns({
+            frames: {
+                request: (run) => requestAnimationFrame(run),
+                cancel: (handle) => cancelAnimationFrame(handle)
+            },
+            now: () => performance.now(),
+            budget: TURN_BUDGET
+        })
+    );
 
     const arrange = createArrange({
         ref: () => ref,
@@ -217,7 +241,10 @@
 </div>
 
 <style>
+    /* A tile keeps its size while its slide arrives, so the scroll has nothing to follow, and the
+       browser's anchor among slides that arrive would move it. */
     .overview {
+        overflow-anchor: none;
         display: flex;
         flex-direction: column;
         gap: 14px;
