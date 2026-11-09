@@ -31,7 +31,7 @@ dispatch:           # steps in flight, up to six (Z632)
     executor: agent
     worker: claude:opus
     session_id: aa5d402b0228d31d1 (claude-opus-5-5)
-    builder_usage: 280678 tokens, 220 tool uses, 1928 s
+    builder_usage: 280678 tokens, 220 tool uses, 1928 s; round 1: 324366 tokens, 176 tool uses, 3391 s
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O176-report.md
     round: 0
@@ -39,21 +39,7 @@ dispatch:           # steps in flight, up to six (Z632)
     reviewer_report: .scratch/migration/agents/reviews/O176-refuter.md (a1215ab627588ef2f, claude-opus-5-5, 324381 tokens, 44 tool uses, 523 s)
     landing: not-started
     brief_check: .scratch/migration/agents/reviews/O176-brief-check.md (a379c743a49e059f5, claude-opus-5-5, 196944 tokens, 34 tool uses, 1065 s)
-  - step: O177
-    base: 12f08efdc
-    worktree: .agents/worktrees/migration-O177
-    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O177
-    executor: agent
-    worker: claude:opus
-    session_id: ad215e14fdd46d365 (claude-opus-5-5)
-    builder_usage: 96637 tokens, 129 tool uses, 1801 s
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O177-report.md
-    round: 0
-    round: 1 (.scratch/migration/agents/briefs/O177-round-1.md; snapshot .agents/worktrees/migration-O177-round-1)
-    reviewer_report: .scratch/migration/agents/reviews/O177-refuter.md (ab2166d2af0bc3b1a, claude-opus-5-5, 219077 tokens, 37 tool uses, 815 s)
-    landing: not-started
-    brief_check: .scratch/migration/agents/reviews/O177-brief-check.md (a602a835ac6d57075, claude-opus-5-5, 227351 tokens, 28 tool uses, 664 s)
+
 ```
 
 ## The standing demands (from Axel, in force)
@@ -889,6 +875,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+
+- 2026-11-09. O177 landed on main; its hub side stands uncommitted in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O177` and needs Axel's word. Next: the review of O176 over repair round 1, then its landing.
 
 - 2026-11-09 (open items 736 and 737 ruled). 736 (a) and 737 (a). O176's and O177's repair rounds run. In flight (2 of 6): O176, O177. Open items: none.
 - 2026-11-09 (O177 repair round 1 sent). The review is `agents/reviews/O177-refuter.md`; two findings go to the builder, one is left as built by the no-breakage rule, one is open item 737. O176's round runs. In flight (2 of 6): O176, O177. Open items: 736, 737.

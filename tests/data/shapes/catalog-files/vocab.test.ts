@@ -44,13 +44,14 @@ function cluster(key: string, words: string): string {
     return `{ key: ${key}, ${words}muted: false, layout: columns }`;
 }
 
-/** oculus's four clusters as a hub file writes them, `incubate` given `words` for its label. */
+/** oculus's five clusters as a hub file writes them, `incubate` given `words` for its label. */
 function clustersWith(words: string): string {
     return [
         'focus_clusters:',
         `  - ${cluster('now', 'label: focus.cluster_now, glyph: focus.now_glyph, ')}`,
         `  - ${cluster('parked', 'label: focus.cluster_parked, ')}`,
         `  - ${cluster('incubate', words)}`,
+        '  - { key: umbrella, glyph: focus.ideas_glyph, muted: true, layout: full_width, sort: title }',
         '  - { key: idea, glyph: focus.ideas_glyph, muted: true, layout: full_width, sort: title }',
         ''
     ].join('\n');
@@ -72,7 +73,7 @@ describe("the vocabulary's words past its shape", () => {
             'words a category whose label holds no other form, and draws it by its key',
             '{ one: idea }',
             [
-                `${FILE} | categories[2].label | categories[2].label is a map of plural forms with no other form, which every such map holds`
+                `${FILE} | categories[3].label | categories[3].label is a map of plural forms with no other form, which every such map holds`
             ],
             'idea'
         ],
@@ -80,7 +81,7 @@ describe("the vocabulary's words past its shape", () => {
             'words a form of a category label outside the six plural forms, and reads the others',
             '{ one: idea, several: ideas, other: ideas }',
             [
-                `${FILE} | categories[2].label.several | categories[2].label.several is not a plural form: the forms are zero, one, two, few, many and other`
+                `${FILE} | categories[3].label.several | categories[3].label.several is not a plural form: the forms are zero, one, two, few, many and other`
             ],
             'ideas'
         ],
@@ -127,6 +128,7 @@ describe("the vocabulary's words past its shape", () => {
         expect(clusters(withHub(text).config).map((one) => one.key)).toEqual([
             'now',
             'parked',
+            'umbrella',
             'idea'
         ]);
     });
@@ -144,6 +146,7 @@ describe("the vocabulary's words past its shape", () => {
             ['scope', 'incubate'],
             ['derisk', 'incubate'],
             ['build', 'incubate'],
+            ['umbrella', 'umbrella'],
             ['idea', 'idea']
         ].map(
             ([lane, cluster], at) =>
@@ -168,8 +171,8 @@ describe("the vocabulary's words past its shape", () => {
             '  - { key: now, muted: false, layout: grid }\n  - { key: idea,'
         );
         expect(said(repeated)).toEqual([
-            `${FILE} | focus_clusters.3.layout | focus_clusters.3.layout must be one of columns, full_width`,
-            `${FILE} | focus_clusters[3] | a second row of focus_clusters has the key now; the row is not read`
+            `${FILE} | focus_clusters.4.layout | focus_clusters.4.layout must be one of columns, full_width`,
+            `${FILE} | focus_clusters[4] | a second row of focus_clusters has the key now; the row is not read`
         ]);
     });
 
@@ -187,7 +190,7 @@ describe("the vocabulary's words past its shape", () => {
             `  - ${cluster('now', '')}\n  - { key: idea,`
         );
         expect(said(text)).toEqual([
-            `${FILE} | focus_clusters[3] | a second row of focus_clusters has the key now; the row is not read`
+            `${FILE} | focus_clusters[4] | a second row of focus_clusters has the key now; the row is not read`
         ]);
     });
 
@@ -277,6 +280,7 @@ const LEFT_OUT = [
     ['scope', 'incubate'],
     ['derisk', 'incubate'],
     ['build', 'incubate'],
+    ['umbrella', 'umbrella'],
     ['idea', 'idea']
 ].map(([lane, cluster], at): [string, string] => [
     `focus_lanes[${String(at + 3)}]`,
@@ -364,7 +368,7 @@ const OTHER_HUB_ROWS: OtherHubRow[] = [
     [
         'a category row naming no color beside two tiers carrying default',
         `categories:\n  - { key: x, label: { other: X }, stages: { words: [building] } }\n${TIERS}`,
-        [['categories[7]', 'categories[7] names no color, so it is drawn in no colour'], TIERS_SAID]
+        [['categories[8]', 'categories[8] names no color, so it is drawn in no colour'], TIERS_SAID]
     ],
     [
         'a lane naming no stages, which the merge refuses',

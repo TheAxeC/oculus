@@ -8,18 +8,18 @@
    apart from its cyan and red. The teal of Nord, Dracula, Solarized, One Dark and Synthwave '84 and
    the pink of Nord and One Dark are oculus's own, chosen to read apart from the theme's other
    status hues. The `--c-blue`, `--c-slate` and `--c-grey-d` of Nord, the `--c-grey-d` of Dracula,
-   the `--c-green`, `--c-slate`, `--c-grey` and `--c-grey-d` of Solarized and the `--c-slate`,
-   `--c-grey` and `--c-grey-d` of One Dark are oculus's own as well: each brings the Focus headers
-   drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each other and
-   from the panel, and stays 10 or more from every other status hue of the theme, on the hue and on
-   its `-txt`. Each was picked as the nearest to the palette's colour, or to tokens.css's where the
-   palette gives none (the slate and grey-d of Nord), among the hexes of the palette's own block and
-   an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
-   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more; Solarized's
-   slate, grey and grey-d were picked in that order, each with the ones before it in place. One
-   block per palette, each a set of overrides on the tokens of tokens.css; the shape every rice
-   palette shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+   the `--c-green`, `--c-slate`, `--c-grey` and `--c-grey-d` of Solarized, the `--c-slate`,
+   `--c-grey` and `--c-grey-d` of One Dark and the `--c-blue` of Synthwave '84 are oculus's own as
+   well: each brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000
+   of 10 or more from each other and from the panel, and stays 10 or more from every other status
+   hue of the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's
+   colour, or to tokens.css's where the palette gives none (the slate and grey-d of Nord), among the
+   hexes of the palette's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in
+   steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every
+   measure at 10.5 or more; Solarized's slate, grey and grey-d were picked in that order, each with
+   the ones before it in place. One block per palette, each a set of overrides on the tokens of
+   tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
+   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Nord ---------------------------------------------------------------- */
 body.nord {
@@ -284,7 +284,7 @@ body.synthwave {
     --c-cyan: #36f9f6;
     --c-cyan-d: #36f9f6;
     --c-sky: #36f9f6;
-    --c-blue: #03edf9;
+    --c-blue: #61e2f9;
     --c-indigo: #b381c5;
     --c-violet: #b381c5;
     --c-purple: #b381c5;

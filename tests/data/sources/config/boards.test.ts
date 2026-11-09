@@ -220,28 +220,28 @@ describe('categoriesFindings', () => {
     it.each([
         [
             [{ key: 'y', label: { other: 'y' }, forms: { words: ['poster'] } }],
-            ['categories[7]: categories[7] names no color, so it is drawn in no colour']
+            ['categories[8]: categories[8] names no color, so it is drawn in no colour']
         ],
         [
             [{ key: 'y', label: { other: 'y' }, stages: { words: ['submitted'] } }],
-            ['categories[7]: categories[7] names no color, so it is drawn in no colour']
+            ['categories[8]: categories[8] names no color, so it is drawn in no colour']
         ],
         [
             [{ key: 'y', color: '#9ca3af', stages: { words: ['nonsense'] } }],
             [
-                'categories[7].stages.words: categories[7].stages.words must be one of the items of the list project_stages; it is not read'
+                'categories[8].stages.words: categories[8].stages.words must be one of the items of the list project_stages; it is not read'
             ]
         ],
         [
             [{ key: 'idea', stages: { words: ['nascent'] } }],
             [
-                'categories[7]: categories[7] must be a map with a key no earlier row holds; the row is not read'
+                'categories[8]: categories[8] must be a map with a key no earlier row holds; the row is not read'
             ]
         ],
         [
             [{ label: { other: 'z' }, color: '#9ca3af' }],
             [
-                'categories[7]: categories[7] must be a map with a key no earlier row holds; the row is not read'
+                'categories[8]: categories[8] must be a map with a key no earlier row holds; the row is not read'
             ]
         ]
     ])('words the added rows %j', (rows, expected) => {
@@ -272,15 +272,15 @@ describe('the category rows of a hub that is not the primary', () => {
             ),
             [
                 [
-                    'categories[7].stages.words',
-                    'categories[7].stages.words must be one of the items of the list project_stages; it is not read'
+                    'categories[8].stages.words',
+                    'categories[8].stages.words must be one of the items of the list project_stages; it is not read'
                 ]
             ]
         ],
         [
             'a row naming no color',
             rowsFile('{ key: x, label: { other: X }, stages: { words: [building] } }'),
-            [['categories[7]', 'categories[7] names no color, so it is drawn in no colour']]
+            [['categories[8]', 'categories[8] names no color, so it is drawn in no colour']]
         ],
         [
             'a form word the hub does not hold',
@@ -289,8 +289,8 @@ describe('the category rows of a hub that is not the primary', () => {
             ),
             [
                 [
-                    'categories[7].forms.words',
-                    'categories[7].forms.words must be one of the items of the list project_forms; it is not read'
+                    'categories[8].forms.words',
+                    'categories[8].forms.words must be one of the items of the list project_forms; it is not read'
                 ]
             ]
         ],
@@ -299,10 +299,10 @@ describe('the category rows of a hub that is not the primary', () => {
             'a row with no key',
             rowsFile("{ label: { other: X }, color: '#16a34a' }"),
             [
-                ['categories.7.key', 'categories.7.key must be a text'],
+                ['categories.8.key', 'categories.8.key must be a text'],
                 [
-                    'categories[7]',
-                    'categories[7] must be a map with a key no earlier row holds; the row is not read'
+                    'categories[8]',
+                    'categories[8] must be a map with a key no earlier row holds; the row is not read'
                 ]
             ]
         ],

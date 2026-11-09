@@ -1,14 +1,14 @@
 /* Kanagawa (rebelot/kanagawa.nvim, MIT): Wave and Dragon, then Lotus. The pink of Wave and the teal
    of Dragon and of Lotus are oculus's own, chosen to read apart from the theme's other status hues.
-   The `--c-blue` of Dragon and the `--c-green` and `--c-gold` of Lotus are oculus's own as well:
-   each brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000 of 10
-   or more from each other and from the panel, and stays 10 or more from every other status hue of
-   the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's colour
-   among the hexes of the palette's own block and an OKLCH grid around that colour (lightness 0.15
-   to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10),
-   with every measure at 10.5 or more. One block per palette, each a set of overrides on the tokens
-   of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
-   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+   The `--c-blue` of Dragon and the `--c-blue`, `--c-green` and `--c-gold` of Lotus are oculus's own
+   as well: each brings the Focus headers drawn in it that touch with every cluster open to a
+   CIEDE2000 of 10 or more from each other and from the panel, and stays 10 or more from every other
+   status hue of the theme, on the hue and on its `-txt`. Each was picked as the nearest to the
+   palette's colour among the hexes of the palette's own block and an OKLCH grid around that colour
+   (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in
+   steps of 10), with every measure at 10.5 or more. One block per palette, each a set of overrides
+   on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css,
+   and the theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
 body.kanagawa {
@@ -158,7 +158,7 @@ body.kanagawalotus {
     --c-cyan: #4e8ca2;
     --c-cyan-d: #5a7785;
     --c-sky: #6693bf;
-    --c-blue: #4d699b;
+    --c-blue: #324088;
     --c-indigo: #5d57a3;
     --c-violet: #624c83;
     --c-purple: #624c83;

@@ -648,21 +648,21 @@ export function laneFacts(
 /**
  * The awaiting-a-response box. Every tally counts only a project laneItems draws on a lane of a
  * cluster carrying `awaiting: true`, so a project on no lane or on a lane of another cluster (the
- * Idea lane's, with oculus's clusters) is in none. For each, the people named in `waiting-on:`
- * first, then the venue holding it when its stage carries `pauses_countdown` in `stages`
- * (submitted). The blocked projects are those on a lane that carry a chip with `blocked` in
- * `chips`, whatever else the project is waiting for. A `waiting-on:` value is the internal id of a
- * person or another project, or its words as written when it names neither, drawn by waiting.ts. A
- * tally counts each project once, however many of its `waiting-on:` values give the tally's name,
- * and keeps the ids of the projects it counts: those ids are what the box's board of that name
- * takes, so a press on a name of the box opens a board of exactly the projects it counts. The
- * grants are the funding schemes and the applications the entries of the collections flagged
- * `awaiting` whose status carries `deadline_met` in `statuses` of their own hub's words, sorted by
- * title, each with its id, its hub and the key of its collection in that hub (for a scheme, the
- * collection of its hub naming the `funding` registry, absent when the hub has none), which a press
- * on its name opens the page of. A waited-on project is named from `known`, every project of the
- * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
- * projects without it.
+ * Umbrella lane's and the Idea lane's, with oculus's clusters) is in none. For each, the people
+ * named in `waiting-on:` first, then the venue holding it when its stage carries `pauses_countdown`
+ * in `stages` (submitted). The blocked projects are those on a lane that carry a chip with
+ * `blocked` in `chips`, whatever else the project is waiting for. A `waiting-on:` value is the
+ * internal id of a person or another project, or its words as written when it names neither, drawn
+ * by waiting.ts. A tally counts each project once, however many of its `waiting-on:` values give
+ * the tally's name, and keeps the ids of the projects it counts: those ids are what the box's board
+ * of that name takes, so a press on a name of the box opens a board of exactly the projects it
+ * counts. The grants are the funding schemes and the applications the entries of the collections
+ * flagged `awaiting` whose status carries `deadline_met` in `statuses` of their own hub's words,
+ * sorted by title, each with its id, its hub and the key of its collection in that hub (for a
+ * scheme, the collection of its hub naming the `funding` registry, absent when the hub has none),
+ * which a press on its name opens the page of. A waited-on project is named from `known`, every
+ * project of the portfolio, when the snapshot holds only the projects a filter keeps, and from the
+ * snapshot's own projects without it.
  */
 export function waiting(
     snapshot: Snapshot,

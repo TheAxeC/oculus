@@ -1,14 +1,14 @@
 /* Everforest (sainnhe/everforest, MIT), medium contrast: dark, then light. The teal and the pink of
    the dark palette and the pink of the light one are oculus's own, chosen to read apart from the
-   theme's other status hues. The `--c-mauve` of the dark palette is oculus's own as well: it brings
-   the Focus headers drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more
-   from each other and from the panel, and stays 10 or more from every other status hue of the
-   theme, on the hue and on its `-txt`. It was picked as the nearest to the palette's purple among
-   the hexes of the palette's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97
-   in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every
-   measure at 10.5 or more. One block per palette, each a set of overrides on the tokens of
-   tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
-   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+   theme's other status hues. The `--c-mauve` and `--c-blue` of the dark palette are oculus's own as
+   well: each brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000
+   of 10 or more from each other and from the panel, and stays 10 or more from every other status
+   hue of the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's
+   colour among the hexes of the palette's own block and an OKLCH grid around that colour (lightness
+   0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of
+   10), with every measure at 10.5 or more. One block per palette, each a set of overrides on the
+   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the
+   theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
 body.everforest {
@@ -41,7 +41,7 @@ body.everforest {
     --c-cyan: #7fbbb3;
     --c-cyan-d: #7fbbb3;
     --c-sky: #7fbbb3;
-    --c-blue: #7fbbb3;
+    --c-blue: #87e3e3;
     --c-indigo: #d699b6;
     --c-violet: #d699b6;
     --c-purple: #d699b6;

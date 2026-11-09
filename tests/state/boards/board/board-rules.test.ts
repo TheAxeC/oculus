@@ -605,6 +605,7 @@ describe('the Focus lanes', () => {
             ['parked', 'columns', true],
             ['incubate', 'columns', true],
             ['later', 'columns', true],
+            ['umbrella', 'full_width', true],
             ['idea', 'full_width', true]
         ]);
         expect(clusters(config)[3].label).toBe('focus.cluster_parked');

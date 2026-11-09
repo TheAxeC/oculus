@@ -561,7 +561,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # A deck reads no pin: a pinned project's deck is placed as any other. A category left out comes
 # after the listed ones, in the order of `categories`. Each word is a `key` of this hub's
 # categories; a key no row holds, or a key named twice, is a finding.
-# deck_order: [publications, other-outputs, in-review, in-flight, released, idea, dead-ends]
+# deck_order: [publications, other-outputs, in-review, in-flight, released, umbrella, idea, dead-ends]
 #   example:
 #   deck_order: [idea, in-flight, publications]
 
@@ -921,9 +921,9 @@ One project. `tier` and `stage` are required, and a project naming no `lead` is 
 # --- Core
 tier: research          # research, personal or software: the kind of project, which with your
                         # role and the stage puts it on its boards
-stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, building, submit-ready,
-                        # submitted, revision, accepted, published, released, failed or stopped;
-                        # the stage puts the project on its Focus lane
+stage: nascent          # nascent, scoping, umbrella, de-risking, exploring, in-prep, building,
+                        # submit-ready, submitted, revision, accepted, published, released, failed
+                        # or stopped; the stage puts the project on its Focus lane
 # form: journal         # journal, conference, thesis, abstract, poster or tech-report
 # short: my-project     # short name for cards and lists
 # title: ""

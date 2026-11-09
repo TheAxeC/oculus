@@ -657,7 +657,17 @@ All of these are the orchestrator's look, on a scratch server pointed at the hub
 | Pillars and Domains | a card whose only members are these two | | stays awake, since `umbrella` carries `on_map`; the in-flight count and tier strip of a card lose them, since the stage carries no `live` |
 | Present | the deck order, and each project's Stage spec | decks in in-flight; `exploring; parked`, `exploring, concept note made`, headline "Idea: choose..." | decks in the Umbrella category before Idea; `umbrella`, `umbrella, concept note made`, headline "Choose..." |
 | Project form | the Stage field | | `umbrella (parent of other projects)` offered after scoping, the help names it |
-| Funding tab, audit | novel-math-primitives | a project at a `live` stage | no longer one, by the flag's rule at `vocab.yml:54`; not run, for the look |
+| Audit, results and datasets (`src/lib/server/content/audit/projects.ts:191-205`, set from the flag at `rules.ts:165`) | both projects | Both at `exploring`, so the rule asks. novel-math-primitives: domain `method` carries no `expects_datasets` (`.oculus/data/pillars/domains.yml:11-15`), so only `results` is asked, and it holds one line: no finding. ecg-af-fair: domain `heart` carries it (`domains.yml:20`), so `datasets` and `results` are asked; it holds `ml4af` (`.oculus/data/research/data.yml:1213`) and one result: no finding | The rule no longer asks for either: no finding, the same list today. A later emptied `results` or `datasets` raises nothing |
+| Audit, provisional results (`projects.ts:206-219`) | both projects | Asked; `grep -c PROVISIONAL` on each `project.yml` prints 0: no finding | Not asked: no finding |
+| Audit, documents ahead of the manifest (`projects.ts:220-231`) | both projects | Asked. The documents compared are `README.md`, `code/README.md`, `manuscript/main.pdf` and `manuscript/main.tex` (`src/lib/data/sources/documents/docs.ts:40-45`); neither project has the last three (`ls`). `stat` on the main checkout: novel-math-primitives README 2026-08-24, manifest 2026-10-24; ecg-af-fair README and manifest both 2026-11-09: lag 0 (`src/lib/data/snapshot/normalise.ts:251-262`), no finding | Not asked: no finding |
+| Audit, the ELI5 (`projects.ts:455-458`) | both projects | Asked; each manifest holds `eli5:`: no finding | Not asked: no finding |
+| Focus board, unplaced projects (`src/lib/state/boards/focus.ts:529`, drawn from `ticker.ts:563`) | both projects | `live`, and a lane takes each (Run for ecg-af-fair, Backburner for novel-math-primitives, C3's first run): not listed | Neither `live` nor `idea`, and the Umbrella lane takes each: not listed. No change |
+| Focus board, manifests behind (`src/lib/state/boards/focus/focus-lanes.ts:115`, drawn from `ticker.ts:205` and `:562`) | both projects | Asked; `staleDays` is undefined for each by the three lines of the documents-ahead row above (`normalise.ts:318`): not listed | Not asked: not listed. No change today; a README edited later lists neither, where at `exploring` it would have listed it |
+| Pillars, a card's in-flight count (`src/lib/views/shared/card/record/registry/LineCard.svelte:77` and `:107`, `src/lib/state/boards/structure/lines.ts:94-100`) | both projects | Both name `pillars: [tensor]` and both count on the Tensor card | Neither counts: the card's number is lower by 2. The number drawn is for the look. The Domains card reads no such count (`grep -n flight DomainCard.svelte` prints nothing) |
+| Pillars, a card's tier strip (`LineCard.svelte:78`, `lines.ts:120-122`) | both projects | Neither names a venue, so both count under the fallback row of the Tensor card's strip | Neither counts: that row is lower by 2. The chip drawn is for the look |
+| A venue's concentration marker (`src/lib/state/sources/registries/venues.ts:70`), the board's venue stat (`src/lib/state/boards/board/stats.ts:51`), the ticker's venue load (`src/lib/state/boards/ticker.ts:205` and `:560`), the attention line (`src/lib/state/feeds/feeds.ts:97`) | both projects | Neither names a venue (`venue:` empty at novel-math-primitives `project.yml:12`, no key in ecg-af-fair; `normalise.ts:310`), so neither is counted at any venue | Neither is counted. No change |
+| Funding tab, the card of unfunded work (`src/lib/state/boards/structure/cross-links.ts:364-365`, `src/lib/views/boards/collection/Collection.svelte:183`, `src/lib/views/boards/listing/Listing.svelte:72`) | novel-math-primitives only | It is `live` and names no scheme: on the card | Not `live`: off the card, which holds one project fewer. The card's count is for the look |
+| Funding tab, the card of unfunded work (the same lines) | ecg-af-fair | Names `funding: [FAIR]` (`project.yml:12`), and `FAIR` is an entry of `.oculus/data/academic/funding.yml:129`, so it is covered: not on the card, whatever its stage | Not on the card. No change, which is why the row above applies to one project alone |
 | Help of RESEARCH-APPROACH | the hub map figure | seven rows | eight rows, with the row `projects/umbrella/` |
 
 ## Every judgment call, each a decision the orchestrator may reverse
@@ -686,3 +696,32 @@ Limitations I know of:
 - The Umbrella lane takes moves: a card dropped on it writes `stage: umbrella`, as the brief's `move_writes` says.
 - The three changed `--c-blue` values also redraw the status chips using `blue` in those three themes.
 - The two projects' `status.line`, `next` and `latest` are left as they were, as the brief says.
+
+## Repair round 1
+
+Everything in `agents/briefs/O177-round-1.md` is done. Spec 2 (open item 737) and Proof 1 are left as built, as that brief says.
+
+What changed:
+
+- Item 1: `config/catalogs/vocab.yml:277`, the `idea` row of `categories:`, is the base row again, with its `stages:` in the column of the `in-flight` and `umbrella` rows. The check compares the row of `git show 12f08efdc:config/catalogs/vocab.yml` with the file's and prints `idea-row-identical-to-12f08efdc`; `git diff -U0 config/catalogs/vocab.yml | grep -c -E '^[-+] +- \{ key: idea, +label: \{ one: idea'` prints `0`. `git diff --stat -- config/catalogs/vocab.yml` prints `1 file changed, 8 insertions(+), 4 deletions(-)`.
+- Item 2: in "Before and after of each view a reader sees changed", the row "Funding tab, audit | novel-math-primitives" is replaced by eleven rows, one per thing the flag's rule at `vocab.yml:54` names, with the audit's in-flight rules one row per rule and the Funding card one row per project. Each row is read from the code and names its file and line; the numbers and manifest values they rest on come from `grep -c PROVISIONAL`, `ls` of the three other documents, `stat` of the README and the manifest on the main checkout, `.oculus/data/pillars/domains.yml`, `.oculus/data/research/data.yml` and `.oculus/data/academic/funding.yml`. For the reader today, three things change: the Tensor pillar card's in-flight count is lower by 2, its tier strip's fallback row is lower by 2, and novel-math-primitives leaves the Funding tab's unfunded card. The audit's four rules, the unplaced row, manifests behind and the venue marker draw the same today for both projects. The look settles the three drawn numbers.
+
+No code other than that row changed in this round, and no hub file. `npm run diagrams` ran right before the list and no `docs/diagrams` path shows in `git status --short`.
+
+The verify list ran once this round, after the last change, with `TMPDIR` unset. No whole-suite command ran.
+
+C3, C4 and C5 ran from programs written again under `.agents/scratch/` and removed before this report was handed back. `case-c3-c4.mts` is the source quoted above. `case-c5.mts` is the source quoted above with its `--hues`, `--pick` and `--try` modes taken out and the one `if (tree.tone.umbrella ...)` guard around each measuring block with them, so it only measures; the folded-only lines are counted and not printed.
+
+| Check | Output of this round's run |
+|---|---|
+| Verify 1, `npm run test:quick` | `ok prettier (0.6 s)`, `ok ASCII gate (0.7 s)`, `ok svelte-kit sync (2.6 s)`, `ok eslint (2.5 s)`, `ok svelte-check (11.0 s): ... 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest slow (28.6 s)`, `ok vitest (32.8 s)`, `ok vitest checks (54.4 s)`, last verdict line `test:quick: 57.1 s; every command passed`. It does not cover, as it prints, tests that reach no changed file within the import depth other than the checks under `tests/checks/source`, `tests/checks/tree` and `tests/checks/imports`, the build, and the lint of unchanged files |
+| C1 | `Tests  125 passed (125)` |
+| C2 | `Tests  14 passed (14)` |
+| C3 | `novel-math-primitives: stage umbrella; chips []; category umbrella; lane Umbrella; on_map yes` and `ecg-af-fair: stage umbrella; chips []; category umbrella; lane Umbrella; on_map yes` |
+| C4 | `synthetic-umbrella-parked (C4): stage umbrella; chips [parked]; category umbrella; lane Backburner; on_map yes` |
+| C5 | every line equals the "last run" quote above from `themes: 49` to `status: kanagawalotus`, and it closes `open-layout pairs 21; under 10 in at least one theme: 0` and `folded-only pairs 49; under 10 in at least one theme: 14` |
+| Boards | `npx vitest run tests/data/sources/config/boards.test.ts`: `Tests  46 passed (46)` |
+| Verify 3, ASCII gate | the `perl` command printed no line of the tree, only `find: bin: No such file or directory` |
+| Verify 4, hub YAML | the `python3` command printed nothing, `yaml-exit=0` |
+| Verify 5, C6 | `git status --short` groups as in the quote above (`8  D projects/active/novel-math-primitives`, `38  D projects/ideas/ecg-af-fair`, one more ` D` for the `.pptx` path, six ` M`, `?? projects/umbrella/`), 54 lines; `find projects/umbrella -type f | wc -l` prints `47` |
+| C7 | `grep -rn -E "exploring|parked" projects/umbrella | wc -l` prints `0` |
