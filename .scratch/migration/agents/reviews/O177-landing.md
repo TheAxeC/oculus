@@ -10,7 +10,7 @@ The runner's agent listing showed no agent of the step running; the builder and 
 
 ## Not done
 
-The hub side is not committed: it stands in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O177` at 76cf0c5f9 and needs Axel's word.
+Nothing inside the brief. The hub side is hub commit b64f84066, made on Axel's word.
 
 ## What landed
 

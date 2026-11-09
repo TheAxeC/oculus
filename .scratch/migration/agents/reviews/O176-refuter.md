@@ -136,3 +136,116 @@ Usage: a1215ab627588ef2f, claude-opus-5-5, 324381 tokens, 44 tool uses, 523 s
 
 - Spec 1, Spec 2, Spec 3 and Spec 5: repair round 1 (`agents/briefs/O176-round-1.md`).
 - Spec 4 and Proof 1: the table of C8 is made again by reading in repair round 1, with nothing the two shell searches printed; Spec 4 is raised as open item 736.
+
+## Repair round 1, refuted
+
+Review of O176 (the decks repaired after O151), over repair round 1, whole diff since base 76cf0c5f9. Nothing was changed.
+
+Open against the step: items 2, 6, 7 and 9 are violated, C2 is partial. Spec 1 and Spec 2 are the ones that matter: round item 1 said nothing leaves a slide unless it moves to the other slide, and text left slides for good. C10 is not verifiable here and is the session's measurement at landing.
+
+VERDICT PER ITEM (brief)
+
+- Item 1: holds. 15 figures on slides by C1, the round moved them where the text left no room; the 12 others stand on no slide. Captions read against sources (sandpile code/README.md:16, README.md:27; source-localization main.tex:179; block-term bare_jrnl.tex:824; meseret main.tex:300).
+- Item 2: violated (Spec 3).
+- Item 3: holds.
+- Item 4: holds. bt-operator-theory 'Checks' chip; raw-pls 'representation moves 3%' main.tex:630, :651; bttn main.tex:307, :317-319.
+- Item 5: holds. The facts stand on the decks. Rows sampled and true: loewner :15, :16, :18-20; fed-faithful :13, :15, :18; clinical-ai-eval :18; xsub :14, :18; hccnet-fl :18; covert-applied README.md:34 (24x, 8x); block-term :19; sandpile :20.
+- Item 6: violated, minor (Spec 4). The headline closure holds: 'On band-structured targets' (bt-operator-theory main.tex:53, :373).
+- Item 7: violated (Spec 1, Spec 2, Proof 1).
+- Item 8: holds. C8 was remade; author-line citations are gone. Sampled in place and meaning, all correct: pfl-ms-npj T:72, :115, :232, :252, :353-354, :488, :549, :563; concept-bottleneck-hcc R:11, :22; serial-ecg-af R:3, :11, :21, Y:17; proprioception-exoskeleton T:13, :23-27, :98, :124, :138, :180.
+- Item 9: violated (Spec 4, Spec 5).
+
+VERDICT PER ROUND ITEM
+
+- Round 1, every slide fits: violated on "nothing is taken off a slide to make room unless it moves to the deck's other slide" (Spec 1, Spec 2, Proof 1). The 22 listed slides are each addressed (the report's 22 lines equal the round brief's list). Figures moved as ruled. Fit itself is declined below.
+- Round 2, bt-operator-theory headline: holds.
+- Round 3, bt-operator-theory synthetic checks: violated, minor (Spec 4). The class is now stated correctly: all four scripts check the band-constrained class (code/synthetic_separation.py:29-30, four_format_ordering.py docstring, proportional_regime.py d_BT = mu_band*K, depth_amplification.py profile on its band only).
+- Round 4, ssm-longitudinal hook: holds. Hook from its README "What it is and why", :20 from "Next" items 1-2; no fault of HCCNet is stated; 'fixed-step Transformer' stands only as an ablation arm.
+- Round 5, C8 table: holds, by the sampling above and a read-only sweep of slide numbers against each table row (59 rows; 23 decks have digits absent from their row, all digits of names or labels such as CODE-15, BEAST 2, 2 Hz, $L=1$, 3D, or rounded forms).
+- Round 6, facts left off: holds. One row per fact for the 14 decks.
+
+Rulings of "O176 decks": 13 equations stay and none is restored; 15 figures restored and 12 left off; a second slide by need; projects/active/novel-math-primitives and projects/ideas/ecg-af-fair are not in git status. All hold.
+
+VERDICT PER CASE
+
+- C1: met.
+- C2: partial (Spec 3). 13 equations and the integrity test pass; eight equation diff lines stand against "only bt-operator-theory".
+- C3: met. 74 decks of one slide, 19 of two, none other.
+- C4: met.
+- C5: met.
+- C6: met.
+- C7: met as written ($\mu_{\mathrm{band}}$ stands only at bt-operator-theory present/main.md:19, the corollary line).
+- C8: met by sampling (see Round 5).
+- C9: met. 36 lines repeat across decks: spec labels, tag text, status values, author lists, venue strings, three shared sub titles; no hook, headline, method or result line.
+- C10: not verifiable (see Declined).
+- C11: met by reading, except meseret-cirrhosis (Spec 1).
+
+CHECKS RERUN
+
+- C1, C3: source lines 110-191 of O176-report.md through `node --no-warnings --input-type=module - <hub worktree>` from the oculus worktree: 15 C1 lines, each "exists true"; decks: 93; figure lines: 15; two-slide decks: 19; faults: 0.
+- C9: report lines 197-258, same way: lines repeated across decks: 36.
+- C2, hub worktree: `grep -rl --include=main.md '^equation' projects | wc -l`: 13. `git diff 76cf0c5f9 -U0 | grep -E '^[-+]equation'`: eight lines (bt-operator-theory, hccnet-revision, meseret-cirrhosis, raw-pls, one - and one + each).
+- C2, oculus worktree: `OCULUS_TEST_HUB=<hub worktree> npx vitest run tests/checks/config/integrity.test.ts -t "deck|equation|portfolio"`: Test Files 1 passed (1); Tests 7 passed | 7 skipped (14).
+- `npm run test:quick`, TMPDIR unset: ok ASCII gate; ok svelte-kit sync; ok svelte-check 591 FILES 0 ERRORS 0 WARNINGS; every command passed. It selected 0 test files (3 changed files, none a test), so it covers no deck content. The report's 56.8 s and "verify-exit=0" are not what this command printed here (13.3 s, no such line); no decision rests on either.
+- Character set, report: LC_ALL=C perl gate, 0 lines. Decks: four lines, the place name Link<o-umlaut>ping (modality-dropping-btf:10; hccnet-fl-sweden:4, :11, :19).
+- `git status --short`, hub worktree: 25 paths, all " M", all */present/main.md. Oculus worktree: 3 untracked ledger files (briefs/O176-round-1.md, reviews/O176-refuter.md, reviews/O176-report.md).
+- katex.renderToString with throwOnError:true on the three gathered equations, displayMode true and false: all parse.
+
+SPEC
+
+Spec 1. projects/manuscripts/meseret-cirrhosis/present/main.md:1-20 (first slide; lines `sub:`, `hook:`, `eli5:` removed). O176-report.md:851 says "removed; carried by the title and the first two results", :785 says "Nothing was dropped to hide it".
+What is wrong: the round brief says "nothing is taken off a slide to make room unless it moves to the deck's other slide" and "nothing is dropped to hide it". No line of the deck carries "A patient still alive at the last visit is not a negative case; models that respect this track each patient's true risk" or "Give patients a time-resolved risk of dying and of receiving a transplant" (sources: manuscript/main.tex:39, :45), nor the paper's title line in `sub`. It is the only deck among all projects/**/present/main.md whose first slide has no sub, hook or eli5 (read-only glob). The report's first line still estimates the slide at about 40 lines against 37, and the disclosure at :735 names only second-slide `sub` and `eli5` rows, so this removal is not covered by it.
+Failure scenario: a reader of the slide never learns why a status label is wrong for censored data, and the slide may still run over.
+
+Spec 2. Second-slide `sub` and `eli5` removed in bttn-incident-af, dries-bttr-ecg, ward-bttr-crosssubject, raw-pls, clinical-hccnet and linfoot-estimator (sub and eli5), hccnet-revision (eli5). O176-report.md:735 discloses them and says the brief's sentence "could be read to cover them".
+What is wrong: the brief forbids removal without a move, and for slides over by 10% or less it says "every fact, number and qualifier kept". Concretely, projects/manuscripts/bttn-incident-af/present/main.md:29-41: `sub` 'Occlusion on held-out MIMIC-IV data, external cohorts and dead ends' is gone; O176-report.md:809 says "title and result lines of slide 2 carry it", yet no line of slide 2 says held-out (source: manuscript/main.tex:328 "in held-out inputs", :333 "on held-out MIMIC-IV data").
+Failure scenario: a reader cannot tell the occlusion map was read on held-out data.
+
+Spec 3. projects/manuscripts/hccnet-revision/present/main.md:39, meseret-cirrhosis/present/main.md:37, raw-pls/present/main.md:38: `equation: '\begin{gathered}...'`, the separator `, \quad` dropped in two. O176-report.md:736: "could be read to forbid it; no term changed".
+What is wrong: brief item 2 says "Equations stay as they are" and C2 expected only bt-operator-theory's diff lines; no item or round item asks for this. Terms are unchanged and KaTeX parses them (rerun).
+Failure scenario: three equations of the deck are reformatted against a stated rule of the step, and C2's check no longer holds as written.
+
+Spec 4 (minor, fixable at landing). projects/manuscripts/bt-operator-theory/present/main.md:34 'The scripts check the band-constrained form; the free-profile rerun is still to do.', :43 headline with the same words, :30 'Four self-contained synthetics check the paper''s Gaussian model on the band-constrained block-term class.'
+What is wrong: project.yml `next:` says "rerun the scripts" after correcting Theorem 1; no source says "free-profile rerun" or that the rerun will check the free-profile class. Line :30 names the Gaussian model as the thing checked, where CLAUDE.md and the `reproduced` note say the scripts reproduce the paper's synthetic numbers "from the paper's own Gaussian model".
+Failure scenario: a reader takes as stated that a free-profile check is planned, and takes the Gaussian model as what is verified.
+
+Spec 5. projects/active/linfoot-estimator/present/main.md:14 `{ label: 'Backbone bias ratio', value: '2.13 to 1.65' }`, moved by the round from slide 2 to slide 1 (O176-report.md:845 "unchanged, on slide 1").
+What is wrong: README.md:61 calls it "fine to broad ratio" (rms bias of finest bin against broadest bin, 60k-example model against 480k-example model, in the closed Phase 3 operator-backbone gate, README.md:52-63). The term is not the source's, and on slide 1 no line mentions a backbone; the explaining line 'an operator backbone, not built' stands on slide 2, :39.
+Failure scenario: a reader takes it as a bias improvement of the presented estimator's backbone.
+
+Spec 6 (minor). projects/manuscripts/ward-bttr-crosssubject/present/main.md:14 chip 'Cursor cohort, n = 4' moved to slide 1 while its limit 'Cursor cohort: no significance claim, one patient goes the other way.' stays at :36 on slide 2; body.tex:838-840 states them together.
+Failure scenario: a reader of slide 1 reads 76.7% against 7.9% with no limit beside it.
+
+PROOF
+
+Proof 1. O176-report.md:787 "Each after states the same fact as its before", with :809 and :851 "carried by". Not reproduced for bttn-incident-af's "held-out" and meseret-cirrhosis's eli5 and sub (Spec 1, Spec 2). The decision resting on it is whether the removals are lossless, which is what round item 1 required. Failure scenario: the removals are accepted as lossless and the facts stay off.
+
+STANDARDS
+
+none
+
+BEHAVIOUR
+
+none
+
+DECLINED TO JUDGE
+
+- Fit of every slide at 16:9 (C10): the session's measurement on a scratch server at landing. By reading, the figure-with-equation second slides (bttn-incident-af, hccnet-revision, meseret-cirrhosis, raw-pls, ward-bttr-crosssubject, linfoot-estimator) are not plainly over-long. meseret-cirrhosis slide 1 is over by the builder's estimate, not by a measurement.
+- 59 unchanged-content decks: read whole only for ssm-longitudinal and those the round changed; meaning sampled in four (pfl-ms-npj, concept-bottleneck-hcc, serial-ecg-af, proprioception-exoskeleton); the others by the digit sweep only.
+- icfp-src-poster chart values and the images themselves: no render and no image opened; ebttr_fig, gobttr, image10, dongho_silhouette, fig_simulation and figure_outline were read against text only.
+- The report's `git diff -U0` and `--numstat` with no base were run only as `git diff 76cf0c5f9`.
+- linfoot-estimator "runs in progress": read against the worktree's README.md:253 and plan. The main checkout holds uncommitted holdout results (results/holdout/, results/holdout_comparison.md), which are not a committed source and were not used to judge the line; if they are final at landing, that line is stale.
+
+Usage: a99b12ed7f73ef95a, claude-opus-5-5, 101002 tokens, 56 tool uses, 773 s
+
+### Closed (repair round 1, refuted)
+
+Every finding was fixed at landing in the hub worktree; none was sent to the builder.
+
+- Spec 1 (meseret): the first slide's `sub`, `hook` and `eli5` restored from the base; both figures in the second slide's `panels`. Seen at the look.
+- Spec 2 (second-slide `sub` and `eli5` removed): each was checked against what the deck still carries; bttn's second hook says held-out.
+- Spec 3 (equations): hccnet-revision, raw-pls and meseret restored to the base. `git diff 76cf0c5f9 -U0 | grep -E '^[-+]equation'` prints only bt-operator-theory's pair, which follows its README.
+- Spec 4 (bt-operator-theory): hook, plain line and headline say the rerun after correcting Theorem 1 is still to do; the free-profile tie stands on the second slide.
+- Spec 5 (linfoot label): the fact reads "gate: fine to broad bias ratio 2.13 at 60k examples, 1.65 at 480k" in the second slide's Closed line.
+- Spec 6 (ward): the cursor chip carries "no significance claim, one patient goes the other way".
+- Proof 1: follows Spec 1 and Spec 2, closed with them.

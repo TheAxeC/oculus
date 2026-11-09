@@ -24,22 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-  - step: O176
-    base: f5e4fa700
-    worktree: .agents/worktrees/migration-O176
-    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176
-    executor: agent
-    worker: claude:opus
-    session_id: aa5d402b0228d31d1 (claude-opus-5-5)
-    builder_usage: 280678 tokens, 220 tool uses, 1928 s; round 1: 324366 tokens, 176 tool uses, 3391 s
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O176-report.md
-    round: 0
-    round: 1 (.scratch/migration/agents/briefs/O176-round-1.md; snapshot /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176-round-1)
-    reviewer_report: .scratch/migration/agents/reviews/O176-refuter.md (a1215ab627588ef2f, claude-opus-5-5, 324381 tokens, 44 tool uses, 523 s)
-    landing: not-started
-    brief_check: .scratch/migration/agents/reviews/O176-brief-check.md (a379c743a49e059f5, claude-opus-5-5, 196944 tokens, 34 tool uses, 1065 s)
-
 ```
 
 ## The standing demands (from Axel, in force)
@@ -876,7 +860,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-11-09. O177 landed on main; its hub side stands uncommitted in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O177` and needs Axel's word. Next: the review of O176 over repair round 1, then its landing.
+- 2026-11-09. O176 landed: its oculus side is this commit's booking, its 25 decks are in the hub worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O176`, uncommitted, waiting for Axel's word; after that commit that worktree, `migration-O176-round-1` and `migration-O151-round-2` in the hub are removed. In flight (0 of 6). Open items: none.
+- 2026-11-09. O177 landed on main (6322c57f9), its hub side at hub commit b64f84066. Next: the review of O176 over repair round 1, then its landing.
 
 - 2026-11-09 (open items 736 and 737 ruled). 736 (a) and 737 (a). O176's and O177's repair rounds run. In flight (2 of 6): O176, O177. Open items: none.
 - 2026-11-09 (O177 repair round 1 sent). The review is `agents/reviews/O177-refuter.md`; two findings go to the builder, one is left as built by the no-breakage rule, one is open item 737. O176's round runs. In flight (2 of 6): O176, O177. Open items: 736, 737.
