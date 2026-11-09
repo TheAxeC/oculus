@@ -38,7 +38,16 @@ dispatch:           # steps in flight, up to six (Z632)
     landing: not-started
     brief_check: ".scratch/migration/agents/reviews/O179-brief-check.md (a8f1c2ab3bdcbe17f, claude-opus-5-5, 261781 tokens, 34 tool uses, 586 s)"
   - step: O180
-    landing: preparing
+    base: 3c2f99290
+    worktree: .agents/worktrees/migration-O180
+    executor: agent
+    worker: claude:opus
+    session_id: a693cdb5194fcfd55
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O180-report.md
+    round: 0
+    landing: not-started
+    brief_check: ".scratch/migration/agents/reviews/O180-brief-check.md (af5af1f8f126742f6, claude-opus-5-5, 269392 tokens, 39 tool uses, 696 s)"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -196,6 +205,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 746 (2026-11-09, O180's hub lines without a worktree of the hub), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 746" says; step O180.
 - Open item 745 (2026-11-09, three website words still fixed in `papers.ts`), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 745" says; step O180.
 - Open item 744 (2026-11-09, the fields of a paper on the website are hardcoded), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 744" says; step O180.
 - Open item 743 (2026-11-09, step O179's first defect cannot be produced by a hub file), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 743" says.
@@ -890,6 +900,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O180 building; ruling 746). Builder a693cdb5194fcfd55 (claude-opus-5-5) launched in the oculus worktree at 3c2f99290; O180 makes no worktree of the hub, and the hub's lines are written at landing on Axel's word. O179's builder is on repair round 1. In flight (2 of 6): O179, O180. Open items: none.
 - 2026-11-09 (O178 landed on oculus and on the hub, eb801a32e). In flight (0 of 6). Open items: 742.
 - 2026-11-09 (O178 repair round 1 sent; ruling 740). The round's brief `agents/briefs/O178-round-1.md` carries findings B1, B2, B5, ST1 to ST3 and a publication's `cv_hide`. At landing: the `service` row, the three `docs/data-map.md` lines to Axel, the stray `/tmp/x` behind the red rows of `tests/server/edit/config-key.test.ts`. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 building; eleventh row booked). At landing, before the hub commit, add to the hub worktree's `.oculus/config.yml` the row `- { key: service, fields: [title, location, duration, url, about, hide] }` after `academic` (`plan.md` Rulings "O178 service row"). In flight (1 of 6): O178. Open items: none.

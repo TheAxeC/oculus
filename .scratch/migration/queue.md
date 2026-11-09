@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O179 (an absent list told from an empty one), repair round 1 building.
-- O180 (the fields of a paper on the website come from configuration), preparing.
+- O180 (the fields of a paper on the website come from configuration), building.
 
 Queued: none.
 
