@@ -239,4 +239,4 @@ Usage: aae22591a037e332b, claude-opus-5-5, 203183 tokens, 24 tool uses, 452 s
 - Check 5: Decision 1 says a named limit, size, cadence, timeout, path, file name or program name gets a key, and the kept constants are listed for the reviewer. "Read so far" stays self-declared; the reviewer reads the diff and the kept list.
 - Check 6: each implied input has a case, or falls under Decision 2.
 - Check 8: `hpc.poll_timeout_ms` is now `slurm.poll_timeout_ms` and `terminal.default_agent` names `appearance.yml`; each rewritten dictated line holds against `agents/spec.md` (ASCII, one line, no history).
-- Declined, the Settings ruling: Axel closed this on 2026-11-09 with open item 748's withdrawal; the later ruling governs.
+- Declined, the Settings ruling: the later and specific ruling Hardcoding sweep governs the values it moves, as open item 748's withdrawal records.

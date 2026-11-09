@@ -39,8 +39,17 @@ dispatch:           # steps in flight, up to six (Z632)
     reviewer_report: ".scratch/migration/agents/reviews/O180-refuter.md (aade7a12319164806, claude-opus-5-5, 233680 tokens, 32 tool uses, 936 s)"
 
   - step: O181
-    landing: preparing
-    brief_check: "running: aae22591a037e332b"
+    base: f88e2648e
+    worktree: .agents/worktrees/migration-O181
+    executor: agent
+    worker: claude:opus
+    session_id: a10198f634a8b9cea (claude-opus-5-5)
+    launched: 2026-11-09
+    report: .scratch/migration/agents/reviews/O181-report.md
+    round: 0
+    landing: not-started
+    brief_check: ".scratch/migration/agents/reviews/O181-brief-check.md (aae22591a037e332b, claude-opus-5-5, 203183 tokens, 24 tool uses, 452 s)"
+    shared_paths: "migration O180: hub-names.ts, config/defaults/behavior.yml, config/options/behavior.yml, model-machine.ts, model-entities.ts, settings/files.ts, the website files of src/state, docs/templates.md. O181 leaves the website block and audit/website to O180, so each merge takes separate lines or added rows; O180 lands first."
 ```
 
 ## The standing demands (from Axel, in force)
@@ -896,7 +905,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-11-09 (O180 reviewed; repair round 1 sent). Review in `agents/reviews/O180-refuter.md`, round in `agents/briefs/O180-round-1.md`. O181 is prepared next. In flight (1 of 6): O180. Open items: none.
+- 2026-11-09 (O181's builder launched). O180's repair round 1 builds; O181 builds from base f88e2648e. In flight (2 of 6): O180, O181. Open items: none.
 - 2026-11-09 (O179 landed). The list drawing is on main (booking in `plan.md`, `agents/reviews/O179-landing.md`). O180's review runs; O181 is prepared next. In flight (1 of 6): O180. Open items: none.
 - 2026-11-09 (O181 booked; ruling Hardcoding sweep). O179 landing, its fixes on main uncommitted. O180 built, its review next, its repair round carries the website items of the ruling. O181 queued. In flight (2 of 6): O179, O180. Open items: none.
 - 2026-11-09 (O180 building; ruling 746). Builder a693cdb5194fcfd55 (claude-opus-5-5) launched in the oculus worktree at 3c2f99290; O180 makes no worktree of the hub, and the hub's lines are written at landing on Axel's word. O179's builder is on repair round 1. In flight (2 of 6): O179, O180. Open items: none.

@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O180 (the fields of a paper on the website come from configuration), repair round 1 building.
+- O181 (no hardcoding left in oculus), building.
 
-Queued:
-- O181 (no hardcoding left in oculus), ruling Hardcoding sweep.
+Queued: none.
 
 Owed looks: none.
 
