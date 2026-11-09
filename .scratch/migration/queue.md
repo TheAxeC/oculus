@@ -2,12 +2,12 @@ In flight (1 of 6 slots in use):
 - O180 (the fields of a paper on the website come from configuration), review running.
 
 Queued:
-- O181 (no hardcoding left in oculus), ruling Hardcoding sweep.
+- O181 (no hardcoding left in oculus), ruling Hardcoding sweep; waits on open item 748.
 
 Owed looks: none.
 
 Landed, newest first:
-- O179 (an absent list told from an empty one), 2026-11-09.
+- O179 (an absent list told from an empty one), 2026-11-09, 60751d00e.
 - O178 (the CV's sections set in the hub, a publication's cv_hide), 2026-11-09, b224e2c30; hub eb801a32e.
 - O176 (the decks repaired after O151), 2026-11-09, 5976da035; hub 83b3034df.
 - O177 (the stage umbrella), 2026-11-09, 6322c57f9; hub b64f84066.
