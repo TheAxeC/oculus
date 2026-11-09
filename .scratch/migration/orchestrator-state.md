@@ -39,8 +39,10 @@ dispatch:           # steps in flight, up to six (Z632)
     landing: preparing
     brief_check: "running: a379c743a49e059f5"
   - step: O177
+    base: 12f08efdc
+    worktree: .agents/worktrees/migration-O177
     landing: preparing
-    brief_check: "running: a602a835ac6d57075"
+    brief_check: .scratch/migration/agents/reviews/O177-brief-check.md (a602a835ac6d57075, claude-opus-5-5, 227351 tokens, 28 tool uses, 664 s)
 ```
 
 ## The standing demands (from Axel, in force)
