@@ -134,3 +134,241 @@ New rows: the 18 rows of `tests/data/website/paper-fields.test.ts`, the two rows
 - The press is refused and the audit offers no action on every hub until the hub's lines of item 9 are written, which is the orchestrator's at landing.
 - `tests/data/website/paper-fields.test.ts` builds the demo hub copy in `beforeAll`, as `website-files.test.ts` does; under heavy load on this machine its hook timed out at 10 s in a first run with three other files and passed when run alone.
 - Scratch folders `.agents/scratch/` and `.agents/worktrees/tmp-O180` are removed.
+
+## Repair round 1
+
+Everything in the round's brief is done. One input of the brief could not be read: `.scratch/migration/agents/reviews/O180-refuter.md` is not in this worktree (`ls` says no such file), so the findings were taken from the text of `agents/briefs/O180-round-1.md`. Two reds remain in `tests/checks/source/keys.test.ts`, over `audit/publications.ts`, named by the brief as not this step's.
+
+Hazard for the landing: until the hub's lines below are written, every role of `website.cv_fields` is empty on the real hub, so the CV writes no fields and the audit has 40 findings. The hub's lines land with this step.
+
+### DONE / NOT DONE
+
+Each row of the runs is a run of that test file after the last source edit.
+
+| Check | Status | Output |
+| --- | --- | --- |
+| `tests/data/website/cv-fields.test.ts` (new) | DONE | `Tests  21 passed (21)` |
+| `tests/data/website/paper-fields.test.ts` | DONE | `Tests  18 passed (18)` |
+| `tests/data/hubs/website-files.test.ts` | DONE, the three generated files byte for byte | `Tests  61 passed (61)` |
+| `tests/routes/docs/audit.test.ts` | DONE | `Tests  41 passed (41)` |
+| `tests/routes/sessions/website.test.ts` | DONE | `Tests  23 passed (23)` |
+| `tests/server/root/watch/website-watch.test.ts` | DONE | `Tests  1 passed (1)` |
+| `tests/state/sessions/source/website-store.test.ts` | DONE | `Tests  9 passed (9)` |
+| `tests/checks/config/arrangements.test.ts` | DONE | `Tests  32 passed (32)` |
+| `tests/checks/config/config-folder.test.ts` | DONE | `Tests  31 passed \| 2 skipped (33)` |
+| `tests/checks/config/config.test.ts` | DONE | `Tests  42 passed (42)` |
+| `tests/checks/config/integrity.test.ts` | DONE | `Tests  7 passed \| 7 skipped (14)` |
+| `tests/checks/config/templates.test.ts` | DONE | `Tests  5 passed (5)` |
+| `tests/checks/source/comment-width.test.ts` | DONE | `Tests  2 passed (2)` |
+| `tests/checks/source/history.test.ts`, `catalog-file-keys.test.ts` | DONE | `Tests  6 passed (6)`, `Tests  1 passed (1)`; at the default 5 s each timed out on this machine |
+| `tests/checks/tree/size.test.ts`, `duplication.test.ts`, `boundaries.test.ts` | DONE | `Tests  10 passed (10)`, `Tests  18 passed (18)`, `Tests  11 passed (11)` |
+| `tests/checks/imports/cycles.test.ts`, `tests/data/helpers/hub-names.test.ts` | DONE | `Tests  7 passed (7)`, `Tests  34 passed (34)` |
+| `tests/checks/source/keys.test.ts` | 2 RED, not this step's | `Tests  2 failed \| 9 passed (11)`: `audit/publications.ts: sentence(` twice, and the four keys `audit.msg_site_differs`, `_whole`, `_no_cv`, `_whole_no_cv` |
+| `npx tsc --noEmit -p .` | DONE | prints nothing |
+| ASCII gate over the changed files | DONE | prints nothing |
+| `sh utils/unused-exports.sh` against `../O180-base/unused-exports.txt` | DONE | `diff` prints nothing, exit 0 |
+| `npx prettier --check` over the written `.ts` and `.svelte` files | DONE | `All matched files use Prettier code style!` |
+| `npm run test:quick` | not run, as the round's brief says | |
+
+What the green runs do not cover: no real hub, no real website folder, and no page was opened; the hub's lines are exercised only through the fixture.
+
+### S1, the website's field names
+
+`tests/data/website/cv-fields.test.ts`, its first run on the tree before the change: `Tests  19 failed | 2 passed (21)`. The failing line of its first row:
+
+```
+FAIL tests/data/website/cv-fields.test.ts > ... > the rows of cv_lists say the lists read and their sections
+AssertionError: expected undefined to deeply equal [ { ...(3) } ]
+```
+
+The other 18 fail the same way, each on the field or the section the changed word names (`expected [ 'other' ] to deeply equal [ 'federated' ]` for `site_programs`, `expected [] to deeply equal [ [ 'website.cv_fields.period' ] ]` for an empty role). The two that passed are the rows saying no problem is raised, which hold on any tree.
+
+What changed:
+
+- `src/lib/server/content/audit/website/cv.ts`: rewritten over `website.cv_lists` (`career`, line 415 on), `website.cv_entry_fields` (`entryFields`, line 154) and the roles of `website.cv_fields` (`held` and `written`, lines 83 and 91; `byRoles`, line 99, reading `studentShape` and `sharedShape` by role). `CAREER_LISTS`, `WHEN`, `DURATION`, `DATE`, `FROM_RECORD_ELSE`, `RECORDS` and `SHARED` are gone. An empty role is one problem per build naming `website.cv_fields.<role>`, raised in the `Cv` constructor while `website.cv_sections` holds a row. An empty `students_section` or `projects_section` writes no row and raises no second problem of an unknown section.
+- `src/lib/data/sources/config/settings/files.ts`: shapes `cvListShape`, `cvEntryFieldShape`, types `CvList`, `CvEntryField`, `CvFields`, `CodeStatuses`; `cvSectionOf(personBlock)` replaces `CV_PERSON_BLOCK`, so a section may not take the word `person_block` holds; `keyedRows` became `namedRows`, which takes how a row is named, since a row of `cv_lists` is named by `list`.
+- `src/lib/data/model/model-entities.ts`: `CV_FIELD_ROLES`, the forty roles, beside `ProjectCv`, imported by the reader and the hub list, as `COLLECTION_FLAGS` and `REGISTRY_WORDS` are. `hub-names.ts` adds each role by `CV_FIELD_ROLES.map`, because forty rows would pass the size rule; the file is at 880 lines.
+- `papers.ts`: `website.code_statuses.deposited`, `.review_copy` and `website.doi_origin` read in `codeLink`. Either status empty gives no code link and one problem through `audit.msg_site_no_word`, so an anonymous review copy's DOI is never linked for want of its word.
+- `site.ts`: `readSite(value, path, key)` reads the map under `website.site_programs`.
+- `publication.ts`: `projectCv` keeps every non-null key as `publication()` does (`heldKeys`), `title` and `rank` in their shapes. `ProjectCv` types those two and holds any other key as `unknown`.
+- `config/schemas/manifest-schema.yml:121`: `"cv.cv_hide"`. `docs/data-map.md:377`: lists `cv_hide` and says any other key is held as written. `docs/templates.md`: the `cv:` template holds `cv_hide`, as `tests/checks/config/templates.test.ts` requires of every schema field.
+- `config/defaults/behavior.yml`, `config/options/behavior.yml`: the 46 new keys, each with an entry, and the groups `website.code_statuses` and `website.cv_fields`. `docs/templates.md`: the paragraph, the default block and the example.
+
+Beyond the brief's text, each following from it:
+
+- `website.site_programs` left empty is one problem through `audit.msg_site_no_word` where a paper names a line, in place of one false finding per line.
+- `audit.msg_cv_no_word` no longer speaks only of a period: "the CV needs a word the setting {0} does not hold, so it is written without it: set it".
+- `config/options/behavior.yml` help of `website.cv_sections`, `period` and `record_fields`, which named `personal`, `date`, `duration`, `location` and `when`, now names the roles.
+
+Behaviour to know: a `cv:` key of the wrong shape (`hide: "x"`) was dropped when read and is now held and written as given, as the brief asks and as `publication()` does; the manifest schema check names it.
+
+These stay, each a field of a typed record of oculus's own model or a key of a setting's own row: `Publication`'s `program`, `links`, `rank`; the `NamedLink` fields `name`, `url`; `Person`'s `name`, `family`, `email`, `orcid`, `links`, `handle`; `CodeAvailability`'s `status`, `doi`, `url`, `zenodoStatus`; `ProjectCv`'s `title`, `rank`; a setting's own `pub_pre`, `pub_post`, `order`, `key`, `fields`, `record_fields`, `period`.
+
+Keys introduced, checked: an empty role word is the problem above; an empty code status and `site_programs` the same; `doi_origin` has no `empty: true`, so an empty value is refused and the default stands. A word two roles share (`location`) is allowed, since the roles name different records. A word `__proto__` lands as an own key (`written` builds through `Object.fromEntries`) and reads only an own field (`byKey`). A list or a key of the new rows is held to `websiteRowKey`, so neither is empty or `__proto__`. A repeated `list` or `key` is a `repeat` problem, the first standing. A section taking the person block's word is refused at its row.
+
+Brief check 3, with the names of this round added to the pattern, `grep -n -E "'(<all names>)'|papers:|https://doi" src/lib/server/content/audit/website/*.ts`:
+
+```
+src/lib/server/content/audit/website/site.ts:90:const FILE_KEYS = ['site', 'cv', 'papers', 'industry'] as const;
+```
+
+The one hit is the four keys of `website.files`, a setting's own keys. `cv.ts` has none (`grep -c` prints 0). The same names as `\bname:` and `\.name\b` hit only TypeScript parameters and properties of oculus's own types (`key: string`, `about: null`, `projects: readonly`, `person.name`, `person.email`, `deposit.status`, `row.url`, `kind.order`, `site.programs`) and `words.<role>` reads, each a typed record or a role.
+
+Every line for the hub's `website:` block (`doi_origin` is not among them, since the default is the hub's value):
+
+```yaml
+  cv_lists:
+    - { list: references, section: references, reference: true }
+    - { list: positions, section: experience }
+    - { list: degrees, section: education }
+    - { list: awards, section: awards }
+  cv_entry_fields:
+    - { key: title, from: cv_title }
+    - { key: url, from: cv_url }
+    - { key: status, from: cv_status, own: false }
+  cv_fields:
+    period: when
+    section: cv_section
+    rank: cv_rank
+    record_key: key
+    students: students
+    student_person: person
+    student_topic: topic
+    student_degree: degree
+    reference_person: person
+    reference_reason: reason
+    reference_name: name
+    reference_email: email
+    funding: funding
+    funding_title: title
+    funding_place: location
+    funding_about: about
+    records: records
+    record_place: location
+    period_text: duration
+    timestamp: date
+    row_title: title
+    row_place: location
+    award_title: award
+    award_place: location
+    award_content: content
+    rows: content
+    person_block: personal
+    first_name: first-name
+    last_name: last-name
+    person_links: links
+    link_email: email
+    link_orcid: orcid
+    link_place: location
+    profiles: profiles
+    profile_shared: shared
+    shared_place: location
+    shared_email: email
+    shared_links: links
+    students_section: students
+    projects_section: projects
+  code_statuses: { deposited: deposited, review_copy: review-anon }
+  site_programs: programs
+```
+
+Lines of `docs/data-map.md` and `docs/HELP.md` not written, for the orchestrator: the count at `docs/data-map.md:162` and `:214` gains these 46 keys (`grep -c` over `CV_FIELD_ROLES` gives 40, plus `website.code_statuses.deposited`, `.review_copy`, `website.doi_origin`, `website.site_programs`, `website.cv_lists`, `website.cv_entry_fields`), and the settings list after `website.kinds` at `:123` gains them.
+
+### Report items (P1, P2, P3, B1)
+
+History words, over the comment lines and titles added or changed, `grep -i -E "\b(before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package)\b"`:
+
+```
+help: the words the website prints before the venue of an entry of the row, ...
+* not readable, the command's last run still running, and a file the writer cannot take. The page
+// path of `website.files` cannot be used, which is refused before the website's own file is read
+// and before an approval is asked, while the last run of the command still runs, and when the
+// checks it before the first is written, and a file the writer still refuses puts the files of the
+// before it is sent, as every write over such a file is (state/sessions/source/write-files.ts,
+// of `website.files` cannot be used, while the last run of the command still runs, and when the
+```
+
+Each hit is a place in a line of print or the order of a press and a run happening now; none compares with an earlier state of the code.
+
+Each changed name across `src`, `tests`, `config`, `docs`, `README.md`, `grep -rn`: `CV_PERSON_BLOCK`, `CAREER_LISTS`, `FROM_RECORD_ELSE`, `DEPOSITED`, `REVIEW_ANON`, `DOI_ORIGIN`, `CV_LISTS`, `CV_ENTRY_FIELDS` print nothing. `keyedRows` hits only `keyedRowsShape` of `shapes.ts` and `task-seed.ts`, another thing. `PAPER_SETTINGS` and `WebsiteWorld` hit only `tests/fixtures/hubs/website-hub.ts`, where they are now local. `readSite` is in `site.ts`, `publications.ts`, `runs/website.ts`, `website-hub.ts`, `website-files.test.ts`, `cv-fields.test.ts`, `audit.test.ts`, each with its third argument. `projectCv` is in `publication.ts`, `normalise.ts`, `cv-fields.test.ts`.
+
+Each new helper, type and schema, by name, `grep -rl <name> ../O180-base/src ../O180-base/tests` (the tree before the step), run after writing them; the count of files holding the name: `heldKeys` 0, `byRoles` 0, `CvFields` 0, `CvList` 0, `CvEntryField` 0, `CodeStatuses` 0, `CV_FIELD_ROLES` 0, `cvSectionOf` 0, `cvListShape` 0, `cvEntryFieldShape` 0, `namedRows` 0, `FIELD_LINES` 0. `function held` 69, `written` 882 and `type Pair` 5 are local names and a common word, none a helper of this meaning. `paperSettings` 2 is the two files that held it. The key call of `held` and of the record reads, `Object.hasOwn`, has a helper, `byKey` of `guards.ts`, which `held`, `readSite` and `entryOf` use.
+
+File table, `diff -rq ../O180-base/{src,tests,config}` and `git status` for `docs`:
+
+| Path | In the write list |
+| --- | --- |
+| `src/lib/data/helpers/hub-names.ts` | yes |
+| `src/lib/data/model/index.ts` | NO: exports `CV_FIELD_ROLES` and `CvFieldRole`, the facade every reader of the model imports through |
+| `src/lib/data/model/machine/model-machine.ts` | yes |
+| `src/lib/data/model/model-entities.ts` | yes |
+| `src/lib/data/snapshot/normalise-parts/publication.ts` | yes |
+| `src/lib/data/sources/config/settings/files.ts` | yes |
+| `src/lib/server/content/audit/publications.ts` | yes |
+| `src/lib/server/content/audit/website/cv.ts` | yes (round) |
+| `src/lib/server/content/audit/website/files.ts` | yes |
+| `src/lib/server/content/audit/website/papers.ts` | yes |
+| `src/lib/server/content/audit/website/site.ts` | yes |
+| `src/lib/server/machine/runs/website.ts` | yes |
+| `src/lib/state/sessions/source/website.svelte.ts` | yes |
+| `config/defaults/behavior.yml` | yes |
+| `config/options/behavior.yml` | yes |
+| `config/schemas/manifest-schema.yml` | yes (round) |
+| `config/text/views/academic/career.yml` | yes |
+| `config/text/views/system/audit.yml` | yes |
+| `docs/data-map.md` | yes (round, line 377 alone) |
+| `docs/templates.md` | yes |
+| `tests/data/hubs/website-files.test.ts` | yes |
+| `tests/data/website/cv-fields.test.ts` | yes (round) |
+| `tests/data/website/paper-fields.test.ts` | yes |
+| `tests/fixtures/hubs/website-hub.ts` | yes |
+| `tests/routes/docs/audit.test.ts` | yes |
+| `tests/routes/sessions/website.test.ts` | yes |
+| `tests/server/root/watch/website-watch.test.ts` | yes |
+| `tests/state/sessions/source/website-store.test.ts` | yes |
+
+The run on the unchanged tree of each changed test input: `../O180-base` copied to a scratch folder, the four test files and the fixture of this tree laid over it, each run alone (the folder is removed):
+
+```
+tests/server/root/watch/website-watch.test.ts   Tests  1 passed (1)
+tests/routes/docs/audit.test.ts                 Tests  1 failed | 40 passed (41)
+  FAIL ... name a file that differs and offer no action while website.paper_fields holds no row
+  AssertionError: expected '_data/publications.yml differs from w...' to contain 'website.paper_fields'
+tests/routes/sessions/website.test.ts           Tests  2 failed | 21 passed (23)
+  FAIL ... writes nothing and asks no approval while website.paper_fields holds no row
+  FAIL ... writes nothing and asks no approval while website.paper_list is empty
+  AssertionError: expected { status: 200, body: { ...(2) } } to deeply equal { status: 409, body: { ...(2) } }
+tests/state/sessions/source/website-store.test.ts  Tests  1 failed | 8 passed (9)
+  FAIL ... is the sentence of the missing fields while website.paper_fields holds no row
+  Error: text key not in the text catalog (config/text/): career.website_no_paper_fields
+```
+
+The new rows fail there and the rest pass. `website-watch.test.ts` only had its settings extended so its case keeps building; it passes on both trees and proves nothing of this step by itself.
+
+The six help texts, from `git show HEAD:` and the file now:
+
+- `config/options/behavior.yml`, `order` of `website.kinds` (`:130`). Before: "whether an entry of the row says the user's place among the authors, first, senior or coauthor, read from the manifest's lead, supervisors and collaborators". After: "whether an entry of the row says the user's place among the authors, the word of website.author_places read from the manifest's lead, supervisors and collaborators".
+- `pub_pre` (`:134`). Before: "the words the website prints before the venue of an entry of the row; a row without it writes no pub_pre". After: "the words the website prints before the venue of an entry of the row, written under the key of the website.paper_fields row whose from is kind_pre; a row without it writes no such key".
+- `pub_post` (`:138`). Before: "the words the website prints after the venue of an entry of the row; a row without it writes no pub_post". After: "the words the website prints after the venue of an entry of the row, written under the key of the website.paper_fields row whose from is kind_post; a row without it writes no such key".
+- group `website` (`:1687` of the first pass). Before: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications, the sections of its CV and the words a CV's period prints, and the paths of its four files." After: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications, the fields an entry of them writes with the name of the code link, the words of the user's place among the authors, the code statuses and the DOI address its code links use and the key of the research lines in its own file, the sections of its CV, the career lists and entry fields the CV reads, the word of each field the CV reads and writes, the words a CV's period prints, and the paths of its four files."
+- `config/schemas/manifest-schema.yml:105`, `publication.authors`. Before: "... listed in the website's publications; its title, year, section, your place among the authors, the words around the venue and the Code link are taken from the rest of the manifest." After: "... listed in the website's publications; the rows of the hub's website.paper_fields say which fields an entry writes and which are taken from the rest of the manifest."
+- `config/schemas/manifest-schema.yml:109`, `publication.links`. Before: "... The Code link is added after them from the code deposit: ...". After: "... The code link is added after them, under the name website.code_link_name holds, from the code deposit: ...". The rest of the sentence is unchanged.
+
+A record link already named as `website.code_link_name`, from a run of `papersFile` over a project holding `links: [{ name: Code, url: https://example.org/own }, { name: Slides, ... }]` and a deposited DOI:
+
+```
+{"value":{"journal":{"papers":[{"links":{"Code":"https://doi.org/10.1/x","Slides":"https://example.org/slides"}}]}},"problems":[]}
+```
+
+The code link replaces the record's link of that name, at the record's place in the list, and no problem is raised.
+
+### Standards
+
+- S2: `src/lib/state/sessions/source/website.svelte.ts:9-15`, the paragraph rewrapped to 100 columns.
+- S3: `PAPER_SETTINGS` and `WebsiteWorld` in `tests/fixtures/hubs/website-hub.ts` are local. New exports of the fixture are `CV_FIELDS`, `FIELD_LINES` and `paperSettings`, each imported by a test; `paperSettings` moved out of `audit.test.ts`, which would otherwise pass the size rule (874 lines now).
+- S4: `site.ts:1-6` says the website's words and field names stand in the hub's settings and in no code. The head comment of `cv.ts` is rewritten to name roles, not fields; the head comment of `papers.ts` names the code statuses and the DOI address as settings.
+- S5: `docs/templates.md` at the `publication:` comment and the help of `website.paper_fields` say a key of `publication:` the manifest schema does not name needs a row in the hub's `manifest_fields`.
+- P4: no change, as the brief says.
+
+Comments and documents re-read for this round: head of `cv.ts`, `papers.ts`, `site.ts`, `publication.ts` rewritten; `websiteSettings`, `WebsiteSettings` doc comments rewritten; `ProjectCv` doc comment rewritten; `website-hub.ts` head comment still true.
+
+The scratch folder `.agents/scratch` is removed. `../tmp-O180-r` and `../migration-O180-round-1` stand beside the worktree, dated 22:08 to 22:32 by `ls -la`, ahead of this round's edits; they were left in place and their origin is not verified.

@@ -4,84 +4,60 @@
 // what the file's text carries, on its text.
 //
 // The hub is a copy of tests/fixtures/hubs/demo/ (hubs-fixture.ts) with the manifests of the rows
-// added under projects/manuscripts/, its `website.kinds`, `website.cv_sections` and
-// `website.cv_words` in its settings file, a career file of its own, the user named by the copy's
-// `local.yml` and given a family name in the copy's people file. A row about the user's names
-// builds the files again from the same input with the user's people entry changed, and a row about
-// the CV's sections or words builds them again with the setting, a career file or a source of its
-// own. The settings file's lines, the manifests, the career file, the website's own file and the
-// shipped paths are tests/fixtures/hubs/website-hub.ts's. The paths of `website.files` are read
-// from the merged configuration of the copy and of the shipped defaults, and the watch list
-// (`siteFiles`) is read over a website folder of its own.
+// added under projects/manuscripts/, its `website:` sections in its settings file, a career file of
+// its own, the user named by the copy's `local.yml` and given a family name in the copy's people
+// file. A row about the user's names builds the files again from the same input with the user's
+// people entry changed, and a row about the CV's sections or words builds them again with the
+// setting, a career file or a source of its own. The settings file's lines, the manifests, the
+// career file, the website's own file, the shipped paths and the build over the copy
+// (`websiteWorld`) are tests/fixtures/hubs/website-hub.ts's; the fields of a publications entry
+// are tests/data/website/paper-fields.test.ts's. The paths of `website.files` are read from the
+// merged configuration of the copy and of the shipped defaults, and the watch list (`siteFiles`) is
+// read over a website folder of its own.
 
-import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeAll, describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { bareId, HUB_FILE, rootOf } from '../../../src/lib/data/helpers/hub-names.ts';
+import { bareId, HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import type { Collection, Person, Project } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { localFile } from '../../../src/lib/data/sources/config/local.ts';
 import {
     websiteSettings,
     type CvSection,
     type CvWords
 } from '../../../src/lib/data/sources/config/settings/files.ts';
 import type { SettingProblem } from '../../../src/lib/data/sources/config/settings/reader.ts';
-import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
 import {
     websiteFiles,
     type WebsiteInput
 } from '../../../src/lib/server/content/audit/website/files.ts';
-import {
-    readSite,
-    siteFiles,
-    type Problem
-} from '../../../src/lib/server/content/audit/website/site.ts';
+import { readSite, siteFiles } from '../../../src/lib/server/content/audit/website/site.ts';
 import { foldsCase } from '../../../src/lib/server/core/paths.ts';
 import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 import {
-    CAREER,
+    build,
     CV_PATH,
     DATED,
     INDUSTRY_PATH,
-    MANIFESTS,
     PAPERS_PATH,
-    SETTINGS,
+    saying,
     SHIPPED,
-    SITE,
     SITE_PATH,
     siteWith,
     TEN,
     TEN_ROWS_CV,
-    WORDS
+    websiteWorld,
+    WORDS,
+    type Built
 } from '../../fixtures/hubs/website-hub.ts';
-import { copyHub, published } from './hubs-fixture.ts';
-
-/** What the rows read: each generated file's text and parse, and the problems, by manifest id. */
-type Built = {
-    texts: Record<string, string>;
-    files: Record<string, Record<string, unknown>>;
-    problems: [string, string, (string | number)[]][];
-};
+import { copyHub } from './hubs-fixture.ts';
 
 let input: WebsiteInput;
 let built: Built;
 let hubDir = '';
 let config: Record<string, unknown> = {};
-
-/** The files and the problems the input gives. */
-function build(from: WebsiteInput): Built {
-    const out = websiteFiles(from);
-    return {
-        texts: Object.fromEntries(out.files.map((file) => [file.name, file.text])),
-        files: Object.fromEntries(
-            out.files.map((file) => [file.name, parse(file.text) as Record<string, unknown>])
-        ),
-        problems: out.problems.map((one: Problem) => [one.about?.id ?? '', one.key, one.args])
-    };
-}
 
 /** The files and the problems the input gives with the user's people entry changed. */
 function withSelf(change: (person: Person) => Person): Built {
@@ -97,42 +73,11 @@ function personals(from: Built): Record<string, unknown>[] {
 }
 
 beforeAll(() => {
-    const hub = copyHub(scratchDir('oculus-website-files-'), 'hub');
-    for (const [folder, text] of Object.entries(MANIFESTS)) {
-        const dir = join(hub, 'projects', 'manuscripts', folder);
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(join(dir, 'project.yml'), text);
-    }
-    writeFileSync(join(hub, '.oculus', 'data', 'academic', 'career.yml'), CAREER);
-    const peopleFile = join(hub, '.oculus', 'data', 'people', 'people.yml');
-    const named = readFileSync(peopleFile, 'utf8').replace(
-        '    name: "Ana Rivera"\n',
-        '    name: "Ana Rivera"\n    family: "Rivera"\n'
-    );
-    writeFileSync(peopleFile, named);
-    writeFileSync(localFile(hub), 'self: rivera-lab\n');
-    writeFileSync(join(hub, '.oculus', 'config.yml'), SETTINGS, { flag: 'a' });
-    const { snapshot } = published([{ name: 'hub', dir: hub }], 'hub');
-    config = loadConfig(engineDir(), { hub }).config;
-    const { entities } = snapshot;
-    const ours = <T extends { root?: string }>(all: Record<string, T>): T[] =>
-        Object.values(all).filter((one) => rootOf(one) === 'hub');
-    const people = Object.values(entities.people);
-    input = {
-        projects: ours(entities.projects),
-        collections: ours(entities.collections),
-        people,
-        career: entities.career,
-        self: new Set(people.filter((one) => one.self === true).map((one) => one.id)),
-        kinds: websiteSettings(config).kinds,
-        cvSections: websiteSettings(config).cvSections,
-        cvWords: websiteSettings(config).cvWords,
-        rules: auditRules(config),
-        site: readSite(parse(SITE), SITE_PATH),
-        paths: SHIPPED
-    };
+    const world = websiteWorld();
+    input = world.input;
+    config = world.config;
+    hubDir = world.hub;
     built = build(input);
-    hubDir = hub;
 });
 
 /** The entries of a section of the publications file. */
@@ -152,11 +97,6 @@ type Section = { content: Record<string, unknown>[] };
 /** The rows of the CV's section `key` in the files `from`. */
 function rowsOf(from: Built, key: string): Record<string, unknown>[] {
     return (from.files[CV_PATH][key] as Section).content;
-}
-
-/** The problems of the files `from` saying the sentence `key`, each by its arguments. */
-function saying(from: Built, key: string): (string | number)[][] {
-    return from.problems.filter((one) => one[1] === key).map((one) => one[2]);
 }
 
 /** The files the input gives with the CV's sections `sections`. */
@@ -230,6 +170,17 @@ const ROWS: { rule: string; check: () => void }[] = [
         }
     },
     {
+        rule: 'the comment line is the setting, and an empty setting writes none',
+        check: () => {
+            for (const name of [CV_PATH, PAPERS_PATH, INDUSTRY_PATH]) {
+                expect(
+                    build({ ...input, fileHeader: 'Made here.' }).texts[name].split('\n')[0]
+                ).toBe('# Made here.');
+                expect(build({ ...input, fileHeader: '' }).texts[name].startsWith('#')).toBe(false);
+            }
+        }
+    },
+    {
         rule: "the sections come in the rows' order",
         check: () => {
             expect(Object.keys(built.files[PAPERS_PATH])).toEqual([
@@ -243,7 +194,7 @@ const ROWS: { rule: string; check: () => void }[] = [
     {
         rule: 'no section of the CV or the publications holds a title, and the publications hold none at the top',
         check: () => {
-            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH);
+            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH, 'programs');
             const { files } = build({ ...input, site });
             expect('title' in files[PAPERS_PATH]).toBe(false);
             for (const [key, section] of Object.entries(files[PAPERS_PATH])) {
@@ -258,7 +209,7 @@ const ROWS: { rule: string; check: () => void }[] = [
     {
         rule: 'both person blocks hold the names and the links and nothing of the website file',
         check: () => {
-            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH);
+            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH, 'programs');
             for (const personal of personals(build({ ...input, site }))) {
                 expect(Object.keys(personal)).toEqual(['first-name', 'last-name', 'links']);
             }
@@ -270,7 +221,7 @@ const ROWS: { rule: string; check: () => void }[] = [
             const of = (title: string, author: string): Record<string, string> =>
                 build({
                     ...input,
-                    site: readSite(parse(siteWith(title, author)), SITE_PATH)
+                    site: readSite(parse(siteWith(title, author)), SITE_PATH, 'programs')
                 }).texts;
             expect(of('Another title', 'Another author')).toEqual(of('A title', 'An author'));
         }

@@ -22,6 +22,7 @@ import {
     watchPortfolio,
     type PortfolioWatcher
 } from '../../../../src/lib/server/root/watch/portfolio/portfolio.ts';
+import { FIELD_LINES } from '../../../fixtures/hubs/website-hub.ts';
 import { workspaceWith } from '../../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { copyHub } from '../../../data/hubs/hubs-fixture.ts';
@@ -109,7 +110,7 @@ describe('the portfolio watcher over the website the primary hub names', () => {
         const dir = copyHub(scratchDir('oculus-website-watch-'), 'hub');
         appendFileSync(
             join(dir, HUB_FILE),
-            `\nwebsite:\n  folder: ${FOLDER}\n  cv_sections:\n    - { key: news, fields: [title] }\n`
+            `\nwebsite:\n  folder: ${FOLDER}\n  cv_sections:\n    - { key: news, fields: [title] }\n  paper_list: papers\n  paper_fields:\n    - { key: title, from: project_title }\n${FIELD_LINES}`
         );
         const data = join(dir, FOLDER, '_data');
         mkdirSync(data, { recursive: true });

@@ -5,6 +5,7 @@
 // the workspace. The hub, the folders and the state that opens the workspace are planted under the
 // system temporary directory, and the workspace is read as the server's portfolio build reads it
 // (`primaryConfig`, `buildHubs`).
+// @module-tag slow: each case plants a hub and reads the whole workspace.
 
 import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';

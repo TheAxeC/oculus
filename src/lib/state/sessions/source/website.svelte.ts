@@ -4,14 +4,14 @@
 // folder as a task terminal (server/machine/runs/website.ts).
 //
 // The button is off, with the sentence saying why, while the user is not known, `website.folder`
-// is empty or `website.cv_sections` holds no section; its tip names the three paths of
-// `website.files` and the command of `website.cv`. A press over a generated file a source tab holds
-// unsaved text of is refused before it is sent, as every write over such a file is
-// (state/sessions/source/write-files.ts, `unsavedAnswer`). A command text not yet approved comes
-// back as its line: the store holds it, the view asks, and approving it posts the approval as a
-// project command's is posted and presses again. Under the button the store says what the last
-// press came to: the files written, then the command running and the status it ended with, read
-// from the terminals list, or the refusal.
+// is empty, `website.cv_sections` holds no section, or `website.paper_fields` holds no row or
+// `website.paper_list` is empty; its tip names the three paths of `website.files` and the command
+// of `website.cv`. A press over a generated file a source tab holds unsaved text of is refused
+// before it is sent, as every write over such a file is (state/sessions/source/write-files.ts,
+// `unsavedAnswer`). A command text not yet approved comes back as its line: the store holds it, the
+// view asks, and approving it posts the approval as a project command's is posted and presses
+// again. Under the button the store says what the last press came to: the files written, then the
+// command running and the status it ended with, read from the terminals list, or the refusal.
 
 import { z } from 'zod';
 import { readJson } from '../../../data/shapes/shapes.ts';
@@ -24,6 +24,7 @@ import {
     type WebsiteRefusal
 } from '../../../data/model/index.ts';
 import {
+    cvSettingsHeld,
     websiteSettings,
     type WebsiteSettings
 } from '../../../data/sources/config/settings/files.ts';
@@ -87,6 +88,8 @@ const REFUSAL_WORDS: Record<WebsiteRefusal, string> = {
     'website-no-person': 'career.website_no_person',
     'website-no-folder': 'career.website_no_folder',
     'website-no-cv-sections': 'career.website_no_cv_sections',
+    'website-no-paper-fields': 'career.website_no_paper_fields',
+    'website-no-cv-fields': 'career.website_no_cv_fields',
     'website-folder-missing': 'career.website_folder_missing',
     'website-bad-path': 'career.website_bad_path',
     'website-site-unreadable': 'career.website_site_unreadable',
@@ -121,6 +124,10 @@ export function createWebsite(deps: WebsiteDeps): WebsiteStore {
         const setting = settingsOf(deps.config());
         if ((setting?.folder ?? '') === '') return t('career.website_no_folder');
         if (setting?.cvSections.length === 0) return t('career.website_no_cv_sections');
+        if (setting?.paperFields.length === 0 || setting?.paperList === '') {
+            return t('career.website_no_paper_fields');
+        }
+        if (setting !== null && !cvSettingsHeld(setting)) return t('career.website_no_cv_fields');
         return null;
     }
 

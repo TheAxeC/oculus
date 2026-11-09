@@ -525,7 +525,7 @@ The problems found in the hubs' files, each with its file and line, and in the A
 
 - Each convention under `audit:` ([the hub's settings](data-map.md#the-hubs-settings)) applies once the hub sets it.
 - Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`.
-- A Website finding of a generated file that differs offers Write the website while `website.cv_sections` holds a section.
+- A Website finding of a generated file that differs offers Write the website while `website.cv_sections` holds a section, `website.cv_lists` a row, every key of `website.cv_fields` a word, `website.paper_fields` a row and `website.paper_list` a word.
 
 ### History
 

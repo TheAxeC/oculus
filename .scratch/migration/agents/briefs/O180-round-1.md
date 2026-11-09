@@ -1,6 +1,6 @@
 # Repair round 1 of O180
 
-Read `agents/reviews/O180-refuter.md` and close these findings. The brief `agents/briefs/O180.md` and `agents/spec.md` stay in force, except that test files run one per process (`npx vitest run <file> --reporter=dot`, one after the other, `TMPDIR=/tmp/v180` after `mkdir -p /tmp/v180`) and `npm run test:quick` is not run. A shortcut is a finding: a narrower reading of an item, or work inside it called outside it, is done or handed back with the reason before the report. Git: only status, diff and show.
+Read `agents/reviews/O180-refuter.md` and close these findings. The brief `agents/briefs/O180.md` and `agents/spec.md` stay in force. A shortcut is a finding: a narrower reading of an item, or work inside it called outside it, is done or handed back with the reason before the report. Git: only status, diff and show.
 
 Paths written: the files of the brief's "Paths this step writes", and `src/lib/server/content/audit/website/cv.ts`, `config/schemas/manifest-schema.yml`, the `cv.*` line of `docs/data-map.md` (line 377, that line alone), `tests/data/website/cv-fields.test.ts` (new).
 
@@ -45,6 +45,6 @@ P4 needs no change.
 
 ## Verify
 
-Run the brief's "Verify before you report" again, one test file per process and no `test:quick`, with `tests/data/website/cv-fields.test.ts` and `tests/checks/config` added. The two red rows of `tests/checks/source/keys.test.ts` over `audit/publications.ts` are not this step's, a fix for them being on main, and are named as such.
+Run the brief's "Verify before you report" again, with `tests/data/website/cv-fields.test.ts` and `tests/checks/config` added. The two red rows of `tests/checks/source/keys.test.ts` over `audit/publications.ts` are not this step's, a fix for them being on main, and are named as such.
 
 Append to `.scratch/migration/agents/reviews/O180-report.md` a section "Repair round 1": each finding with what changed, file and line, and the checks' output.

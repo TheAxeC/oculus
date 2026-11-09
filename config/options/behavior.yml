@@ -87,7 +87,7 @@ options:
     website.files.site:
         heading: sources
         section: Website
-        help: "The website's own file, a path relative to the website's folder, whose programs: are the research lines a paper may name. A missing file holds none. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The website's own file, a path relative to the website's folder, whose map at the key website.site_programs holds the research lines a paper may name. A missing file holds none. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
         empty: true
     website.files.cv:
@@ -127,21 +127,101 @@ options:
                 from: project_forms
                 empty: true
             order:
-                help: whether an entry of the row says the user's place among the authors, first, senior or coauthor, read from the manifest's lead, supervisors and collaborators
+                help: whether an entry of the row says the user's place among the authors, the word of website.author_places read from the manifest's lead, supervisors and collaborators
                 control: toggle
                 empty: true
             pub_pre:
-                help: the words the website prints before the venue of an entry of the row; a row without it writes no pub_pre
+                help: the words the website prints before the venue of an entry of the row, written under the key of the website.paper_fields row whose from is kind_pre; a row without it writes no such key
                 control: text
                 empty: true
             pub_post:
-                help: the words the website prints after the venue of an entry of the row; a row without it writes no pub_post
+                help: the words the website prints after the venue of an entry of the row, written under the key of the website.paper_fields row whose from is kind_post; a row without it writes no such key
                 control: text
                 empty: true
+    website.paper_fields:
+        heading: sources
+        section: Website
+        help: "The fields an entry of the website's publications writes, in the order the file lists them. A row without a from writes the publication record's own field of its key. A key must start with a lower-case letter and hold only lower-case letters, digits, _ and -; a key that breaks this, a from no word names and a key an earlier row holds are findings. A key of publication: the manifest schema does not name needs a row in the hub's manifest_fields. A hub with no row stops Write the website. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            key:
+                help: the key the entry writes in the publications' file
+                control: text
+            from:
+                help: "the value the row writes: project_title or project_year the manifest's title or year, author_place the word of website.author_places for the user's place where the kinds row says the place, kind_pre or kind_post the words of the kinds row, links_with_code the links with the code link last; left out or empty, the publication record's own field of the key"
+                control: choice
+                options:
+                    [
+                        project_title,
+                        project_year,
+                        author_place,
+                        kind_pre,
+                        kind_post,
+                        links_with_code
+                    ]
+                empty: true
+    website.paper_list:
+        heading: sources
+        section: Website
+        help: "The key a section of the website's publications holds its entries under. Empty stops Write the website. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.code_link_name:
+        heading: sources
+        section: Website
+        help: "The name an entry's code link is printed with on the website. Empty leaves the code link out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.author_places.lead:
+        heading: sources
+        section: Website
+        help: "The word an entry prints for the user's place when the user leads the paper. Empty leaves the place out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.author_places.supervisor:
+        heading: sources
+        section: Website
+        help: "The word an entry prints for the user's place when the user supervises the paper. Empty leaves the place out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.author_places.collaborator:
+        heading: sources
+        section: Website
+        help: "The word an entry prints for the user's place when the user collaborates on the paper. Empty leaves the place out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.code_statuses.deposited:
+        heading: sources
+        section: Website
+        help: "The word a code deposit's status holds when the deposit is published, under which the website links the code. Empty leaves every code link out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.code_statuses.review_copy:
+        heading: sources
+        section: Website
+        help: "The word a Zenodo deposit's status holds when the deposit is the anonymous review copy, whose DOI the website never links. Empty leaves every code link out, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.doi_origin:
+        heading: sources
+        section: Website
+        help: "The address a DOI resolves at, which an entry's code link starts with."
+        control: text
+    website.file_header:
+        heading: sources
+        section: Website
+        help: 'The comment line each file written for the website opens with. Empty writes no comment line.'
+        control: text
+        empty: true
+    website.site_programs:
+        heading: sources
+        section: Website
+        help: "The key of the website's own file whose map holds the research lines a paper may name. Empty reads none, and a paper that names a line is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
     website.cv_sections:
         heading: sources
         section: Website
-        help: "The sections of the website's CV, in the order the file lists them, and what each writes. A row of the CV whose section no row lists is written nowhere and is a finding of the audit. A key must start with a lower-case letter, hold only lower-case letters, digits, _ and -, and not be personal; a key that breaks this, a row with no field and a key an earlier row holds are findings. A hub with no row stops Write the website and writes no CV. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The sections of the website's CV, in the order the file lists them, and what each writes. A row of the CV whose section no row lists is written nowhere and is a finding of the audit. A key must start with a lower-case letter, hold only lower-case letters, digits, _ and -, and not be the word of website.cv_fields.person_block; a key that breaks this, a row with no field and a key an earlier row holds are findings. A hub with no row stops Write the website and writes no CV. This is a setting of the primary hub, kept in its .oculus/config.yml."
         fields:
             key:
                 help: the key of the section in the CV's file
@@ -150,14 +230,284 @@ options:
                 help: the fields the section's rows print, in that order
                 control: list
             period:
-                help: "timestamp writes a row's period in date, as a timestamp in the CV and as the period text in an employer CV; left out or empty, the period text goes in duration. A supervision entry's student always prints in duration"
+                help: "timestamp writes a row's period in the field website.cv_fields.timestamp names, as a timestamp in the CV and as the period text in an employer CV; left out or empty, the period text goes in the field website.cv_fields.period_text names. A supervision entry's student always prints in that field"
                 control: choice
                 options: [timestamp]
                 empty: true
             record_fields:
-                help: what an employer CV's row of the section takes from the record it names when it holds none of its own; left out, location and when; an empty list takes nothing
+                help: what an employer CV's row of the section takes from the record it names when it holds none of its own; left out, the fields website.cv_fields.record_place and website.cv_fields.period name; an empty list takes nothing
                 control: list
                 empty: true
+    website.cv_lists:
+        heading: sources
+        section: Website
+        help: "The lists of the career file the website's CV reads rows from, in the order they are read. A list must start with a lower-case letter and hold only lower-case letters, digits, _ and -, as a section must; a row that breaks this and a list an earlier row holds are findings. A hub with no row reads no list of the career file. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            list:
+                help: the key of the list in the career file
+                control: text
+            section:
+                help: the CV section the list's rows go to, unless a row names its own in the field website.cv_fields.section names
+                control: text
+            reference:
+                help: whether the list's rows are built from the person each names, with that person's name and email, and not as the row holds them
+                control: toggle
+                empty: true
+    website.cv_entry_fields:
+        heading: sources
+        section: Website
+        help: "The fields a collection entry writes on the website's CV under another name: the entry's field from, where it holds one, is written as key. A key must start with a lower-case letter and hold only lower-case letters, digits, _ and -; a key that breaks this, a row with no from and a key an earlier row holds are findings. A hub with no row writes an entry's fields as it holds them. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            key:
+                help: the field the row writes on the CV
+                control: text
+            from:
+                help: the field of the entry the value is read from
+                control: text
+            own:
+                help: false leaves the entry's own field of the key out, so it is written only where the entry holds the from field; left out, the entry's own field stands until the from field replaces it
+                control: toggle
+                empty: true
+    website.cv_fields.period:
+        heading: sources
+        section: Website
+        help: 'The field a record of the hub holds its period in. Empty reads no period, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.section:
+        heading: sources
+        section: Website
+        help: 'The field a collection entry or a career row names its CV section in. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.rank:
+        heading: sources
+        section: Website
+        help: 'The field a collection entry or a career row holds its place in its section in, lowest first. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.record_key:
+        heading: sources
+        section: Website
+        help: 'The field a career row holds the key a profile row or an award names it by in. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.students:
+        heading: sources
+        section: Website
+        help: 'The field of a supervision entry that lists its students. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.student_person:
+        heading: sources
+        section: Website
+        help: "The field of a student that holds the key of the student's person. Empty reads no student, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.student_topic:
+        heading: sources
+        section: Website
+        help: 'The field of a student that holds the topic. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.student_degree:
+        heading: sources
+        section: Website
+        help: 'The field of a student that holds the degree the CV prints. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.reference_person:
+        heading: sources
+        section: Website
+        help: 'The field of a row of a list marked reference that holds the key of its person. Empty reads no such row, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.reference_reason:
+        heading: sources
+        section: Website
+        help: 'The field that holds the reason of a row of a list marked reference, read from the row and written on the CV under the same name. Empty carries none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.reference_name:
+        heading: sources
+        section: Website
+        help: "The field of the CV a reference's person's name is written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.reference_email:
+        heading: sources
+        section: Website
+        help: "The field of the CV a reference's person's email is written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.funding:
+        heading: sources
+        section: Website
+        help: 'The field of a career row that names the funding entry it takes its award fields from. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.funding_title:
+        heading: sources
+        section: Website
+        help: "The field of a funding entry an award's title is read from. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.funding_place:
+        heading: sources
+        section: Website
+        help: "The field of a funding entry an award's place is read from. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.funding_about:
+        heading: sources
+        section: Website
+        help: "The field of a funding entry an award's text is read from. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.records:
+        heading: sources
+        section: Website
+        help: "The field of an employer CV's row that lists the records it stands for. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.record_place:
+        heading: sources
+        section: Website
+        help: "The field an employer CV's row takes from its record as the place, where its section's row of website.cv_sections says no fields. Empty takes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.period_text:
+        heading: sources
+        section: Website
+        help: "The field of the CV a row's period is written in as text. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.timestamp:
+        heading: sources
+        section: Website
+        help: 'The field of the CV a row of a section with period timestamp writes its period in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.row_title:
+        heading: sources
+        section: Website
+        help: "The field of the CV a student's name and a project's title are written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.row_place:
+        heading: sources
+        section: Website
+        help: "The field of the CV a student's topic is written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.award_title:
+        heading: sources
+        section: Website
+        help: "The field of the CV an award's title is written in, taken from its funding entry. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.award_place:
+        heading: sources
+        section: Website
+        help: "The field of the CV an award's place is written in, taken from its funding entry. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.award_content:
+        heading: sources
+        section: Website
+        help: "The field of the CV an award's text is written in, taken from its funding entry. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.rows:
+        heading: sources
+        section: Website
+        help: 'The field a section of the CV and of an employer CV holds its rows under. Empty reads and writes no rows, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.person_block:
+        heading: sources
+        section: Website
+        help: "The key of the CV's file, and of the employer CVs' shared block, that holds the person block; no section may take it. Empty writes no person block, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.first_name:
+        heading: sources
+        section: Website
+        help: 'The field of the person block the given name is written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.last_name:
+        heading: sources
+        section: Website
+        help: 'The field of the person block the family name is written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.person_links:
+        heading: sources
+        section: Website
+        help: 'The field of the person block the links are written in. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        empty: true
+    website.cv_fields.link_email:
+        heading: sources
+        section: Website
+        help: "The name the person block's links give the email. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.link_orcid:
+        heading: sources
+        section: Website
+        help: "The name the person block's links give the ORCID. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.link_place:
+        heading: sources
+        section: Website
+        help: "The name the employer CVs' person block links give the place. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.profiles:
+        heading: sources
+        section: Website
+        help: "The key of the career file that holds the employer CVs, and of the employer CVs' file that lists them. Empty reads and writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.profile_shared:
+        heading: sources
+        section: Website
+        help: "The key among the career file's employer CVs that holds the block they share, and of the employer CVs' file that writes it. Empty reads and writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.shared_place:
+        heading: sources
+        section: Website
+        help: "The field of the employer CVs' shared block that holds the place. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.shared_email:
+        heading: sources
+        section: Website
+        help: "The field of the employer CVs' shared block that holds the email. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.shared_links:
+        heading: sources
+        section: Website
+        help: "The field of the employer CVs' shared block that lists the names of the links they print. Empty reads none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.students_section:
+        heading: sources
+        section: Website
+        help: "The CV section a supervision entry's students are written to. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_fields.projects_section:
+        heading: sources
+        section: Website
+        help: "The CV section the manifests' CV records are written to. Empty writes none, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
     website.cv_words.months:
         heading: sources
         section: Website
@@ -1633,8 +1983,11 @@ descriptions:
                 described_by: reader_step
 groups:
     audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, and the folders a project at a stage is kept under."
-    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications, the sections of its CV and the words a CV's period prints, and the paths of its four files."
+    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications, the fields an entry of them writes with the name of the code link, the words of the user's place among the authors, the code statuses and the DOI address its code links use and the key of the research lines in its own file, the sections of its CV, the career lists and entry fields the CV reads, the word of each field the CV reads and writes, the words a CV's period prints, and the paths of its four files."
     website.files: "The website's four files, each a path relative to its folder: its own file and the three the hub's files are written into."
+    website.author_places: "The words an entry of the website's publications prints for the user's place among the authors: lead, supervisor and collaborator."
+    website.code_statuses: "The two words of a code deposit's status the website's code links read: the published deposit and the anonymous review copy."
+    website.cv_fields: "The word of each field the website's CV and its employer CVs read from the hub's records or write in their files, one word per role."
     website.cv_words: "The words a period of the website's CV prints: the twelve months, the end of a period with no end and the time and zone after an award's day."
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.

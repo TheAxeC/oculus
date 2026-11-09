@@ -321,17 +321,50 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # the section `kind` of the first row whose `stages` hold its stage and whose `forms` hold its form,
 # a row leaving one out placing no condition on it; `order` is whether its entries say the user's
 # place among the authors, and `pub_pre` and `pub_post` the words printed before and after an
-# entry's venue. A manifest no row takes gives no entry and a finding. `cv_sections` are the
-# sections of the CV's file in order, each row writing a section `key` with the fields `fields`
-# (at least one): a row's period goes in `date` as a timestamp under `period: timestamp` and in
-# `duration` otherwise; in an employer CV the period is the period text, in the same field the row's
-# `period` picks, and a supervision entry's student is always in `duration`. `record_fields` are
-# what an employer CV's row of the section takes from the record it names when it holds none of its
-# own, `location` and `when` when left out, and nothing for an empty list. A key must start with a
-# lower-case letter, hold only lower-case letters, digits, `_` and `-`, and not be `personal`; a key
-# that breaks this, a row with no field and a key an earlier row holds are findings of Settings; a
-# CV row whose section no row lists is written nowhere and is a finding of the audit, and a hub with
-# no row stops Write the website.
+# entry's venue. A manifest no row takes gives no entry and a finding. `paper_fields` are the fields
+# of an entry in order, each row writing a key `key`: left without a `from` it takes the record's
+# own field of that key, and with one the value the word names: `project_title` or `project_year`
+# the manifest's title or year, `author_place` the word of `author_places` for the user's place
+# where the row of `kinds` says `order`, `kind_pre` or `kind_post` the words of that row, and
+# `links_with_code` the links, the code link last under the name `code_link_name`. `paper_list` is
+# the key a section holds its entries under. A hub with no row in `paper_fields`, or an empty
+# `paper_list`, stops Write the website, and a word `code_link_name` or `author_places` does not
+# hold where an entry needs it is left out and is one finding of the audit. `code_statuses` are the
+# two words of a code deposit's status the code link reads, `deposited` for a published deposit and
+# `review_copy` for the anonymous review copy, whose DOI is never linked; either left empty gives no
+# code link and one finding of the audit. `doi_origin` is the address a DOI resolves at; left empty it gives no
+# link by DOI and one finding of the audit. `file_header` is the comment line each generated file
+# opens with, none when empty.
+# `site_programs` is the key of the website's own file whose map holds the research lines a paper
+# may name; left empty it reads none, and a paper that names a line is one finding of the audit.
+# `cv_sections` are the sections of the CV's file in order, each row writing a section `key` with the
+# fields `fields` (at least one): a row's period goes in the field `cv_fields.timestamp` names as a
+# timestamp under `period: timestamp` and in the field `cv_fields.period_text` names otherwise; in
+# an employer CV the period is the period text, in the same field the row's `period` picks, and a
+# supervision entry's student is always in the field `cv_fields.period_text` names. `record_fields`
+# are what an employer CV's row of the section takes from the record it names when it holds none of
+# its own, the fields `cv_fields.record_place` and `cv_fields.period` name when left out, and
+# nothing for an empty list. A key must start with a lower-case letter, hold only lower-case
+# letters, digits, `_` and `-`, and not be the word of `cv_fields.person_block`; a key that breaks
+# this, a row with no field and a key an earlier row holds are findings of Settings; a CV row whose
+# section no row lists is written nowhere and is a finding of the audit, and a hub with no row
+# stops Write the website. `cv_lists` are the career file's lists the CV reads, each row a `list`,
+# the `section` its rows go to unless one names its own, and `reference: true` where the rows are
+# built from the person each names. `cv_entry_fields` are the fields a collection entry writes on
+# the CV under another name: the entry's field `from`, where it holds one, is written as `key`, and
+# `own: false` leaves the entry's own field of that key out. `cv_fields` holds one word per role,
+# each the name of a field the CV reads from the hub's records or writes in its files: the record's
+# `period`, `section`, `rank` and `record_key`; a supervision entry's `students` with
+# `student_person`, `student_topic` and `student_degree`; a reference's `reference_person` and
+# `reference_reason` with the CV's `reference_name` and `reference_email`; a career row's `funding`
+# with the funding entry's `funding_title`, `funding_place` and `funding_about` and the CV's
+# `award_title`, `award_place` and `award_content`; an employer CV's `records` and `record_place`;
+# the CV's `period_text`, `timestamp`, `row_title`, `row_place` and `rows`; the person block
+# `person_block` with `first_name`, `last_name`, `person_links`, `link_email`, `link_orcid` and
+# `link_place`; the career file's `profiles` and `profile_shared` with `shared_place`,
+# `shared_email` and `shared_links`; and the sections `students_section` and `projects_section`. A
+# role left empty reads nothing and writes nothing, and while `cv_sections` holds a row it is one
+# finding of the audit.
 # `cv_words` are the words a period prints, each a key of its own: twelve `months`, January first,
 # `open_end` for a period with no end and `award_time` after the day of a timestamp. A period
 # needing a word the setting lacks prints without it and is a finding of the audit; an empty
@@ -344,7 +377,63 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   folder: ''
 #   cv: ''
 #   kinds: []
+#   paper_fields: []
+#   paper_list: ''
+#   code_link_name: ''
+#   author_places:
+#     lead: ''
+#     supervisor: ''
+#     collaborator: ''
+#   code_statuses:
+#     deposited: ''
+#     review_copy: ''
+#   doi_origin: https://doi.org/
+#   file_header: "Generated by oculus from the research hub. Change the hub's files and write the website again."
+#   site_programs: ''
 #   cv_sections: []
+#   cv_lists: []
+#   cv_entry_fields: []
+#   cv_fields:
+#     period: ''
+#     section: ''
+#     rank: ''
+#     record_key: ''
+#     students: ''
+#     student_person: ''
+#     student_topic: ''
+#     student_degree: ''
+#     reference_person: ''
+#     reference_reason: ''
+#     reference_name: ''
+#     reference_email: ''
+#     funding: ''
+#     funding_title: ''
+#     funding_place: ''
+#     funding_about: ''
+#     records: ''
+#     record_place: ''
+#     period_text: ''
+#     timestamp: ''
+#     row_title: ''
+#     row_place: ''
+#     award_title: ''
+#     award_place: ''
+#     award_content: ''
+#     rows: ''
+#     person_block: ''
+#     first_name: ''
+#     last_name: ''
+#     person_links: ''
+#     link_email: ''
+#     link_orcid: ''
+#     link_place: ''
+#     profiles: ''
+#     profile_shared: ''
+#     shared_place: ''
+#     shared_email: ''
+#     shared_links: ''
+#     students_section: ''
+#     projects_section: ''
 #   cv_words:
 #     months: []
 #     open_end: ''
@@ -362,9 +451,26 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #       - { kind: thesis, forms: [thesis] }
 #       - { kind: papers-in-review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }
 #       - { kind: journal, stages: [accepted, published], forms: [journal], order: true }
+#     paper_list: papers
+#     code_link_name: Code
+#     author_places: { lead: first, supervisor: senior, collaborator: coauthor }
+#     paper_fields:
+#       - { key: authors }
+#       - { key: title, from: project_title }
+#       - { key: order, from: author_place }
+#       - { key: links, from: links_with_code }
 #     cv_sections:
 #       - { key: experience, fields: [title, location, duration, url, about, hide] }
 #       - { key: awards, fields: [award, event, date, location, content, hide], period: timestamp }
+#     cv_lists:
+#       - { list: references, section: references, reference: true }
+#       - { list: positions, section: experience }
+#     cv_entry_fields:
+#       - { key: title, from: cv_title }
+#       - { key: status, from: cv_status, own: false }
+#     cv_fields: { period: when, section: cv_section, rank: cv_rank, period_text: duration, rows: content, person_block: personal }
+#     code_statuses: { deposited: deposited, review_copy: review-anon }
+#     site_programs: programs
 #     cv_words:
 #       months: [Jan., Feb., Mar., Apr., May, Jun., Jul., Aug., Sep., Oct., Nov., Dec.]
 #       open_end: Current
@@ -1018,14 +1124,16 @@ stage: nascent          # nascent, scoping, umbrella, de-risking, exploring, in-
 # doi: ""
 
 # --- Website
-# publication:          # the paper's entry in the website's publications; its title, year,
-                        # section, your place among the authors, the words around the venue and
-                        # the Code link come from the rest of the manifest
+# publication:          # the paper's entry in the website's publications; the rows of
+                        # website.paper_fields say which of its fields an entry writes and which
+                        # value comes from the rest of the manifest (a key not below is held too,
+                        # and needs a row in the hub's manifest_fields, since the manifest schema
+                        # does not name it)
 #   authors: ""         # the authors as the website prints them
 #   book: ""            # the venue as the website prints it
-#   program: []         # research lines, keys of programs: of the website's own file
+#   program: []         # research lines, keys of the map website.site_programs names in the website's own file
 #   url: ""             # the address the title links to
-#   links: []           # { name, url } rows in the order the website prints them, Code left out
+#   links: []           # { name, url } rows in the order the website prints them, the code link left out
 #   abstract: ""
 #   pub_last: ""        # a mark printed after the authors, such as Spotlight
 #   hide: false         # kept off the website while it stays in the file
@@ -1038,6 +1146,7 @@ stage: nascent          # nascent, scoping, umbrella, de-risking, exploring, in-
 #   about: ""
 #   role: ""
 #   hide: false         # kept off the CV
+#   cv_hide: false      # kept off the CV while it stays on the website
 #   rank: 1             # the place in the CV's projects, lowest first
 
 # --- Rare

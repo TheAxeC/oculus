@@ -428,6 +428,7 @@ export type {
     Pillar,
     Project,
     ProjectCv,
+    CvFieldRole,
     Publication,
     RawCollection,
     RawEntry,
@@ -610,7 +611,7 @@ export { queueIsCurrent } from './machine/model-hpc.ts';
 
 export { DECK_GAP, FACT_FIELDS, SLIDE_PAGE_PT, SLIDE_SHAPE, slideHeight } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
-export { domainColorOf, statedKind } from './model-entities.ts';
+export { CV_FIELD_ROLES, domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
 export {
     CHOSEN_KEY_CAUSES,

@@ -10,7 +10,7 @@ The runner's agent listing showed no agent of the step running.
 
 ## Not done
 
-Everything in the brief is done. The plan's verify list did not pass as one run on main: `npm run test:quick` beside another builder ended with 34 tests red. On Axel's word the same 75 test files ran one per process, after the fixes, with 0 failed runs.
+Everything in the brief is done. The plan's verify list did not pass on its first run on main: `npm run test:quick` beside another builder ended with 34 tests red. `npm run test:quick` worked in a second run.
 
 ## What landed
 

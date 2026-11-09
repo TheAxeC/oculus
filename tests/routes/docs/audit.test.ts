@@ -37,6 +37,7 @@ import { readSite } from '../../../src/lib/server/content/audit/website/site.ts'
 import { holdersOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { paperSettings } from '../../fixtures/hubs/website-hub.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -465,7 +466,7 @@ describe('the website of the audit', () => {
     function generated(
         paths = SHIPPED,
         from: readonly Project[] = projects,
-        site = readSite(parse(siteText), paths.site)
+        site = readSite(parse(siteText), paths.site, 'programs')
     ): Record<string, string> {
         const built = websiteFiles({
             projects: from,
@@ -476,6 +477,7 @@ describe('the website of the audit', () => {
             kinds,
             cvSections,
             cvWords,
+            ...paperSettings,
             rules: auditRules(config),
             site,
             paths
@@ -496,7 +498,7 @@ describe('the website of the audit', () => {
     /** The check of the website in the folder `folder` of the hub, with the paths given. */
     function checkOf(hub: string, folder = 'site', files = SHIPPED): WebsiteCheck {
         return {
-            setting: { folder, cv: '', kinds, cvSections, cvWords, files },
+            setting: { folder, cv: '', kinds, cvSections, cvWords, files, ...paperSettings },
             dir: folder === '' ? '' : join(hub, folder),
             people: [me],
             career: null
@@ -591,6 +593,24 @@ describe('the website of the audit', () => {
         expect(found.filter((one) => one.action === 'website')).toEqual([]);
     });
 
+    it('name a file that differs and offer no action while website.paper_fields holds no row', () => {
+        const changed = papersWith((value) => {
+            const journal = value.journal as Section;
+            journal.papers[0].authors = 'Someone else';
+            return value;
+        });
+        const hub = siteHub({ ...generated(), [papersPath]: changed });
+        const held = checkOf(hub);
+        const found = websiteFindings(hub, {
+            ...held,
+            setting: { ...held.setting, paperFields: [] }
+        });
+        const message = found.find((one) => one.where === papersPath)?.message ?? '';
+        expect(message).toContain(papersPath);
+        expect(message).toContain('website.paper_fields');
+        expect(found.filter((one) => one.action === 'website')).toEqual([]);
+    });
+
     it('count the order of the sections and of the entries, and not the order of the keys inside an entry', () => {
         const files = generated();
         const keysTurned = papersWith((value) => {
@@ -672,7 +692,7 @@ describe('the website of the audit', () => {
             lead: [me.id],
             publication: { authors: 'A. Me', book: 'A venue', rank: 3, program: ['a-line'] }
         });
-        const site = readSite(parse(siteText), paths.site);
+        const site = readSite(parse(siteText), paths.site, 'programs');
         const hub = siteHub(generated(paths, [lined], site), siteText, paths.site);
         const found = findingsOf(hub, [lined], true, checkOf(hub, 'site', paths), self);
         expect(

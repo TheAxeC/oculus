@@ -3,9 +3,10 @@
 // `website.cv` in the website's folder as a task terminal after the approval a project command
 // takes. A press is refused, with nothing written, while the user is not known, while
 // `website.folder` names no folder or one that is not there, while `website.cv_sections` holds no
-// section, while a path of `website.files` cannot be used, while the last run of the command still
-// runs, and when the writer cannot take one of the three files; a file the writer refuses after the
-// first was written puts the written ones back.
+// section, while `website.paper_fields` holds no row or `website.paper_list` is empty, while a path
+// of `website.files` cannot be used, while the last run of the command still runs, and when the
+// writer cannot take one of the three files; a file the writer refuses after the first was written
+// puts the written ones back.
 // @module-tag slow: its cases write a hub copy of their own and time out under the load of a full
 // run.
 //
@@ -44,6 +45,7 @@ import {
 import { noCredentials, pagePost } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { copyHub, published } from '../../data/hubs/hubs-fixture.ts';
+import { FIELD_LINES } from '../../fixtures/hubs/website-hub.ts';
 import { taskTmux } from '../../server/machine/runs/commands/commands-fixture.ts';
 import { WriteLog } from '../write-log.ts';
 import { HERE } from './terminal-fixture.ts';
@@ -76,7 +78,16 @@ const CV = 'make cv';
 const SELF = 'rivera-lab';
 
 /** The lines of `website.cv_sections` a press takes, one section. */
-const CV_SECTIONS = '  cv_sections:\n    - { key: news, fields: [title] }\n';
+const CV_SECTIONS = `  cv_sections:\n    - { key: news, fields: [title] }\n${FIELD_LINES}`;
+
+/** One row of `website.paper_fields`, which a press takes only with `website.paper_list` set. */
+const PAPER_FIELDS = '  paper_fields:\n    - { key: title, from: project_title }\n';
+
+/** The lines a press takes, the rows of the CV and of the publications. */
+const READY = `${CV_SECTIONS}${PAPER_FIELDS}  paper_list: papers\n`;
+
+/** The lines of `website.paper_fields` and `website.paper_list` a press takes. */
+const PAPER_LINES = `${PAPER_FIELDS}  paper_list: papers\n`;
 
 /** One case's world: the hub, the website's folder, the writer, tmux and the approvals file. */
 type World = {
@@ -94,15 +105,15 @@ const log = new WriteLog('hub', () => hub);
 
 /**
  * A hub whose settings file names the website folder `folder` (made unless `make` is false), the
- * command, the paths `files` of `website.files` and the lines `sections` of `website.cv_sections`,
- * with the user set unless `self` is false.
+ * command, the paths `files` of `website.files` and the lines `sections` of `website.cv_sections`
+ * and of the fields of an entry, with the user set unless `self` is false.
  */
 function worldOf(
     folder = FOLDER,
     make = true,
     self = true,
     files: Record<string, string> = {},
-    sections = CV_SECTIONS
+    sections = `${CV_SECTIONS}${PAPER_LINES}`
 ): World {
     hub = realpathSync(copyHub(scratchDir('oculus-website-'), 'hub'));
     const paths = Object.entries(files).map(([key, path]) => `    ${key}: '${path}'\n`);
@@ -283,6 +294,38 @@ describe('a press of Write the website that is refused', () => {
         expect(world.log.listed()).toEqual([]);
         expect(world.tmux.starts()).toEqual([]);
     });
+
+    for (const [row, lines] of [
+        ['website.cv_lists holds no row', READY.replace(/ {2}cv_lists:\n( {4}- .*\n)+/, '')],
+        ['a role of website.cv_fields is empty', READY.replace('    period: when\n', '')]
+    ]) {
+        it(`writes nothing and asks no approval while ${row}`, async () => {
+            const world = worldOf(FOLDER, true, true, {}, lines);
+            expect(await press(world)).toEqual({
+                status: 409,
+                body: { error: 'website-no-cv-fields', names: [] }
+            });
+            expect(onDisk(world)).toEqual([]);
+            expect(world.log.listed()).toEqual([]);
+            expect(world.tmux.starts()).toEqual([]);
+        });
+    }
+
+    for (const [row, lines] of [
+        ['website.paper_fields holds no row', CV_SECTIONS],
+        ['website.paper_list is empty', `${CV_SECTIONS}${PAPER_FIELDS}`]
+    ]) {
+        it(`writes nothing and asks no approval while ${row}`, async () => {
+            const world = worldOf(FOLDER, true, true, {}, lines);
+            expect(await press(world)).toEqual({
+                status: 409,
+                body: { error: 'website-no-paper-fields', names: [] }
+            });
+            expect(onDisk(world)).toEqual([]);
+            expect(world.log.listed()).toEqual([]);
+            expect(world.tmux.starts()).toEqual([]);
+        });
+    }
 
     it('asks for the approval of a command text not yet approved and writes and runs nothing until it is given', async () => {
         const world = worldOf();

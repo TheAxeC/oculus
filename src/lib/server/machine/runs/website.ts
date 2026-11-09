@@ -8,12 +8,14 @@
 //
 // A press is refused, with nothing written, while the user is not known, while `website.folder`
 // names no folder or one that is not there, while `website.cv_sections` holds no section, so a hub
-// with no rows writes no CV holding its person block alone, while a path of `website.files` cannot
-// be used, which is refused before the website's own file is read and before an approval is asked,
-// while the last run of the command still runs, and when the writer could not take one of the
-// three files: every file is checked as the writer's upload checks it before the first is written,
-// and a file the writer still refuses puts the files of the press already written back as they
-// were. Each refusal is a word of WEBSITE_REFUSALS with the names its sentence is about.
+// with no rows writes no CV holding its person block alone, while `website.paper_fields` holds no
+// row or `website.paper_list` is empty, so no publications file is written empty of fields, while a
+// path of `website.files` cannot be used, which is refused before the website's own file is read
+// and before an approval is asked, while the last run of the command still runs, and when the
+// writer could not take one of the three files: every file is checked as the writer's upload
+// checks it before the first is written, and a file the writer still refuses puts the files of the
+// press already written back as they were. Each refusal is a word of WEBSITE_REFUSALS with the
+// names its sentence is about.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
@@ -24,7 +26,7 @@ import { tokenedBody } from '../../core/auth.ts';
 import { MAX_UPLOAD_BYTES } from '../../../data/file-ops.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
 import type { Snapshot, Terminal, WebsiteRefusal } from '../../../data/model/index.ts';
-import { websiteSettings } from '../../../data/sources/config/settings/files.ts';
+import { cvSettingsHeld, websiteSettings } from '../../../data/sources/config/settings/files.ts';
 import { selfOf } from '../../../data/shapes/boards/roles.ts';
 import { chainLines, chainText, defaultApprovalsPath, isApproved } from '../approvals/approvals.ts';
 import {
@@ -141,6 +143,10 @@ function builtFiles(
     const setting = websiteSettings(config);
     if (setting.folder === '') return refused('website-no-folder');
     if (setting.cvSections.length === 0) return refused('website-no-cv-sections');
+    if (setting.paperFields.length === 0 || setting.paperList === '') {
+        return refused('website-no-paper-fields');
+    }
+    if (!cvSettingsHeld(setting)) return refused('website-no-cv-fields');
     const dir = websiteDir(primary.dir, setting.folder);
     if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         return refused('website-folder-missing', [setting.folder]);
@@ -163,9 +169,20 @@ function builtFiles(
         self,
         kinds: setting.kinds,
         cvSections: setting.cvSections,
+        cvLists: setting.cvLists,
+        cvEntryFields: setting.cvEntryFields,
+        cvFields: setting.cvFields,
         cvWords: setting.cvWords,
+        paperFields: setting.paperFields,
+        paperList: setting.paperList,
+        codeLinkName: setting.codeLinkName,
+        authorPlaces: setting.authorPlaces,
+        codeStatuses: setting.codeStatuses,
+        doiOrigin: setting.doiOrigin,
+        fileHeader: setting.fileHeader,
+        sitePrograms: setting.sitePrograms,
         rules: auditRules(config),
-        site: readSite(site, setting.files.site),
+        site: readSite(site, setting.files.site, setting.sitePrograms),
         paths: setting.files
     });
     return { files: built.files, dir, cv: setting.cv };

@@ -1,9 +1,11 @@
 // Layer 1, data. The records a manifest and a person carry for the website, out of the maps the
 // sources parsed: a manifest's `publication:` (the entry of its paper in the website's
 // publications) and `cv:` (the row of the project in the CV's projects), and a person's `links:`
-// rows. Pure, like normalise: a field is kept when it is of its shape, an empty text included,
-// since the website is written with every field the record holds, and a field that is not is left
-// out; the manifest schema check names it.
+// rows. Pure, like normalise. Each of the two records holds every key of the map whose value is
+// not null as the file gives it, since which keys the website is written with are the hub's
+// settings `website.paper_fields` and `website.cv_sections`, and reads the keys oculus itself works
+// with in their shapes: `program`, `links` and `rank` of a `publication:`, `title` and `rank` of a
+// `cv:`. A key held but of the wrong shape for the website is named by the manifest schema check.
 
 import { z } from 'zod';
 import { isMap } from '../../helpers/guards.ts';
@@ -48,31 +50,34 @@ function record<T extends object>(value: unknown, read: (map: Record<string, unk
     return isMap(value) ? compact(read(value)) : undefined;
 }
 
-/** A manifest's `publication:` record, absent when the manifest carries none. */
+/** Every key of a map whose value is not null, as the file gives it and whatever its name. */
+function heldKeys(map: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(map).filter(([, held]) => held !== null));
+}
+
+/**
+ * A manifest's `publication:` record, absent when the manifest carries none: every key of the map
+ * as `heldKeys` keeps it, and `program`, `links` and `rank` read in their shapes, each left out
+ * when it is not of its shape.
+ */
 export function publication(value: unknown): Publication | undefined {
     return record<Publication>(value, (map) => ({
-        authors: field(textShape, map.authors),
-        book: field(textShape, map.book),
+        ...heldKeys(map),
         program: Array.isArray(map.program) ? rows(textShape, map.program) : undefined,
-        url: field(textShape, map.url),
         links: Array.isArray(map.links) ? rows<NamedLink>(namedLinkShape, map.links) : undefined,
-        abstract: field(textShape, map.abstract),
-        pub_last: field(textShape, map.pub_last),
-        hide: field(z.boolean(), map.hide),
-        cv_hide: field(z.boolean(), map.cv_hide),
         rank: field(rankShape, map.rank)
     }));
 }
 
-/** A manifest's `cv:` record, absent when the manifest carries none. */
+/**
+ * A manifest's `cv:` record, absent when the manifest carries none: every key of the map as
+ * `heldKeys` keeps it, and `title` and `rank` read in their shapes, each left out when it is not of
+ * its shape.
+ */
 export function projectCv(value: unknown): ProjectCv | undefined {
     return record<ProjectCv>(value, (map) => ({
+        ...heldKeys(map),
         title: field(textShape, map.title),
-        url: field(textShape, map.url),
-        when: field(z.union([z.string(), z.number()]), map.when),
-        about: field(textShape, map.about),
-        role: field(textShape, map.role),
-        hide: field(z.boolean(), map.hide),
         rank: field(rankShape, map.rank)
     }));
 }

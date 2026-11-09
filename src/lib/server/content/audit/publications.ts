@@ -1,18 +1,22 @@
 // Layer 2, server. The audit's publications section: the website's three generated files, built in
 // memory from the primary hub's files (website/files.ts), against the files on disk at the paths
 // `website.files` gives. A file that differs is one finding naming the file and the first place it
-// differs at, and while `website.cv_sections` holds a section the finding offers Write the website.
-// A manifest, a career row or a research line the website cannot be written with is a finding of
-// its own, a research line in the Missing data section, the rest here. The section runs for the
-// primary hub alone, whose `website.folder` names the website: an empty folder checks nothing, a
-// folder that is not there is one finding naming it, and a path of `website.files` that cannot be
-// used is one finding naming its key, with none of the four files read.
+// differs at, and while `website.cv_sections` holds a section, `website.paper_fields` a row and
+// `website.paper_list` a word the finding offers Write the website. A manifest, a career row or a
+// research line the website cannot be written with is a finding of its own, a research line in the
+// Missing data section, the rest here. The section runs for the primary hub alone, whose
+// `website.folder` names the website: an empty folder checks nothing, a folder that is not there
+// is one finding naming it, and a path of `website.files` that cannot be used is one finding naming
+// its key, with none of the four files read.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { Career, Person } from '../../../data/model/index.ts';
-import type { WebsiteSettings } from '../../../data/sources/config/settings/files.ts';
+import {
+    cvSettingsHeld,
+    type WebsiteSettings
+} from '../../../data/sources/config/settings/files.ts';
 import {
     fileIn,
     fileOf,
@@ -40,12 +44,15 @@ export type WebsiteCheck = {
 /** The scope a finding about the website itself is filed under. */
 const WEBSITE = 'website';
 
-/** The website's own file at `at` in its folder, read; a problem when it does not parse. */
-function siteOf(dir: string, at: string): SiteFile | { unreadable: string } {
+/**
+ * The website's own file at `at` in its folder, its research lines under `key`, read; a problem
+ * when it does not parse.
+ */
+function siteOf(dir: string, at: string, key: string): SiteFile | { unreadable: string } {
     const path = join(dir, at);
-    if (!existsSync(path)) return readSite(undefined, at);
+    if (!existsSync(path)) return readSite(undefined, at, key);
     try {
-        return readSite(parse(slurp(path)), at);
+        return readSite(parse(slurp(path)), at, key);
     } catch (error) {
         return {
             unreadable: error instanceof Error ? error.message.split('\n')[0] : String(error)
@@ -95,7 +102,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         });
         return;
     }
-    const site = siteOf(check.dir, files.site);
+    const site = siteOf(check.dir, files.site, check.setting.sitePrograms);
     if ('unreadable' in site) {
         add({
             scope: WEBSITE,
@@ -114,16 +121,31 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         self: input.self,
         kinds: check.setting.kinds,
         cvSections: check.setting.cvSections,
+        cvLists: check.setting.cvLists,
+        cvEntryFields: check.setting.cvEntryFields,
+        cvFields: check.setting.cvFields,
         cvWords: check.setting.cvWords,
+        paperFields: check.setting.paperFields,
+        paperList: check.setting.paperList,
+        codeLinkName: check.setting.codeLinkName,
+        authorPlaces: check.setting.authorPlaces,
+        codeStatuses: check.setting.codeStatuses,
+        doiOrigin: check.setting.doiOrigin,
+        fileHeader: check.setting.fileHeader,
+        sitePrograms: check.setting.sitePrograms,
         rules: input.rules,
         site,
         paths: files
     });
     for (const problem of built.problems) add(raised(input, problem, where));
-    const writable = check.setting.cvSections.length > 0;
+    const writable =
+        check.setting.cvSections.length > 0 &&
+        cvSettingsHeld(check.setting) &&
+        check.setting.paperFields.length > 0 &&
+        check.setting.paperList !== '';
     for (const file of built.files) {
         const path = join(check.dir, file.name);
-        const found = differences(file.text, slurp(path));
+        const found = differences(file.text, slurp(path), check.setting.paperFields);
         if (found.length === 0) continue;
         const place = found[0].place;
         add({

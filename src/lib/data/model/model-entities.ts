@@ -227,46 +227,82 @@ export type PersonLink = NamedLink & { handle?: string };
 
 /**
  * A manifest's `publication:` record, the entry the website's publications list the project's paper
- * with. Each field is held when the manifest writes it, an empty text included, and is written
- * through as held; the title, the date, the section, the place among the authors, the words around
- * the venue and the code link are generated from the rest of the manifest
+ * with. The three fields oculus itself works with are typed; any other key is held as the manifest
+ * gives it, a null left out, and is written through as held by the rows of `website.paper_fields`
  * (server/content/audit/website/papers.ts).
  */
 export type Publication = {
-    /** The authors as the website prints them, one text. */
-    authors?: string;
-    /** The venue as the website prints it. */
-    book?: string;
-    /** The website's research lines the paper belongs to, keys of `programs:` of its own file. */
+    /** The research lines, keys of the map `website.site_programs` names in the website's file. */
     program?: string[];
-    url?: string;
     /** The paper's other links, in the order the website prints them, the code link left out. */
     links?: NamedLink[];
-    abstract?: string;
-    /** A mark printed after the authors, such as an award of the paper. */
-    pub_last?: string;
-    hide?: boolean;
-    cv_hide?: boolean;
     /** The place of the entry in its website section, lowest first. */
     rank?: number;
+    /** Any other field of the record, as the manifest gives it. */
+    [key: string]: unknown;
 };
 
 /**
- * A manifest's `cv:` record, the row the CV's projects list the project with. Each field is held
- * when the manifest writes it and is written through as held; `title` stands for the manifest's own
- * title where the CV prints another.
+ * A manifest's `cv:` record, the row the CV's projects list the project with. Every key the
+ * manifest writes is held as written, since which of them the CV prints is the hub's setting;
+ * `title` stands for the manifest's own title where the CV prints another.
  */
 export type ProjectCv = {
     title?: string;
-    url?: string;
-    /** The period of the row, which the CV builder prints in its one form. */
-    when?: string | number;
-    about?: string;
-    role?: string;
-    hide?: boolean;
     /** The place of the row in the CV's projects, lowest first. */
     rank?: number;
+    [key: string]: unknown;
 };
+
+/**
+ * The roles of the hub's `website.cv_fields`, each a key of the hub list of its own: what a word of
+ * that setting names among the fields of the hub's records and of the website's CV files.
+ */
+export const CV_FIELD_ROLES = [
+    'period',
+    'section',
+    'rank',
+    'record_key',
+    'students',
+    'student_person',
+    'student_topic',
+    'student_degree',
+    'reference_person',
+    'reference_reason',
+    'reference_name',
+    'reference_email',
+    'funding',
+    'funding_title',
+    'funding_place',
+    'funding_about',
+    'records',
+    'record_place',
+    'period_text',
+    'timestamp',
+    'row_title',
+    'row_place',
+    'award_title',
+    'award_place',
+    'award_content',
+    'rows',
+    'person_block',
+    'first_name',
+    'last_name',
+    'person_links',
+    'link_email',
+    'link_orcid',
+    'link_place',
+    'profiles',
+    'profile_shared',
+    'shared_place',
+    'shared_email',
+    'shared_links',
+    'students_section',
+    'projects_section'
+] as const;
+
+/** One role of `website.cv_fields`. */
+export type CvFieldRole = (typeof CV_FIELD_ROLES)[number];
 
 /**
  * The deposit mirror of a project's `code/` folder as GET and POST /api/deposit answer it, one

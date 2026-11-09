@@ -32,6 +32,8 @@ text:
         website_no_person: 'The user is not known: no entry of people.yml is marked self, so the website is not written.'
         website_no_folder: 'The setting website.folder is not set, so the website is not written.'
         website_no_cv_sections: 'The setting website.cv_sections is not set, so the website is not written.'
+        website_no_paper_fields: 'The settings website.paper_fields and website.paper_list are not set, so the website is not written.'
+        website_no_cv_fields: 'The settings website.cv_lists and website.cv_fields are not all set, so the website is not written.'
         website_folder_missing: 'The website folder {0} that website.folder names is not there, so nothing was written.'
         website_bad_path: "The setting {0} holds '{1}': it must name a file inside the website's folder that no other key of website.files names, so nothing was written."
         website_site_unreadable: "The website's {0} does not read as YAML, so nothing was written."

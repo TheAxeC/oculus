@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import type { ProgramApps } from '../../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../../helpers/guards.ts';
+import { CV_FIELD_ROLES, type CvFieldRole } from '../../../model/index.ts';
 import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem, type ValueProblem } from '../catalog/value-rule.ts';
 import { authShape, type Auth } from './rows/grammar.ts';
@@ -217,24 +218,26 @@ const websiteKindShape = z.object({
 /** One row of `website.kinds`, as read. */
 export type WebsiteKind = z.infer<typeof websiteKindShape>;
 
-/** The key of the CV's file that holds its person block, which no section may take. */
-const CV_PERSON_BLOCK = 'personal';
-
 /** The setting the CV's sections are read from. */
 const CV_SECTIONS_KEY = 'website.cv_sections';
 
+/** The setting the fields of a publications entry are read from. */
+const PAPER_FIELDS_KEY = 'website.paper_fields';
+
+/**
+ * A key a row of the website's settings writes into a generated file: lower case and starting with
+ * a letter, so no row reads as the empty key or as `__proto__`.
+ */
+const websiteRowKey = z.string().regex(/^[a-z][a-z0-9_-]*$/);
+
 /**
  * One row of `website.cv_sections`: the key of a CV section, the fields its rows print in that
- * order, how its rows print their period (`timestamp`, else the empty text or none for `duration`),
- * and the fields an employer CV's row of that section takes from the record it names. A key is
- * lower case and starts with a letter, so no row reads as the empty key or as `__proto__`, and it
- * is not the person block; a row must print at least one field.
+ * order, how its rows print their period (`timestamp`, else the empty text or none for the period
+ * text), and the fields an employer CV's row of that section takes from the record it names. A row
+ * must print at least one field.
  */
 const cvSectionShape = z.object({
-    key: z
-        .string()
-        .regex(/^[a-z][a-z0-9_-]*$/)
-        .refine((key) => key !== CV_PERSON_BLOCK),
+    key: websiteRowKey,
     fields: z.array(z.string()).min(1),
     period: z.union([z.literal('timestamp'), z.literal('').transform(() => undefined)]).optional(),
     record_fields: z.array(z.string()).optional()
@@ -242,6 +245,72 @@ const cvSectionShape = z.object({
 
 /** One row of `website.cv_sections`, as read. */
 export type CvSection = z.infer<typeof cvSectionShape>;
+
+/** The shape of a row of `website.cv_sections` whose key is not the person block `personBlock`. */
+function cvSectionOf(personBlock: string): z.ZodType<CvSection> {
+    return cvSectionShape.refine((row) => row.key !== personBlock);
+}
+
+/**
+ * One row of `website.cv_lists`: a list of the career file, the CV section its rows go to unless a
+ * row names one, and whether its rows are built from the person each names.
+ */
+const cvListShape = z.object({
+    list: websiteRowKey,
+    section: websiteRowKey,
+    reference: z.boolean().optional()
+});
+
+/** One row of `website.cv_lists`, as read. */
+export type CvList = z.infer<typeof cvListShape>;
+
+/**
+ * One row of `website.cv_entry_fields`: the field `from` of a collection entry, where it holds one,
+ * is written as `key`, and `own: false` leaves the entry's own field `key` out.
+ */
+const cvEntryFieldShape = z.object({
+    key: websiteRowKey,
+    from: z.string().min(1),
+    own: z.boolean().optional()
+});
+
+/** One row of `website.cv_entry_fields`, as read. */
+export type CvEntryField = z.infer<typeof cvEntryFieldShape>;
+
+/** The word of each role of `website.cv_fields`; the empty text where the hub sets none. */
+export type CvFields = Record<CvFieldRole, string>;
+
+/** The two words of the code deposit's status the website links by, `website.code_statuses`. */
+export type CodeStatuses = { deposited: string; review_copy: string };
+
+/** The words a row of `website.paper_fields` names a value of the hub by. */
+const paperFromShape = z.enum([
+    'project_title',
+    'project_year',
+    'author_place',
+    'kind_pre',
+    'kind_post',
+    'links_with_code'
+]);
+
+/** One word of `from` of a row of `website.paper_fields`. */
+export type PaperFrom = z.infer<typeof paperFromShape>;
+
+/**
+ * One row of `website.paper_fields`: the key an entry of the publications file writes and the value
+ * it takes, a word of `paperFromShape`, or the record's own field of that key when `from` is left
+ * out or the empty text.
+ */
+const paperFieldShape = z.object({
+    key: websiteRowKey,
+    from: z.union([paperFromShape, z.literal('').transform(() => undefined)]).optional()
+});
+
+/** One row of `website.paper_fields`, as read. */
+export type PaperField = z.infer<typeof paperFieldShape>;
+
+/** The word of the user's place among a paper's authors, `website.author_places`, by place. */
+export type AuthorPlaces = { lead: string; supervisor: string; collaborator: string };
 
 /** The words a CV's period prints, from the hub's `website.cv_words`. */
 export type CvWords = { months: string[]; open_end: string; award_time: string };
@@ -255,14 +324,30 @@ export type WebsiteFiles = { site: string; cv: string; papers: string; industry:
 /**
  * The website the primary hub's files are written into: its folder relative to the hub, empty when
  * none is set, the command run in it once the files are written, empty for none, the rows of its
- * publications' sections in the file's order, the rows of the CV's sections in the file's order,
- * the words a CV's period prints, and its four files.
+ * publications' sections in the file's order, the rows of an entry's fields in the file's order,
+ * the key a section holds its entries under, the code link's name, the words of the user's place
+ * among the authors, the code statuses the website links by, the address a DOI resolves at, the key
+ * of its own file that holds the research lines, the rows of the CV's sections in the file's order,
+ * the career lists the CV reads, the rows of a collection entry's CV fields, the word of each
+ * field the CV reads or writes, the words a CV's period prints, and its four files.
  */
 export type WebsiteSettings = {
     folder: string;
     cv: string;
     kinds: WebsiteKind[];
+    paperFields: PaperField[];
+    paperList: string;
+    codeLinkName: string;
+    authorPlaces: AuthorPlaces;
+    codeStatuses: CodeStatuses;
+    doiOrigin: string;
+    /** The comment line each generated file opens with, `website.file_header`; empty for none. */
+    fileHeader: string;
+    sitePrograms: string;
     cvSections: CvSection[];
+    cvLists: CvList[];
+    cvEntryFields: CvEntryField[];
+    cvFields: CvFields;
     cvWords: CvWords;
     files: WebsiteFiles;
 };
@@ -301,30 +386,52 @@ export function zenodoSettings(
     };
 }
 
-/** The rows of `website.cv_sections` its shape takes, each key once, the first standing. */
-function cvSections(config: Record<string, unknown>, problems: SettingProblem[]): CvSection[] {
-    const rows: CvSection[] = [];
-    for (const { at, row } of checkedRows(config, CV_SECTIONS_KEY, problems)) {
-        const section = cvSectionShape.safeParse(row);
-        if (!section.success) {
+/**
+ * The rows of the setting `key` that `shape` takes, each name (`nameOf`) once, the first standing;
+ * a row the shape refuses is left out with a `shape` problem at the row, and a repeated name with a
+ * `repeat` problem naming it.
+ */
+function namedRows<T>(
+    config: Record<string, unknown>,
+    key: string,
+    shape: z.ZodType<T>,
+    problems: SettingProblem[],
+    nameOf: (row: T) => string
+): T[] {
+    const rows: T[] = [];
+    for (const { at, row } of checkedRows(config, key, problems)) {
+        const read = shape.safeParse(row);
+        if (!read.success) {
             const issue = { kind: 'shape' as const, row: at, at: '' };
-            problems.push({ key: CV_SECTIONS_KEY, where: 'row', issue });
-        } else if (rows.some((one) => one.key === section.data.key)) {
-            problems.push({ key: CV_SECTIONS_KEY, where: 'repeat', name: section.data.key });
+            problems.push({ key, where: 'row', issue });
+        } else if (rows.some((one) => nameOf(one) === nameOf(read.data))) {
+            problems.push({ key, where: 'repeat', name: nameOf(read.data) });
         } else {
-            rows.push(section.data);
+            rows.push(read.data);
         }
     }
     return rows;
 }
 
+/** A row's name where it is its `key`. */
+const keyOf = (row: { key: string }): string => row.key;
+
 /**
  * Read `website:`'s keys, each its default when it is missing or wrong. A key of `website.files` is
  * a key of the hub list of its own (data/helpers/hub-names.ts), so a hub that sets one keeps
- * oculus's other three, and so is a key of `website.cv_words`. A row of `website.cv_sections` its
- * own shape refuses is left out with a `shape` problem at the row, and a row whose key an earlier
- * row holds with a `repeat` problem naming the key, the earlier one standing.
+ * oculus's other three, and so is a key of `website.cv_words`, `website.cv_fields`,
+ * `website.code_statuses` and `website.author_places`. A row of a list of rows its own shape
+ * refuses is left out with a `shape` problem at the row, and a row whose name an earlier row holds
+ * with a `repeat` problem naming it, the earlier one standing.
  */
+/**
+ * Whether the settings hold what a CV is built from besides its sections: a row of
+ * `website.cv_lists` and the field of every role of `website.cv_fields`.
+ */
+export function cvSettingsHeld(setting: Pick<WebsiteSettings, 'cvLists' | 'cvFields'>): boolean {
+    return setting.cvLists.length > 0 && Object.values(setting.cvFields).every((one) => one !== '');
+}
+
 export function websiteSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
@@ -335,11 +442,44 @@ export function websiteSettings(
         const kind = websiteKindShape.safeParse(row);
         if (kind.success) kinds.push(kind.data);
     }
+    const cvFields = Object.fromEntries(
+        CV_FIELD_ROLES.map((role) => [role, read.text(`website.cv_fields.${role}`).trim()])
+    ) as CvFields;
     return {
         folder: read.text('website.folder').trim(),
         cv: read.text('website.cv').trim(),
         kinds,
-        cvSections: cvSections(config, problems),
+        paperFields: namedRows(config, PAPER_FIELDS_KEY, paperFieldShape, problems, keyOf),
+        paperList: read.text('website.paper_list').trim(),
+        codeLinkName: read.text('website.code_link_name').trim(),
+        authorPlaces: {
+            lead: read.text('website.author_places.lead').trim(),
+            supervisor: read.text('website.author_places.supervisor').trim(),
+            collaborator: read.text('website.author_places.collaborator').trim()
+        },
+        codeStatuses: {
+            deposited: read.text('website.code_statuses.deposited').trim(),
+            review_copy: read.text('website.code_statuses.review_copy').trim()
+        },
+        doiOrigin: read.text('website.doi_origin').trim(),
+        fileHeader: read.text('website.file_header').trim(),
+        sitePrograms: read.text('website.site_programs').trim(),
+        cvSections: namedRows(
+            config,
+            CV_SECTIONS_KEY,
+            cvSectionOf(cvFields.person_block),
+            problems,
+            keyOf
+        ),
+        cvLists: namedRows(config, 'website.cv_lists', cvListShape, problems, (row) => row.list),
+        cvEntryFields: namedRows(
+            config,
+            'website.cv_entry_fields',
+            cvEntryFieldShape,
+            problems,
+            keyOf
+        ),
+        cvFields,
         cvWords: {
             months: read.strings('website.cv_words.months'),
             open_end: read.text('website.cv_words.open_end').trim(),

@@ -24,26 +24,13 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-  - step: O180
-    base: 3c2f99290
-    worktree: .agents/worktrees/migration-O180
-    executor: agent
-    worker: claude:opus
-    session_id: a693cdb5194fcfd55
-    builder_usage: "326442 tokens, 152 tool uses, 2557 s"
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O180-report.md
-    round: 1
-    landing: not-started
-    brief_check: ".scratch/migration/agents/reviews/O180-brief-check.md (af5af1f8f126742f6, claude-opus-5-5, 269392 tokens, 39 tool uses, 696 s)"
-    reviewer_report: ".scratch/migration/agents/reviews/O180-refuter.md (aade7a12319164806, claude-opus-5-5, 233680 tokens, 32 tool uses, 936 s)"
-
   - step: O181
     base: f88e2648e
     worktree: .agents/worktrees/migration-O181
     executor: agent
     worker: claude:opus
-    session_id: a10198f634a8b9cea (claude-opus-5-5)
+    session_id: a954c186d0c9de69b
+    builders_before: "a10198f634a8b9cea, claude-opus-5-5, stopped by Axel"
     launched: 2026-11-09
     report: .scratch/migration/agents/reviews/O181-report.md
     round: 0
@@ -905,6 +892,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-10 (O180 landed). The website's field names are the hub's configuration (booking in `plan.md`, `agents/reviews/O180-landing.md`); the hub's lines are written, the hub commit on Axel's word. O181 builds on in its worktree from base f88e2648e under builder a954c186d0c9de69b. In flight (1 of 6): O181. Open items: none.
 - 2026-11-09 (O181's builder launched). O180's repair round 1 builds; O181 builds from base f88e2648e. In flight (2 of 6): O180, O181. Open items: none.
 - 2026-11-09 (O179 landed). The list drawing is on main (booking in `plan.md`, `agents/reviews/O179-landing.md`). O180's review runs; O181 is prepared next. In flight (1 of 6): O180. Open items: none.
 - 2026-11-09 (O181 booked; ruling Hardcoding sweep). O179 landing, its fixes on main uncommitted. O180 built, its review next, its repair round carries the website items of the ruling. O181 queued. In flight (2 of 6): O179, O180. Open items: none.

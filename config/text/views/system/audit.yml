@@ -58,8 +58,8 @@ text:
         msg_site_unreadable: 'could not parse {0}: {1}'
         msg_site_differs: "{0} differs from what the hub's files give, first at {1}: write the website"
         msg_site_differs_whole: "{0} differs as a whole from what the hub's files give, being missing, unreadable or of another kind: write the website"
-        msg_site_differs_no_cv: "{0} differs from what the hub's files give, first at {1}: set website.cv_sections, then write the website"
-        msg_site_differs_whole_no_cv: "{0} differs as a whole from what the hub's files give, being missing, unreadable or of another kind: set website.cv_sections, then write the website"
+        msg_site_differs_no_cv: "{0} differs from what the hub's files give, first at {1}: set website.cv_sections, website.cv_lists, website.cv_fields, website.paper_fields and website.paper_list, then write the website"
+        msg_site_differs_whole_no_cv: "{0} differs as a whole from what the hub's files give, being missing, unreadable or of another kind: set website.cv_sections, website.cv_lists, website.cv_fields, website.paper_fields and website.paper_list, then write the website"
         msg_site_no_folder: 'the website folder {0} that website.folder names is not there'
         msg_site_bad_path: "the setting {0} holds '{1}': it must name a file inside the website's folder that no other key of website.files names, so none of the website's files is checked"
         msg_site_no_person: "the person the website is written for is not known: set self in the primary hub's .oculus/local.yml"
@@ -67,13 +67,14 @@ text:
         msg_site_stage: 'carries a publication record, but the stage {0} lists no paper on the website: give it a stage that does, or take the record out'
         msg_site_no_kind: 'carries a publication record, but no row of website.kinds takes the stage `{0}` with the form `{1}`'
         msg_site_no_self: 'carries a publication record, but names you in none of lead, supervisors and collaborators, so your place among the authors is not known'
-        msg_site_program: 'the publication record names the research line {0}, which programs: of {1} does not hold'
+        msg_site_program: 'the publication record names the research line {0}, which the map website.site_programs names in {1} does not hold'
+        msg_site_no_word: 'the publications need a word the setting {0} does not hold, so what it names is left out: set it'
         msg_cv_unknown_person: 'the row {0} of the career and collection files names {1}, who is no entry of the people file'
         msg_cv_unknown_record: 'the row {0} of the career file names {1}, which no record of the hub is'
         msg_cv_key_twice: 'the row {3} of the career file names {0}, which both {1} and {2} hold, so it takes nothing from either: give one of them another key'
         msg_cv_empty_key: 'the row {0} of the career file has an empty key: give it a key or take the key out'
         msg_cv_unknown_section: "the row {0} names the CV section {1}, which website.cv_sections does not list, so the row is written nowhere: add it to website.cv_sections or correct the row's section"
-        msg_cv_no_word: 'a period of the CV needs a word the setting {0} does not hold, so it prints without it: set it'
+        msg_cv_no_word: 'the CV needs a word the setting {0} does not hold, so it is written without it: set it'
         write_website: Write the website
         write_website_glyph: publish
         write_website_tip: Write the website's three files from the hub's files, as the Career view's Write the website does.

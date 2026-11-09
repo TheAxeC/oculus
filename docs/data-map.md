@@ -120,7 +120,21 @@ audit.stage_folders:      # the folders a project at a stage is kept under
 website.folder:           # the website's folder, which Write the website writes its three files into
 website.cv:               # the command run in that folder after a write
 website.kinds:            # the sections of the website's publications, by stage and form
+website.paper_fields:     # the fields an entry of the publications writes, in order
+website.paper_list:       # the key a section holds its entries under
+website.code_link_name:   # the name the code link prints with
+website.author_places.lead:         # the word of the user's place among the authors, as lead
+website.author_places.supervisor:   # the same, as supervisor
+website.author_places.collaborator: # the same, as collaborator
+website.code_statuses.deposited:    # the word of a published code deposit's status
+website.code_statuses.review_copy:  # the word of the anonymous review copy's status
+website.doi_origin:       # the address a DOI resolves at
+website.file_header:      # the comment line each generated file opens with
+website.site_programs:    # the key of the website's own file whose map holds the research lines
 website.cv_sections:      # the CV's sections in order, each with its fields, period and record fields
+website.cv_lists:         # the lists of the career file the CV prints, each with its section
+website.cv_entry_fields:  # the fields of a collection entry the CV takes
+website.cv_fields.<role>: # the field each role of the CV reads, one key per role
 website.cv_words.months:     # the twelve month words of the CV's periods
 website.cv_words.open_end:   # the CV's word for a period with no end
 website.cv_words.award_time: # the time and zone after the day of a CV timestamp
@@ -159,7 +173,7 @@ A word the hub's values no longer give, taken out with `<word>: null` or left ou
 
 In oculus's own values a row left with no word stays. In a list or a row the hub writes itself, each such word is a finding naming the hub's file at the word's place.
 
-Oculus reads thirty-one keys from the primary hub's file alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `literature.sources`, `literature.prefer`, `website.folder`, `website.cv`, `website.kinds`, `website.cv_sections`, `website.cv_words.months`, `website.cv_words.open_end`, `website.cv_words.award_time`, `website.files.site`, `website.files.cv`, `website.files.papers`, `website.files.industry` and `links`. When another hub sets one of them, the primary's value stands and the key is a finding of that hub's file. Oculus reads the other 42 keys from each hub's own file, and a path among them resolves against the folder of that hub.
+Oculus reads eighty-four keys from the primary hub's file alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `literature.sources`, `literature.prefer`, `website.folder`, `website.cv`, `website.kinds`, `website.paper_fields`, `website.paper_list`, `website.code_link_name`, `website.author_places.lead`, `website.author_places.supervisor`, `website.author_places.collaborator`, `website.code_statuses.deposited`, `website.code_statuses.review_copy`, `website.doi_origin`, `website.file_header`, `website.site_programs`, `website.cv_sections`, `website.cv_lists`, `website.cv_entry_fields`, the forty keys of `website.cv_fields`, `website.cv_words.months`, `website.cv_words.open_end`, `website.cv_words.award_time`, `website.files.site`, `website.files.cv`, `website.files.papers`, `website.files.industry` and `links`. When another hub sets one of them, the primary's value stands and the key is a finding of that hub's file. Oculus reads the other 42 keys from each hub's own file, and a path among them resolves against the folder of that hub.
 
 A value of `bookmarks`, `schedules` or `apps_dir` resolves in this order:
 
@@ -211,7 +225,7 @@ settings:                 # your values of oculus's options for this workspace
 
 A folder's `path` is absolute or starts with `~`. Its `repository_scan_depth` is how many levels below it oculus searches for repositories, any whole number from -1: 0 searches the folder alone and -1 every level.
 
-Without `primary:` the workspace has no primary hub. It then has no bookmarks file and no schedules, Settings refuses the thirty-one keys of the primary and writes a hub's other keys only once a hub is picked, and an update task and an app's new record are refused.
+Without `primary:` the workspace has no primary hub. It then has no bookmarks file and no schedules, Settings refuses the eighty-four keys of the primary and writes a hub's other keys only once a hub is picked, and an update task and an app's new record are refused.
 
 `settings:` holds each option of oculus's defaults files and catalogs, keyed as the merged config keys it, with no file names. In `settings:`, a key of the hub's settings, a key no option names and a value its option refuses are findings, and oculus's value stands for each. Besides the options, it takes these keys:
 
@@ -373,8 +387,8 @@ The keys of `project.yml` are the fields of `config/schemas/manifest-schema.yml`
 | `reproduced.date`, `reproduced.note` | the last run of the whole pipeline from the raw data |
 | `outcome`, `doi` | how the project ended, and the published paper's DOI |
 | `paths` | where a document is kept away from its usual place, and `cluster`, the project's folder on the cluster |
-| `publication.*` | the website's publications entry: `authors`, `book`, `program`, `url`, `links`, `abstract`, `pub_last`, `hide`, `cv_hide`, `rank` |
-| `cv.*` | the CV's projects row: `title`, `url`, `when`, `about`, `role`, `hide`, `rank` |
+| `publication.*` | the website's publications entry, every key of the record whose value is not null held as the file gives it; the rows of `website.paper_fields` say which are written |
+| `cv.*` | the CV's projects row: `title`, `url`, `when`, `about`, `role`, `hide`, `cv_hide`, `rank`; any other key is held as written |
 
 A `followup:` note is `{ do, after, done, lead, supervisors, collaborators }`: its `after` hides it until that date, and `done: true` keeps it on its card, struck through, and takes it off the Focus board. The three people fields of a note each hold a person key or a list of keys, which Mine only and the Role list read in place of the project's own people. A `subtasks:` line takes the same three fields.
 

@@ -1,14 +1,15 @@
 // Layer 2, server. What the website's own file gives the generated files, the research lines a
-// paper may name (`programs:`), and the one check of the paths of `website.files`, which every
-// reader of the four files goes through. The website's own words (the titles of its sections and
-// the parts of the CV's person block) stay in its own file, read by its templates, so the hub holds
-// no word of the website's and the generated files hold only what the hub gives.
+// paper may name (under the key `website.site_programs` says), and the one check of the paths of
+// `website.files`, which every reader of the four files goes through. The website's words and field
+// names stand in the hub's settings and in no code. The titles of its sections and the other parts
+// of the CV's person block stay in its own file, read by its templates, and the generated files
+// hold only what the hub gives.
 //
 // A path of `website.files` is relative to the website's folder and is held to it by its real path,
 // so a link out of the folder is caught.
 
 import { basename, dirname, isAbsolute, join } from 'node:path';
-import { isMap } from '../../../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import type { WebsiteFiles } from '../../../../data/sources/config/settings/files.ts';
 import { seen } from '../../../core/git/run.ts';
@@ -18,7 +19,7 @@ import { below, foldsCase, realPath } from '../../../core/paths.ts';
 export type SiteFile = {
     /** The file's path relative to the website's folder, which a problem names it by. */
     path: string;
-    /** The keys of `programs:`, the research lines a paper may name. */
+    /** The keys under `website.site_programs`, the research lines a paper may name. */
     programs: string[];
 };
 
@@ -29,6 +30,7 @@ type ProblemKey =
     | 'audit.msg_site_no_kind'
     | 'audit.msg_site_no_self'
     | 'audit.msg_site_program'
+    | 'audit.msg_site_no_word'
     | 'audit.msg_cv_unknown_person'
     | 'audit.msg_cv_unknown_record'
     | 'audit.msg_cv_self_names'
@@ -49,12 +51,13 @@ export type Problem = {
     kind?: 'data';
 };
 
-/** The website's own file at `path` read for what the generated files take from it. */
-export function readSite(value: unknown, path: string): SiteFile {
-    return {
-        path,
-        programs: isMap(value) && isMap(value.programs) ? Object.keys(value.programs) : []
-    };
+/**
+ * The website's own file at `path` read for what the generated files take from it, the research
+ * lines being the keys of its map `key` holds (`website.site_programs`); none for no such map.
+ */
+export function readSite(value: unknown, path: string, key: string): SiteFile {
+    const lines = isMap(value) ? byKey(value, key) : undefined;
+    return { path, programs: isMap(lines) ? Object.keys(lines) : [] };
 }
 
 /**
