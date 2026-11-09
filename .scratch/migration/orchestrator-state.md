@@ -203,12 +203,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 737 (2026-11-09), O177: the builder's case-run program for the colours also searched for the hue the three themes everforest, synthwave and kanagawalotus needed, and the three `--c-blue` values in their sheets are its output; the brief approved only programs that print a case's result. Every open-layout pair measures 10 or more in all 49 themes. (a) Keep the three values, the recommendation; (b) choose the three by hand and measure them again, which costs more and changes nothing a reader sees. Neither leaves work undone, so neither is the lazy option.
-- Open item 736 (2026-11-09), O176: the builder made the C8 table with two read-only `grep`/`sed`/`cut` loops, which no ruling approved. (a) Their output is discarded and the table is made again by reading in repair round 1, the recommendation; (b) approve them, and the table stands. (b) is the lazy option.
 
 
 ## Closed items
 
+- Open item 737 (2026-11-09), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 737" says.
+- Open item 736 (2026-11-09), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 736" says; (b) was the lazy option.
 - 735 (2026-11-09): ruled, Axel: "Lets do the landing first. After that, I can see the slides myself and see what I want to be changed" (`plan.md` Rulings).
 - Open item 734 (2026-11-08), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 734" says; (b) was the lazy option. Step O173 carries it.
 - Open item 733 (2026-11-08), closed by Axel the same day: (a), every research project and no stage filter, as `plan.md` Rulings "Open item 733" says; (a) without `tiers` was the lazy option. Step O173 builds the `tiers` block; the row is the hub's own change after it.
@@ -890,6 +890,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (open items 736 and 737 ruled). 736 (a) and 737 (a). O176's and O177's repair rounds run. In flight (2 of 6): O176, O177. Open items: none.
 - 2026-11-09 (O177 repair round 1 sent). The review is `agents/reviews/O177-refuter.md`; two findings go to the builder, one is left as built by the no-breakage rule, one is open item 737. O176's round runs. In flight (2 of 6): O176, O177. Open items: 736, 737.
 - 2026-11-09 (O176 repair round 1 sent). The review (`agents/reviews/O176-refuter.md`) and the 22 slides measured too tall are in `agents/briefs/O176-round-1.md`. In flight (2 of 6): O176, O177. Open items: 736.
 - 2026-11-09 (O175 landed). The Overview draws its tiles a few at a time (booking in `plan.md`, `agents/reviews/O175-landing.md`), with five fixes at landing. In flight (2 of 6): O176 and O177, each built and awaiting its review. Next: `/refute migration O177` and `/refute migration O176`. Open items: none.
