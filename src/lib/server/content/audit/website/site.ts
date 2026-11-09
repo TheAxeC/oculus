@@ -33,7 +33,9 @@ type ProblemKey =
     | 'audit.msg_cv_unknown_record'
     | 'audit.msg_cv_self_names'
     | 'audit.msg_cv_key_twice'
-    | 'audit.msg_cv_empty_key';
+    | 'audit.msg_cv_empty_key'
+    | 'audit.msg_cv_unknown_section'
+    | 'audit.msg_cv_no_word';
 
 /**
  * Something the hub's files give that the website cannot be written with: the manifest it is about

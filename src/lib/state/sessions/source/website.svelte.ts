@@ -3,14 +3,15 @@
 // from the hub, writes them through the Files view's writer and runs `website.cv` in the website's
 // folder as a task terminal (server/machine/runs/website.ts).
 //
-// The button is off, with the sentence saying why, while the user is not known or `website.folder`
-// is empty; its tip names the three paths `website.files` gives and the command of `website.cv`. A
-// press over a generated file a source tab holds unsaved text of is refused before it is sent, as
-// every write over such a file is (state/sessions/source/write-files.ts, `unsavedAnswer`). A
-// command text not yet approved comes back as its line: the store holds it, the view asks, and
-// approving it posts the approval as a project command's is posted and presses again. Under the
-// button the store says what the last press came to: the files written, then the command running
-// and the status it ended with, read from the terminals list, or the refusal.
+// The button is off, with the sentence saying why, while the user is not known, `website.folder`
+// is empty or `website.cv_sections` holds no section; its tip names the three paths of
+// `website.files` and the command of `website.cv`. A press over a generated file a source tab holds
+// unsaved text of is refused before it is sent, as every write over such a file is
+// (state/sessions/source/write-files.ts, `unsavedAnswer`). A command text not yet approved comes
+// back as its line: the store holds it, the view asks, and approving it posts the approval as a
+// project command's is posted and presses again. Under the button the store says what the last
+// press came to: the files written, then the command running and the status it ended with, read
+// from the terminals list, or the refusal.
 
 import { z } from 'zod';
 import { readJson } from '../../../data/shapes/shapes.ts';
@@ -85,6 +86,7 @@ const REFUSAL_WORDS: Record<WebsiteRefusal, string> = {
     'website-no-hub': 'career.website_no_hub',
     'website-no-person': 'career.website_no_person',
     'website-no-folder': 'career.website_no_folder',
+    'website-no-cv-sections': 'career.website_no_cv_sections',
     'website-folder-missing': 'career.website_folder_missing',
     'website-bad-path': 'career.website_bad_path',
     'website-site-unreadable': 'career.website_site_unreadable',
@@ -116,7 +118,9 @@ export function createWebsite(deps: WebsiteDeps): WebsiteStore {
 
     function off(): string | null {
         if (!selfKnown(deps.snapshot())) return t('career.website_no_person');
-        if ((settingsOf(deps.config())?.folder ?? '') === '') return t('career.website_no_folder');
+        const setting = settingsOf(deps.config());
+        if ((setting?.folder ?? '') === '') return t('career.website_no_folder');
+        if (setting?.cvSections.length === 0) return t('career.website_no_cv_sections');
         return null;
     }
 

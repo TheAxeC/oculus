@@ -7,12 +7,13 @@
 // terminal's, and the page reads its exit from the terminals list.
 //
 // A press is refused, with nothing written, while the user is not known, while `website.folder`
-// names no folder or one that is not there, while a path of `website.files` cannot be used, which
-// is refused before the website's own file is read and before an approval is asked, while the last
-// run of the command still runs, and when the writer could not take one of the three files: every
-// file is checked as the writer's upload checks it before the first is written, and a file the
-// writer still refuses puts the files of the press already written back as they were. Each refusal
-// is a word of WEBSITE_REFUSALS with the names its sentence is about.
+// names no folder or one that is not there, while `website.cv_sections` holds no section, so a hub
+// with no rows writes no CV holding its person block alone, while a path of `website.files` cannot
+// be used, which is refused before the website's own file is read and before an approval is asked,
+// while the last run of the command still runs, and when the writer could not take one of the
+// three files: every file is checked as the writer's upload checks it before the first is written,
+// and a file the writer still refuses puts the files of the press already written back as they
+// were. Each refusal is a word of WEBSITE_REFUSALS with the names its sentence is about.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
@@ -139,6 +140,7 @@ function builtFiles(
     const config = options.config();
     const setting = websiteSettings(config);
     if (setting.folder === '') return refused('website-no-folder');
+    if (setting.cvSections.length === 0) return refused('website-no-cv-sections');
     const dir = websiteDir(primary.dir, setting.folder);
     if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         return refused('website-folder-missing', [setting.folder]);
@@ -160,6 +162,8 @@ function builtFiles(
         career: entities.career,
         self,
         kinds: setting.kinds,
+        cvSections: setting.cvSections,
+        cvWords: setting.cvWords,
         rules: auditRules(config),
         site: readSite(site, setting.files.site),
         paths: setting.files

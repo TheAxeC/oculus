@@ -317,7 +317,8 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
 
 /**
  * One finding for each setting of `behavior.yml`, and each option of the editor, whose value the
- * options catalog's rule refuses (and the repository scan depth of sources.yml): it names the file
+ * options catalog's rule refuses, one for each label of a refused row of a list of records (and the
+ * repository scan depth of sources.yml): it names the file
  * the value was read from and the key, and the reader uses the entry's default. A key the catalog
  * holds no entry for gives none (the options files' own findings name that file), and neither does
  * a configuration whose merge dropped behavior.yml, which holds no key to be wrong. They are worded
@@ -333,7 +334,13 @@ export function settingFindings(where: ConfigWhere, config: Record<string, unkno
     }
     const named = new Set<string>();
     return problems.flatMap((problem) => {
-        const once = `${problem.where}:${problem.key}${problem.where === 'repeat' ? problem.name : ''}`;
+        const which =
+            problem.where === 'repeat'
+                ? problem.name
+                : problem.where === 'row'
+                  ? problem.issue.row
+                  : '';
+        const once = `${problem.where}:${problem.key}${which}`;
         if (named.has(once)) return [];
         named.add(once);
         const file = keyFile(where, problem.key);

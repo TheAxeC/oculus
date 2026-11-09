@@ -701,10 +701,11 @@ export function offerAlong(
  * let draw arrows, the conventions its audit holds its projects to (`audit:`: the files and
  * sections it requires, the folders a stage keeps a project in and its website's feed), the
  * website its files are written into (`website:`, each of the four paths of `website.files` a key
- * of its own, so a hub that sets one keeps oculus's other three), the values its apps' settings
- * hold, the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds
- * to the project form, the reader rows of its literature sources, its Recover sources and its
- * journal browser, the links every page link is built from, and the Zenodo deposit of its projects
+ * of its own, so a hub that sets one keeps oculus's other three, and each of the three words of
+ * `website.cv_words` a key of its own the same way), the values its apps' settings hold, the
+ * counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the
+ * project form, the reader rows of its literature sources, its Recover sources and its journal
+ * browser, the links every page link is built from, and the Zenodo deposit of its projects
  * (`deposit.zenodo`, each of its three fields a key of its own, so a hub that sets one keeps
  * oculus's other two). Its domains and theme words are its own registry files'. Which of them each
  * hub's own file is read for, and which the primary's alone, is data/shapes/hub-keys.ts's.
@@ -766,6 +767,10 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'website.folder', file: 'behavior.yml' },
     { key: 'website.cv', file: 'behavior.yml' },
     { key: 'website.kinds', file: 'behavior.yml' },
+    { key: 'website.cv_sections', file: 'behavior.yml' },
+    { key: 'website.cv_words.months', file: 'behavior.yml' },
+    { key: 'website.cv_words.open_end', file: 'behavior.yml' },
+    { key: 'website.cv_words.award_time', file: 'behavior.yml' },
     { key: 'website.files.site', file: 'behavior.yml' },
     { key: 'website.files.cv', file: 'behavior.yml' },
     { key: 'website.files.papers', file: 'behavior.yml' },

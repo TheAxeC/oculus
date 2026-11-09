@@ -321,15 +321,34 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # the section `kind` of the first row whose `stages` hold its stage and whose `forms` hold its form,
 # a row leaving one out placing no condition on it; `order` is whether its entries say the user's
 # place among the authors, and `pub_pre` and `pub_post` the words printed before and after an
-# entry's venue. A manifest no row takes gives no entry and a finding. `files` gives the website's
-# four files, each a path relative to its folder, `site` its own file; a hub sets any of them alone
-# and the others stay as shipped. A path that is empty, is absolute, leaves the folder or names the
-# file of another key stops Write the website and is one finding of the audit. The headings of the
-# sections are the website's own, in `sections:` of its own file.
+# entry's venue. A manifest no row takes gives no entry and a finding. `cv_sections` are the
+# sections of the CV's file in order, each row writing a section `key` with the fields `fields`
+# (at least one): a row's period goes in `date` as a timestamp under `period: timestamp` and in
+# `duration` otherwise; in an employer CV the period is the period text, in the same field the row's
+# `period` picks, and a supervision entry's student is always in `duration`. `record_fields` are
+# what an employer CV's row of the section takes from the record it names when it holds none of its
+# own, `location` and `when` when left out, and nothing for an empty list. A key must start with a
+# lower-case letter, hold only lower-case letters, digits, `_` and `-`, and not be `personal`; a key
+# that breaks this, a row with no field and a key an earlier row holds are findings of Settings; a
+# CV row whose section no row lists is written nowhere and is a finding of the audit, and a hub with
+# no row stops Write the website.
+# `cv_words` are the words a period prints, each a key of its own: twelve `months`, January first,
+# `open_end` for a period with no end and `award_time` after the day of a timestamp. A period
+# needing a word the setting lacks prints without it and is a finding of the audit; an empty
+# `award_time` prints the day alone and is none. `files` gives the website's four files, each a path
+# relative to its folder, `site` its own file; a hub sets any of them alone and the others stay as
+# shipped. A path that is empty, is absolute, leaves the folder or names the file of another key
+# stops Write the website and is one finding of the audit. The headings of the sections are the
+# website's own, in `sections:` of its own file.
 # website:
 #   folder: ''
 #   cv: ''
 #   kinds: []
+#   cv_sections: []
+#   cv_words:
+#     months: []
+#     open_end: ''
+#     award_time: ''
 #   files:
 #     site: _data/website.yml
 #     cv: _data/data.yml
@@ -343,6 +362,13 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #       - { kind: thesis, forms: [thesis] }
 #       - { kind: papers-in-review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }
 #       - { kind: journal, stages: [accepted, published], forms: [journal], order: true }
+#     cv_sections:
+#       - { key: experience, fields: [title, location, duration, url, about, hide] }
+#       - { key: awards, fields: [award, event, date, location, content, hide], period: timestamp }
+#     cv_words:
+#       months: [Jan., Feb., Mar., Apr., May, Jun., Jul., Aug., Sep., Oct., Nov., Dec.]
+#       open_end: Current
+#       award_time: '15:59:00-0400'
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
@@ -1003,6 +1029,7 @@ stage: nascent          # nascent, scoping, umbrella, de-risking, exploring, in-
 #   abstract: ""
 #   pub_last: ""        # a mark printed after the authors, such as Spotlight
 #   hide: false         # kept off the website while it stays in the file
+#   cv_hide: false      # kept off the CV while it stays on the website
 #   rank: 1             # the place in its section, lowest first
 # cv:                   # the project's row in the CV's projects
 #   title: ""           # when it is not the manifest's title

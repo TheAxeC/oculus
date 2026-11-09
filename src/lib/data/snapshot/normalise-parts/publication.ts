@@ -59,6 +59,7 @@ export function publication(value: unknown): Publication | undefined {
         abstract: field(textShape, map.abstract),
         pub_last: field(textShape, map.pub_last),
         hide: field(z.boolean(), map.hide),
+        cv_hide: field(z.boolean(), map.cv_hide),
         rank: field(rankShape, map.rank)
     }));
 }

@@ -18,8 +18,17 @@ import { describe, expect } from 'vitest';
 import { parse, stringify } from 'yaml';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
-import type { AuditFinding, Person, Project } from '../../../src/lib/data/model/index.ts';
-import type { WebsiteKind } from '../../../src/lib/data/sources/config/settings/files.ts';
+import type {
+    AuditFinding,
+    Collection,
+    Person,
+    Project
+} from '../../../src/lib/data/model/index.ts';
+import type {
+    CvSection,
+    CvWords,
+    WebsiteKind
+} from '../../../src/lib/data/sources/config/settings/files.ts';
 import { auditFindings, hubAuditSetting } from '../../../src/lib/server/content/audit/scan.ts';
 import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
 import type { WebsiteCheck } from '../../../src/lib/server/content/audit/publications.ts';
@@ -75,7 +84,8 @@ function findingsOf(
     projects: Project[],
     primary = true,
     website: WebsiteCheck | null = null,
-    self: ReadonlySet<string> = new Set<string>()
+    self: ReadonlySet<string> = new Set<string>(),
+    collections: Collection[] = []
 ): AuditFinding[] {
     return auditFindings({
         hub,
@@ -84,7 +94,7 @@ function findingsOf(
         held: holdersOf(projects),
         self,
         projects,
-        collections: [],
+        collections,
         rules: auditRules(config),
         setting: hubAuditSetting(hub),
         website,
@@ -423,6 +433,9 @@ describe('the website of the audit', () => {
         { kind: 'journal', forms: ['journal'] },
         { kind: 'conference', forms: ['conference'] }
     ];
+    /** The CV's one section, its words empty, since no row here prints a period. */
+    const cvSections: CvSection[] = [{ key: 'news', fields: ['title'] }];
+    const cvWords: CvWords = { months: [], open_end: '', award_time: '' };
     /** The four paths of `website.files` as they ship. */
     const SHIPPED = {
         site: '_data/website.yml',
@@ -461,6 +474,8 @@ describe('the website of the audit', () => {
             career: null,
             self,
             kinds,
+            cvSections,
+            cvWords,
             rules: auditRules(config),
             site,
             paths
@@ -481,16 +496,23 @@ describe('the website of the audit', () => {
     /** The check of the website in the folder `folder` of the hub, with the paths given. */
     function checkOf(hub: string, folder = 'site', files = SHIPPED): WebsiteCheck {
         return {
-            setting: { folder, cv: '', kinds, files },
+            setting: { folder, cv: '', kinds, cvSections, cvWords, files },
             dir: folder === '' ? '' : join(hub, folder),
             people: [me],
             career: null
         };
     }
 
-    /** The website's findings of the audit of a hub with the check given. */
-    function websiteFindings(hub: string, check: WebsiteCheck, user = self): AuditFinding[] {
-        return findingsOf(hub, projects, true, check, user).filter((one) => one.kind === 'publink');
+    /** The website's findings of the audit of a hub with the check and the collections given. */
+    function websiteFindings(
+        hub: string,
+        check: WebsiteCheck,
+        user = self,
+        collections: Collection[] = []
+    ): AuditFinding[] {
+        return findingsOf(hub, projects, true, check, user, collections).filter(
+            (one) => one.kind === 'publink'
+        );
     }
 
     /** The publications file with its value changed by `change`, as a YAML text. */
@@ -506,6 +528,30 @@ describe('the website of the audit', () => {
     it('find nothing when the three files on disk are the files the hub gives', () => {
         const hub = siteHub(generated());
         expect(websiteFindings(hub, checkOf(hub))).toEqual([]);
+    });
+
+    it('say the row and the section of an entry naming a section website.cv_sections lacks', () => {
+        const hub = siteHub(generated());
+        const talks = {
+            id: 'hub:talks',
+            root: 'hub',
+            title: 'Talks',
+            file: '',
+            entries: [
+                {
+                    id: 'hub:a-talk',
+                    root: 'hub',
+                    title: 'A talk',
+                    file: '',
+                    index: 0,
+                    fields: { cv_section: 'nowhere' }
+                }
+            ]
+        } as Collection;
+        const found = websiteFindings(hub, checkOf(hub), self, [talks]);
+        expect(found.map((one) => [one.scope, one.where, one.message])).toEqual([
+            ['website', 'site', said('audit.msg_cv_unknown_section', 'talks.a-talk', 'nowhere')]
+        ]);
     });
 
     it('name a file whose authors differ at the first place they differ, offering Write the website', () => {
@@ -525,6 +571,24 @@ describe('the website of the audit', () => {
                 `site/${papersPath}`
             ]
         ]);
+    });
+
+    it('name a file that differs and offer no action while website.cv_sections holds no section', () => {
+        const changed = papersWith((value) => {
+            const journal = value.journal as Section;
+            journal.papers[0].authors = 'Someone else';
+            return value;
+        });
+        const hub = siteHub({ ...generated(), [papersPath]: changed });
+        const held = checkOf(hub);
+        const found = websiteFindings(hub, {
+            ...held,
+            setting: { ...held.setting, cvSections: [] }
+        });
+        expect(found.map((one) => one.message)).toContain(
+            said('audit.msg_site_differs_no_cv', papersPath, 'journal.papers.0.authors')
+        );
+        expect(found.filter((one) => one.action === 'website')).toEqual([]);
     });
 
     it('count the order of the sections and of the entries, and not the order of the keys inside an entry', () => {

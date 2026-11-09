@@ -369,7 +369,7 @@ The keys of `project.yml` are the fields of `config/schemas/manifest-schema.yml`
 | `reproduced.date`, `reproduced.note` | the last run of the whole pipeline from the raw data |
 | `outcome`, `doi` | how the project ended, and the published paper's DOI |
 | `paths` | where a document is kept away from its usual place, and `cluster`, the project's folder on the cluster |
-| `publication.*` | the website's publications entry: `authors`, `book`, `program`, `url`, `links`, `abstract`, `pub_last`, `hide`, `rank` |
+| `publication.*` | the website's publications entry: `authors`, `book`, `program`, `url`, `links`, `abstract`, `pub_last`, `hide`, `cv_hide`, `rank` |
 | `cv.*` | the CV's projects row: `title`, `url`, `when`, `about`, `role`, `hide`, `rank` |
 
 A `followup:` note is `{ do, after, done, lead, supervisors, collaborators }`: its `after` hides it until that date, and `done: true` keeps it on its card, struck through, and takes it off the Focus board. The three people fields of a note each hold a person key or a list of keys, which Mine only and the Role list read in place of the project's own people. A `subtasks:` line takes the same three fields.

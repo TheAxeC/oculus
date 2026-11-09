@@ -138,6 +138,43 @@ options:
                 help: the words the website prints after the venue of an entry of the row; a row without it writes no pub_post
                 control: text
                 empty: true
+    website.cv_sections:
+        heading: sources
+        section: Website
+        help: "The sections of the website's CV, in the order the file lists them, and what each writes. A row of the CV whose section no row lists is written nowhere and is a finding of the audit. A key must start with a lower-case letter, hold only lower-case letters, digits, _ and -, and not be personal; a key that breaks this, a row with no field and a key an earlier row holds are findings. A hub with no row stops Write the website and writes no CV. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            key:
+                help: the key of the section in the CV's file
+                control: text
+            fields:
+                help: the fields the section's rows print, in that order
+                control: list
+            period:
+                help: "timestamp writes a row's period in date, as a timestamp in the CV and as the period text in an employer CV; left out or empty, the period text goes in duration. A supervision entry's student always prints in duration"
+                control: choice
+                options: [timestamp]
+                empty: true
+            record_fields:
+                help: what an employer CV's row of the section takes from the record it names when it holds none of its own; left out, location and when; an empty list takes nothing
+                control: list
+                empty: true
+    website.cv_words.months:
+        heading: sources
+        section: Website
+        help: "The twelve words the website's CV prints for a month, January first. Without twelve entries a month prints as its year alone, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: list
+    website.cv_words.open_end:
+        heading: sources
+        section: Website
+        help: "The word the website's CV prints for the end of a period that has none. Empty prints the start alone, and the audit has a finding. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.cv_words.award_time:
+        heading: sources
+        section: Website
+        help: "The time and zone written after the day of a timestamp the website's CV prints, in the form its to_date parses. Empty prints the day alone. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
     focus.sections:
         heading: boards
         section: Focus board
@@ -1596,8 +1633,9 @@ descriptions:
                 described_by: reader_step
 groups:
     audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, and the folders a project at a stage is kept under."
-    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications and the paths of its four files."
+    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications, the sections of its CV and the words a CV's period prints, and the paths of its four files."
     website.files: "The website's four files, each a path relative to its folder: its own file and the three the hub's files are written into."
+    website.cv_words: "The words a period of the website's CV prints: the twelve months, the end of a period with no end and the time and zone after an award's day."
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.

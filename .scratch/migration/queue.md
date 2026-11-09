@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use): O178 (the CV's sections set in the hub).
+In flight (0 of 6 slots in use): none.
 
 Queued: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O178 (the CV's sections set in the hub, a publication's cv_hide), 2026-11-09; hub commit awaits Axel's word.
 - O176 (the decks repaired after O151), 2026-11-09, 5976da035; hub 83b3034df.
 - O177 (the stage umbrella), 2026-11-09, 6322c57f9; hub b64f84066.
 - O175 (the portfolio Overview usable at 110 tiles), 2026-11-09.

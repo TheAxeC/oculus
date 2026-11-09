@@ -107,7 +107,10 @@ function atPlace(audit: AuditPayload, name: string): boolean {
 describe('the portfolio watcher over the website the primary hub names', () => {
     it('publishes the audit again for a change on disk to each of the three generated files', async () => {
         const dir = copyHub(scratchDir('oculus-website-watch-'), 'hub');
-        appendFileSync(join(dir, HUB_FILE), `\nwebsite:\n  folder: ${FOLDER}\n`);
+        appendFileSync(
+            join(dir, HUB_FILE),
+            `\nwebsite:\n  folder: ${FOLDER}\n  cv_sections:\n    - { key: news, fields: [title] }\n`
+        );
         const data = join(dir, FOLDER, '_data');
         mkdirSync(data, { recursive: true });
         const workspace = workspaceWith([{ name: 'hub', dir }], 'hub');

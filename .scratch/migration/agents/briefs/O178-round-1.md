@@ -12,7 +12,7 @@ Rules: `.scratch/migration/agents/spec.md`, as for the step. The brief `agents/b
 
 ## 3. A second refused row gets its own finding (Behaviour B5)
 
-`src/lib/data/sources/config/catalogs.ts`, the `once` key in the flatMap: for `problem.where === 'row'` it also holds `JSON.stringify(problem.issue)`, so two refused rows of one setting are two findings. Add a row beside the existing rows of the refused row in `tests/data/hubs/website-files.test.ts` only if a row there already reads the catalog's findings; otherwise quote a run in the report.
+`src/lib/data/sources/config/catalogs.ts`, the `once` key in the flatMap: for `problem.where === 'row'` it also holds `problem.issue.row`, so two refused rows of one setting are two findings and one row with several issues stays one finding, as the guarded row 'names a key the reader does not know' in `tests/server/core/reader/reader.test.ts` expects. Add a row beside the existing rows of the refused row in `tests/data/hubs/website-files.test.ts` only if a row there already reads the catalog's findings; otherwise quote a run in the report.
 
 ## 4. Sentences (Standards ST1, ST2, ST3)
 

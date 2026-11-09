@@ -246,6 +246,7 @@ export type Publication = {
     /** A mark printed after the authors, such as an award of the paper. */
     pub_last?: string;
     hide?: boolean;
+    cv_hide?: boolean;
     /** The place of the entry in its website section, lowest first. */
     rank?: number;
 };

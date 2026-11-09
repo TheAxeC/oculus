@@ -110,6 +110,7 @@ manifest_schema:
     "publication.abstract": { label: "Abstract", type: textarea, section: Website, help: "The abstract the website shows under the paper; empty for none." }
     "publication.pub_last": { label: "Mark", type: text, section: Website, help: "A mark printed after the authors, such as Spotlight." }
     "publication.hide": { label: "Hidden", type: checkbox, section: Website, help: "Tick to keep the paper off the website while it stays in the file; the website writes the value as it is held." }
+    "publication.cv_hide": { label: "Paper hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the paper off the CV while it stays in the file; the website writes the value as it is held." }
     "publication.rank": { label: "Place", type: text, section: Website, help: "The place of the entry in its website section, lowest first, as a whole number." }
     "cv.title": { label: "CV title", type: text, section: Website, help: "The title the CV's projects list the project with, when it is not the manifest's title. A manifest that carries a cv record is listed in the CV's projects." }
     "cv.url": { label: "CV address", type: text, section: Website, help: "The address the CV links the project to; empty for none." }

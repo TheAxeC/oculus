@@ -19,9 +19,9 @@ afterEach(() => vi.unstubAllGlobals());
 /** A snapshot that names the user. */
 const KNOWN = { entities: { people: { me: { self: true } } } } as unknown as Snapshot;
 
-/** The settings file of a hub with a website folder and these lines under `website:`. */
+/** The settings file of a hub with a website folder, a CV section and the lines `lines`. */
 function settingsOf(lines: string): string {
-    return `website:\n  folder: site\n${lines}`;
+    return `website:\n  folder: site\n  cv_sections:\n    - { key: news, fields: [title] }\n${lines}`;
 }
 
 /** The store over a hub with this settings file, holding the files `held` unsaved. */
@@ -71,6 +71,12 @@ describe('the tip of Write the website', () => {
 
     it('is the reason while the button is off', () => {
         expect(storeOf('{}\n').tip()).toBe(t('career.website_no_folder'));
+    });
+
+    it('is the sentence of the missing sections while website.cv_sections holds none', () => {
+        expect(storeOf('website:\n  folder: site\n').tip()).toBe(
+            t('career.website_no_cv_sections')
+        );
     });
 });
 

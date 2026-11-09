@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-  - step: O178
-    base: a2928dd16
-    worktree: .agents/worktrees/migration-O178
-    hub_worktree: /Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O178
-    hub_base: 29e47d50f
-    executor: agent
-    worker: claude:opus
-    session_id: a3e426484f4e3af8e (claude-opus-5-5)
-    builder_usage: 359280 tokens, 148 tool uses, 2186 s
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O178-report.md
-    round: 1
-    landing: not-started
-    brief_check: .scratch/migration/agents/reviews/O178-brief-check.md (a68f29698156160cf, claude-opus-5-5, 226791 tokens, 22 tool uses, 528 s)
-    reviewer_report: .scratch/migration/agents/reviews/O178-refuter.md (ad42d420335726bd5, claude-opus-5-5, 267396 tokens, 42 tool uses, 905 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -188,6 +173,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 
 
+
+- Open item 741 (2026-11-09, O178's landing): four sentences of the documents `agents/spec.md:72` leaves to Axel. `docs/data-map.md:122` gains the four new keys after `website.kinds`, `:158` and `:210` say thirty-one keys in place of twenty-seven and `:158` lists the four, and `docs/HELP.md:528` says a differing file offers Write the website while a CV section is set. (a) Write the four lines as a fix on main: pro, the pages are true; con, none beyond the edit. (b) Leave them: pro, no edit; con, the pages stay false; this is the lazy option. Recommendation: (a).
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
@@ -883,6 +870,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O178 landed on oculus main). Its hub worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/migration-O178` waits for Axel's word: `git add -A && git commit` there, cherry-pick on hub main, remove the worktree and branch. Until then the live hub has no CV section, so Write the website is off. In flight (0 of 6). Open items: 741.
 - 2026-11-09 (O178 repair round 1 sent; ruling 740). The round's brief `agents/briefs/O178-round-1.md` carries findings B1, B2, B5, ST1 to ST3 and a publication's `cv_hide`. At landing: the `service` row, the three `docs/data-map.md` lines to Axel, the stray `/tmp/x` behind the red rows of `tests/server/edit/config-key.test.ts`. In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 building; eleventh row booked). At landing, before the hub commit, add to the hub worktree's `.oculus/config.yml` the row `- { key: service, fields: [title, location, duration, url, about, hide] }` after `academic` (`plan.md` Rulings "O178 service row"). In flight (1 of 6): O178. Open items: none.
 - 2026-11-09 (O178 building). Prepared at a2928dd16, hub worktree at 29e47d50f; builder a3e426484f4e3af8e (claude-opus-5-5) launched. In flight (1 of 6): O178. Open items: none.

@@ -102,6 +102,7 @@ function entryOf(project: Project, kind: WebsiteKind, order: string | undefined)
     put('abstract', held.abstract);
     put('pub_last', held.pub_last);
     put('hide', held.hide);
+    put('cv_hide', held.cv_hide);
     return entry;
 }
 

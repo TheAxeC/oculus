@@ -4,18 +4,25 @@
 // `references`), the entries of the hub's collections that name a CV section (`cv_section`), each
 // supervision entry's students, and the manifests that carry a `cv:` record, each section's rows by
 // their rank and then in the order they are read in. The employer CVs are the career file's
-// `profiles`, whose rows name the records they stand for and take from the first one the place,
-// period or address their section prints where they hold none of their own. A section's title and
-// the person's other details (portrait, titles, author, website) are the website's, which its
-// templates read from its own file.
+// `profiles`, whose rows name the records they stand for and take from the first one the fields
+// their section's row of `website.cv_sections` says, or the place and the period where the row says
+// none, where they hold none of their own. A section's title and the person's other details
+// (portrait, titles, author, website) are the website's, which its templates read from its own
+// file.
+//
+// The sections are the rows of the hub's `website.cv_sections`, in the rows' order, each writing
+// the fields its row names; a row naming a section the setting does not list is a problem naming
+// the row and the section, and is written nowhere.
 //
 // A record's period is its `when`, read by the period reader of data/helpers/dates.ts, and the CV
-// prints it in one form in the field the website reads (`periodText`): `duration` in every section,
-// and in the CV's awards `date`, the timestamp the website's `to_date` parses. A student's row
-// prints the degree with the student's period, else the supervision entry's. A record's `when`
-// that is no period, and a record with none, print no period. The month words and "Current" are
-// the website's CV text, which this file writes for it, so they are held here and not in oculus's
-// own catalog.
+// prints it in one form in the field the website reads (`periodText`): under the row's `period:
+// timestamp` in `date` as the timestamp the website's `to_date` parses, and otherwise in `duration`
+// as the period text, and in `duration` for a section no row names. A student's row prints the
+// degree with the student's period, else the supervision entry's. A record's `when` that is no
+// period, and a record with none, print no period. The words a period prints are the website's CV
+// text, so they come from the hub's `website.cv_words`, each read by key: a period needing a word
+// the setting does not hold prints without it and is one problem naming the key, however many
+// periods need it.
 //
 // A record is named by its key: a collection entry's key, a manifest's folder name, a career row's
 // `key`. A key two records hold names neither: a row that names it takes nothing from either and is
@@ -26,6 +33,7 @@ import { readPeriod, type PeriodPoint } from '../../../../data/helpers/dates.ts'
 import { bareId } from '../../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Career, Collection, Id, Person, Project } from '../../../../data/model/index.ts';
+import type { CvSection, CvWords } from '../../../../data/sources/config/settings/files.ts';
 import type { Problem } from './site.ts';
 
 /** What the CV and the employer CVs are built from. */
@@ -35,27 +43,11 @@ export type CvInput = {
     people: readonly Person[];
     career: Career | null;
     self: ReadonlySet<Id>;
+    /** The CV's sections, in the file's order: the rows of `website.cv_sections`. */
+    cvSections: readonly CvSection[];
+    /** The words a period prints: `website.cv_words`. */
+    cvWords: CvWords;
 };
-
-/** The fields of a row that carries a title, in the order a row is written. */
-const TITLED = ['title', 'location', 'duration', 'url', 'about', 'hide'];
-
-/**
- * The CV's sections in the order the file lists them, each with the fields its rows print: the
- * shape the website's templates and its CV programs read.
- */
-const SECTIONS: { key: string; fields: readonly string[] }[] = [
-    { key: 'references', fields: ['name', 'email', 'reason'] },
-    { key: 'experience', fields: TITLED },
-    { key: 'academic', fields: TITLED },
-    { key: 'students', fields: ['title', 'location', 'duration'] },
-    { key: 'news', fields: TITLED },
-    { key: 'education', fields: TITLED },
-    { key: 'grants', fields: ['title', 'url', 'duration', 'role', 'status', 'about', 'hide'] },
-    { key: 'projects', fields: ['title', 'url', 'duration', 'role', 'hide', 'about'] },
-    { key: 'awards', fields: ['award', 'event', 'date', 'location', 'content', 'hide'] },
-    { key: 'extracurricular', fields: TITLED }
-];
 
 /** The career file's lists of CV rows, each with the section its rows go to unless one is named. */
 const CAREER_LISTS: { list: string; section: string }[] = [
@@ -68,92 +60,14 @@ const CAREER_LISTS: { list: string; section: string }[] = [
 /** The field a record holds its period in. */
 const WHEN = 'when';
 
-/** The field of a row the CV prints the period text in, and the one of an award row. */
+/** The field of a row the CV prints the period text in, and the one of a timestamp row. */
 const DURATION = 'duration';
 const DATE = 'date';
 
-/** The section whose rows print their period as the timestamp the website's `to_date` parses. */
-const AWARDS = 'awards';
+/** How many months a `website.cv_words.months` list holds. */
+const MONTHS_IN_A_YEAR = 12;
 
-/** The month words of the CV's period text, January first. */
-const MONTHS = [
-    'Jan.',
-    'Feb.',
-    'Mar.',
-    'Apr.',
-    'May',
-    'Jun.',
-    'Jul.',
-    'Aug.',
-    'Sep.',
-    'Oct.',
-    'Nov.',
-    'Dec.'
-];
-
-/** The words the CV prints for an open end. */
-const OPEN_END = 'Current';
-
-/** The time and zone of an award's timestamp, after its day: the form `to_date` parses. */
-const AWARD_TIME = '15:59:00-0400';
-
-/** One end of a period as the CV prints it: its month and year, or its year alone. */
-function pointText(point: PeriodPoint): string {
-    return point.month === undefined
-        ? String(point.year)
-        : `${MONTHS[point.month - 1]} ${point.year}`;
-}
-
-/**
- * A period as the CV prints it: `<start> - <end>`, `<start> - Current` for an open end, and one
- * end alone when the two print the same; undefined for a value that is no period.
- */
-function periodText(value: unknown): string | undefined {
-    const read = readPeriod(value);
-    if (read === null) return undefined;
-    const start = pointText(read.start);
-    const end = read.end === null ? OPEN_END : pointText(read.end);
-    return start === end ? start : `${start} - ${end}`;
-}
-
-/** An award's period as the timestamp the website parses, its day the start's first day. */
-function awardDate(value: unknown): string | undefined {
-    const read = readPeriod(value);
-    return read === null ? undefined : `${read.start.first} ${AWARD_TIME}`;
-}
-
-/**
- * The fields of a row with its period printed in the field its section reads: an award's `date`
- * as its timestamp, any other row's `duration` as its text (`stamped`), or with `stamped` false an
- * award's `date` as its text, as an employer CV prints it. The `when` and any period text the
- * record holds are left out, so a record with no `when` prints none.
- */
-function withPeriod(
-    section: string,
-    fields: Record<string, unknown>,
-    stamped: boolean
-): Record<string, unknown> {
-    const into = section === AWARDS ? DATE : DURATION;
-    const out: Record<string, unknown> = {};
-    for (const [name, value] of Object.entries(fields)) {
-        if (name !== WHEN && name !== into) out[name] = value;
-    }
-    const text = into === DATE && stamped ? awardDate(fields[WHEN]) : periodText(fields[WHEN]);
-    if (text !== undefined) out[into] = text;
-    return out;
-}
-
-/**
- * The fields a profile row takes from the first record it names when it holds none of its own: of
- * the place, the period and the address, those its section of the employer CV prints (the
- * website's `_industry/src/cv/` templates), by the section's key.
- */
-const FROM_RECORD: Record<string, readonly string[]> = {
-    awards: ['location', WHEN],
-    projects: ['url', WHEN]
-};
-
-/** The fields a row of any other section of a profile takes from its record. */
+/** The fields a profile row takes from its record where its section's row says none. */
 const FROM_RECORD_ELSE: readonly string[] = ['location', WHEN];
 
 /** The list that names the records a profile row stands for. */
@@ -212,13 +126,18 @@ function entryFields(fields: Record<string, unknown>): Record<string, unknown> {
     return out;
 }
 
-/** The fields of a row its section prints, in the section's order, each one the source holds. */
+/**
+ * The fields of a row its section prints, in the section's order, each one the source holds. A
+ * name comes from the setting, so it is read on the row's own fields alone.
+ */
 function printed(
     fields: Record<string, unknown>,
     keys: readonly string[]
 ): Record<string, unknown> {
     const out: Record<string, unknown> = {};
-    for (const key of keys) if (fields[key] !== undefined) out[key] = fields[key];
+    for (const key of keys) {
+        if (Object.hasOwn(fields, key) && fields[key] !== undefined) out[key] = fields[key];
+    }
     return out;
 }
 
@@ -228,17 +147,99 @@ class Cv {
     readonly problems: Problem[] = [];
     /** The person blocks' names, from the user's people entry; none when it gives none. */
     names: Record<string, unknown> = {};
+    /** The rows of `website.cv_sections`, by their key. */
+    private readonly sections = new Map<string, CvSection>();
     /** The CV fields of every record a profile row or an award row may name, by its key. */
     private readonly records = new Map<string, Record<string, unknown>>();
     /** The places of the records each key was read at, in the order they were read in. */
     private readonly places = new Map<string, string[]>();
     private readonly people = new Map<string, Person>();
     private readonly input: CvInput;
+    /** The keys of `website.cv_words` already said to lack a word, each said once per build. */
+    private readonly saidWords = new Set<string>();
     private at = 0;
 
     constructor(input: CvInput) {
         this.input = input;
+        for (const row of input.cvSections) this.sections.set(row.key, row);
         for (const person of input.people) this.people.set(bareId(person), person);
+    }
+
+    /** A word the setting `key` of `website.cv_words` does not hold, as one problem per build. */
+    private noWord(key: string): void {
+        if (this.saidWords.has(key)) return;
+        this.saidWords.add(key);
+        this.problems.push({
+            about: null,
+            key: 'audit.msg_cv_no_word',
+            args: [`website.cv_words.${key}`]
+        });
+    }
+
+    /** One end of a period as the CV prints it: its month and year, or its year alone. */
+    private pointText(point: PeriodPoint): string {
+        if (point.month === undefined) return String(point.year);
+        const { months } = this.input.cvWords;
+        const word = months.length === MONTHS_IN_A_YEAR ? months[point.month - 1] : undefined;
+        if (word === undefined || word === '') {
+            this.noWord('months');
+            return String(point.year);
+        }
+        return `${word} ${point.year}`;
+    }
+
+    /**
+     * A period as the CV prints it: `<start> - <end>`, `<start> - <open end word>` for an open
+     * end, and one end alone when the two print the same or the setting holds no open end word;
+     * undefined for a value that is no period.
+     */
+    periodText(value: unknown): string | undefined {
+        const read = readPeriod(value);
+        if (read === null) return undefined;
+        const start = this.pointText(read.start);
+        const openEnd = this.input.cvWords.open_end;
+        if (read.end === null && openEnd === '') {
+            this.noWord('open_end');
+            return start;
+        }
+        const end = read.end === null ? openEnd : this.pointText(read.end);
+        return start === end ? start : `${start} - ${end}`;
+    }
+
+    /** A timestamp the website parses from a period, its day the start's first day. */
+    private timestamp(value: unknown): string | undefined {
+        const read = readPeriod(value);
+        if (read === null) return undefined;
+        const time = this.input.cvWords.award_time;
+        return time === '' ? read.start.first : `${read.start.first} ${time}`;
+    }
+
+    /**
+     * The fields of a row with its period printed in the field its section reads: `date` under
+     * the row's `period: timestamp`, as the timestamp (`stamped`) or with `stamped` false as the
+     * period text, which is what an employer CV prints; `duration` as the text for any other row,
+     * and for a section no row names. The `when` and any period text the record holds are left
+     * out, so a record with no `when` prints none.
+     */
+    withPeriod(
+        section: string,
+        fields: Record<string, unknown>,
+        stamped: boolean
+    ): Record<string, unknown> {
+        const into = this.sections.get(section)?.period === 'timestamp' ? DATE : DURATION;
+        const out: Record<string, unknown> = {};
+        for (const [name, value] of Object.entries(fields)) {
+            if (name !== WHEN && name !== into) out[name] = value;
+        }
+        const when = fields[WHEN];
+        const text = into === DATE && stamped ? this.timestamp(when) : this.periodText(when);
+        if (text !== undefined) out[into] = text;
+        return out;
+    }
+
+    /** The fields a profile row of a section takes from its record. */
+    recordFields(section: string): readonly string[] {
+        return this.sections.get(section)?.record_fields ?? FROM_RECORD_ELSE;
     }
 
     /** A record read at `where` under `key`; a key a record read before holds names neither. */
@@ -292,8 +293,21 @@ class Cv {
         return found;
     }
 
-    add(section: string, rank: number, fields: Record<string, unknown>): void {
-        this.rows.push({ section, rank, at: this.at++, fields });
+    /**
+     * A row of the CV at `where`: one row of `section` when the setting lists the section, its
+     * fields made only then, so a section written nowhere needs no period word; a problem naming
+     * the row and the section otherwise.
+     */
+    add(section: string, rank: number, where: string, fields: () => Record<string, unknown>): void {
+        if (!this.sections.has(section)) {
+            this.problems.push({
+                about: null,
+                key: 'audit.msg_cv_unknown_section',
+                args: [where, section]
+            });
+            return;
+        }
+        this.rows.push({ section, rank, at: this.at++, fields: fields() });
     }
 
     /**
@@ -304,14 +318,17 @@ class Cv {
         for (const collection of this.input.collections) {
             for (const entry of collection.entries) {
                 const fields = entryFields(entry.fields);
-                this.hold(bareId(entry), `${bareId(collection)}.${bareId(entry)}`, fields);
+                const place = `${bareId(collection)}.${bareId(entry)}`;
+                this.hold(bareId(entry), place, fields);
                 const section = entry.fields.cv_section;
                 if (typeof section !== 'string') continue;
                 const rank = rankOf(entry.fields.cv_rank, Number.POSITIVE_INFINITY);
                 if (Array.isArray(entry.fields.students)) {
                     const where = `${bareId(entry)}.students`;
                     this.students(entry.fields.students, where, rank, entry.fields[WHEN]);
-                } else this.add(section, rank, withPeriod(section, fields, true));
+                } else {
+                    this.add(section, rank, place, () => this.withPeriod(section, fields, true));
+                }
             }
         }
     }
@@ -324,14 +341,17 @@ class Cv {
         list.forEach((one, index) => {
             const row = studentShape.safeParse(one);
             if (!row.success) return;
-            const person = this.person(row.data.person, `${where}.${index}`);
+            const place = `${where}.${index}`;
+            const person = this.person(row.data.person, place);
             if (person === undefined) return;
-            const period = periodText(row.data.when) ?? periodText(when);
-            this.add('students', rank, {
+            this.add('students', rank, place, () => ({
                 title: person.name,
                 location: row.data.topic,
-                [DURATION]: studentText(row.data.degree, period)
-            });
+                [DURATION]: studentText(
+                    row.data.degree,
+                    this.periodText(row.data.when) ?? this.periodText(when)
+                )
+            }));
         });
     }
 
@@ -354,7 +374,9 @@ class Cv {
                     });
                 } else if (typeof row.key === 'string') this.hold(row.key, where, fields);
                 const named = typeof row.cv_section === 'string' ? row.cv_section : section;
-                this.add(named, rankOf(row.cv_rank, index), withPeriod(named, fields, true));
+                this.add(named, rankOf(row.cv_rank, index), where, () =>
+                    this.withPeriod(named, fields, true)
+                );
             });
         }
     }
@@ -387,9 +409,10 @@ class Cv {
             const held = project.cv;
             if (held === undefined) continue;
             const fields = { ...held, title: held.title ?? project.title };
-            this.hold(bareId(project), `projects.${bareId(project)}`, fields);
+            const place = `projects.${bareId(project)}`;
+            this.hold(bareId(project), place, fields);
             const rank = rankOf(held.rank, Number.POSITIVE_INFINITY);
-            this.add('projects', rank, withPeriod('projects', fields, true));
+            this.add('projects', rank, place, () => this.withPeriod('projects', fields, true));
         }
     }
 
@@ -443,7 +466,9 @@ export function cvFile(input: CvInput, cv: Cv): Record<string, unknown> {
     const person = selfOf(input);
     const value: Record<string, unknown> = {};
     if (person !== undefined) value.personal = personal(person, cv);
-    for (const { key, fields } of SECTIONS) value[key] = { content: cv.section(key, fields) };
+    for (const { key, fields } of input.cvSections) {
+        value[key] = { content: cv.section(key, fields) };
+    }
     return value;
 }
 
@@ -472,7 +497,7 @@ function profileRow(
     section: string,
     taken: readonly string[]
 ): Record<string, unknown> {
-    if (!Array.isArray(row[RECORDS])) return withPeriod(section, row, false);
+    if (!Array.isArray(row[RECORDS])) return cv.withPeriod(section, row, false);
     const keys = row[RECORDS].filter((one): one is string => typeof one === 'string');
     const out: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(row)) if (name !== RECORDS) out[name] = value;
@@ -481,7 +506,7 @@ function profileRow(
     for (const name of taken) {
         if (out[name] === undefined && first?.[name] !== undefined) out[name] = first[name];
     }
-    return withPeriod(section, out, false);
+    return cv.withPeriod(section, out, false);
 }
 
 /** A profile with every section's rows given their records' fields. */
@@ -492,9 +517,8 @@ function profileOf(profile: Record<string, unknown>, cv: Cv, where: string) {
             out[name] = part;
             continue;
         }
-        const taken = Object.hasOwn(FROM_RECORD, name) ? FROM_RECORD[name] : FROM_RECORD_ELSE;
         const content = rowsOf(part.content).map((row, index) =>
-            profileRow(row, cv, `${where}.${name}.${index}`, name, taken)
+            profileRow(row, cv, `${where}.${name}.${index}`, name, cv.recordFields(name))
         );
         out[name] = { ...part, content };
     }

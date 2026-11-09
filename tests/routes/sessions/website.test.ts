@@ -2,9 +2,10 @@
 // three files through the Files writer, one History record each that its Undo takes back, then runs
 // `website.cv` in the website's folder as a task terminal after the approval a project command
 // takes. A press is refused, with nothing written, while the user is not known, while
-// `website.folder` names no folder or one that is not there, while a path of `website.files` cannot
-// be used, while the last run of the command still runs, and when the writer cannot take one of the
-// three files; a file the writer refuses after the first was written puts the written ones back.
+// `website.folder` names no folder or one that is not there, while `website.cv_sections` holds no
+// section, while a path of `website.files` cannot be used, while the last run of the command still
+// runs, and when the writer cannot take one of the three files; a file the writer refuses after the
+// first was written puts the written ones back.
 // @module-tag slow: its cases write a hub copy of their own and time out under the load of a full
 // run.
 //
@@ -74,6 +75,9 @@ const CV = 'make cv';
 /** The key of the demo's person who is the user. */
 const SELF = 'rivera-lab';
 
+/** The lines of `website.cv_sections` a press takes, one section. */
+const CV_SECTIONS = '  cv_sections:\n    - { key: news, fields: [title] }\n';
+
 /** One case's world: the hub, the website's folder, the writer, tmux and the approvals file. */
 type World = {
     hub: string;
@@ -90,19 +94,21 @@ const log = new WriteLog('hub', () => hub);
 
 /**
  * A hub whose settings file names the website folder `folder` (made unless `make` is false), the
- * command and the paths `files` of `website.files`, with the user set unless `self` is false.
+ * command, the paths `files` of `website.files` and the lines `sections` of `website.cv_sections`,
+ * with the user set unless `self` is false.
  */
 function worldOf(
     folder = FOLDER,
     make = true,
     self = true,
-    files: Record<string, string> = {}
+    files: Record<string, string> = {},
+    sections = CV_SECTIONS
 ): World {
     hub = realpathSync(copyHub(scratchDir('oculus-website-'), 'hub'));
     const paths = Object.entries(files).map(([key, path]) => `    ${key}: '${path}'\n`);
     appendFileSync(
         join(hub, HUB_FILE),
-        `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n  files:\n${paths.join('') || '    {}\n'}`
+        `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n${sections}  files:\n${paths.join('') || '    {}\n'}`
     );
     if (self) writeFileSync(localFile(hub), `self: ${SELF}\n`);
     const site = join(hub, folder);
@@ -265,6 +271,17 @@ describe('a press of Write the website that is refused', () => {
         expect(existsSync(missing.site)).toBe(false);
         expect(missing.log.listed()).toEqual([]);
         expect(missing.tmux.starts()).toEqual([]);
+    });
+
+    it('writes nothing and asks no approval while website.cv_sections holds no section', async () => {
+        const world = worldOf(FOLDER, true, true, {}, '');
+        expect(await press(world)).toEqual({
+            status: 409,
+            body: { error: 'website-no-cv-sections', names: [] }
+        });
+        expect(onDisk(world)).toEqual([]);
+        expect(world.log.listed()).toEqual([]);
+        expect(world.tmux.starts()).toEqual([]);
     });
 
     it('asks for the approval of a command text not yet approved and writes and runs nothing until it is given', async () => {

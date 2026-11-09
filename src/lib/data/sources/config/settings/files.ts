@@ -217,6 +217,35 @@ const websiteKindShape = z.object({
 /** One row of `website.kinds`, as read. */
 export type WebsiteKind = z.infer<typeof websiteKindShape>;
 
+/** The key of the CV's file that holds its person block, which no section may take. */
+const CV_PERSON_BLOCK = 'personal';
+
+/** The setting the CV's sections are read from. */
+const CV_SECTIONS_KEY = 'website.cv_sections';
+
+/**
+ * One row of `website.cv_sections`: the key of a CV section, the fields its rows print in that
+ * order, how its rows print their period (`timestamp`, else the empty text or none for `duration`),
+ * and the fields an employer CV's row of that section takes from the record it names. A key is
+ * lower case and starts with a letter, so no row reads as the empty key or as `__proto__`, and it
+ * is not the person block; a row must print at least one field.
+ */
+const cvSectionShape = z.object({
+    key: z
+        .string()
+        .regex(/^[a-z][a-z0-9_-]*$/)
+        .refine((key) => key !== CV_PERSON_BLOCK),
+    fields: z.array(z.string()).min(1),
+    period: z.union([z.literal('timestamp'), z.literal('').transform(() => undefined)]).optional(),
+    record_fields: z.array(z.string()).optional()
+});
+
+/** One row of `website.cv_sections`, as read. */
+export type CvSection = z.infer<typeof cvSectionShape>;
+
+/** The words a CV's period prints, from the hub's `website.cv_words`. */
+export type CvWords = { months: string[]; open_end: string; award_time: string };
+
 /**
  * The website's four files, each a path relative to its folder: its own file and the three the
  * hub's files are written into.
@@ -226,12 +255,15 @@ export type WebsiteFiles = { site: string; cv: string; papers: string; industry:
 /**
  * The website the primary hub's files are written into: its folder relative to the hub, empty when
  * none is set, the command run in it once the files are written, empty for none, the rows of its
- * publications' sections in the file's order, and its four files.
+ * publications' sections in the file's order, the rows of the CV's sections in the file's order,
+ * the words a CV's period prints, and its four files.
  */
 export type WebsiteSettings = {
     folder: string;
     cv: string;
     kinds: WebsiteKind[];
+    cvSections: CvSection[];
+    cvWords: CvWords;
     files: WebsiteFiles;
 };
 
@@ -269,10 +301,29 @@ export function zenodoSettings(
     };
 }
 
+/** The rows of `website.cv_sections` its shape takes, each key once, the first standing. */
+function cvSections(config: Record<string, unknown>, problems: SettingProblem[]): CvSection[] {
+    const rows: CvSection[] = [];
+    for (const { at, row } of checkedRows(config, CV_SECTIONS_KEY, problems)) {
+        const section = cvSectionShape.safeParse(row);
+        if (!section.success) {
+            const issue = { kind: 'shape' as const, row: at, at: '' };
+            problems.push({ key: CV_SECTIONS_KEY, where: 'row', issue });
+        } else if (rows.some((one) => one.key === section.data.key)) {
+            problems.push({ key: CV_SECTIONS_KEY, where: 'repeat', name: section.data.key });
+        } else {
+            rows.push(section.data);
+        }
+    }
+    return rows;
+}
+
 /**
  * Read `website:`'s keys, each its default when it is missing or wrong. A key of `website.files` is
  * a key of the hub list of its own (data/helpers/hub-names.ts), so a hub that sets one keeps
- * oculus's other three.
+ * oculus's other three, and so is a key of `website.cv_words`. A row of `website.cv_sections` its
+ * own shape refuses is left out with a `shape` problem at the row, and a row whose key an earlier
+ * row holds with a `repeat` problem naming the key, the earlier one standing.
  */
 export function websiteSettings(
     config: Record<string, unknown>,
@@ -288,6 +339,12 @@ export function websiteSettings(
         folder: read.text('website.folder').trim(),
         cv: read.text('website.cv').trim(),
         kinds,
+        cvSections: cvSections(config, problems),
+        cvWords: {
+            months: read.strings('website.cv_words.months'),
+            open_end: read.text('website.cv_words.open_end').trim(),
+            award_time: read.text('website.cv_words.award_time').trim()
+        },
         files: {
             site: read.text('website.files.site').trim(),
             cv: read.text('website.files.cv').trim(),

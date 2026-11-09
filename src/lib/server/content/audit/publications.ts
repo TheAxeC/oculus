@@ -1,12 +1,12 @@
 // Layer 2, server. The audit's publications section: the website's three generated files, built in
 // memory from the primary hub's files (website/files.ts), against the files on disk at the paths
 // `website.files` gives. A file that differs is one finding naming the file and the first place it
-// differs at, and the finding offers Write the website. A manifest, a career row or a research line
-// the website cannot be written with is a finding of its own, a research line in the Missing data
-// section, the rest here. The section runs for the primary hub alone, whose `website.folder` names
-// the website: an empty folder checks nothing, a folder that is not there is one finding naming it,
-// and a path of `website.files` that cannot be used is one finding naming its key, with none of the
-// four files read.
+// differs at, and while `website.cv_sections` holds a section the finding offers Write the website.
+// A manifest, a career row or a research line the website cannot be written with is a finding of
+// its own, a research line in the Missing data section, the rest here. The section runs for the
+// primary hub alone, whose `website.folder` names the website: an empty folder checks nothing, a
+// folder that is not there is one finding naming it, and a path of `website.files` that cannot be
+// used is one finding naming its key, with none of the four files read.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -113,11 +113,14 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         career: check.career,
         self: input.self,
         kinds: check.setting.kinds,
+        cvSections: check.setting.cvSections,
+        cvWords: check.setting.cvWords,
         rules: input.rules,
         site,
         paths: files
     });
     for (const problem of built.problems) add(raised(input, problem, where));
+    const writable = check.setting.cvSections.length > 0;
     for (const file of built.files) {
         const path = join(check.dir, file.name);
         const found = differences(file.text, slurp(path));
@@ -128,10 +131,19 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             where: file.name,
             kind: 'publink',
             file: fileOf(input.hub, path),
-            action: 'website',
+            ...(writable ? { action: 'website' as const } : {}),
             ...(place === ''
-                ? sentence('audit.msg_site_differs_whole', file.name)
-                : sentence('audit.msg_site_differs', file.name, place))
+                ? sentence(
+                      writable
+                          ? 'audit.msg_site_differs_whole'
+                          : 'audit.msg_site_differs_whole_no_cv',
+                      file.name
+                  )
+                : sentence(
+                      writable ? 'audit.msg_site_differs' : 'audit.msg_site_differs_no_cv',
+                      file.name,
+                      place
+                  ))
         });
     }
 }
