@@ -60,7 +60,8 @@ dispatch:           # steps in flight, up to six (Z632)
   builder_usage: 144856 tokens, 32 tool uses, 10.6 min
   launched: 2026-11-09
   report: .scratch/migration/agents/reviews/O174-report.md
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O174-refuter.md (a257a7ef987bda9ae, claude-opus-5-5, usage pending)
+  round: 1 (.scratch/migration/agents/briefs/O174-round-1.md; snapshot .agents/worktrees/migration-O174-round-1)
   landing: not-started
   brief_check: agents/reviews/O174-brief-check.md (adbccfd2456711e7e, claude-opus-5-5, 149974 tokens, 15 tool uses, 7.0 min)
 ```
