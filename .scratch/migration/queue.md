@@ -1,12 +1,12 @@
 In flight (0 of 6 slots in use): none.
 
-Queued: none.
+Queued: O175 (the portfolio Overview usable at 110 tiles), O176 (the decks repaired after O151), O177 (the stage umbrella).
 
 Owed looks: none.
 
 Landed, newest first:
 - O151 (a deck for every research project), 2026-11-09, a6dfb9555; hub 76cf0c5f9.
-- O173 (the audit asks every research project for a deck), 2026-11-09, 776672fc0.
+- O173 (a row of the audit's required files takes a tiers block), 2026-11-09, 776672fc0.
 - O174 (a cut long field shows no sliced block), 2026-11-09, f86845e78.
 - O170 (Literature and Present said and drawn plainly), 2026-11-08, 3d5b3da7d.
 - O172 (a long field drawn with its newlines and paragraphs), 2026-11-08, 014cc1c0d.
