@@ -290,8 +290,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # of a tier `research_audit.skip_tiers` names is held to none of them.
 # `required_files`: a file a project must hold, a row requiring its file when each key it names
 # is met: the project's stage meets `stages` (a word block of the stages: `words`, `not_words`,
-# `flags`, `not_flags`), the project holds the folder `folder`, and it lies under one of the hub
-# folders `folders` (a project of a workspace repository lies under none).
+# `flags`, `not_flags`), its tier meets `tiers` (a word block of the tiers: `words`, `not_words`),
+# the project holds the folder `folder`, and it lies under one of the hub folders `folders` (a
+# project of a workspace repository lies under none).
 # `required_sections`: a heading a file of a project must hold while the dotted manifest key `key`
 # has a value; a line holds it when it is the heading or starts with it and a space.
 # `stage_folders`: the hub folders a project at the stages `stages` is kept under, matched by whole
@@ -304,6 +305,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   audit:
 #     required_files:
 #       - { file: README.md, stages: { not_flags: [terminal] } }
+#       - { file: present/present.yml, tiers: { words: [research] } }
 #       - { file: code/README.md, folder: code }
 #     required_sections:
 #       - { file: README.md, heading: "## Data", key: datasets }

@@ -1757,7 +1757,7 @@ pickedSources, takesRecord", pos="e,267.93,567.00 81.47,573.00 90.80,573.00 100.
     subgraph "cluster_70. lost" {
         bb="152.75,8.00,462.11,68.00"; lp="188.44,56.80";
         label="not placed"; style=dashed;
-        "70. ? src/lib/data/shapes/boards/words.ts:26" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/shapes/boards/words.ts:26 stringItemsShape.parse(</TD></TR></TABLE>>, pos="307.43,27.00!"];
+        "70. ? src/lib/data/shapes/boards/words.ts:27" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/shapes/boards/words.ts:27 stringItemsShape.parse(</TD></TR></TABLE>>, pos="307.43,27.00!"];
     }
-    "70. lib/data/shapes/boards/words.ts" -> "70. ? src/lib/data/shapes/boards/words.ts:26" [style=dashed, pos="e,160.75,27.00 91.99,27.00 109.58,27.00 127.16,27.00 144.75,27.00 147.58,27.00 150.42,27.00 153.25,27.00"];
+    "70. lib/data/shapes/boards/words.ts" -> "70. ? src/lib/data/shapes/boards/words.ts:27" [style=dashed, pos="e,160.75,27.00 91.99,27.00 109.58,27.00 127.16,27.00 144.75,27.00 147.58,27.00 150.42,27.00 153.25,27.00"];
 }

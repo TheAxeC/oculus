@@ -264,10 +264,15 @@ function stageMeets(input: AuditInput, project: Project, block: WordBlock | unde
     return block === undefined || blockHolds(block, wordList(project.stage), input.rules.stages);
 }
 
+/** Whether a project's tier meets a word block of the setting, no block placing no condition. */
+function tierMeets(input: AuditInput, project: Project, block: WordBlock | undefined): boolean {
+    return block === undefined || blockHolds(block, wordList(project.tier), input.rules.tiers);
+}
+
 /**
  * The files the hub's `required_files` rows require: a row requires its file of a project when
- * every key it names holds, the stage meeting `stages`, the folder `folder` there in the project
- * and the project lying under one of `folders`.
+ * every key it names holds, the stage meeting `stages`, the tier meeting `tiers`, the folder
+ * `folder` there in the project and the project lying under one of `folders`.
  */
 export function requiredFiles(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
@@ -275,6 +280,7 @@ export function requiredFiles(input: AuditInput, add: (f: Raised) => void): void
         const folder = folderOnDisk(input.hub, project);
         for (const row of input.setting.requiredFiles) {
             if (!stageMeets(input, project, row.stages)) continue;
+            if (!tierMeets(input, project, row.tiers)) continue;
             if (row.folder !== undefined && !isFolder(join(folder, row.folder))) continue;
             if (row.folders !== undefined && !underFolders(project, row.folders)) continue;
             if (existsSync(join(folder, row.file))) continue;

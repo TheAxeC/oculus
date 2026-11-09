@@ -21,8 +21,17 @@ import { folderOf, HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import type { WordBlock } from '../../../data/shapes/boards/words.ts';
 import { wordBlock } from '../../../data/shapes/catalog-files/vocab.ts';
 
-/** A row of `required_files`: the file, and the stage, project folder and hub folders it needs. */
-type RequiredFile = { file: string; stages?: WordBlock; folder?: string; folders?: string[] };
+/**
+ * A row of `required_files`: the file, and the stage, tier, project folder and hub folders it
+ * needs.
+ */
+type RequiredFile = {
+    file: string;
+    stages?: WordBlock;
+    tiers?: WordBlock;
+    folder?: string;
+    folders?: string[];
+};
 
 /** A row of `required_sections`: the file, the heading it holds, the manifest key asking for it. */
 type RequiredSection = { file: string; heading: string; key: string; folders?: string[] };
@@ -106,10 +115,18 @@ function rowsOf(
     return kept;
 }
 
+/**
+ * A word block of the tiers: `words` and `not_words`. `FLAG_SOURCES` names no list of flags for
+ * `tiers`, so the form offers no flag on such a block and the config check refuses one
+ * (schemas/options.ts), and a block naming flags is not of this shape.
+ */
+const tiersBlock = wordBlock.omit({ flags: true, not_flags: true });
+
 /** The fields of a row of `required_files`. */
 const FILE_FIELDS: Fields = {
     file: filledShape,
     stages: wordBlock,
+    tiers: tiersBlock,
     folder: filledShape.transform(folderOf),
     folders: foldersShape
 };

@@ -17,6 +17,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { parse } from 'yaml';
+import type { Finding } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -26,6 +27,7 @@ import {
 } from '../../../src/lib/server/edit/writes/config/config-place.ts';
 import { writeConfigValue } from '../../../src/lib/server/edit/writes/config/config-value.ts';
 import { configWrite } from '../../../src/lib/server/edit/writes/config/config-write.ts';
+import { readerFindings } from '../../data/sources/config/layers/layers-fixture.ts';
 import { plantSaved } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import {
@@ -369,6 +371,14 @@ function hubValue(engine: string, dir: string, key: string): unknown {
     return at(loadLayers(engine, { hub: dir }).config, key);
 }
 
+/** The findings of the config channel over a hub's merge that name a key or a part of it. */
+function findingsNaming(engine: string, dir: string, key: string): Finding[] {
+    const read = loadLayers(engine, { hub: dir });
+    return [...read.findings, ...readerFindings(read, dir, engine)].filter(
+        (one) => one.key === key || one.key.startsWith(`${key}.`) || one.key.startsWith(`${key}[`)
+    );
+}
+
 /** The settings file of a hub folder, parsed, or an empty map when it holds nothing. */
 function settingsMap(dir: string): unknown {
     return parse(readFileSync(join(dir, '.oculus', 'config.yml'), 'utf8')) ?? {};
@@ -422,6 +432,16 @@ const LAB_ROWS: {
         key: 'audit.required_files',
         value: () => [{ file: 'README.md' }],
         holds: (stored) => expect(stored).toEqual([{ file: 'README.md' }])
+    },
+    {
+        row: 'a file only the projects of the tiers it names must hold, under audit',
+        file: 'behavior.yml',
+        key: 'audit.required_files',
+        value: () => [{ file: 'present/present.yml', tiers: { words: ['research'] } }],
+        holds: (stored) =>
+            expect(stored).toEqual([
+                { file: 'present/present.yml', tiers: { words: ['research'] } }
+            ])
     }
 ];
 
@@ -442,6 +462,7 @@ describe('a list or family written into the hub the write names', { tags: ['slow
             expect([outcome.refused, outcome.changed]).toEqual([[], [`${file}:${key}`]]);
             holds(at(settingsMap(made.lab), key));
             expect(hubValue(made.into.engine, made.lab, key)).toEqual(value(held));
+            expect(findingsNaming(made.into.engine, made.lab, key)).toEqual([]);
             expect(readFileSync(join(made.hub, '.oculus', 'config.yml'), 'utf8')).toBe('{}\n');
         }
     );

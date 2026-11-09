@@ -38,19 +38,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a6f5f05ec3e63f0f2, claude-opus-5-5, 206748 tokens, 180 tool uses, 23.1 min); over round 1: a79e0d6fd9a360f28, claude-opus-5-5, 353095 tokens, 142 tool uses, 21.8 min
   round: 2 (.scratch/migration/agents/briefs/O151-round2.md; snapshots .agents/worktrees/migration-O151-2-round-2 in oculus and .agents/worktrees/migration-O151-round-2 in the hub); round 1 .scratch/migration/agents/briefs/O151-round1.md (snapshots .agents/worktrees/migration-O151-round-1 in oculus and in the hub); round 0 .scratch/migration/agents/briefs/O151-cases.md
   landing: not-started
-- step: O173
-  brief_check: .scratch/migration/agents/reviews/O173-brief-check.md (a3b6a980fe45e6b36, claude-opus-5-5, 176663 tokens, 18 tool uses, 6.1 min)
-  base: c116b57ad
-  worktree: .agents/worktrees/migration-O173
-  executor: agent
-  worker: claude:opus
-  session_id: aca21d5a391ac3483 (claude-opus-5-5)
-  builder_usage: 212085 tokens, 69 tool uses, 19.7 min; round 1: 250084 tokens, 31 tool uses, 7.3 min
-  launched: 2026-11-09
-  report: .scratch/migration/agents/reviews/O173-report.md
-  reviewer_report: .scratch/migration/agents/reviews/O173-refuter.md (a0a900d566b589741, claude-opus-5-5, 195803 tokens, 27 tool uses, 12.8 min); over round 1: a89ad68a5efc4538f, claude-opus-5-5, 176698 tokens, 23 tool uses, 9.8 min
-  round: 1 (.scratch/migration/agents/briefs/O173-round-1.md; snapshot .agents/worktrees/migration-O173-round-1)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -884,6 +871,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-09 (O173 landed). O173, the `tiers` block of a `required_files` row, landed (booking in `plan.md`, `agents/reviews/O173-landing.md`), with one fix at landing: a word block's name stands at the block's top (`Cards.svelte`, `.field.tall`). O174's worktree and branch are removed. In flight (1 of 6): O151, repair round 2 running. Queued: none. Next: O151's review over round 2 when its builder reports. The hub row `{ file: present/present.yml, tiers: { words: [research] } }` of open item 733 waits for O151's hub commit and Axel's word. Open items: none.
 - 2026-11-09 (O174 landed). The cut of a long field ends at the last line or block that fits whole. O173's review over round 1 found nothing; its landing is next. O151's round 2 runs. In flight (2 of 6): O151, O173. Open items: none.
 - 2026-11-09 (O173 repair round 1 sent). O173's review (`agents/reviews/O173-refuter.md`) holds every item and meets every case but C9, the look; three Standards findings are ruled in `agents/briefs/O173-round-1.md` and go to builder aca21d5a391ac3483. O174 was prepared in parallel (base abe602359), its first review running. O151's round 2 runs. In flight (3 of 6): O151, O173, O174. Open items: none.
 - 2026-11-09 (owed looks of O170 and O172 taken). Recorded in `agents/reviews/O170-landing.md` and `agents/reviews/O172-landing.md` under The look. One flaw found, booked as O174 in `plan.md` (ruling Look flaws), queued after O173. Next: O151's repair round 2 and O173 in parallel (Axel, 2026-11-08: "taking the owed looks, then doing O151 and O173 in parallel").

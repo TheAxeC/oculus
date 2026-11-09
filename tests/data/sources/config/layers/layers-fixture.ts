@@ -41,12 +41,16 @@ export function withSettings(
     return loadConfig(engineDir(), { ...options, workspace: { file: WORKSPACE_FILE, text } });
 }
 
-/** The findings the config's readers give over a merge, under the hub `hub` or none. */
+/**
+ * The findings the config's readers give over a merge, under the hub `hub` or none, with oculus's
+ * files read from the folder `engine`.
+ */
 export function readerFindings(
-    read: ReturnType<typeof loadConfig>,
-    hub: string | null = null
+    read: Pick<ReturnType<typeof loadConfig>, 'config' | 'from'>,
+    hub: string | null = null,
+    engine: string = engineDir()
 ): Finding[] {
-    const where = { engine: engineDir(), hub, from: read.from };
+    const where = { engine, hub, from: read.from };
     return READER_FINDINGS.flatMap((reader) => reader(where, read.config));
 }
 

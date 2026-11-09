@@ -230,6 +230,78 @@ describe('the required files of the audit', () => {
         ]);
         expect(scopesSaying(found, said('audit.msg_required_file', 'README.md'))).toEqual([]);
     });
+
+    /** One row of a table of `tiers`: the row of the setting, the hub's projects, what it asks. */
+    type TiersCase = {
+        title: string;
+        row: string;
+        file: string;
+        files: Record<string, string>;
+        projects: Project[];
+        scopes: string[];
+    };
+
+    it.each<TiersCase>([
+        {
+            title: 'of a project of a tier the words list names that lacks the file, and of no other',
+            row: '{ file: present/present.yml, tiers: { words: [research] } }',
+            file: 'present/present.yml',
+            files: { 'projects/b/present/present.yml': 'title: B\n' },
+            projects: [
+                projectAt('projects/a', { stage: 'nascent' }),
+                projectAt('projects/b', { stage: 'nascent' }),
+                projectAt('projects/c', { stage: 'nascent', tier: 'software' })
+            ],
+            scopes: ['projects/a']
+        },
+        {
+            title: 'of no project with no tier under a words list',
+            row: '{ file: present/present.yml, tiers: { words: [research] } }',
+            file: 'present/present.yml',
+            files: {},
+            projects: [projectAt('projects/a', { stage: 'nascent', tier: undefined })],
+            scopes: []
+        },
+        {
+            title: 'of a project of another tier and of one with no tier under a not_words list',
+            row: '{ file: NOTES.md, tiers: { not_words: [software] } }',
+            file: 'NOTES.md',
+            files: {},
+            projects: [
+                projectAt('projects/a', { stage: 'nascent' }),
+                projectAt('projects/b', { stage: 'nascent', tier: 'software' }),
+                projectAt('projects/c', { stage: 'nascent', tier: undefined })
+            ],
+            scopes: ['projects/a', 'projects/c']
+        },
+        {
+            title: 'only of a project meeting both the tiers and the stages of the row',
+            row: '{ file: NOTES.md, tiers: { words: [research] }, stages: { words: [exploring] } }',
+            file: 'NOTES.md',
+            files: {},
+            projects: [
+                projectAt('projects/a', { stage: 'exploring' }),
+                projectAt('projects/b', { stage: 'nascent' }),
+                projectAt('projects/c', { stage: 'exploring', tier: 'software' })
+            ],
+            scopes: ['projects/a']
+        },
+        {
+            title: 'of no project of a tier skip_tiers names, though the row names that tier',
+            row: '{ file: NOTES.md, tiers: { words: [personal] } }',
+            file: 'NOTES.md',
+            files: {},
+            projects: [projectAt('projects/a', { stage: 'nascent', tier: 'personal' })],
+            scopes: []
+        }
+    ])('require a file $title', ({ row, file, files, projects, scopes }) => {
+        const found = findingsOf(
+            hubOf(`audit:\n  required_files:\n    - ${row}\n`, files),
+            projects
+        );
+        expect(found.filter((one) => one.scope === '.oculus/config.yml')).toEqual([]);
+        expect(scopesSaying(found, said('audit.msg_required_file', file))).toEqual(scopes);
+    });
 });
 
 describe('the required sections of the audit', () => {
@@ -673,6 +745,25 @@ describe('the shape of the audit setting', () => {
                 'projects/a'
             ]);
         }
+    });
+
+    it.each([
+        { name: 'a list in place of a block', tiers: '[research]' },
+        { name: 'a block naming flags', tiers: '{ flags: [default] }' }
+    ])('name $name under tiers and run the next row of required_files', ({ tiers }) => {
+        const setting = `audit:
+  required_files:
+    - { file: present/present.yml, tiers: ${tiers} }
+    - { file: README.md }
+`;
+        const found = findingsOf(hubOf(setting), [projectAt('projects/a', { stage: 'nascent' })]);
+        expect(shapeKeys(found)).toEqual(['audit.required_files.0.tiers']);
+        expect(scopesSaying(found, said('audit.msg_required_file', 'present/present.yml'))).toEqual(
+            []
+        );
+        expect(scopesSaying(found, said('audit.msg_required_file', 'README.md'))).toEqual([
+            'projects/a'
+        ]);
     });
 
     it('hold a project of the tier personal to no key of the setting set at once', () => {

@@ -56,6 +56,7 @@
     import {
         addableFields,
         addedValue,
+        controlOf,
         drawsCards,
         fromText,
         shownFields,
@@ -277,7 +278,7 @@
                     {:else if spec !== undefined && removeOnly}
                         <code>{textOf(card.fields[name])}</code>
                     {:else if spec !== undefined}
-                        <span class="field">
+                        <span class="field" class:tall={controlOf(spec) === 'words'}>
                             {#if worded}
                                 <span class="word" aria-hidden="true">{nameOf(name, at)}</span>
                             {/if}
@@ -443,6 +444,11 @@
         gap: 6px;
         flex: 1 1 160px;
         min-width: 0;
+    }
+
+    /* A word block is four lists tall, so a name drawn beside it stands at the block's top. */
+    .field.tall {
+        align-items: flex-start;
     }
 
     .card:not(.inline) .field {

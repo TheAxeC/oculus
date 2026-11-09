@@ -24,7 +24,7 @@ options:
     audit.required_files:
         heading: boards
         section: Audit checks
-        help: The files the audit asks a project of the hub to hold, one row a file. A row requires its file of a project when every key it names holds; a row naming no stages, folder or folders requires it of every project. A missing required file is a finding of the Hub conventions section. A project of a workspace repository is held to the rows that name no folders, and a project of a tier research_audit.skip_tiers names to none. Empty asks for no file. This is a setting of the hub, kept in its .oculus/config.yml.
+        help: The files the audit asks a project of the hub to hold, one row a file. A row requires its file of a project when every key it names holds; a row naming no stages, tiers, folder or folders requires it of every project. A missing required file is a finding of the Hub conventions section. A project of a workspace repository is held to the rows that name no folders, and a project of a tier research_audit.skip_tiers names to none. Empty asks for no file. This is a setting of the hub, kept in its .oculus/config.yml.
         fields:
             file:
                 help: the path of the file, relative to the project's folder
@@ -33,6 +33,10 @@ options:
                 help: the stages whose projects the row holds, held against the project's stage; a project with no stage meets a block that names only not_words or not_flags
                 control: words
                 from: project_stages
+            tiers:
+                help: the tiers whose projects the row holds, held against the project's tier; a project with no tier meets a block that names only not_words
+                control: words
+                from: tiers
             folder:
                 help: a folder, relative to the project's folder, that the project must hold for the row to hold
                 control: text

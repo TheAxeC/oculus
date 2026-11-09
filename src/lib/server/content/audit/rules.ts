@@ -50,6 +50,11 @@ export type AuditRules = {
      * against (`blockHolds`).
      */
     stages: unknown;
+    /**
+     * The merged config's `tiers:` map, which the `tiers` block of a row of the hub's `audit:`
+     * setting is held against (`blockHolds`).
+     */
+    tiers: unknown;
     /** The tiers the research rules leave alone, `research_audit.skip_tiers`. */
     skipTiers: Set<string>;
     /** The stages of done or closed work, the stages carrying `terminal`. */
@@ -161,6 +166,7 @@ export function auditRules(
         placedStages: flagged('stages', 'placed'),
         stageLabel: stageLabelOf(config),
         stages: config.stages,
+        tiers: config.tiers,
         skipTiers: new Set(skippedTiers(config)),
         terminalStages: flagged('stages', 'terminal'),
         laneChips: laneChipsOf(config.focus_lanes),

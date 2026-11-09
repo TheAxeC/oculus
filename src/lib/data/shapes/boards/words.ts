@@ -1,12 +1,13 @@
 // Layer 1, data, pure. A word block: the lists `words`, `not_words`, `flags` and `not_flags` that a
-// board's or a category's `stages:`, `chips:` and `forms:` name, held against a project's words of
-// one vocabulary map (its stage, its chips or its form). A project meets a block when every list
-// the block names holds: `words` when one of its words is in the list, `not_words` when none is,
-// `flags` when one of its words carries one of the flags in the vocabulary map, `not_flags` when
-// none does. A list left out places no condition. The boards, the categories, the audit and the
-// config check read blocks the one way through this module, so a board and a category cannot read
-// a block differently; the `words` control of an option (data/sources/config/catalog/value-rule.ts
-// and the Settings view's editor) takes its four lists from here.
+// board's or a category's `stages:`, `chips:` and `forms:` and a row of the hub's `audit:` setting
+// name, held against a project's words of one vocabulary map (its stage, its chips, its form or its
+// tier). A project meets a block when every list the block names holds: `words` when one of its
+// words is in the list, `not_words` when none is, `flags` when one of its words carries one of the
+// flags in the vocabulary map, `not_flags` when none does. A list left out places no condition. The
+// boards, the categories, the audit and the config check read blocks the one way through this
+// module, so a board and a category cannot read a block differently; the `words` control of an
+// option (data/sources/config/catalog/value-rule.ts and the Settings view's editor) takes its four
+// lists from here.
 
 import { z } from 'zod';
 import { mapShape, readAs, stringItemsShape } from '../shapes.ts';
@@ -75,7 +76,7 @@ export function flagsOf(vocabulary: unknown): string[] {
 
 /**
  * Whether a project's words of one vocabulary map meet a block, `vocabulary` being that map of the
- * merged config (`stages`, `chips` or `forms`). No block places no condition.
+ * merged config (`stages`, `chips`, `forms` or `tiers`). No block places no condition.
  */
 export function blockHolds(
     block: WordBlock | null,
