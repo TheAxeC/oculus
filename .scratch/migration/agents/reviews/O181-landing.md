@@ -10,7 +10,7 @@ The runner's agent listing (ListAgents) showed no subagent of this session, so n
 
 ## Not done
 
-Everything in the brief is done in oculus. The hub's lines (the block "The hub's lines" of `agents/reviews/O181-report.md`, and `foreign_key: vocab.radar_relevance` at the hub's `radar.yml:22`) are not written to the research hub yet; they wait for Axel's word on a hub commit.
+Everything in the brief is done. The hub's lines (the block "The hub's lines" of `agents/reviews/O181-report.md`, and `foreign_key: vocab.radar_relevance` at the hub's `radar.yml:22`) are in the research hub at commit 375697686, on Axel's word; the hub's `local.yml` needs no `sessions_roots` line, since the default is the base's roots. On a scratch server over the hub copy with the two files: 184 findings, no Files section, and the update tray lists Lit Watch, Scout, LinkedIn and Inbox.
 
 ## What landed
 
