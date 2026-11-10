@@ -18,19 +18,20 @@
     // its folder. One instance per project, and the project it is for is the `id` in its instance
     // state, exactly as the editor reads its own.
     //
-    // The LaTeX panel is project/Latex.svelte, drawn for a project whose manuscript folder holds a
+    // The LaTeX panel is project/Latex.svelte, drawn for a project whose folder of mains holds a
     // main file, or whose read failed, and for no other: what it needs is the id, and everything
     // about the files it lists comes from api/latex rather than from the snapshot. A project of any
-    // tier has the panel, over the `manuscript/` of its hub folder or, for a project read from a
-    // repository, of the repository.
+    // tier has the panel, over the folder of the `.tex` row of its hub's `project_docs` in its hub
+    // folder or, for a project read from a repository, in the repository.
     //
     // The card is views/shared/card/project/ProjectCard.svelte, the one the board draws, with
     // `page` on: this tab's card draws its fields in two columns under the closed card and has no
     // Open project page action. The card carries the deposit control on every page that draws it,
-    // whatever the project's tier or placement; the deposit mirrors the `code/` folder of the
-    // project's own folder. It is drawn with `documents` off, since the documents section below is
-    // this tab's list of the project's documents, and with no clamp state, so its ELI5 is drawn
-    // whole. That list draws a known document the project has not got as the card's tag for it.
+    // whatever the project's tier or placement; the deposit mirrors the code folder (the hub's
+    // `code_dir`) of the project's own folder. It is drawn with `documents` off, since the
+    // documents section below is this tab's list of the project's documents, and with no clamp
+    // state, so its ELI5 is drawn whole. That list draws a known document the project has not got
+    // as the card's tag for it.
     // Everything else the card shows, the pin, the stale badge, the file finder and the subtasks
     // among it, is the board's card unchanged.
     //

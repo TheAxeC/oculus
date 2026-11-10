@@ -19,11 +19,11 @@
     // colour with the count of its lines, and folds by its control, which the tab keeps under
     // `folded`; its cards are drawn in the shared card grid
     // (views/shared/card/record/CardGrid.svelte). The Orphans card is drawn in the first row's
-    // section and the Archival card, while a project is archived, in the section of `offpillar`, or
-    // under Other when the list holds no such row; a section with no line and neither card is not
-    // drawn. The title of either card opens the set's page, the `listing` view's tab. An off-pillar
-    // line's card is muted. A line asked to be revealed opens its folded section before it is
-    // scrolled to.
+    // section and the Archival card, while a project is archived, in the section of the row that
+    // carries `archival: true`, or under Other when the list holds no such row; a section with no
+    // line and neither card is not drawn. The title of either card opens the set's page, the
+    // `listing` view's tab. The card of a line of that row's kind is muted. A line asked to be
+    // revealed opens its folded section before it is scrolled to.
     //
     // Over a wallpaper each card is its own surface.
 
@@ -41,7 +41,6 @@
     import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
-        OFFPILLAR,
         archival,
         registryLines,
         lineKinds,
@@ -85,8 +84,8 @@
     const tiers = $derived(venueTiers(vocabOf().venue_tiers));
     /** The key of the section the Orphans card is drawn in: the first row's, else Other's. */
     const orphansAt = $derived(kinds[0]?.key ?? '');
-    /** The key of the section the Archival card is drawn in: `offpillar`'s, else Other's. */
-    const archivalAt = $derived(kinds.some((kind) => kind.key === OFFPILLAR) ? OFFPILLAR : '');
+    /** The key of the section the Archival card is drawn in: the archival row's, else Other's. */
+    const archivalAt = $derived(kinds.find((kind) => kind.archival)?.key ?? '');
     /** The sections drawn: those with a line, and those holding the Orphans or Archival card. */
     const shown = $derived(
         kinds.filter(
@@ -143,7 +142,7 @@
                                 {tiers}
                                 entry={file.entryOf(line.id)}
                                 schema={file.schemaOf(line.id)}
-                                muted={kind.key === OFFPILLAR}
+                                muted={kind.archival}
                                 file={file.sourceOf(line.id)}
                                 fault={file.faultOf(line.id)}
                                 onsaid={file.say}

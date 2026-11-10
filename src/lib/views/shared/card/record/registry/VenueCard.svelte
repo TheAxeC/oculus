@@ -12,8 +12,8 @@
     // (views/shared/card/record/RecordDetails.svelte), and the card draws no strip of projects,
     // which the row under the page's card counts. The project list is every project that targets
     // the venue, dead ends included (state/sources/registries/venues.ts `venueUsers`), and
-    // concentration, read over the real ones among them, arrives as a flag, drawn as the card's
-    // ring.
+    // concentration, read over the real ones among them, arrives as the warning count they reach,
+    // drawn as the card's ring and a tag whose tip names the count.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
     // (hubPathsOf of state/boards/collection/): a path is offered only as the action that selects
@@ -52,11 +52,12 @@
     import { t } from '$lib/state/shared/words/text';
     import { dueBadge } from '$lib/views/shared/card/card';
     import {
-        freeTone,
-        quartileTone,
+        noJif,
+        venueTone,
         type Project,
         type Venue
     } from '$lib/state/sources/registries/venues';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { readBlocked, readFromBrowser } from '$lib/state/sources/registries/browser';
     import { routeBody } from '$lib/state/feeds/literature/answers';
     import { refusalWords } from '$lib/views/shared/forms/answer-words';
@@ -75,7 +76,8 @@
         /** Whether keyboard navigation has selected this venue. */
         cursor: boolean;
         projects: Project[];
-        concentrated: boolean;
+        /** The warning count the venue's live projects reach, null while they reach none. */
+        concentrated: number | null;
         /** The labels of the venue theme words, which the theme tags draw in place of the word. */
         labels: ThemeWordLabels;
         entry: Entry | null;
@@ -105,6 +107,9 @@
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
     const cardMath = createCardMath();
     const htmlMemo = useHtmlMemo();
+
+    /** The words of the venue's own hub, whose `venue_ranks` and `venue_costs` tone its tags. */
+    const words = $derived(vocabOf(rootOf(venue)));
 
     /** The key the venue's hub gives the venues registry, which its page and writes name. */
     const collection = $derived(registryKey('venues', rootOf(venue)));
@@ -223,7 +228,7 @@
 
     const metadata: MetaItem[] = $derived(
         [
-            venue.jif && !['none', ' - '].includes(venue.jif.toLowerCase())
+            venue.jif !== undefined && !noJif(venue.jif, words)
                 ? { label: t('venues.jif', venue.jif) }
                 : null,
             indexed(venue.wos, venue.wosMark, (words) => t('venues.wos', words)),
@@ -257,15 +262,15 @@
 
 {#snippet meta()}
     {#if venue.quartile}
-        <Tag label={venue.quartile} tone={quartileTone(venue.quartile)} />
+        <Tag label={venue.quartile} tone={venueTone(venue.quartile, 'venue_ranks', words)} />
     {/if}
-    {#if concentrated}
-        <Tooltip text={t('venues.conc_tip')} focusable>
+    {#if concentrated !== null}
+        <Tooltip text={t('venues.conc_tip', concentrated)} focusable>
             <Tag label={t('venues.conc')} tone="violet" />
         </Tooltip>
     {/if}
     {#if venue.free}
-        <Tag label={venue.free} tone={freeTone(venue.free)} />
+        <Tag label={venue.free} tone={venueTone(venue.free, 'venue_costs', words)} />
     {/if}
     {#if due}
         <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
@@ -363,7 +368,7 @@
         {cursor}
         title={venue.name}
         titleHtml={inlineMarkdown(venue.name, cardMath(venue.name), htmlMemo)}
-        ring={concentrated ? 'violet' : undefined}
+        ring={concentrated !== null ? 'violet' : undefined}
         record={venue}
         {actions}
         {onsaid}

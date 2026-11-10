@@ -42,11 +42,13 @@
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
+        defaultBucket,
         dismissedSplit,
         filledBuckets,
         parseRadarState,
         radarBuckets,
         radarSearch,
+        relevanceWords,
         sortBucket,
         type RadarState
     } from '$lib/state/feeds/radar';
@@ -75,14 +77,16 @@
     const held = $derived(parseRadarState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const buckets = $derived(radarBuckets(vocabOf().radar_buckets));
+    /** The relevance words, the closest first, which order the papers of one day. */
+    const ranks = $derived(relevanceWords(vocabOf()));
     const projects = $derived(portfolio()?.entities.projects ?? {});
     const all = $derived(data?.entries ?? []);
     const split = $derived(dismissedSplit(all));
     const live = $derived(split.live);
     const dismissed = $derived(split.dismissed);
     const searchedLive = $derived(radarSearch(live, held.search));
-    const searchedDismissed = $derived(sortBucket(radarSearch(dismissed, held.search)));
-    const groups = $derived(filledBuckets(searchedLive, buckets));
+    const searchedDismissed = $derived(sortBucket(radarSearch(dismissed, held.search), ranks));
+    const groups = $derived(filledBuckets(searchedLive, buckets, defaultBucket(vocabOf())));
     /** The presses that fold and unfold a bucket, by its key. */
     const folds = stateFolds(
         () => held.folded,

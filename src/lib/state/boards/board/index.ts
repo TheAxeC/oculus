@@ -19,7 +19,6 @@ export {
     presetFor,
     RECORD_VIEW,
     recordPreset,
-    setting,
     shortWords,
     venueText
 } from './presets.ts';
@@ -70,10 +69,9 @@ export {
     waitingWords
 } from './filter-menu.ts';
 export type { BoardFilter, FilterChoice, FilterGroup } from './filter-menu.ts';
-export { VENUE_WARN, disseminated, humanSize, stats } from './stats.ts';
+export { disseminated, humanSize, stats } from './stats.ts';
 export type { Dissemination } from './stats.ts';
 export {
-    STALE_LAG,
     appliedFilters,
     applyFilters,
     emptyBoardState,

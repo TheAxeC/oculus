@@ -42,7 +42,12 @@ export function replaceWorld(files: Record<string, string | Buffer> = {}): Repla
         writeFileSync(join(served, name), body);
     }
     const hub = realpathSync(served);
-    const roots = [{ key: 'hub', dir: hub, hub: true as const }];
+    // The hub marked with its folder of secrets and its notes folder, as the server marks a hub
+    // whose `secrets_dir` is `secrets` and whose `notes_dir` is the shipped `.oculus/notes`
+    // (withSecrets, withNotes).
+    const roots = [
+        { key: 'hub', dir: hub, hub: true as const, secrets: 'secrets', notes: '.oculus/notes' }
+    ];
     const history = join(into.hub, 'history');
     const writes = fsWrites();
     into.files = { roots: () => roots, history, writes };

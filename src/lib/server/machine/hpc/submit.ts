@@ -1,12 +1,13 @@
 // Layer 2, server. Submit on a job script: the clusters the Submit box offers with the one its
 // project's `compute:` picks, the plan of what will be copied and run, and the run of a plan the
 // reader confirmed. The plan names the cluster of `slurm.resource` the reader picked, the code
-// folder of the script's project, the folder on the cluster it is copied to (one folder per
-// project, whichever cluster), the files sent, the rsync arguments and the one remote command, and
-// warns when the script never names the cluster's per-job scratch folder (scratch.ts). A plan
-// naming a key `slurm.resource` does not list is refused. The run computes the plan again at the
-// press and runs it only when it equals the plan the reader confirmed, so what runs is what the
-// confirm showed, on the connection of the cluster it names.
+// folder of the script's project (its hub's `code_dir`), the folder on the cluster it is copied to
+// (one folder per project, whichever cluster), the files sent (git's list without the hub's
+// `slurm.unsent`), the rsync arguments and the one remote command, and warns when the script never
+// names the cluster's per-job scratch folder of `slurm.scratch_roots` (scratch.ts), a cluster with
+// none having no such rule. A plan naming a key `slurm.resource` does not list is refused. The run
+// computes the plan again at the press and runs it only when it equals the plan the reader
+// confirmed, so what runs is what the confirm showed, on the connection of the cluster it names.
 //
 // The only processes started are rsync (transfer.ts) and one ssh that runs
 // `cd <folder> && sbatch --parsable <script>` (ssh.ts), both injected so a test starts neither. One
@@ -20,11 +21,12 @@ import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { clusterFolder } from '../../../data/shapes/shapes.ts';
-import type { Finding, Id, Project, SubmitPlan } from '../../../data/model/index.ts';
+import type { Finding, HubLayout, Id, Project, SubmitPlan } from '../../../data/model/index.ts';
 import { errorLine, readYamlMap } from '../../../data/sources/yaml-file.ts';
 import type { TextCatalog } from '../../../data/helpers/finding-text.ts';
 import { deepestHolding } from '../../../data/helpers/files/paths.ts';
 import { bareId, rootOf } from '../../../data/helpers/hub-names.ts';
+import { globTest } from '../../../data/helpers/search/glob.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import type { Read } from '../../core/git/run.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
@@ -48,6 +50,7 @@ type SubmitReason =
     | 'no-project'
     | 'outside-code'
     | 'bad-cluster'
+    | 'no-cluster-folder'
     | 'unknown-cluster'
     | 'no-host'
     | 'no-files'
@@ -112,10 +115,21 @@ export type PlanDeps = {
     /** The text catalog the manifest reader words its findings from. */
     catalog: () => TextCatalog;
     /**
+     * The layout of the served root whose folder is given, the project's hub or repository, read
+     * from its settings (server/root/process/config-cache.ts): its `codeDir`, `clusterFolder` and
+     * `unsent`.
+     */
+    layout: (dir: string) => HubLayout;
+    /**
      * The connection of the cluster of `slurm.resource` a plan names, or the sentence for why there
      * is none (clusters/connections.ts).
      */
     connection: (resource: string) => ConnectionFound;
+    /**
+     * The per-job scratch folder of the cluster of that key, its member of `slurm.scratch_roots`,
+     * or '' when it has none and the scratch rule is not run.
+     */
+    scratchRoot: (resource: string) => string;
     /** The clusters of `slurm.resource`, in order, each with the id of its registry entry. */
     clusters: () => readonly ClusterChoice[];
     /** The paths git keeps under a folder (`keptFiles`), its refusals worded from the catalog. */
@@ -144,16 +158,25 @@ const refuse = (reason: SubmitReason, detail?: string): SubmitRefused => ({
     ...(detail === undefined ? {} : { detail })
 });
 
-/** The cluster folder of a project: the manifest's `paths.cluster`, else `~/projects/<id>`. */
-function clusterOf(project: Project, catalog: TextCatalog): { folder: string } | SubmitRefused {
+/**
+ * The cluster folder of a project: the manifest's `paths.cluster`, else the hub's
+ * `slurm.cluster_folder` with `{id}` standing for the project's id, and refused when that is empty.
+ */
+function clusterOf(
+    project: Project,
+    catalog: TextCatalog,
+    layout: HubLayout
+): { folder: string } | SubmitRefused {
     const findings: Finding[] = [];
     const manifest = readYamlMap(project.file, catalog, findings, errorLine);
     if (manifest === null) return refuse('bad-cluster', findings[0]?.message);
     const paths = manifest.paths;
-    const written =
-        typeof paths === 'object' && paths !== null && Object.hasOwn(paths, 'cluster')
-            ? (paths as Record<string, unknown>).cluster
-            : `~/projects/${bareId(project)}`;
+    const named = typeof paths === 'object' && paths !== null && Object.hasOwn(paths, 'cluster');
+    const pattern = layout.clusterFolder;
+    if (!named && pattern === '') return refuse('no-cluster-folder');
+    const written = named
+        ? (paths as Record<string, unknown>).cluster
+        : pattern.replaceAll('{id}', bareId(project));
     const folder = clusterFolder(written);
     return folder === null
         ? refuse('bad-cluster', typeof written === 'string' ? written : JSON.stringify(written))
@@ -167,14 +190,19 @@ function remoteOf(folder: string, script: string): string {
     return `cd ${where} && sbatch --parsable ${shellWord(script.startsWith('-') ? `./${script}` : script)}`;
 }
 
+/** The folder of the served root a project is of, its hub or its repository, or null for none. */
+function rootDirOf(project: Project, deps: PlanDeps): string | null {
+    const key = rootOf(project);
+    return deps.roots().find((one) => one.key === key)?.dir ?? null;
+}
+
 /**
  * The folder of a project: the repository it is read from, else its folder under the hub it is of.
  * Null when that hub is served nowhere.
  */
 function folderOf(project: Project, deps: PlanDeps): string | null {
-    const key = rootOf(project);
-    const hub = deps.roots().find((one) => one.key === key)?.dir;
-    return hub === undefined ? null : projectDirectory(hub, project);
+    const hub = rootDirOf(project, deps);
+    return hub === null ? null : projectDirectory(hub, project);
 }
 
 /** The project whose folder holds the path as it was asked, most closely, or null. */
@@ -195,7 +223,7 @@ function projectOf(asked: string, deps: PlanDeps): Project | null {
 
 /**
  * The path as the request wrote it under its root's real folder, with no link followed. The project
- * is chosen from it, so a `code/` that links into another project or out of the hub is judged
+ * is chosen from it, so a code folder that links into another project or out of the hub is judged
  * against the project the script was asked under.
  */
 function asked(roots: Root[], input: { root: string; path: string }): string {
@@ -203,19 +231,34 @@ function asked(roots: Root[], input: { root: string; path: string }): string {
     return resolve(realPath(dir, true) ?? dir, input.path);
 }
 
-/** The files to send, from git's list: the code, without caches, results, logs or missing paths. */
-function sentFiles(code: string, listed: string[]): { files: string[]; bytes: number } {
+/**
+ * Whether a path of the code folder is one of the globs `unsent` (the hub's `slurm.unsent`): a glob
+ * is held against the path and against each folder on it, each from the code folder, and a glob
+ * with no slash against each of their names (data/helpers/search/glob.ts), so `__pycache__` holds
+ * every file under such a folder at any depth and `results/**` the files of the top `results`.
+ */
+function unsentBy(unsent: readonly string[]): (path: string) => boolean {
+    const tests = unsent.map(globTest);
+    return (path) => {
+        const parts = path.split('/');
+        const held = parts.map((_, at) => parts.slice(0, at + 1).join('/'));
+        return tests.some((test) => held.some((one) => test(one)));
+    };
+}
+
+/**
+ * The files to send, from git's list: the code, without the files of the globs `unsent` or missing
+ * paths.
+ */
+function sentFiles(
+    code: string,
+    listed: string[],
+    unsent: readonly string[]
+): { files: string[]; bytes: number } {
     let bytes = 0;
+    const left = unsentBy(unsent);
     const files = listed
-        .filter((path) => {
-            const parts = path.split('/');
-            return (
-                !parts.includes('__pycache__') &&
-                !path.endsWith('.npy') &&
-                parts[0] !== 'results' &&
-                parts[0] !== 'logs'
-            );
-        })
+        .filter((path) => !left(path))
         .filter((path) => {
             try {
                 bytes += lstatSync(`${code}/${path}`).size;
@@ -244,13 +287,15 @@ async function compute(
     }
     const project = projectOf(asked(deps.roots(), input), deps);
     if (project === null) return refuse('no-project');
-    const folder = folderOf(project, deps);
+    const root = rootDirOf(project, deps);
+    const folder = root === null ? null : projectDirectory(root, project);
+    const layout = deps.layout(root ?? '');
     const home = folder === null ? null : realPath(folder, true);
-    const code = home === null ? null : realPath(`${home}/code`, true);
+    const code = home === null ? null : realPath(`${home}/${layout.codeDir}`, true);
     if (home === null || code === null || !inside(code, home) || !inside(file, code)) {
         return refuse('outside-code');
     }
-    const cluster = clusterOf(project, deps.catalog());
+    const cluster = clusterOf(project, deps.catalog(), layout);
     if ('status' in cluster) return cluster;
     const reached = deps.connection(input.resource);
     if ('missing' in reached) {
@@ -259,7 +304,7 @@ async function compute(
     const { connection } = reached;
     const listed = await deps.kept(code, deps.catalog());
     if (!listed.ok) return refuse('no-files', listed.error);
-    const { files, bytes } = sentFiles(code, listed.value);
+    const { files, bytes } = sentFiles(code, listed.value, layout.unsent);
     const script = file.slice(code.length + 1);
     if (!files.includes(script)) return refuse('not-sent');
     const plan: SubmitPlan = {
@@ -275,7 +320,7 @@ async function compute(
         digest: createHash('sha256').update(files.join('\0')).digest('hex'),
         rsync: copyVector(connection, cluster.folder),
         remote: remoteOf(cluster.folder, script),
-        scratch: await scratchRule(file, code, cluster.folder)
+        scratch: await scratchRule(file, code, cluster.folder, deps.scratchRoot(input.resource))
     };
     return { plan, files, connection };
 }

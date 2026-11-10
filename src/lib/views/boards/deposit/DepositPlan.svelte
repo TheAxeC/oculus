@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, partial of views/boards/deposit/Deposit.svelte. The sync plan of a deposit: the
-    // files of the project's `code/` the mirror takes, the changed files, each a row that opens its
-    // diff (DepositFile.svelte), and the findings of the scan, each in words. The rows of the
+    // files of the project's code folder the mirror takes, the changed files, each a row that opens
+    // its diff (DepositFile.svelte), and the findings of the scan, each in words. The rows of the
     // changed files are made again whenever the branch or the changes are, so an open diff is shut
     // and never shows texts older than the plan it sits in.
 
@@ -30,7 +30,7 @@
     function findingWords(one: Finding): string {
         if (one.kind === 'secret') return t('deposit.finding_secret', one.path);
         if (one.kind === 'large') return t('deposit.finding_large', one.mb, one.path);
-        return t('deposit.finding_readme');
+        return t('deposit.finding_readme', one.path);
     }
 </script>
 

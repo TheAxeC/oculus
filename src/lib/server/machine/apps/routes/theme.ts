@@ -76,6 +76,7 @@ type RequestStart = { classes: string; file: AppThemeFile | null };
  * `app_theme` names, as the page's first draw chooses it. The class string is the body class the
  * page's first `applyTheme` sets: the theme's class, `APP_THEME_CLASS` for an app's theme, joined
  * with the rice toggles' classes and, on a page that draws the CRT overlay (`crt`), the overlay's.
+ * A config whose looks do not read (`configLooks` null) gives the theme's class alone.
  */
 export function requestStart(
     held: AppsHeld,
@@ -94,6 +95,7 @@ export function requestStart(
     const file = 'app' in start ? (files[start.app] ?? null) : null;
     const theme = file !== null ? APP_THEME_CLASS : 'cls' in start ? start.cls : '';
     const looks = configLooks(config);
+    if (looks === null) return { classes: theme, file };
     return { classes: bodyClass(theme, { ...looks, crt: crt && looks.crt }), file };
 }
 

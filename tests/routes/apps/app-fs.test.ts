@@ -78,7 +78,14 @@ function reachOf(fixture: ReturnType<typeof plant>, scanEntries: number) {
             home: join(fixture.base, 'home'),
             local: localDefaults(),
             perOculus: { bookmarks: null, schedules: null, appsDir: null },
-            roots: [{ key: 'lab', dir: join(fixture.base, 'roots', 'lab'), hub: true }]
+            roots: [
+                {
+                    key: 'lab',
+                    dir: join(fixture.base, 'roots', 'lab'),
+                    hub: true,
+                    secrets: 'secrets'
+                }
+            ]
         }),
         fs: diskFs,
         scanEntries

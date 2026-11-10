@@ -15,12 +15,13 @@
 //
 // The Deposit tab belongs to the project the page was opened for (the item is the project view): it
 // starts as that project's deposit, and the arrangement drops it for a page opened for no project
-// and for a project with no deposit. A project has a deposit when its folder holds `code/`, or its
-// `code_availability:` names a `repo` or a `url`.
+// and for a project with no deposit. A project has a deposit when its folder holds its code folder
+// (the hub's `code_dir`), or its `code_availability:` names a `repo` or a `url`.
 
 import { fields } from '../../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../../data/model/index.ts';
 import { parseArrangement } from '../../../navigation/arrangement.ts';
+import { defaultAgent } from '../../../../shared/words/appearance.ts';
 import {
     closeInstance,
     folderName,
@@ -76,7 +77,7 @@ function projectIdOf(item: FolderItem | undefined): string {
     return item?.view === PROJECT_VIEW ? stateRecord(item.state) : '';
 }
 
-/** Whether a project has a deposit: a `code/` folder, or a `repo` or `url` its manifest names. */
+/** Whether a project has a deposit: its code folder, or a `repo` or `url` its manifest names. */
 function hasDeposit(project: Project | undefined): boolean {
     if (project === undefined) return false;
     const code = project.codeAvailability;
@@ -85,9 +86,11 @@ function hasDeposit(project: Project | undefined): boolean {
 
 /**
  * What each view of the page starts with, given the folder and the project it is for; a Terminal
- * tab's composer takes the folder's absolute path, which `dir` is, or null for a root not served.
+ * tab's composer takes the folder's absolute path, which `dir` is, or null for a root not served,
+ * and the `terminal.default_agent` option, and starts empty before the page has its settings.
  */
 function startOf(view: string, folder: FolderRef, project: string, dir: string | null): Start {
+    const agent = defaultAgent();
     switch (view) {
         case 'files':
             return {
@@ -106,7 +109,7 @@ function startOf(view: string, folder: FolderRef, project: string, dir: string |
         case 'deposit':
             return { layout: recordField(project) };
         case TERMINAL_VIEW:
-            return dir === null ? {} : { ui: splitState(dir, 'claude') };
+            return dir === null || agent === null ? {} : { ui: splitState(dir, agent) };
         default:
             return {};
     }

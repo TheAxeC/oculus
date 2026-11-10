@@ -191,6 +191,8 @@ describe('the recover route', () => {
             home: scratchDir('oculus-recover-mac-'),
             nodeVersion: 'v24.0.0',
             nodeDownload: '',
+            scratchRoot: '/local',
+            partition: '',
             sevenZip: () => ''
         };
         const entry = datasetOf([{ kind: 'url', urls: [{ url: URL_A }] }]);
@@ -215,6 +217,7 @@ describe('the recover route', () => {
             const watcher = watchRecover(channels, {
                 home: scratchDir('oculus-recover-home-'),
                 places: () => [{ hub: 'research-hub', key: 'mitdb', path: '~/data/mitdb' }],
+                dataDir: () => 'data',
                 hubs: () => ['research-hub', 'research-hub-two'],
                 pollCluster: () => undefined,
                 readCluster: () => undefined
@@ -247,6 +250,7 @@ describe('the recover route', () => {
         const watcher = watchRecover(channels, {
             home,
             places: () => [{ hub: 'research-hub', key: 'mitdb', path: '~/data/mitdb' }],
+            dataDir: () => 'data',
             hubs: () => ['research-hub'],
             pollCluster: () => undefined,
             readCluster: () => undefined,

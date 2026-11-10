@@ -119,9 +119,10 @@ describe('the roots served while a workspace file lists three folders', () => {
         expect(resolveRootPath(roots, 'notes', '../outside.md')).toEqual({ error: 'outside' });
         expect(resolveRootFile(roots, 'hub', 'README.md')).toBeNull();
         expect(resolveRootPath(roots, 'engine', 'config')).toEqual({ error: 'outside' });
-        const listed = listDir(roots, 'notes', '');
+        const shown = { hidden: false, folders: [] };
+        const listed = listDir(roots, 'notes', '', shown);
         expect('entries' in listed && listed.entries.map((one) => one.name)).toEqual(['a.md']);
-        expect(listDir(roots, 'notes', '..')).toEqual({ error: 'outside' });
+        expect(listDir(roots, 'notes', '..', shown)).toEqual({ error: 'outside' });
     });
 
     it('refuse a names list for the root hub or engine before any process starts', async () => {
@@ -136,6 +137,7 @@ describe('the roots served while a workspace file lists three folders', () => {
                 },
                 timeout: 1000,
                 max: 100,
+                skipFolders: [],
                 withheld: []
             });
             expect(outcome).toEqual({ ok: false, refused: 'unknown_root' });

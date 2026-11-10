@@ -45,8 +45,18 @@ import { isLibraryAddress } from './library/address.ts';
 const PAGE_NAME = 'oculus-file';
 const PAGE_SCHEME = `${PAGE_NAME}:`;
 
-/** A root the file browser serves, with its real path resolved. */
-export type ServedRoot = { key: string; dir: string; real: string; hub?: true };
+/**
+ * A root the file browser serves, with its real path resolved. A hub's carries its folder of
+ * secrets, its `secrets_dir`, and its notes folder, its `notes_dir`, each when it is marked.
+ */
+export type ServedRoot = {
+    key: string;
+    dir: string;
+    real: string;
+    hub?: true;
+    secrets?: string;
+    notes?: string;
+};
 
 /**
  * A page URI resolved: the file's real path and URI, the root it belongs to, and the page's key.
@@ -80,7 +90,9 @@ export function servedRoots(roots: readonly Root[]): ServedRoot[] {
                 key: root.key,
                 dir,
                 real,
-                ...(root.hub === true ? { hub: true as const } : {})
+                ...(root.hub === true ? { hub: true as const } : {}),
+                ...(root.secrets === undefined ? {} : { secrets: root.secrets }),
+                ...(root.notes === undefined ? {} : { notes: root.notes })
             });
     }
     return served;

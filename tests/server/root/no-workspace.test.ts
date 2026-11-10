@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect } from 'vitest';
-import { DEFAULT_PORT } from '../../../src/lib/data/sources/config.ts';
+import { localDefaults } from '../../../src/lib/data/sources/config.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { createServerContext, type ServerContext } from '../../../src/lib/server/root/context.ts';
 import { stateFileOf } from '../../../src/lib/server/files/workspace/state.ts';
@@ -50,7 +50,7 @@ describe('a server context with no workspace to open', () => {
         expect(open.folders).toEqual([]);
         expect(open.roots).toEqual([]);
         expect(open.primary).toBeNull();
-        expect(context.local.port).toBe(DEFAULT_PORT);
+        expect(context.local.port).toBe(localDefaults().port);
         const portfolio = context.hub.latest('portfolio')?.payload as Snapshot | undefined;
         expect(portfolio).toBeDefined();
         expect(Object.keys(portfolio?.entities.projects ?? {})).toEqual([]);

@@ -65,7 +65,7 @@ text:
             overdue_funding: funding deadline {0}d ago
             overdue_generic: '{0} {1}d ago'
             refresh_glyph: refresh_live
-            refresh_inbox_plain: 'Inbox: triaged {0}d ago | run Inbox from the Update tray'
+            refresh_inbox_plain: 'Inbox: triaged {0}d ago | run {1} from the Update tray'
             refresh_litwatch_plain: '{0}: {1} | run {0} from the Update tray'
             refresh_scout_plain: '{0}: ran {1}d ago | run {0} from the Update tray'
             scout_glyph: scout

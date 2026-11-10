@@ -16,10 +16,11 @@
 // since a list of every file name of every root is as much as a search gives away. A `list` that is
 // empty, repeated or any other value is refused as the word `list`, and a root that is not served
 // as `unknown_root`, both before any process starts. The folders no name is listed from are the
-// machine's private ones (`privateFolders`: the `secrets` folder of every hub and `~/.oculus`),
-// which the language server relay and the writing rules leave out too, and a search leaves them out
-// as well. A search reads each hub's notes folder `.oculus/notes/` beside the rest of the hub, and
-// nothing else of its `.oculus/` folder.
+// machine's private ones (`privateFolders`: the folder of secrets every hub's `secrets_dir` names,
+// which the route marks the hubs among the roots with, and `~/.oculus`), which the language server
+// relay and the writing rules leave out too, and a search leaves them out as well. A search reads
+// each hub's notes folder (its `notes_dir`, which the route marks the hubs with too) beside the
+// rest of the hub, and nothing else of its `.oculus/` folder.
 //
 // A refusal is answered as a word (data/helpers/search/query.ts SearchRefusal) and the page says it
 // in the catalog's sentence for that word. A pattern ripgrep could not read is the word `pattern`
@@ -28,14 +29,14 @@
 import { homedir } from 'node:os';
 import { json } from '@sveltejs/kit';
 import { hasToken } from '../../core/auth.ts';
-import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
+import { privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { requestFrom } from '../../../data/helpers/search/query.ts';
 import { runNames, runSearch, type SearchOptions } from './search.ts';
 import type { Root } from '../files.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';
 
 export type SearchRouteOptions = SearchOptions & {
-    /** Every root this request may search. */
+    /** Every root this request may search, each hub marked with its folder of secrets. */
     roots: Root[];
     /** How many hits one answer carries, from the merged config. */
     cap: number;
@@ -75,7 +76,8 @@ export async function handleSearch(
             ...(options.run === undefined ? {} : { run: options.run }),
             timeout: options.timeout,
             max: options.maxNames,
-            withheld: privateFolders(hubDirs(options.roots), homedir()),
+            skipFolders: options.skipFolders,
+            withheld: privateFolders(options.roots, homedir()),
             repositories: options.repositories ?? [],
             ...(options.credentials === undefined ? {} : { credentials: options.credentials })
         });
@@ -87,7 +89,7 @@ export async function handleSearch(
     const query = asked.query;
     const outcome = await runSearch(options.roots, query, {
         ...options,
-        withheld: privateFolders(hubDirs(options.roots), homedir())
+        withheld: privateFolders(options.roots, homedir())
     });
     if (!outcome.ok) {
         const body =

@@ -700,7 +700,7 @@ describe('a hub reports only the files its own configuration names', () => {
     it('reads a feed from the collections entry that names it, as no collection, and finds a named file that is not there', () => {
         const hub = plantScratch('oculus-collections-feed-', {
             '.oculus/config.yml':
-                'collections:\n  - { key: radar, file: elsewhere/radar.yml, registry: radar }\n  - { key: leads, file: gone/leads.yml, registry: leads }\n',
+                'feed_registries: [leads, radar]\ncollections:\n  - { key: radar, file: elsewhere/radar.yml, registry: radar }\n  - { key: leads, file: gone/leads.yml, registry: leads }\n',
             'elsewhere/radar.yml': 'meta:\n  last_run: the last pass\nentries: []\n'
         });
         const { config, from } = loadConfig(engineDir(), { hub });

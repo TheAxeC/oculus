@@ -16,30 +16,39 @@
 // The route also lists the names of the files of the served roots (`list=names`), for the palette's
 // file mode. That request carries no pattern, so it has its own small shape beside the query: the
 // root it names or every root, the arguments `--files` runs with, and the same refusal of a root
-// that is not served. It reads the same `SKIP_GLOBS`, so a search and a name list leave out the
-// same folders.
+// that is not served. Both leave out the folders `search.skip_folders` names, by name at any depth
+// and whatever a .gitignore says (`skipGlobs`), so a search and a name list leave out the same
+// folders.
 //
 // In regular-expression mode the arguments also carry the replacement template of ./replace.ts, so
 // that each match ripgrep reports holds the text of every group of the pattern. A replace names one
 // file instead of a directory and asks for every match of it (`fileArgs`).
 //
 // What one root's search runs over is the query's arguments with that root's own place
-// (`rootSearchArgs`): an anchored glob for each private folder inside the root (the `secrets`
-// folder of every hub and `~/.oculus`, as the name list leaves them out), and, for a hub, its notes
-// folder `.oculus/notes/` named beside `.`, since ripgrep leaves out every folder whose name starts
-// with a dot and the notes are the one such folder a search reads. A scope in a hub's `.oculus/`
-// folder searches the notes folder and nothing else of it, so the scope `.oculus` searches the
-// notes and a scope elsewhere in it searches nothing. A search of every root may be scoped to one
-// folder only, the notes folder (`NOTES_FOLDER`), which searches the notes of every hub and nothing
-// of a root that is no hub: the search a press on a tag opens.
+// (`rootSearchArgs`): an anchored glob for each private folder inside the root (the folder of
+// secrets of every hub and `~/.oculus`, as the name list leaves them out), and, for a hub, its
+// notes folder (its `notes_dir`) named beside `.` when the folder lies in a dot folder, since
+// ripgrep leaves out every folder whose name starts with a dot and the notes are the one such
+// folder a search reads. A scope in a hub's `.oculus/` folder searches the notes folder and nothing
+// else of it, so a scope in the notes folder searches there and a scope elsewhere in `.oculus/`
+// searches nothing. A search of every root may be scoped to one thing only, the notes
+// (`NOTES_SCOPE`), which searches the notes folder of every hub and nothing of a root that is no
+// hub: the search a press on a tag opens.
 
 import { z } from 'zod';
-import { NOTES_FOLDER, inNotes } from '../../prose/markdown/note-names.ts';
+import { inNotes } from '../../prose/markdown/note-names.ts';
 import { fields } from '../guards.ts';
+import { ROOT_FOLDER } from '../hub-names.ts';
 import { replaceTemplate } from './replace.ts';
 
 /** The root key that means every served root rather than one of them. */
 export const ALL_ROOTS = 'all';
+
+/**
+ * The scope of a search of every root that searches the notes folder of each hub, which each hub
+ * names for itself, so it is a word and no path: `#` is in no note's or notes folder's name.
+ */
+export const NOTES_SCOPE = '#notes';
 
 /** The longest pattern a query may carry. A longer one is a paste, not a search. */
 const MAX_QUERY = 1000;
@@ -50,8 +59,14 @@ export const HIT_WIDTH = 240;
 /** The largest file ripgrep opens, as ripgrep's own size word. */
 const MAX_FILESIZE = '2M';
 
-/** The directories no search descends into, whatever a .gitignore says. */
-const SKIP_GLOBS = ['!node_modules', '!.git', '!.svelte-kit', '!.svelte-kit-app'];
+/**
+ * ripgrep's globs for the folders no search or name list descends into, whatever a .gitignore
+ * says: one negated glob per name of `search.skip_folders`, which matches a folder of that name at
+ * any depth.
+ */
+function skipGlobs(skipped: readonly string[]): string[] {
+    return skipped.map((name) => `!${globEscape(name)}`);
+}
 
 /** One search as both sides hold it. */
 export type SearchQuery = {
@@ -126,12 +141,12 @@ export function refusalOf(query: SearchQuery, rootKeys: string[]): QueryRefusal 
 
 /**
  * Whether the folder a query is scoped to can lie under one root: a relative path with no `..`
- * segment, on a query that names one root, or the notes folder on a query of every root. Whether
- * the folder is really there, and not a link out of the root, is the server's to read from the
- * disk.
+ * segment, on a query that names one root, or the notes (`NOTES_SCOPE`) on a query of every root.
+ * Whether the folder is really there, and not a link out of the root, is the server's to read from
+ * the disk.
  */
 function scopedInside(query: SearchQuery): boolean {
-    if (query.root === ALL_ROOTS) return query.under === NOTES_FOLDER;
+    if (query.root === ALL_ROOTS) return query.under === NOTES_SCOPE;
     if (query.under.startsWith('/') || query.under.startsWith('\\')) return false;
     return !query.under.split(/[\\/]/).includes('..');
 }
@@ -174,11 +189,17 @@ function matchArgs(query: MatchQuery): string[] {
 
 /**
  * ripgrep's arguments for this query. The order is fixed so a test reads the list word for word:
- * the JSON stream, the caps, the skipped directories, a root's own globs, the options that say how
- * the pattern is read (with the replacement template in regular-expression mode), the pattern, and
- * the directory, or the paths a root's place names in its place.
+ * the JSON stream, the caps, the skipped folders (`skipped`, the names of `search.skip_folders`), a
+ * root's own globs, the options that say how the pattern is read (with the replacement template in
+ * regular-expression mode), the pattern, and the directory, or the paths a root's place names in
+ * its place.
  */
-function searchArgs(query: SearchQuery, globs: string[] = [], paths?: string[]): string[] {
+function searchArgs(
+    query: SearchQuery,
+    skipped: readonly string[],
+    globs: string[] = [],
+    paths?: string[]
+): string[] {
     const args = [
         '--json',
         '--max-count',
@@ -186,7 +207,7 @@ function searchArgs(query: SearchQuery, globs: string[] = [], paths?: string[]):
         '--max-filesize',
         MAX_FILESIZE
     ];
-    for (const glob of [...SKIP_GLOBS, ...globs]) args.push('--glob', glob);
+    for (const glob of [...skipGlobs(skipped), ...globs]) args.push('--glob', glob);
     const scoped = query.under === '' ? SEARCH_PATH : `./${query.under}`;
     args.push(...matchArgs(query), ...(paths ?? [scoped]));
     return args;
@@ -203,47 +224,60 @@ export function fileArgs(query: MatchQuery, path: string): string[] {
 
 /**
  * What one root's search runs over besides the query: the folders inside it no hit is answered
- * from, and whether it is a hub whose notes folder is there.
+ * from, the notes folder of a hub whose notes folder is there (its `notes_dir`, the empty text for
+ * any other root), and the names of the folders no search descends into (`search.skip_folders`).
  */
-export type RootPlace = { withheld: string[]; notes: boolean };
+export type RootPlace = { withheld: string[]; notes: string; skipped: readonly string[] };
 
-/** The name of the folder a hub's notes folder lies in, which a repository's own folder has too. */
-const STATE_FOLDER = NOTES_FOLDER.split('/')[0] ?? '';
+/** The segments of a path written with `/`, without empty ones. */
+function segmentsOf(path: string): string[] {
+    return path.split('/').filter((one) => one !== '');
+}
 
 /**
- * The paths ripgrep searches in one root, or none: the whole root with its notes folder beside it,
- * the scope's folder, and nothing for a scope inside the root's own `.oculus` folder unless the
- * scope is a hub's notes folder that is there, or a folder under it. A whole-root search reads no
- * `.oculus` folder but the notes, since ripgrep passes over a folder whose name starts with a dot.
+ * The paths ripgrep searches in one root, or none: the whole root, with the notes folder beside it
+ * when it lies in a folder whose name starts with a dot, which ripgrep passes over; the notes
+ * folder for the notes of a search of every root; the scope's folder; and nothing for a scope
+ * inside the root's own `.oculus` folder unless the scope is the notes folder or a folder under it.
  */
-function searchedPaths(under: string, place: RootPlace): string[] {
-    const notes = `./${NOTES_FOLDER}`;
-    if (under === '') return place.notes ? [SEARCH_PATH, notes] : [SEARCH_PATH];
-    const segments = under.split('/').filter((one) => one !== '');
-    if (segments[0] !== STATE_FOLDER) return [`./${under}`];
-    return place.notes && inNotes(under) !== null ? [`./${under}`] : [];
+function searchedPaths(under: string, place: RootPlace, all: boolean): string[] {
+    const notes = place.notes === '' ? [] : [`./${segmentsOf(place.notes).join('/')}`];
+    if (all) return notes;
+    if (under === '') {
+        const dotted = segmentsOf(place.notes).some((one) => one.startsWith('.'));
+        return dotted ? [SEARCH_PATH, ...notes] : [SEARCH_PATH];
+    }
+    if (segmentsOf(under)[0] !== ROOT_FOLDER) return [`./${under}`];
+    return inNotes(under, place.notes) !== null ? [`./${under}`] : [];
 }
 
 /**
  * ripgrep's arguments for one root of a planned search, or null when the root's place leaves
  * nothing of the scope to search (a scope in a `.oculus` folder outside a hub's notes, the notes
- * folder of a search of every root in a root that is no hub with notes): the plan's arguments with
- * the root's private folders left out by a glob each before the pattern, and its paths in place of
- * the plan's one.
+ * of a search of every root in a root that is no hub with notes): the plan's arguments with the
+ * root's private folders left out by a glob each before the pattern, and its paths in place of the
+ * plan's one.
  */
 export function rootSearchArgs(query: SearchQuery, place: RootPlace): string[] | null {
-    if (query.root === ALL_ROOTS && query.under !== '' && !place.notes) return null;
-    const paths = searchedPaths(query.under, place);
+    const all = query.root === ALL_ROOTS && query.under !== '';
+    const paths = searchedPaths(query.under, place, all);
     if (paths.length === 0) return null;
     const globs = place.withheld.map((path) => `!/${globEscape(path)}`);
-    return searchArgs(query, globs, paths);
+    return searchArgs(query, place.skipped, globs, paths);
 }
 
-/** The checks and the arguments as one call, which is what both sides use. */
-export function searchQuery(query: SearchQuery, rootKeys: string[]): SearchPlan {
+/**
+ * The checks and the arguments as one call, `skipped` the names of `search.skip_folders`. The page
+ * runs the same checks through `refusalOf`.
+ */
+export function searchQuery(
+    query: SearchQuery,
+    rootKeys: string[],
+    skipped: readonly string[]
+): SearchPlan {
     const refused = refusalOf(query, rootKeys);
     if (refused !== null) return { ok: false, refused };
-    return { ok: true, args: searchArgs(query) };
+    return { ok: true, args: searchArgs(query, skipped) };
 }
 
 /** A path as ripgrep printed it against `.`, as the path inside the root. */
@@ -333,14 +367,15 @@ function globEscape(path: string): string {
 }
 
 /**
- * ripgrep's arguments for the names of one root: every file with hidden ones, the skipped folders,
- * and one anchored glob for each folder inside the root that no name may be answered from (the
- * machine's private folders, given as paths inside the root). The directory is named `.` as a
- * search names it, and the paths come back as `./<path>`, which `pathIn` reads.
+ * ripgrep's arguments for the names of one root: every file with hidden ones, the skipped folders
+ * (`skipped`, the names of `search.skip_folders`), and one anchored glob for each folder inside the
+ * root that no name may be answered from (the machine's private folders, given as paths inside the
+ * root). The directory is named `.` as a search names it, and the paths come back as `./<path>`,
+ * which `pathIn` reads.
  */
-export function namesArgs(withheld: string[]): string[] {
+export function namesArgs(withheld: string[], skipped: readonly string[]): string[] {
     const args = ['--files', '--hidden'];
-    for (const glob of SKIP_GLOBS) args.push('--glob', glob);
+    for (const glob of skipGlobs(skipped)) args.push('--glob', glob);
     for (const path of withheld) args.push('--glob', `!/${globEscape(path)}`);
     args.push(SEARCH_PATH);
     return args;

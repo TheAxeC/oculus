@@ -10,6 +10,7 @@ import { describe, expect } from 'vitest';
 import type { Deck } from '../../../src/lib/data/model/index.ts';
 import { deckOrderOf } from '../../../src/lib/data/shapes/boards/order.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { hubLayout } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import {
@@ -83,6 +84,7 @@ function read(
     const reader = createReader({
         hub: { key: 'hub', dir },
         projects: ids.map(project),
+        deck: hubLayout(VOCAB, []).deckDir,
         tagTones: {},
         catalog: textCatalog(VOCAB),
         order: deckOrderOf(VOCAB),

@@ -16,7 +16,6 @@ import {
     SESSIONS_LIVE,
     SESSIONS_NONE,
     SESSIONS_RECENT,
-    STALE_LAG,
     boardItemFor,
     boardItems,
     disseminated,
@@ -29,7 +28,8 @@ import { boardTakes } from '../../data/shapes/boards/takes.ts';
 import { rolesOf } from '../../data/shapes/boards/roles.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
-import { byKey, focusSetting } from '../../data/helpers/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
+import { focusNumber } from '../../data/sources/config/sections/focus.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
 import {
     collectionsOf,
@@ -200,7 +200,7 @@ export type SelectorsStore = {
     /** The ids of the people marked as the user (data/snapshot/hubs/self.ts). */
     selfPeople: () => Set<Id>;
     boardStats: (items: BoardItem[]) => BoardStats;
-    staleLag: () => number;
+    staleLag: () => number | null;
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: (hub: string) => Choice[];
     /** The folder a new project of the tier starts with in the hub `hub` (new-project.ts). */
@@ -387,10 +387,10 @@ export function createSelectors(
 
     /**
      * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind its documents
-     * a manifest may be.
+     * a manifest may be, by its options entry; null before the page holds the settings.
      */
-    function staleLag(): number {
-        return focusSetting(configMap(), 'stale_lag_days') ?? STALE_LAG;
+    function staleLag(): number | null {
+        return focusNumber(configMap(), 'stale_lag_days');
     }
 
     /** The events and education entries that name one project. Empty before the first snapshot. */

@@ -16,11 +16,11 @@
 // row with no key to tell it by comes after oculus's rows as it is, and the reader of the list says
 // what is wrong with it. The rows of a list replaced whole are told apart by their `key`, by their
 // `label` in a list of the Focus band's stages, which has no key, or by the text itself in a list
-// of texts (`deck_order`): a row naming the key of an earlier row is a problem naming its place,
-// and oculus's list stands. The hub layer (hub-layer.ts) lets oculus's list stand too when a row of
-// such a list is not of the shape oculus's file takes, and takes a word the hub's values no longer
-// give out of the lists that name it. `focus_clusters` is applied as written, since its reader
-// (sections/vocab.ts) takes it row by row.
+// of texts (`deck_order`, `venue_biennial`, `venue_no_jif`): a row naming the key of an earlier row
+// is a problem naming its place, and oculus's list stands. The hub layer (hub-layer.ts) lets
+// oculus's list stand too when a row of such a list is not of the shape oculus's file takes, and
+// takes a word the hub's values no longer give out of the lists that name it. `focus_clusters` is
+// applied as written, since its reader (sections/vocab.ts) takes it row by row.
 //
 // The inverse is here too: the value a settings file holds for a value the reader sees, so the
 // merge over oculus's value gives the seen value back. It holds only the entries the reader changed
@@ -29,7 +29,7 @@
 // entries first.
 
 import { isEqual } from 'lodash-es';
-import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
+import { findingText, valueShown, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { HEX_COLOUR } from '../../../shapes/catalog-files/common.ts';
 import type { Merged, OverrideProblem } from './keyed.ts';
@@ -117,7 +117,12 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     venue_categories: WHOLE,
     pillar_kinds: WHOLE,
     venue_tiers: WHOLE,
+    venue_ranks: MAP,
+    venue_costs: MAP,
+    venue_biennial: TEXTS,
+    venue_no_jif: TEXTS,
     radar_buckets: WHOLE,
+    radar_relevance: MAP,
     ticker_categories: MAP
 };
 
@@ -199,12 +204,16 @@ export function problemFinding(
     return { file, key, words };
 }
 
-/** The finding of a value that is not of the kind its key takes, oculus's value standing. */
+/**
+ * The finding of a value that is not of the kind its key takes, naming the key and the value,
+ * oculus's value standing.
+ */
 export function wrongKindFinding(
     file: string,
     key: string,
     name: string,
-    wrong: WrongKind
+    wrong: WrongKind,
+    value: unknown
 ): PendingFinding {
     const kind = (catalog: TextCatalog): string =>
         wrong === 'map'
@@ -216,7 +225,13 @@ export function wrongKindFinding(
         file,
         key,
         words: (catalog) =>
-            findingText(catalog, 'findings.config.settings_value', name, kind(catalog))
+            findingText(
+                catalog,
+                'findings.config.settings_value',
+                name,
+                kind(catalog),
+                valueShown(value)
+            )
     };
 }
 

@@ -2,11 +2,11 @@
 // file the file routes would never serve whatever the roots is never named: a path with a segment
 // that starts with a dot, a path holding a folder `closed_paths` names, and the folders of this
 // machine that hold its own state or secrets (the engine's `config/` folder, `~/.oculus`, and the
-// `secrets` folder of every hub). `closed_paths` is read as a list of folders each relative to a
-// root and applied to every root (data/helpers/files/apps/apps.ts); a path outside every root has
-// no root to be relative to, so a folder is matched wherever its segments follow each other in the
-// path. A `closed_paths` key that is missing or is no list closes every file, as it does for an
-// app.
+// folder of secrets of every hub, its `secrets_dir`). `closed_paths` is read as a list of folders
+// each relative to a root and applied to every root (data/helpers/files/apps/apps.ts); a path
+// outside every root has no root to be relative to, so a folder is matched wherever its segments
+// follow each other in the path. A `closed_paths` key that is missing or is no list closes every
+// file, as it does for an app.
 //
 // One exception is made to the dot rule: a Python library lives in a virtual environment or a
 // version manager's folder, whose path holds a dot segment (`.venv`, `.pyenv`), so a file under
@@ -19,7 +19,7 @@
 import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
-import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
+import { privateFolders, type HubMarked } from '../../../../data/helpers/files/private-folders.ts';
 import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
 import { inside, realPath, under } from '../../../core/paths.ts';
 
@@ -38,10 +38,10 @@ export const NO_LIBRARY: LibraryRules = { closed: null, withheld: [] };
 
 /**
  * The folders of this machine that hold its own state or secrets: oculus's config folder, the
- * state folder and the `secrets` folder of each hub.
+ * state folder and the folder of secrets of each hub of `roots`, its `secrets_dir`.
  */
-export function withheldFolders(engineConfig: string, hubs: readonly string[]): string[] {
-    return [engineConfig, ...privateFolders(hubs, homedir())];
+export function withheldFolders(engineConfig: string, roots: readonly HubMarked[]): string[] {
+    return [engineConfig, ...privateFolders(roots, homedir())];
 }
 
 /** The server a path is asked for, and what it is the interpreter's folders of. */

@@ -16,13 +16,7 @@ import { decodeHTML } from 'entities';
 import MailComposer from 'nodemailer/lib/mail-composer';
 import { z } from 'zod';
 import { getJson, httpsLink, postJson, rowsOf, rowsShape } from '../connect/api.ts';
-import {
-    SIGNALS,
-    TODO_LABEL,
-    type Candidate,
-    type MailReadArgs,
-    type PlateThread
-} from './plate.ts';
+import { signalsOf, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
 import type { Signal } from './plate.ts';
 
 /** A field of Gmail's answer that is text where it is there, and read as absent otherwise. */
@@ -71,17 +65,24 @@ function threadLink(link: string, id: string): string | undefined {
     return httpsLink(link.replaceAll('{id}', () => encodeURIComponent(id)));
 }
 
-/** The search each signal is read with, which is the plate rule written in Gmail's own query. */
-function queryFor(signal: Signal): string {
+/**
+ * The search each signal is read with, which is the plate rule written in Gmail's own query. A
+ * label of letters, digits, `_` and `-` is written as it is, and any other in quotes, with no quote
+ * of its own.
+ */
+function queryFor(signal: Signal, label: string): string {
     if (signal === 'unread') return 'in:inbox is:unread';
-    if (signal === 'todo') return `in:inbox label:${TODO_LABEL}`;
+    if (signal === 'todo') {
+        const written = /^[A-Za-z0-9_-]+$/.test(label) ? label : `"${label.replaceAll('"', '')}"`;
+        return `in:inbox label:${written}`;
+    }
     return 'in:inbox has:nouserlabels';
 }
 
 /** The thread ids one signal answers with, newest first and capped at the configured count. */
 async function idsFor(args: MailReadArgs, signal: Signal): Promise<string[]> {
     const url = new URL(`${args.base}/threads`);
-    url.searchParams.set('q', queryFor(signal));
+    url.searchParams.set('q', queryFor(signal, args.todoLabel));
     url.searchParams.set('maxResults', String(args.perSignal));
     const body = await getJson('google', url.toString(), args);
     const found: string[] = [];
@@ -146,11 +147,11 @@ function threadOf(id: string, body: Record<string, unknown>, linkOf: string): Pl
     };
 }
 
-/** Every candidate of one account: the three signals read, each thread's metadata behind them. */
+/** Every candidate of one account: its signals read, each thread's metadata behind them. */
 export async function readGoogleMail(args: MailReadArgs): Promise<Candidate[]> {
     const candidates: Candidate[] = [];
     const read = new Map<string, PlateThread | null>();
-    for (const signal of SIGNALS) {
+    for (const signal of signalsOf(args)) {
         for (const id of await idsFor(args, signal)) {
             if (!read.has(id)) read.set(id, threadOf(id, await readThread(args, id), args.link));
             const thread = read.get(id) ?? null;

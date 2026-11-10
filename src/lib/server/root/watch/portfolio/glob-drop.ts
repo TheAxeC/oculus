@@ -12,9 +12,10 @@
 // segment, as a `present.yml` saved under `projects/*/present.yml` or `slides/*` is: oculus writes
 // a file through a temporary name renamed over it, and the temporary name is gone and no match,
 // while a slide file renamed into place is no folder and no last segment names it. A `change` event
-// never drops, and neither does a path inside a project's `code/` or `attic/` folder (audited.ts
-// `NEVER`), which the build never reads and where no deck lies, nor a path inside a dot folder the
-// pattern does not name, which Node's `globSync` does not enter (a run of Node 24's
+// never drops, and neither does a path inside a folder the hubs' settings leave out of the watch
+// (audited.ts `WatchScope`, a project's code folder and the folders of `audit.skip_folders`), which
+// the build never reads and where no deck lies, nor a path inside a dot folder the pattern does
+// not name, which Node's `globSync` does not enter (a run of Node 24's
 // `globSync('projects/**/present')` over a tree holding `projects/.hidden/b/present` answers only
 // the matches outside it; its documentation says nothing of dot folders).
 //
@@ -30,7 +31,7 @@
 import { isAbsolute, join, matchesGlob, relative } from 'node:path';
 import { DECK_FILE } from '../../../../data/sources/deck/read.ts';
 import { isGlob, placeIn, type HeldGlob } from '../../../../data/sources/documents/folder-globs.ts';
-import { NEVER } from './audited.ts';
+import { folderAt } from './audited.ts';
 
 /** What a path an event names is now. */
 export type PathNow = 'folder' | 'file' | 'gone';
@@ -53,10 +54,13 @@ function segmentsOf(path: string): string[] {
     return path.split('/').filter((one) => one !== '');
 }
 
-/** Whether a path inside a key's root is one whose event can change the key's matches. */
-function heardBy(glob: HeldGlob, under: string): boolean {
+/**
+ * Whether a path inside a key's root is one whose event can change the key's matches: none inside
+ * a folder of `never`, the folders left out of the watch as segments.
+ */
+function heardBy(glob: HeldGlob, under: string, never: readonly string[][]): boolean {
     const parts = segmentsOf(under);
-    if (parts.some((one) => NEVER.includes(one))) return false;
+    if (folderAt(parts, never) >= 0) return false;
     const dotted = segmentsOf(glob.pattern).some((one) => one.startsWith('.'));
     return dotted || !parts.some((one) => one.startsWith('.'));
 }
@@ -78,13 +82,17 @@ function namedBy(name: string, last: string): boolean {
     return name === DECK_FILE && matchesGlob(name, last);
 }
 
-/** The keys of `held` one watch event drops. */
-export function droppedKeys(event: GlobEvent, held: readonly HeldGlob[]): string[] {
+/** The keys of `held` one watch event drops, `never` the folders left out of the watch. */
+export function droppedKeys(
+    event: GlobEvent,
+    held: readonly HeldGlob[],
+    never: readonly string[][]
+): string[] {
     if (event.type !== 'rename') return [];
     const path = join(event.root, event.path);
     return held.flatMap((glob) => {
         const under = placeIn(glob, path);
-        if (under === null || under === '' || !heardBy(glob, under)) return [];
+        if (under === null || under === '' || !heardBy(glob, under, never)) return [];
         const last = segmentsOf(glob.pattern).at(-1) ?? '';
         const name = segmentsOf(under).at(-1) ?? '';
         if (namedBy(name, last)) return [glob.key];
@@ -102,16 +110,18 @@ function within(path: string, dir: string): boolean {
 
 /**
  * Whether a watch event is a project folder made, moved or removed under one of the scan folders
- * `scanned`, which rebuilds the snapshot: a `rename` outside `code/`, `attic/` and every dot folder
- * whose path is a folder now, inside none of the project folders `projects` of the last snapshot,
- * that is a project or holds one below it, or is gone and was one of those project folders or the
- * folder above one, or a match of a held key or the folder above one.
+ * `scanned`, which rebuilds the snapshot: a `rename` outside the folders `never` leaves out of the
+ * watch and every dot folder whose path is a folder now, inside none of the project folders
+ * `projects` of the last snapshot, that is a project or holds one below it, or is gone and was one
+ * of those project folders or the folder above one, or a match of a held key or the folder above
+ * one.
  */
 export function movedFolder(
     event: GlobEvent,
     held: readonly HeldGlob[],
     scanned: readonly string[],
-    projects: readonly string[]
+    projects: readonly string[],
+    never: readonly string[][]
 ): boolean {
     if (event.type !== 'rename') return false;
     const path = join(event.root, event.path);
@@ -120,7 +130,7 @@ export function movedFolder(
         return rest === '' || rest.startsWith('..') || isAbsolute(rest) ? [] : [rest];
     });
     const parts = below.length === 0 ? null : segmentsOf(below[0].split('\\').join('/'));
-    if (parts === null || parts.some((one) => NEVER.includes(one) || one.startsWith('.'))) {
+    if (parts === null || folderAt(parts, never) >= 0 || parts.some((one) => one.startsWith('.'))) {
         return false;
     }
     const state = event.now();

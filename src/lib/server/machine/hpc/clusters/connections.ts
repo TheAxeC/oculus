@@ -163,9 +163,9 @@ export function clusterChoices(
 }
 
 /**
- * The settings each cluster's watcher is handed: its connection, the cadences of `slurm:`, the
- * sentences of a failed poll's hint and the rows of the hub's `connections.failures` whose `for`
- * holds `cluster`, the only ones its ssh poll tries.
+ * The settings each cluster's watcher is handed: its connection, the cadences of `slurm:` and the
+ * folders its log search looks in, the sentences of a failed poll's hint and the rows of the hub's
+ * `connections.failures` whose `for` holds `cluster`, the only ones its ssh poll tries.
  */
 export function clusterSettingsOf(
     slurm: SlurmSettings,
@@ -173,8 +173,8 @@ export function clusterSettingsOf(
     words: PollWords,
     failures: readonly FailureRow[]
 ): HpcSettings[] {
-    const { days, pollMin, quotaMin, prewarm } = slurm;
-    const cadences = { days, pollMin, quotaMin, prewarm };
+    const { days, pollMin, quotaMin, prewarm, logDirs } = slurm;
+    const cadences = { days, pollMin, quotaMin, prewarm, logDirs };
     const told = failuresFor(failures, 'cluster');
     return connections.map((connection) => ({
         ...connection,

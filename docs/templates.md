@@ -19,7 +19,7 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | `workspaces/<name>.yml` | `<hub>/.oculus/workspaces/` | Save Workspace As, or you |
 | `schedules.yml` | `<hub>/.oculus/schedules.yml` | Make Folder a Hub..., the update tray, or you |
 | `tasks/<task>.md` | `<hub>/.oculus/tasks/` | you |
-| `notes/<name>.md` | `<hub>/.oculus/notes/` | New Note, or you |
+| `notes/<name>.md` | `<hub>/.oculus/notes/`, or the folder `notes_dir` names | New Note, or you |
 | `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | Make Folder a Project, or you |
 | `settings.yml` | `<repository>/.oculus/settings.yml` | Add Repository Configuration..., or you |
 | `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., Add Command..., or you |
@@ -32,7 +32,7 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 These have no template, since they hold pictures or oculus writes them:
 
 - `<hub>/.oculus/memories/` and `<hub>/.oculus/wallpaper/`: picture folders.
-- `<hub>/.oculus/notes/order.json`: the order the Notes list shows the notes in.
+- `order.json` at the top of the notes folder (`<hub>/.oculus/notes/`, or the folder `notes_dir` names): the order the Notes list shows the notes in.
 - `<repository>/.oculus/app-data/<name>.json`: the store of a root app.
 
 ## config.yml
@@ -101,8 +101,57 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # The keys of the collections list whose files a chat's index holds for this hub, in this order.
 # chat_context: [funding, events, education, applications, tasks]
 
+# The registry words of the collections list whose files are feeds, each read by its feed view and
+# not as a collection, leads by Position Leads and radar by Lit Watch. A registry left out is read
+# as a collection. None by default.
+# feed_registries: []
+#   example: [leads, radar]
+
+# The update tasks the Update tray offers for this hub, in its order. A row is offered while the hub
+# holds its file .oculus/tasks/<task>.md; `label` and `note` are its tray row's words, `view` the
+# view a notice of its run opens, and `last_run` where its last run is read: radar, scout, linkedin
+# (the last post) or inbox (the machine's triage notes); a row without it shows no last run. None by
+# default.
+# update_tasks: []
+#   example:
+#   - { task: litwatch, label: Lit Watch, note: "new-paper radar (web | minutes)", view: radar, last_run: radar }
+#   - { task: scout, label: Scout, note: "academic openings (web | minutes)", view: leads, last_run: scout }
+#   - { task: linkedin, label: LinkedIn, note: draft a post from _linkedin/, view: linkedin, last_run: linkedin }
+#   - { task: inbox, label: Inbox, note: Gmail triage over the private mailbox, view: inbox, last_run: inbox }
+
+# The documents a project card marks a project for, in its order: a file inside the project folder
+# and the short label the card shows for it. New project writes its README under the name of the
+# first .md row that sits in the project folder itself, and no README when no row does.
+# project_docs:
+#   - { name: README.md, label: README }
+#   - { name: code/README.md, label: CODE }
+#   - { name: manuscript/main.pdf, label: PDF }
+#   - { name: manuscript/main.tex, label: TEX }
+
+# The folder of a project that holds its code, against the project folder: the folder the deposit
+# mirrors, the folder an HPC submit sends a job's code from and a folder a project chat is told to
+# read. Inside it the audit reads only the documents of project_docs and the files the audit
+# setting requires, and a change to any other file in it rebuilds nothing.
+# code_dir: code
+
+# The folder of a project that holds its deck, against the project folder: the Present view and
+# the portfolio read a project's slides from its present.yml there.
+# deck_dir: present
+
+# The word a meta.log line of the leads feed holds after its leading date when the line records a
+# run of the position scout, matched in any case; the newest such date is the scout's last run.
+# None by default, and empty reads no run, so the Focus board's refresh strip leaves the scout out.
+# leads_run_word: ''
+#   example: scout
+
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
+
+# The start of a file name in the LinkedIn folder that marks the file as an idea not yet posted:
+# the LinkedIn view's new idea is written under it, and Mark posted renames such a file to the
+# next number. None by default, and empty marks no file as an idea.
+# linkedin_idea_prefix: ''
+#   example: xx-
 
 # The career file, shown in the Career view and edited in its editor, which the website's CV is written from.
 # career_file: .oculus/data/academic/career.yml
@@ -112,6 +161,14 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The wallpaper images' folder, inside the hub.
 # wallpaper_dir: .oculus/wallpaper
+
+# The hub's folder of secrets, which no language server, app, library lookup or writing fix
+# reaches. Empty names none.
+# secrets_dir: secrets
+
+# The hub's notes folder, inside the hub: its .md files are the notes of the Notes section, with
+# `order.json` and `attachments/` at its top. oculus ships `.oculus/notes`.
+# notes_dir: .oculus/notes
 
 # Where oculus keeps the bookmarks, the schedules and the apps. A path that starts with `~` is
 # under your home folder; any other relative path is read from the primary hub's folder. Read from
@@ -131,11 +188,31 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The clusters Live HPC polls, in the order it draws them: the keys of `kind: cluster` entries of
 # the resources registry. The empty list is no cluster. Read from the primary hub alone.
+# `cluster_folder` is the folder on the cluster a Submit copies a project's code to when its
+# manifest names no `paths.cluster`, `{id}` standing for the project's id; empty names none, and
+# such a project is refused. `unsent` is the globs of the code folder's files a Submit does not
+# copy. Both are read from the project's own hub, and both are off by default. `log_dirs` is where
+# the log of a finished job Slurm no longer holds is looked for, in order, under the job's working
+# folder, each a folder pattern holding a file with the job id in its name, and `.` the working
+# folder with Slurm's own `slurm-<id>.out`. Read from the primary hub alone; oculus ships `[.]`.
+# `scratch_roots` is each cluster's per-job scratch folder by its key: the absolute folder that
+# holds one folder per job named by `$SLURM_JOB_ID`. Submit warns about a job script that never
+# names `<folder>/$SLURM_JOB_ID`, and Recover's Verify and Unpack work there; a cluster with none
+# gets no such warning, and Recover refuses its Verify and Unpack. Read from the primary hub alone;
+# oculus ships none.
 # slurm:
 #   resource: []
+#   cluster_folder: ''
+#   unsent: []
+#   log_dirs: [.]
+#   scratch_roots: {}
 #   example:
 #   slurm:
 #     resource: [my-cluster]
+#     cluster_folder: '~/projects/{id}'
+#     unsent: [__pycache__, '*.npy', 'results/**', 'logs/**']
+#     log_dirs: [logs, ., '*/logs']
+#     scratch_roots: { my-cluster: /local }
 
 # The key Account setup makes for a cluster: the type ssh-keygen makes (ed25519, ecdsa or rsa) and
 # the path of the key file, `{type}` standing for the type and `{resource}` for the cluster's key.
@@ -199,10 +276,20 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # source being the row's `key` and the source's other fields filling the row's holes. A row may
 # also hold `access`, `archive`, `pick`, `clash`, `expect` and `pace.field`. oculus ships eleven
 # rows, laid over by the hub's by `key`; a source of a kind no row names is not fetched, and the
-# Data view says so.
+# Data view says so. `data_dir` is the folder under the home folder, written relative to it, that
+# holds the datasets on this Mac and on every cluster alike: Recover acts only on a dataset whose
+# `path:` is under `~/<data_dir>/`, and with it empty on none. `partitions` is the Slurm partition
+# of Recover's Verify and Unpack jobs by the cluster's key; a cluster with none gets its default
+# partition. Both are read from the primary hub alone, and oculus ships neither.
 # recover:
 #   node_download: https://nodejs.org/dist/
+#   data_dir: ''
+#   partitions: {}
 #   sources: []
+#   example:
+#   recover:
+#     data_dir: data
+#     partitions: { my-cluster: main-cpu }
 
 # The literature sources of the Literature search, read from the primary hub, in the order the
 # search lists them. A row is a reader row: `key`, `name`, `format` (json, xml, html, text or
@@ -271,12 +358,17 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # and `auth` the entry the token is read by, from the `downloads` row it names in the primary
 # hub's local.yml, sent in its header after its prefix to `address` alone. Each field laid here
 # replaces oculus's own, so a hub that sets only `address` (Zenodo's sandbox) keeps oculus's
-# `timeout_s` and `auth`.
+# `timeout_s` and `auth`. `default_ignore` is the patterns the deposit's generated .gitignore
+# adds when a project's code folder holds no .depositignore; none by default.
 # deposit:
+#   default_ignore: []
 #   zenodo:
 #     address: https://zenodo.org/api
 #     timeout_s: 600
 #     auth: [{ header: Authorization, prefix: 'Bearer ', row: zenodo, required: true }]
+#   example:
+#   deposit:
+#     default_ignore: [attic/]
 
 # The writing rules: the globs of the files they leave alone, and of the files that draw arrows
 # as icons, matched against the path from the file's root. Both empty by default.
@@ -297,10 +389,19 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # has a value; a line holds it when it is the heading or starts with it and a space.
 # `stage_folders`: the hub folders a project at the stages `stages` is kept under, matched by whole
 # path segments; a project of a workspace repository is held to none.
+# `markers`: the open markers a project's documents and the collection entries are scanned for,
+# each matched in its own case; a marker that starts and ends with a letter or a digit is matched
+# only as a whole word, and any other as it is written, so `%TODO` is found in `%TODO2`.
+# `provisional_mark`: the mark that tags a manifest result as not final, matched in any case.
+# `skip_folders`: the folders of a project whose files never change what the audit finds, besides
+# its code folder. All three are off by default.
 # audit:
 #   required_files: []
 #   required_sections: []
 #   stage_folders: []
+#   markers: []
+#   provisional_mark: ''
+#   skip_folders: []
 #   example:
 #   audit:
 #     required_files:
@@ -311,6 +412,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #       - { file: README.md, heading: "## Data", key: datasets }
 #     stage_folders:
 #       - { stages: { words: [accepted, published] }, folders: [projects/archive/published] }
+#     markers: ['%TODO', '%VERIFY', TODO, FIXME, TBD]
+#     provisional_mark: '[PROVISIONAL]'
+#     skip_folders: [attic]
 
 # The website the primary hub's files are written into, a setting of the primary hub only. `folder`
 # is the website's folder relative to the hub: the Career view's Write the website writes the three
@@ -334,7 +438,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # `review_copy` for the anonymous review copy, whose DOI is never linked; either left empty gives no
 # code link and one finding of the audit. `doi_origin` is the address a DOI resolves at; left empty it gives no
 # link by DOI and one finding of the audit. `file_header` is the comment line each generated file
-# opens with, none when empty.
+# opens with, none when empty. `schema_section` is the `section:` word of a collection schema's
+# fields that feed the website, which an entry's card and page do not draw; left empty every field
+# is drawn.
 # `site_programs` is the key of the website's own file whose map holds the research lines a paper
 # may name; left empty it reads none, and a paper that names a line is one finding of the audit.
 # `cv_sections` are the sections of the CV's file in order, each row writing a section `key` with the
@@ -388,6 +494,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     deposited: ''
 #     review_copy: ''
 #   doi_origin: https://doi.org/
+#   schema_section: ''
 #   file_header: "Generated by oculus from the research hub. Change the hub's files and write the website again."
 #   site_programs: ''
 #   cv_sections: []
@@ -492,10 +599,11 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # move_writes, a funding stage's statuses, a count's match, a board's tier and role, whose one word
 # leaves an empty list); in a list written here, each such word is a finding at its place in this
 # file, and it is not read. A flag a word carries for one use (`new_idea` of stages,
-# `default_task` and `default_application` of statuses, `lead_declined`, `lead_applied` and
-# `default_lead` of lead_statuses, `manifests` of ticker_categories, `default` of tiers) is carried
-# by one word at most: two words carrying it are a finding naming both, and the flag then gives no
-# word.
+# `default_task`, `default_application` and `task_done` of statuses, `lead_declined`,
+# `lead_applied` and `default_lead` of lead_statuses, `manifests` of ticker_categories, `default`
+# of tiers, `archival` of pillar_kinds, `default` of radar_buckets and of radar_relevance) is
+# carried by one word at most: two words carrying it are a finding naming both, and the flag then
+# gives no word.
 
 # The hex each palette token stands for.
 # palette: {}
@@ -663,14 +771,15 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: workshop, label: Workshops, ribbon: true }
 
 # The kinds a pillar line's `kind` takes, in order: `key` the word a line's kind writes, `label`
-# the heading of its section of the Pillars view, and `color` the hue of that heading. A line
-# whose kind names no row is drawn under Other.
+# the heading of its section of the Pillars view, `color` the hue of that heading, and
+# `archival: true` the kind of the lines off the pillars, whose cards are muted and whose section
+# holds the Archival card. A line whose kind names no row is drawn under Other.
 # pillar_kinds: []
 #   example:
 #   pillar_kinds:
 #     - { key: pillar, label: Pillar, color: "#2563eb" }
 #     - { key: provisional, label: Provisional, color: "#d97706" }
-#     - { key: offpillar, label: Off-pillar, color: "#9ca3af" }
+#     - { key: offpillar, label: Off-pillar, color: "#9ca3af", archival: true }
 
 # The tiers a venue's tier takes, best first, each with its glyph, colour and label; the glyph is
 # what a project card's Venue tag draws in the tier's colour, and a tier with none draws the venue
@@ -681,11 +790,44 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: core, glyph: crown, color: "#7c3aed", label: core }
 #     - { key: unrated, color: "#94a3b8", label: unrated, assignable: false }
 
-# The buckets of Lit Watch, in the order they are drawn, each with its glyph, label and colour.
+# The colour of a venue's rank tag and of its cost tag on its card, by a fragment of its
+# free-text `quartile` and of its `free`: the first fragment, in the map's order, that the text
+# holds with case ignored decides, and a text that holds none is drawn grey. Laid over oculus's
+# maps word by word.
+# venue_ranks: {}
+# venue_costs: {}
+#   example:
+#   venue_ranks: { "core a*": "#7c5cff", sjr q2: "#2563eb" }
+#   venue_costs: { diamond: "#16a34a" }
+
+# The texts that, held by a venue's `quartile` or `timing` with case ignored, mark it on the
+# month ribbon as running every other year.
+# venue_biennial: []
+#   example:
+#   venue_biennial: [biennial, every two years]
+
+# The texts a venue's `jif` is written as when it has no impact factor, compared trimmed and with
+# case ignored; a project card's venue line and the venue's card leave such a JIF out.
+# venue_no_jif: []
+#   example:
+#   venue_no_jif: [none, "-", n/a]
+
+# The buckets of Lit Watch, in the order they are drawn, each with its glyph, label and colour;
+# `default: true` marks the bucket an entry whose bucket no row names is drawn under and the one a
+# Literature card's Add form preselects; `spark: true` marks a bucket whose papers offer the card's
+# Idea form.
 # radar_buckets: []
 #   example:
 #   radar_buckets:
-#     - { key: cite_baseline, glyph: green, label: "Cite / baseline", color: "#16a34a" }
+#     - { key: cite_baseline, glyph: green, label: "Cite / baseline", color: "#16a34a", default: true }
+
+# The words a Lit Watch entry's `relevance` takes, the closest first, each with its colour;
+# `default: true` marks the one a Literature card's Add form preselects. Laid over oculus's map
+# word by word.
+# radar_relevance: {}
+#   example:
+#   radar_relevance:
+#     critical: { color: "#b91c1c" }
 
 # The order a deck places the categories in: the decks a group of a deck adds by `discover: true`
 # go category by category in this order, the decks of one category by its row's `sort` and then
@@ -733,6 +875,7 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 
 # The programs oculus starts.
 # claude_bin: claude
+# codex_bin: codex
 # commit_message_account: personal
 # The program an https address is handed to: /usr/bin/open on macOS, xdg-open on Linux, wslview
 # under WSL2.
@@ -777,6 +920,10 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 # schedule_record: ~/.oculus/schedule.json
 # sessions_cache: ~/.oculus/transcript-cache.json
 # sessions_overrides: ~/.oculus/sessions.json
+
+# The folders a session's workspace is looked for under: a session outside a repository is filed
+# under the folder one level below the deepest of them that holds its working folder.
+# sessions_roots: [~/workspace, ~/data, ~]
 ```
 
 ## .gitignore
@@ -871,7 +1018,7 @@ A list of schedules. Each runs one thing: an update task, a command of a reposit
 
 ```yaml
 # - name: Weekly radar
-#   runs: { task: litwatch }        # litwatch, scout, linkedin or inbox
+#   runs: { task: litwatch }        # a task of the hub's update_tasks in .oculus/config.yml
 #   when: "0 7 * * 1"               # cron; without `when` it runs only from Run now
 #   paused: true
 #   unattended: true                # runs without asking for permissions
@@ -891,7 +1038,7 @@ A list of schedules. Each runs one thing: an update task, a command of a reposit
 
 ## Update tasks
 
-An update task is a Markdown file of a hub, `.oculus/tasks/<task>.md`, for `litwatch`, `scout`, `inbox` and `linkedin`, and any hub of the workspace may hold one. The Update tray and a schedule start a Claude Code session in the folder of the hub whose task it is and ask it to follow the file step by step, so the file is the whole instruction for one run. The tray offers the task of every hub that holds its file, the primary's first, and names a row by its hub when two hubs hold that task; a schedule names its hub with `hub:`, the primary when it names none. A save from the Schedule dialog keeps the `hub:` an entry names, the primary's name included, writes none for an entry that names none and runs the primary's task, and writes `hub:` for the task of any other hub. Each template has the same sections: what the task does, the steps, the guardrails and the finish line. Replace every `<...>` with your own words; the rest can stay as it is.
+An update task is a row of the `update_tasks` list of a hub's `.oculus/config.yml` and a Markdown file of that hub, `.oculus/tasks/<task>.md`, and any hub of the workspace may have them. The four templates below are the tasks `litwatch`, `scout`, `inbox` and `linkedin`, and the example rows of `update_tasks` in the config.yml template list them. The Update tray and a schedule start a Claude Code session in the folder of the hub whose task it is and ask it to follow the file step by step, so the file is the whole instruction for one run. The tray offers each row of every hub whose file the hub holds, the primary's first and each hub's in the order of its rows, under the row's label, and names a row by its hub when two rows have that label; a schedule names its hub with `hub:`, the primary when it names none, and its task must be one the hub's `update_tasks` lists. A save from the Schedule dialog keeps the `hub:` an entry names, the primary's name included, writes none for an entry that names none and runs the primary's task, and writes `hub:` for the task of any other hub. Each template has the same sections: what the task does, the steps, the guardrails and the finish line. Replace every `<...>` with your own words; the rest can stay as it is.
 
 ### .oculus/tasks/litwatch.md
 
@@ -1014,13 +1161,13 @@ LinkedIn drafts a post into the posts folder, which the LinkedIn view draws; the
 ```markdown
 # LinkedIn: draft a post
 
-This file is the whole instruction for one run of the LinkedIn update task. The posts are the folder `linkedin_dir` of `.oculus/config.yml` names: `NN-<slug>.md` is a post made, with `title`, `date`, `category` and `publish` in its front matter, and `xx-<slug>.md` an idea. This task drafts and never posts; the LinkedIn view's Mark posted records a post once it is made.
+This file is the whole instruction for one run of the LinkedIn update task. The posts are the folder `linkedin_dir` of `.oculus/config.yml` names: `NN-<slug>.md` is a post made, with `title`, `date`, `category` and `publish` in its front matter, and a file whose name starts with the `linkedin_idea_prefix` of `.oculus/config.yml` is an idea. This task drafts and never posts; the LinkedIn view's Mark posted records a post once it is made.
 
 ## Steps
 
-1. Pick a topic: the most timely `xx-` idea, or a real milestone of a project (read its `project.yml` and `README.md`).
+1. Pick a topic: the most timely idea, or a real milestone of a project (read its `project.yml` and `README.md`).
 2. Draft the post in <the voice and the length to write in>, and show it for review.
-3. On request, save the draft as `xx-<slug>.md` with `publish: False`.
+3. On request, save the draft as an idea, its name the `linkedin_idea_prefix` followed by `<slug>.md`, with `publish: False`.
 
 ## Guardrails
 
@@ -1035,7 +1182,7 @@ End with the path of any file written.
 
 ## notes/\<name>.md
 
-A note is a Markdown file in `<hub>/.oculus/notes/`, and its file name without `.md` is its title. Copy this head to the top of a note to give it tags.
+A note is a Markdown file in the hub's notes folder, `<hub>/.oculus/notes/` unless the hub's `notes_dir` names another, and its file name without `.md` is its title. Copy this head to the top of a note to give it tags.
 
 ```markdown
 ---
@@ -1859,7 +2006,7 @@ schema:
   - { field: url,        type: text,     required: true, section: Core, help: "Address; the sweep deduplicates by it." }
   - { field: bucket,     type: select,   foreign_key: vocab.radar_buckets, required: true, section: Core, help: "preemption, cite_baseline, adjacent or idea." }
   - { field: project,    type: select,   foreign_key: projects, section: Connections, help: "The project it was found for." }
-  - { field: relevance,  type: select,   options: [high, med, low], section: Core, help: "How close it is." }
+  - { field: relevance,  type: select,   foreign_key: vocab.radar_relevance, section: Core, help: "How close it is: high, med or low." }
   - { field: why,        type: textarea, section: Content, help: "Why it matters." }
   - { field: found,      type: date,     section: Dates, help: "Day found." }
   - { field: threatens,  type: textarea, section: Content, help: "The claim a pre-emption puts at stake." }
@@ -1877,7 +2024,7 @@ entries:
 #    url: https://doi.org/10.0000/x   # required
 #    bucket: adjacent             # required: preemption, cite_baseline, adjacent or idea
 #    project: my-project          # not on an idea
-#    relevance: med               # high, med or low; not on an idea
+#    relevance: med               # a word of radar_relevance: high, med or low; not on an idea
 #    why: ""                      # not on an idea
 #    found: YYYY-MM-DD
 #    threatens: ""                # preemption

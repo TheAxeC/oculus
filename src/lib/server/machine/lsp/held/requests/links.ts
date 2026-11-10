@@ -48,6 +48,8 @@ import { adoptHeld } from '../documents.ts';
 export type LinksContext = OculusContext & {
     /** The extensions of Markdown files. */
     extensions(): string[];
+    /** The names of the folders `files.hidden_folders` gives, which no list of files enters. */
+    hiddenFolders(): readonly string[];
     /** The servers whose page closed and wait to be taken over. */
     orphans: Set<Held>;
     /** The servers a link rewrite took while they were ending, until their last rewrite ends. */
@@ -255,7 +257,7 @@ async function editOf(
     texts: Map<string, string>
 ): Promise<{ entries: unknown[] } | null> {
     const reach = { root, roots: context.roots() };
-    const files = await markdownFiles(reach, context.extensions());
+    const files = await markdownFiles(reach, context.extensions(), context.hiddenFolders());
     const abandoned = { now: false };
     const asked = (async (): Promise<LspRpc | null> => {
         await held.caughtUp(files);

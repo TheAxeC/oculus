@@ -53,6 +53,9 @@
     const posted = $derived(entry !== null && split.posts.includes(entry));
     const hubFiles = $derived(data?.hubFiles ?? {});
     const folder = $derived(Object.hasOwn(hubFiles, hub) ? hubFiles[hub] : '');
+    /** The start of an idea's name in the hub's LinkedIn folder, empty while the hub names none. */
+    const ideas = $derived(data?.hubIdeaPrefixes ?? {});
+    const idea = $derived(Object.hasOwn(ideas, hub) ? ideas[hub] : '');
 
     /** What the card's last write answered, the one outcome line this tab holds. */
     let said = $state('');
@@ -62,7 +65,8 @@
         if (entry !== null) return;
         const next = promotedFile(
             key,
-            posts.map((one) => one.file)
+            posts.map((one) => one.file),
+            idea
         );
         if (next === null) return;
         restateInstance(instance.id, postState(hub, next, instanceText(instance.state, 'label')));

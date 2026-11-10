@@ -6,43 +6,57 @@
 // a failure for a reason this version of oculus does not name.
 //
 // The labels an update task goes by are here too, since the tray, its dialog, the Focus board's
-// refresh lines and the notices all name a task of a hub by the same words: the task's label, with
-// the hub's name beside it when two or more hubs offer that task.
+// refresh lines and the notices all name a task of a hub by the same words: the `label` of the
+// hub's row of `update_tasks`, with the hub's name beside it when two or more offered rows have
+// that label.
 
 import { SCHEDULE_WORDS, type HubTask, type ScheduleWord } from '../../../../data/model/index.ts';
-import type { UpdateTask } from '../../../../data/helpers/run/tasks.ts';
 import { terminalSentence, terminalWord } from '../../../shared/answers/terminal-words.ts';
 import { t as catalogText } from '../../../shared/words/text.ts';
 
-const TASK_LABELS: Record<UpdateTask, () => string> = {
-    litwatch: () => catalogText('app.tasks.lit_label'),
-    scout: () => catalogText('app.tasks.scout_label'),
-    linkedin: () => catalogText('app.tasks.linkedin_label'),
-    inbox: () => catalogText('app.tasks.inbox_label')
-};
+/** A task of one hub by its task and its hub's name, as a schedule entry names it. */
+export type TaskOfHub = Pick<HubTask, 'task' | 'hub'>;
 
-/** The label of an update task, whichever hub holds it. */
-export function taskLabel(task: UpdateTask): string {
-    return TASK_LABELS[task]();
+/**
+ * The label of a task of one hub: the label of its row among the `offered` rows, or the task's own
+ * word for a task no offered row is, such as a schedule's task whose hub does not list it.
+ */
+function taskLabel(pair: TaskOfHub, offered: readonly HubTask[]): string {
+    const row = offered.find((one) => one.task === pair.task && one.hub === pair.hub);
+    return row?.label ?? pair.task;
 }
 
 /** The label of a task of one hub, with the hub's name beside it as `app.tasks.in_hub` puts it. */
-export function hubTaskLabel(pair: HubTask): string {
-    return catalogText('app.tasks.in_hub', taskLabel(pair.task), pair.hub);
+export function hubTaskLabel(pair: TaskOfHub, offered: readonly HubTask[]): string {
+    return catalogText('app.tasks.in_hub', taskLabel(pair, offered), pair.hub);
 }
 
 /**
- * The label of a task of one hub as the tray names its row: the task's label, with the hub's name
- * beside it when two or more of the `offered` pairs are of that task.
+ * The label of a task of one hub as the tray names its row: its label, with the hub's name beside
+ * it when two or more of the `offered` rows have that label.
  */
-export function pairLabel(pair: HubTask, offered: readonly HubTask[]): string {
-    const shared = offered.filter((one) => one.task === pair.task).length > 1;
-    return shared ? hubTaskLabel(pair) : taskLabel(pair.task);
+export function pairLabel(pair: TaskOfHub, offered: readonly HubTask[]): string {
+    const label = taskLabel(pair, offered);
+    const shared = offered.filter((one) => one.label === label).length > 1;
+    return shared ? hubTaskLabel(pair, offered) : label;
 }
 
 /** The schedule word a value is, or null for any other value. */
 function scheduleWord(value: unknown): ScheduleWord | null {
     return SCHEDULE_WORDS.find((one) => one === value) ?? null;
+}
+
+/**
+ * The sentence of `update-task-unknown`: the task alone for a task that is no task name, and with
+ * its hub and the tasks that hub's `update_tasks` lists for a name the list lacks, an empty list
+ * worded as a hub that lists none.
+ */
+function taskUnknown(names: readonly string[]): string {
+    const [task = '', hub = '', listed = ''] = names;
+    if (names.length < 2) return catalogText('app.schedules.problem_update_task_unknown', task);
+    return listed === ''
+        ? catalogText('app.schedules.problem_update_task_none', task, hub)
+        : catalogText('app.schedules.problem_update_task_unlisted', task, hub, listed);
 }
 
 /** The sentence for one schedule word, with the names the server sent for it. */
@@ -58,7 +72,7 @@ function problemSentence(word: ScheduleWord, names: readonly string[]): string {
         case 'runs-wrong':
             return catalogText('app.schedules.problem_runs_wrong');
         case 'update-task-unknown':
-            return catalogText('app.schedules.problem_update_task_unknown', first, second);
+            return taskUnknown(names);
         case 'command-missing':
             return catalogText('app.schedules.problem_command_missing', first, second);
         case 'commands-unread':

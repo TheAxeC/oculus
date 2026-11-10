@@ -22,7 +22,6 @@ import { bareId, HUB_FILE, resolvedId } from '../../../data/helpers/hub-names.ts
 import { folderOnDisk } from '../../../data/places/folder-on-disk.ts';
 import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
-import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { projectRole } from '../../../data/shapes/boards/takes.ts';
 import { blockHolds, wordList, type WordBlock } from '../../../data/shapes/boards/words.ts';
 import {
@@ -44,43 +43,46 @@ import {
 import { below } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
 
-/** The markers a document is scanned for, as whole words where they are ordinary English. */
-const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
-
-/** A result the author has tagged as not final. */
-const PROVISIONAL = /\[PROVISIONAL\]/i;
-
 /**
- * The documents of a project folder the markers are read from, folder-relative. The portfolio
- * watcher (server/root/watch/portfolio/audited.ts) rebuilds on an event on one of them, with the
- * files and folders the hubs' `audit:` settings name, since a marker added to a README is no
- * `.yml` it would otherwise notice.
+ * The Markdown slide files of a project's deck folder `deck` (the hub's `deck_dir`), as
+ * folder-relative names, which are scanned for the same markers as its documents.
  */
-export const AUDIT_PATHS: readonly string[] = ['README.md', 'code/README.md'];
-
-/**
- * The Markdown slide files of a project's deck folder, as folder-relative names, which are scanned
- * for the same markers as its README.
- */
-function deckDocuments(folder: string): string[] {
+function deckDocuments(folder: string, deck: string): string[] {
     try {
-        return readdirSync(join(folder, PROJECT_DECK))
+        return readdirSync(join(folder, deck))
             .filter((name) => name.endsWith('.md'))
             .sort()
-            .map((name) => `${PROJECT_DECK}/${name}`);
+            .map((name) => `${deck}/${name}`);
     } catch {
         return [];
     }
 }
 
 /**
- * The first line of a text that carries a marker, collapsed to one line, cut to 110 characters and
- * left as letters and ASCII so the quoted snippet does not carry a document's typography.
+ * One global pattern over the marker words of the hub's `audit.markers`, each word escaped. A word
+ * that starts and ends with an ASCII letter or digit is bounded as a whole word, so `TODO` is not
+ * found inside `TODOS`; any other word is matched as it is written, so `%TODO` is also found in
+ * `%TODO2` and `%TODOS`. No word, or only empty ones, is no pattern.
  */
-export function firstMarker(text: string): string {
+function markerPattern(words: readonly string[]): RegExp | null {
+    const parts = words
+        .filter((one) => one !== '')
+        .map((one) => {
+            const escaped = one.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return /^[A-Za-z0-9](.*[A-Za-z0-9])?$/s.test(one) ? `\\b${escaped}\\b` : escaped;
+        });
+    return parts.length === 0 ? null : new RegExp(parts.join('|'), 'g');
+}
+
+/**
+ * The first line of a text that carries one of the markers (`markerPattern` of the hub's
+ * `audit.markers`), collapsed to one line, cut to 110 characters and left as letters and ASCII so
+ * the quoted snippet does not carry a document's typography.
+ */
+export function firstMarker(text: string, markers: RegExp): string {
     for (const line of text.split('\n')) {
-        MARKERS.lastIndex = 0;
-        if (!MARKERS.test(line)) continue;
+        markers.lastIndex = 0;
+        if (!markers.test(line)) continue;
         const one = line
             .split(/\s+/)
             .filter((part) => part !== '')
@@ -99,10 +101,10 @@ export function firstMarker(text: string): string {
     return '';
 }
 
-/** How many markers a text carries. */
-function markerCount(text: string): number {
-    MARKERS.lastIndex = 0;
-    return [...text.matchAll(MARKERS)].length;
+/** How many markers of the pattern a text carries. */
+function markerCount(text: string, markers: RegExp): number {
+    markers.lastIndex = 0;
+    return [...text.matchAll(markers)].length;
 }
 
 /** An ISO date from a value that is one, and null for anything else. */
@@ -121,36 +123,44 @@ function newestDoc(project: Project): string {
     return newest === 0 ? '' : localDate(newest);
 }
 
-/** The open markers of one project's documents and of every collection entry. */
+/**
+ * The open markers of one project's documents (the Markdown documents of the hub's `project_docs`
+ * and the slides of its deck) and of every collection entry. A hub whose `audit.markers` names none
+ * is scanned for none.
+ */
 export function markers(input: AuditInput, add: (f: Raised) => void): void {
+    const { documents } = input.rules;
+    const deck = input.layout.deckDir;
+    const pattern = markerPattern(input.layout.auditMarkers);
+    if (pattern === null) return;
     for (const project of input.projects) {
         if (isPersonal(project, input.rules)) continue;
         const folder = folderOnDisk(input.hub, project);
-        for (const name of [...AUDIT_PATHS, ...deckDocuments(folder)]) {
+        for (const name of [...documents, ...deckDocuments(folder, deck)]) {
             const path = join(folder, name);
             if (!existsSync(path)) continue;
             const text = slurp(path);
-            const count = markerCount(text);
+            const count = markerCount(text, pattern);
             if (count === 0) continue;
             add({
                 scope: scopeOf(project),
                 where: name,
                 kind: 'todo',
                 ...fileIn(input.hub, project, path),
-                ...pluralSentence('audit.msg_markers', count, count, firstMarker(text))
+                ...pluralSentence('audit.msg_markers', count, count, firstMarker(text, pattern))
             });
         }
     }
     for (const collection of input.collections) {
         for (const entry of collection.entries) {
             const blob = stringify(entry.fields);
-            if (markerCount(blob) === 0) continue;
+            if (markerCount(blob, pattern) === 0) continue;
             add({
                 scope: bareId(collection),
                 where: labelOf(entry.title, entry.index),
                 kind: 'todo',
                 file: fileOf(input.hub, collection.file),
-                ...sentence('audit.msg_entry_marker', firstMarker(blob))
+                ...sentence('audit.msg_entry_marker', firstMarker(blob, pattern))
             });
         }
     }
@@ -203,7 +213,11 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     ...sentence('audit.msg_missing_field', field)
                 });
             }
-            const provisional = project.results.filter((one) => PROVISIONAL.test(one));
+            const mark = input.layout.provisionalMark.toLowerCase();
+            const provisional =
+                mark === ''
+                    ? []
+                    : project.results.filter((one) => one.toLowerCase().includes(mark));
             if (provisional.length > 0) {
                 add({
                     scope,

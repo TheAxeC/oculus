@@ -70,7 +70,7 @@ import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/work
 import { t } from '$lib/state/shared/words/text';
 import { isPrivateFile } from '$lib/state/system/config/config-files';
 import { noticeWords } from '$lib/state/system/machine/refactor/notice-words';
-import { noteRenameOf } from '$lib/state/system/machine/lsp/edits';
+import { hubNotes, noteRenameOf } from '$lib/state/system/machine/lsp/edits';
 import { sentenceOf } from '$lib/state/sources/explorer/notes/note-attach';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
@@ -134,7 +134,7 @@ const KEYS: Record<string, KeyPress> = {
 
 /**
  * Whether a file is one the server of its language is not given, which the relay's entry refuses as
- * well: a YAML file under the `secrets` folder of every hub or under `~/.oculus`, for the YAML
+ * well: a YAML file under the folder of secrets of every hub or under `~/.oculus`, for the YAML
  * server, a Markdown file under those two folders for the Markdown server, and a file whose
  * extension the entry lists in `refusedExtensions` (the Sweave sources texlab is not given).
  */
@@ -254,8 +254,7 @@ export function createLspTab(input: LspTabInput): LspTab {
         },
         library: lsp.named,
         applyEdit: async (edit, held, options) => {
-            const hubs = client.fs.roots().flatMap((one) => (one.hub === true ? [one.key] : []));
-            const note = noteRenameOf(edit, hubs);
+            const note = noteRenameOf(edit, hubNotes(client.fs.roots()));
             if (note === null) {
                 return refactor.submit(edit, held, { ...options, words: noticeWords });
             }

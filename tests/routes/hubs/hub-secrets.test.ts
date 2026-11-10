@@ -1,22 +1,25 @@
-// Layer 2, route tests. The `secrets` folder of every hub of the open workspace (a folder holding
-// `.oculus/config.yml`) is withheld through every caller of `privateFolders` (G3): the page's
-// `isPrivateFile`, the language server relay's, the library rules, the folder Fix All plan, the
-// write of `lsp-edit` and `writing-fix`, and the names search.
+// Layer 2, route tests. The folder of secrets of every hub of the open workspace (a folder holding
+// `.oculus/config.yml`), the folder its `secrets_dir` names, is withheld through every caller of
+// `privateFolders` (G3): the page's `isPrivateFile`, the language server relay's, the library
+// rules, the folder Fix All plan, the write of `lsp-edit` and `writing-fix`, and the names search.
 //
 // The hubs `hub` and `lab` are two scratch folders under the system temporary directory, each
 // holding a file inside `secrets/` and one outside it, and the roots are those the open workspace
-// of a scratch state folder lists. The cases of another letter case (`SECRETS`, `Secrets`) run only
-// where the system temporary directory's file system folds letter case, the macOS default, since on
-// another file system `SECRETS` is a folder of its own name. The roots are given to each caller as
-// that caller takes them; the library rules are given what the server's wiring gives them, the hubs
-// among the roots of the open workspace.
+// of a scratch state folder lists, each hub marked with `secrets`, the shipped default of
+// `secrets_dir`, as the server marks them (`withSecrets`). One case gives a hub a `secrets_dir` of
+// its own and reads it through the hub's settings as the server's wiring does (`secretsOf`). The
+// cases of another letter case (`SECRETS`, `Secrets`) run only where the system temporary
+// directory's file system folds letter case, the macOS default, since on another file system
+// `SECRETS` is a folder of its own name. The roots are given to each caller as that caller takes
+// them.
 
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { hubDirs } from '../../../src/lib/data/helpers/files/private-folders.ts';
-import { configDir, engineDir } from '../../../src/lib/data/sources/config.ts';
+import { withSecrets } from '../../../src/lib/data/helpers/files/private-folders.ts';
+import { configDir, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { secretsOf } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import { workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
@@ -48,6 +51,17 @@ const ELLIPSIS = '\u2026';
 /** Whether the scratch folders' file system reads a path in another letter case as the same. */
 const FOLDS = foldsCase(tmpdir());
 
+/** The folder of secrets of every hub of these cases: the shipped default of `secrets_dir`. */
+const SECRETS = (): string => 'secrets';
+
+/** The notes folder of every hub of these cases: the shipped default of `notes_dir`. */
+const NOTES = (): string => '.oculus/notes';
+
+/** The roots a state folder's open workspace serves, each hub marked as the server marks it. */
+function servedOf(state: string): Root[] {
+    return withSecrets(openWorkspace(state).roots, SECRETS);
+}
+
 /**
  * Two hubs, each with a file inside `secrets/` and one outside it, the state folder of an unsaved
  * workspace listing them, and the roots that workspace serves.
@@ -68,7 +82,7 @@ function hubs(): { base: string; hub: string; lab: string; roots: Root[]; state:
         { name: 'hub', dir: hub },
         { name: 'lab', dir: lab }
     ]);
-    return { base, hub, lab, roots: openWorkspace(state).roots, state };
+    return { base, hub, lab, roots: servedOf(state), state };
 }
 
 describe('the secrets folder of a hub', () => {
@@ -91,7 +105,7 @@ describe('the secrets folder of a hub', () => {
             })
         );
         const state = plantState([{ name: 'plain', dir: join(base, 'plain') }]);
-        const { roots } = openWorkspace(state);
+        const roots = servedOf(state);
         expect(roots.map((one) => one.hub === true)).toEqual([false]);
         expect(isPrivateForPage({ root: 'plain', path: 'secrets/s.yml' }, roots, '/home/me')).toBe(
             false
@@ -100,11 +114,17 @@ describe('the secrets folder of a hub', () => {
 
     it('is learned by the page from the workspaces answer, which marks the hubs', async () => {
         const { state } = hubs();
-        const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
+        const answer = workspacesAnswer(
+            openWorkspace(state),
+            engineDir(),
+            NO_MACHINE,
+            SECRETS,
+            NOTES
+        );
         const held = (await pageWorkspaces(answer)).folders;
-        expect(held.map((one) => [one.key, one.hub])).toEqual([
-            ['hub', true],
-            ['lab', true]
+        expect(held.map((one) => [one.key, one.hub, one.secrets])).toEqual([
+            ['hub', true, 'secrets'],
+            ['lab', true, 'secrets']
         ]);
         expect(isPrivateForPage({ root: 'lab', path: 'secrets/s.yml' }, held, '/home/me')).toBe(
             true
@@ -133,13 +153,48 @@ describe('the secrets folder of a hub', () => {
 
     it('is withheld from the library rules the server builds from the roots of the workspace', () => {
         const { hub, lab, roots } = hubs();
-        const withheld = withheldFolders(configDir(engineDir()), hubDirs(roots));
+        const withheld = withheldFolders(configDir(engineDir()), roots);
         expect(withheld).toContain(`${hub}/secrets`);
         expect(withheld).toContain(`${lab}/secrets`);
         expect(withheld).toContain(configDir(engineDir()));
         expect(under(join(lab, 'secrets', 'deep', 'd.yml'), withheld)).toBe(true);
         expect(under(join(lab, 'open.yml'), withheld)).toBe(false);
         expect(withheld).toContain(`${homedir()}/.oculus`);
+    });
+
+    it('is the folder a hub settings secrets_dir names, read through the hub settings (G3)', async () => {
+        const base = realpathSync(
+            plantScratch('oculus-hub-secrets-named-', {
+                'lab/vault/v.yml': TEXT,
+                'lab/secrets/s.yml': TEXT,
+                'hub/secrets/s.yml': TEXT
+            })
+        );
+        const lab = plantHub(join(base, 'lab'), 'secrets_dir: vault\n');
+        const hub = plantHub(join(base, 'hub'), "secrets_dir: ''\n");
+        const state = plantState([
+            { name: 'lab', dir: lab },
+            { name: 'hub', dir: hub }
+        ]);
+        const read = secretsOf((dir) => loadConfig(engineDir(), { hub: dir }));
+        expect([read(lab), read(hub)]).toEqual(['vault', '']);
+        const roots = withSecrets(openWorkspace(state).roots, read);
+        const withheld = withheldFolders(configDir(engineDir()), roots);
+        expect(withheld).toContain(`${lab}/vault`);
+        expect(under(join(lab, 'secrets', 's.yml'), withheld)).toBe(false);
+        expect(under(join(hub, 'secrets', 's.yml'), withheld)).toBe(false);
+        const served = roots.map((one) => ({ ...one, real: one.dir }));
+        expect(isPrivateForServer(join(lab, 'vault', 'v.yml'), served)).toBe(true);
+        expect(isPrivateForServer(join(lab, 'secrets', 's.yml'), served)).toBe(false);
+        const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE, read, NOTES);
+        const held = (await pageWorkspaces(answer)).folders;
+        expect(isPrivateForPage({ root: 'lab', path: 'vault/v.yml' }, held, '/home/me')).toBe(true);
+        expect(isPrivateForPage({ root: 'lab', path: 'secrets/s.yml' }, held, '/home/me')).toBe(
+            false
+        );
+        expect(isPrivateForPage({ root: 'hub', path: 'secrets/s.yml' }, held, '/home/me')).toBe(
+            false
+        );
     });
 
     it('is refused as a start folder of the folder Fix All plan', async () => {
@@ -201,7 +256,7 @@ describe('the secrets folder of a hub', () => {
                 { name: 'hub', dir: hub },
                 { name: 'lab', dir: lab }
             ]);
-            const roots = openWorkspace(state).roots;
+            const roots = servedOf(state);
             const listed = async (root: string): Promise<string[]> => {
                 const response = await handleSearch(
                     new Request(`http://${HOST}/api/search?list=names&root=${root}`, {
@@ -213,7 +268,14 @@ describe('the secrets folder of a hub', () => {
                         }
                     }),
                     TOKEN,
-                    { roots, cap: 500, maxNames: 100, timeout: 10000, now: () => 0 }
+                    {
+                        roots,
+                        cap: 500,
+                        maxNames: 100,
+                        timeout: 10000,
+                        skipFolders: [],
+                        now: () => 0
+                    }
                 );
                 expect(response.status).toBe(200);
                 const answer = (await response.json()) as { roots: { paths: string[] }[] };
@@ -222,7 +284,13 @@ describe('the secrets folder of a hub', () => {
             expect(await listed('lab')).toEqual(['.oculus/config.yml', 'open.yml']);
             expect(await listed('hub')).toEqual(['.oculus/config.yml', 'open.yml']);
 
-            const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
+            const answer = workspacesAnswer(
+                openWorkspace(state),
+                engineDir(),
+                NO_MACHINE,
+                SECRETS,
+                NOTES
+            );
             const held = (await pageWorkspaces(answer)).folders;
             expect(held.map((one) => one.folds)).toEqual([true, true]);
             expect(isPrivateForPage({ root: 'lab', path: 'Secrets/x.yml' }, held, '/home/me')).toBe(
@@ -258,6 +326,7 @@ describe('the secrets folder of a hub', () => {
                 cap: 500,
                 maxNames: 100,
                 timeout: 10000,
+                skipFolders: [],
                 now: () => 0,
                 run: (_dir, args) => {
                     ran.push(args);

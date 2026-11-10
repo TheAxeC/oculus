@@ -22,9 +22,9 @@
 //
 // The plan refuses the whole edit, with the notice that names the file, when
 // - a file is a library file, outside the served roots, under a `node_modules` or dot folder other
-//   than a hub's own `.oculus/` folder and the folders under it that are neither
-//   (data/prose/markdown/note-names.ts's outsideEdits), or in the `secrets` folder of every hub or
-//   `~/.oculus`,
+//   than a hub's own `.oculus/` folder, its notes folder (its `notes_dir`) and the folders under
+//   them that are neither (data/prose/markdown/note-names.ts's outsideEdits), or in the folder of
+//   secrets of every hub (its `secrets_dir`) or `~/.oculus`,
 // - the roots are not read yet and a source tab is open, so no tab can be told from a file,
 // - an entry creates, renames or deletes a file, or one file is named twice,
 // - a file it names is open in a tab of another page (asked of the relay), whether or not a tab of
@@ -107,12 +107,12 @@ export type LspEditsParts = {
     write: (files: LspEditFile[]) => Promise<Outcome>;
     /**
      * The roots the file browser serves, which decide whether two names are one file on disk, each
-     * marked when it is a hub, whose notes folder an edit is made in.
+     * marked when it is a hub with its notes folder, its `notes_dir`, which an edit is made in.
      */
-    roots: () => readonly (RootFolder & { hub?: true })[];
+    roots: () => readonly HubRoot[];
     /**
-     * Whether a file is in a folder no edit is made in: the `secrets` folder of every hub and
-     * `~/.oculus`.
+     * Whether a file is in a folder no edit is made in: the folder of secrets of every hub (its
+     * `secrets_dir`) and `~/.oculus`.
      */
     withheld: (place: LspPlace) => boolean;
 };
@@ -195,15 +195,27 @@ function folderOf(path: string): string {
     return path.slice(0, Math.max(0, path.lastIndexOf('/')));
 }
 
+/** A served root as the edits read it: a hub's is marked, with its notes folder once it is read. */
+type HubRoot = RootFolder & { hub?: true; notes?: string };
+
+/** The notes folder of each root that is a hub, by its key, as the workspaces answer marks it. */
+export type HubNotesFolders = ReadonlyMap<string, string>;
+
+/** The notes folder of each root of `roots` that is a hub, by its key. */
+export function hubNotes(roots: readonly HubRoot[]): HubNotesFolders {
+    return new Map(roots.flatMap((one) => (one.hub === true ? [[one.key, one.notes ?? '']] : [])));
+}
+
 /**
  * The note a workspace edit renames and its new name, or null for any other edit: its one entry
- * that is no text edit renames a note of the notes folder of a hub (`hubs` the keys of the roots
- * that are hubs) to another note's name in the same folder. The text edits beside it are left
- * aside, since the rename of the note makes the rewrite of the links itself.
+ * that is no text edit renames a note of the notes folder of a hub (`hubs` the notes folder of each
+ * root that is a hub, by its key, as `hubNotes` reads them) to another note's name in the same
+ * folder. The text edits beside it are left aside, since the rename of the note makes the rewrite
+ * of the links itself.
  */
 export function noteRenameOf(
     edit: unknown,
-    hubs: readonly string[]
+    hubs: HubNotesFolders
 ): { item: LspPlace; name: string } | null {
     if (!isRecord(edit) || !Array.isArray(edit.documentChanges)) return null;
     const other = (edit.documentChanges as unknown[]).filter(
@@ -214,9 +226,10 @@ export function noteRenameOf(
     if (typeof change.oldUri !== 'string' || typeof change.newUri !== 'string') return null;
     const from = placeOf(change.oldUri);
     const to = placeOf(change.newUri);
-    if (from === null || to?.root !== from.root || !hubs.includes(from.root)) return null;
+    const notes = from === null ? undefined : hubs.get(from.root);
+    if (from === null || to?.root !== from.root || notes === undefined) return null;
     const note = (path: string): boolean => {
-        const inside = inNotes(path);
+        const inside = inNotes(path, notes);
         return inside !== null && isNote(inside);
     };
     if (!note(from.path) || !note(to.path) || folderOf(from.path) !== folderOf(to.path)) {
@@ -229,13 +242,14 @@ export function noteRenameOf(
 /**
  * The files a workspace edit names with the edits of each, or the refusal: an entry that creates,
  * renames or deletes a file, an address that is a library file or is no file of the page, a file
- * under a `node_modules` folder or a dot folder but a hub's own `.oculus` folder (`hubs` the keys
- * of the roots that are hubs), or a file `withheld` names.
+ * under a `node_modules` folder or a dot folder but a hub's own `.oculus` folder and its notes
+ * folder (`hubs` the notes folder of each root that is a hub, by its key), or a file `withheld`
+ * names.
  */
 function namedBy(
     edit: unknown,
     withheld: LspEditsParts['withheld'],
-    hubs: readonly string[]
+    hubs: HubNotesFolders
 ): Named[] | LspEditOutcome {
     if (!isRecord(edit)) return refuse('lsp_edit_empty');
     const files = new Map<string, Named>();
@@ -243,7 +257,8 @@ function namedBy(
         if (libraryOf(address) !== null)
             return refuse('lsp_edit_library', libraryOf(address)?.name ?? '');
         const place = placeOf(address);
-        const hidden = place !== null && outsideEdits(place.path, hubs.includes(place.root));
+        const notes = place === null ? undefined : hubs.get(place.root);
+        const hidden = place !== null && outsideEdits(place.path, notes !== undefined, notes ?? '');
         if (place === null || hidden || withheld(place)) return refuse('lsp_edit_outside', address);
         const key = nameOf(place);
         // A file named twice is refused as the server refuses it, so the answer does not depend on
@@ -329,8 +344,7 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
         held: ReadonlyMap<string, string> = new Map()
     ): Promise<Planned> {
         const stop = (outcome: LspEditOutcome): Planned => ({ ok: false, outcome });
-        const hubs = parts.roots().flatMap((one) => (one.hub === true ? [one.key] : []));
-        const named = namedBy(edit, parts.withheld, hubs);
+        const named = namedBy(edit, parts.withheld, hubNotes(parts.roots()));
         if (!Array.isArray(named)) return stop(named);
         // With the roots unread no tab can be told from the file: nothing is written until they
         // are.

@@ -54,6 +54,28 @@ collections:
 # The keys of the hub's `collections:` list whose files the index of a portfolio chat and of a project chat holds for this hub, in this order, after the hub's project manifests. A word that names no key of the hub's own list adds nothing.
 chat_context: [funding, events, education, applications, tasks]
 
+# The registry words of `collections:` whose files are feeds, read by their feed view and no collection: `leads` (the Position Leads view) and `radar` (the Lit Watch view), the only two oculus draws as feeds. A registry this list leaves out is read as a collection. The engine names none.
+feed_registries: []
+
+# The word a `meta.log` line of the leads feed holds after its leading date when the line records a run of the position scout, matched in any case: the newest such date is the scout's last run, which the update tray and the Focus board read. The engine names none, and empty reads no run, so the Focus board's refresh strip leaves the scout out.
+leads_run_word: ''
+
+# The update tasks the update tray offers for this hub, in the tray's order: each row a `task`, the name of its file `.oculus/tasks/<task>.md` (lowercase letters, digits and dashes, starting with a letter), the `label` and the `note` its tray row shows, the `view` a notice of its run opens, and `last_run`, where the tray reads its last run from: `radar` (the hub's radar feed), `scout` (its leads feed), `linkedin` (the last post of its LinkedIn folder) or `inbox` (the machine's inbox notes), and a row without `last_run` shows no last run. A row is offered while the hub holds its file. The engine names none.
+update_tasks: []
+
+# The documents a project card marks a project for, in the card's order: each row the `name` of a file inside the project folder and the short `label` the card shows for it.
+project_docs:
+  - { name: README.md, label: README }
+  - { name: code/README.md, label: CODE }
+  - { name: manuscript/main.pdf, label: PDF }
+  - { name: manuscript/main.tex, label: TEX }
+
+# The folder of a project that holds its code, against the project folder: the folder the deposit mirrors, the folder an HPC submit sends a job's code from and a folder a project chat is told to read. Inside it the portfolio's audit reads only the documents of project_docs and the files the hub's audit setting requires, and a change to any other file in it rebuilds nothing. The project card's deposit control is drawn for a project whose folder holds it.
+code_dir: code
+
+# The folder of a project that holds its deck, against the project folder: the Present view and the portfolio read a project's slides from its present.yml there.
+deck_dir: present
+
 
 # The career file holds the goal, the next milestone and its day and the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from; the Career view shows it and its editor edits it. A funding entry's `statement:` shows on the Funding view.
 career_file: .oculus/data/academic/career.yml
@@ -62,12 +84,21 @@ career_file: .oculus/data/academic/career.yml
 # The folder of the LinkedIn posts pipeline. oculus names none: a hub sets it in its .oculus/config.yml, relative to the hub, and empty names no folder.
 linkedin_dir: ''
 
+# The start of a file name in the LinkedIn folder that marks the file as an idea not yet posted: the LinkedIn view's new idea is written under it, and Mark posted renames such a file to the next number. oculus names none: a hub sets it in its .oculus/config.yml, and empty marks no file as an idea, so the view adds no idea.
+linkedin_idea_prefix: ''
+
 
 # The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it or in a folder under it (a folder whose name starts with a dot aside) is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
 memories_dir: .oculus/memories
 
 # The folder of this hub's wallpaper images, relative to the hub and inside it. Its pictures are read with those of every folder under it, a folder whose name starts with a dot aside. The `wallpaper.image` key of the primary hub's .oculus/config.yml names one of them as `<hub name>/<file path>`, the path relative to this folder, so a picture in a folder under it is named with its folders; the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
 wallpaper_dir: .oculus/wallpaper
+
+# The folder of this hub that holds its secrets, relative to the hub: no language server is given or changes a file in it, no app reaches it, no library file is looked for in it and the writing rules never fix a file in it. Empty names none.
+secrets_dir: secrets
+
+# The folder of this hub that holds its notes, relative to the hub and inside it: every .md file in it or in a folder under it is a note of the Notes section, its links and tags read for Backlinks, Tags and the Notes Graph, `order.json` at its top keeps their order and `attachments/` holds what is pasted into a note. A search reads it even when it lies in a folder whose name starts with a dot.
+notes_dir: .oculus/notes
 
 # Where the reader's own bookmarks, the schedules and the machine's apps live, each relative to the primary hub, under the home folder for a value of ~ or one starting with ~/, or an absolute path. A hub sets them in its .oculus/config.yml, and the primary hub's file is the one read.
 bookmarks: .oculus/bookmarks.yml

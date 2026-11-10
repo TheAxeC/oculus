@@ -43,8 +43,8 @@
     // read of either that failed, and the tags are read from the notes. What this view reads of
     // them is the bookmarks the tree draws its stars from. A bookmark is added by the star on a
     // file, a folder or a root and renamed and removed on its row in the Bookmarks section; the
-    // file `bookmarks.yml` in the hub's `.oculus` folder is written by those controls and by the
-    // star, and no form edits it.
+    // bookmarks file the configuration names (`bookmarks`, `.oculus/bookmarks.yml` of the primary
+    // hub by default) is written by those controls and by the star, and no form edits it.
     //
     // The folders of the workspace are those of its workspace file (`.oculus/workspaces/<name>.yml`
     // of a hub), or those the state keeps for an unsaved workspace, and any of them can be taken

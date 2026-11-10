@@ -140,8 +140,9 @@
     $effect(() => {
         // Read inside the effect, the text size is drawn again whenever the page's config is
         // installed anew.
-        const scale = String(configuredLook().textSize);
-        document.documentElement.style.setProperty('--text-scale', scale);
+        const look = configuredLook();
+        if (look === null) return;
+        document.documentElement.style.setProperty('--text-scale', String(look.textSize));
     });
 
     onMount(() => {

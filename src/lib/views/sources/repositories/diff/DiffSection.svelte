@@ -99,7 +99,7 @@
         model: string;
         mode: DiffMode;
         look: string;
-        codeTheme: string;
+        codeTheme: string | null;
         /** Whether the diff holds several files: the editor grows to its content and waits. */
         several: boolean;
         /** Whether to draw the file's header row above it. */

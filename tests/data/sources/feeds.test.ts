@@ -8,6 +8,7 @@
 import { describe, expect } from 'vitest';
 import { readFeeds } from '../../../src/lib/data/sources/documents/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { hubLayout } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import type { FeedFiles } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch, test } from '../../fixtures/scratch.ts';
 
@@ -31,13 +32,23 @@ function hub(files: Record<string, string>): string {
 }
 
 /**
- * What readFeeds answers over a hub planted with the files, read by the block's own beforeAll from
- * the fixture, so a run that skips the block plants nothing.
+ * The merged settings of a hub that names its LinkedIn ideas by the prefix `xx-` and records a
+ * scout run in its leads feed's log by the word `scout`.
  */
-function readHub(files: Record<string, string>): ReturnType<typeof readFeeds> {
+const IDEAS = { ...ENGINE, linkedin_idea_prefix: 'xx-', leads_run_word: 'scout' };
+
+/**
+ * What readFeeds answers over a hub planted with the files, under the hub's merged settings
+ * `merged`, read by the block's own beforeAll from the fixture, so a run that skips the block
+ * plants nothing.
+ */
+function readHub(
+    files: Record<string, string>,
+    merged: Record<string, unknown> = IDEAS
+): ReturnType<typeof readFeeds> {
     const read = {} as ReturnType<typeof readFeeds>;
     test.beforeAll(() => {
-        Object.assign(read, readFeeds(hub(files), FILES, CATALOG, ENGINE));
+        Object.assign(read, readFeeds(hub(files), FILES, CATALOG, merged, hubLayout(merged, [])));
     });
     return read;
 }
@@ -101,10 +112,33 @@ describe('the three feeds, all present', () => {
         expect(read.feeds.linkedin).toEqual({ lastPost: '2026-09-02' });
     });
 
+    it("takes the scout's last run from the newest log line that holds the hub's word (G32)", () => {
+        expect(read.feeds.scout).toEqual({ lastRun: '2026-09-09' });
+    });
+
     it('keeps the live leads with the day of their deadline, dismissed ones out', () => {
         expect(read.feeds.leads).toEqual([
             { title: 'Postdoc AI', deadline: '2026-09-20', status: 'open', fit: 'strong' },
             { title: 'No date', deadline: null, status: 'open', fit: null }
         ]);
+    });
+});
+
+describe('the feeds of a hub that names no idea prefix and no scout word', () => {
+    const read = readHub(
+        {
+            '.oculus/data/academic/leads.yml': LEADS,
+            'site/_linkedin/01-a.md': POST,
+            'site/_linkedin/xx-idea.md': IDEA
+        },
+        ENGINE
+    );
+
+    it('marks no file as an idea, so the xx- file is a post whose date counts (G32)', () => {
+        expect(read.feeds.linkedin).toEqual({ lastPost: '2026-12-31' });
+    });
+
+    it('has no scout feed, since no line of the log can record a run (G32)', () => {
+        expect(read.feeds.scout).toBe(null);
     });
 });

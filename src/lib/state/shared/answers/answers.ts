@@ -71,6 +71,8 @@ function latexSentence(word: LatexRefusal, names: readonly string[] = []): strin
     switch (word) {
         case 'no-project':
             return catalogText('latex.refused_no_project');
+        case 'no-manuscript':
+            return catalogText('latex.refused_no_manuscript');
         case 'not-a-file':
             return catalogText('latex.refused_not_a_file');
         case 'not-a-main':

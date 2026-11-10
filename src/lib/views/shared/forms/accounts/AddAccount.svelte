@@ -36,9 +36,9 @@
         provider?: AccountProvider;
     };
 
-    let { kind, onclose, provider: first = 'google' }: Props = $props();
+    let { kind, onclose, provider: first }: Props = $props();
 
-    let provider: string = $state(untrack(() => first));
+    let provider: string = $state(untrack(() => first ?? PROVIDERS_OF[kind][0]));
     let label = $state('');
     let url = $state('');
     let said = $state('');

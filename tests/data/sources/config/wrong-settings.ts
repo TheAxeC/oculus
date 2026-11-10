@@ -4,7 +4,16 @@
 
 /** The blocks and keys outside the editor's block, each holding a value its entry refuses. */
 export const WRONG_SETTINGS: Record<string, unknown> = {
-    slurm: { resource: 5, days: -1, poll_min: 0, quota_min: 'x', prewarm: 'yes' },
+    slurm: {
+        resource: 5,
+        days: -1,
+        poll_min: 0,
+        quota_min: 'x',
+        prewarm: 'yes',
+        log_dirs: ['/abs'],
+        scratch_roots: { a: 'local' }
+    },
+    recover: { data_dir: '/abs', partitions: { a: 'x y' } },
     calendar: { poll_min: 0, days_back: -1, days_ahead: 3651 },
     search: { max_hits: 0, timeout_s: 0, max_names: 0 },
     literature: { timeout_s: 0, per_source: 500, cache_min: -1 },
@@ -23,6 +32,12 @@ export const WRONG_SETTINGS: Record<string, unknown> = {
         clean_and_retry: 'yes',
         auto_clean: 'x',
         synctex_path: 'foo',
+        texdoc_path: 'foo',
+        texcount_path: 'foo',
+        checkcites_path: 'foo',
+        clean_path: 'foo',
+        literate_recipes: { '.rnw': 'nope' },
+        program_recipes: { 'a/b': 'a' },
         reverse_synctex: 'x',
         texcount_autorun: 'x',
         context_menu: 'yes',

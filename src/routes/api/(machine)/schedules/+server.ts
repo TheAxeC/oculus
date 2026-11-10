@@ -3,6 +3,8 @@
 // carries the token ServerContext minted and writes the machine's schedules file behind the
 // process's write chain; the paths are the ones the context built the schedule watcher over, and
 // the approvals file a saved command's chain is approved in is the one a command's start checks.
+// Each hub a task runs in comes with its merged settings (task.ts's taskHubs), which its
+// `update_tasks` rows are read from.
 
 import { textCatalog } from '$lib/data/sources/config';
 import { carriedOf, target } from '$lib/server/edit/writes';
@@ -11,6 +13,7 @@ import { perOculus } from '$lib/server/files/workspace/paths';
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleSchedules } from '$lib/server/machine/runs/schedules/routes';
 import { defaultRecordPath } from '$lib/server/machine/runs/schedules/record';
+import { taskHubs } from '$lib/server/machine/runs/schedules/task';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) => {
@@ -22,7 +25,8 @@ export const POST: RequestHandler = ({ request, locals }) => {
             record: server.local.scheduleRecord ?? defaultRecordPath()
         }),
         rootsFor: () => repositoryRoots(server.workspace.open()),
-        hubsFor: () => server.workspace.open(),
+        hubsFor: () =>
+            taskHubs(server.workspace.open(), () => locals.config().config, server.configCache.hub),
         text: () => textCatalog(locals.config().config),
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         writes: server.fsWrites,

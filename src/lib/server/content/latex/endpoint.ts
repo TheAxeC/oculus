@@ -24,7 +24,6 @@ import { z } from 'zod';
 import type { BuildOutcome, Project } from '../../../data/model/index.ts';
 import { keyOf, rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
 import {
-    MANUSCRIPT,
     isLatexFile,
     stemOf,
     type Formatter,
@@ -49,9 +48,9 @@ import {
 } from '../latex.ts';
 import { citationsOf } from './bib.ts';
 import { outlineOf, type Outline } from './outline.ts';
-import { foldersOf } from './recipes.ts';
+import { foldersOf, programFor } from './recipes.ts';
 import { dependenciesOf, mainOfPdf, rootOf, type RootHow } from './root.ts';
-import { forward, inverse, placedIn, placesOf, programFor, sourceOf } from './synctex.ts';
+import { forward, inverse, placedIn, placesOf, sourceOf } from './synctex.ts';
 import { packagesOf, texdoc, texdocName } from './texdoc.ts';
 import { run, type Run, type Tools } from '../../core/program.ts';
 import { readCount } from './tools.ts';
@@ -63,6 +62,11 @@ export type LatexTarget = {
     project: (id: string) => Pick<Project, 'folder' | 'root' | 'workspaceFolder'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
+    /**
+     * The folder a project of the hub at a folder keeps its mains in, against the project folder
+     * (data/prose/latex.ts, manuscriptFolder over that hub's `project_docs`), or null for none.
+     */
+    manuscript: (hub: string) => string | null;
     /** The formatter Format Document runs, read from the merged config at each request. */
     formatting: () => LatexFormatting;
     /** What a build and SyncTeX are set by, read from the merged config at each request. */
@@ -83,10 +87,16 @@ type AnsweredMain = MainState & { build: BuildOutcome };
 
 /**
  * The state of a project: the served root that holds it (the folder name of its hub, or its
- * repository's root), its folder under that root, and one state per main file. The folder is empty
- * for a project of a repository, which is its root's top.
+ * repository's root), its folder under that root, the folder its mains sit in against that folder,
+ * and one state per main file. The folder is empty for a project of a repository, which is its
+ * root's top.
  */
-export type ProjectAnswer = { root: string; folder: string; mains: AnsweredMain[] };
+export type ProjectAnswer = {
+    root: string;
+    folder: string;
+    manuscript: string;
+    mains: AnsweredMain[];
+};
 
 /** The outline of a main file of a project, its files against the project's folder. */
 export type ProjectOutline = Outline & { folder: string };
@@ -116,7 +126,7 @@ type Query = z.infer<typeof queryShape>;
 const formatShape = z.object({
     action: z.literal('format'),
     text: z.string(),
-    file: z.string().optional()
+    file: z.string()
 });
 
 /** The body of a forward search: the place of a source file's line, in a root. */
@@ -193,7 +203,10 @@ function relativeTo(base: string, path: string): string {
     return relative(base, path).split(sep).join('/');
 }
 
-/** The scope of a project's manuscript folder, or the refusal. */
+/**
+ * The scope of a project's folder of mains, or the response that ends the request: a refusal, or
+ * the answer with no main for a project of a hub whose `project_docs` names no `.tex` file.
+ */
 function projectScope(into: LatexTarget, id: string): Scope | Response {
     if (id === '') return refuse(400, 'not-an-action');
     const project = into.project(id);
@@ -213,16 +226,24 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     }
     const home = project.workspaceFolder ?? { root: key, dir: hub };
     const under = project.workspaceFolder === undefined ? project.folder : '';
+    // A hub whose `project_docs` names no `.tex` file gives its projects no folder of mains, so the
+    // project holds no main file and draws no LaTeX panel.
+    const manuscript = into.manuscript(hub);
+    if (manuscript === null) {
+        const none: ProjectAnswer = { root: home.root, folder: under, manuscript: '', mains: [] };
+        return json(none, { headers: NO_STORE });
+    }
     return {
-        dir: join(folder, MANUSCRIPT),
+        dir: join(folder, manuscript),
         label: keyOf(id),
         bound: realPath(home.dir) ?? home.dir,
         named: realPath(folder) ?? folder,
-        prefixes: { pdf: MANUSCRIPT, files: '' },
+        prefixes: { pdf: manuscript, files: '' },
         answer: (mains) =>
             ({
                 root: home.root,
                 folder: under,
+                manuscript,
                 mains
             }) satisfies ProjectAnswer,
         outlined: (outline) => ({ ...outline, folder: under }) satisfies ProjectOutline
@@ -307,7 +328,7 @@ function rootFor(
     if (found instanceof Response) return found;
     if (!isFile(found.real)) return refuse(404, 'not-a-file');
     if (!isLatexFile(found.real)) return null;
-    const rooted = rootOf(found.bound, found.real, (main) => {
+    const rooted = rootOf(found.bound, found.real, into.building().mainFile, (main) => {
         const folders = foldersFor(into, found.bound, main);
         return [folders.out, folders.aux];
     });
@@ -335,6 +356,7 @@ function pdfRootAnswer(into: LatexTarget, root: string, pdf: string): Response {
     const main = mainOfPdf(
         found.bound,
         found.real,
+        into.building().mainFile,
         (one) => foldersFor(into, found.bound, one).out
     );
     if (main === null) return json({ main: null }, { headers: NO_STORE });
@@ -408,7 +430,8 @@ async function countAnswer(into: LatexTarget, scope: Scope, main: string): Promi
         return refuse(404, 'not-a-main');
     }
     const args = ['-inc', '-total', '-sum', '-brief', '-utf8', main];
-    const ran = await run('texcount', args, { cwd: scope.dir }, into.tools);
+    const program = programFor(into.building().texcountPath, 'texcount');
+    const ran = await run(program, args, { cwd: scope.dir }, into.tools);
     if (ran.kind !== 'done') {
         return failure(ran, {
             missing: 'count-missing',
@@ -469,7 +492,7 @@ export async function handleLatex(request: Request, into: LatexTarget): Promise<
     if (scope instanceof Response) return scope;
     if (outline !== undefined) return outlineAnswer(into, scope, outline);
     if (count !== undefined) return countAnswer(into, scope, count);
-    const mains = mainsIn(scope.dir).map((main) => ({
+    const mains = mainsIn(scope.dir, into.building().mainFile).map((main) => ({
         ...buildStateIn(
             scope.dir,
             main,
@@ -499,7 +522,7 @@ async function formatAnswer(
     const { formatter, paths } = into.formatting();
     if (formatter === 'none') return refuse(409, 'format-none');
     const program = paths[formatter] === '' ? formatter : paths[formatter];
-    const args = formatArgs(formatter, basename(asked.file ?? 'main.tex'));
+    const args = formatArgs(formatter, basename(asked.file));
     const ran = await run(program, args, { input: asked.text }, into.tools);
     if (ran.kind !== 'done') {
         return failure(ran, {
@@ -540,7 +563,7 @@ async function forwardAnswer(
     if (found === null) return refuse(404, 'not-a-main');
     const built = builtPdf(into, found.bound, found.main);
     if (built instanceof Response) return built;
-    const program = programFor(into.building().synctexPath);
+    const program = programFor(into.building().synctexPath, 'synctex');
     const ran = await forward(
         program,
         built.pdf,
@@ -563,7 +586,7 @@ async function inverseAnswer(
     if (!found.real.toLowerCase().endsWith('.pdf') || !isFile(found.real)) {
         return refuse(404, 'synctex-no-pdf');
     }
-    const program = programFor(into.building().synctexPath);
+    const program = programFor(into.building().synctexPath, 'synctex');
     const ran = await inverse(program, found.real, asked.page, asked.x, asked.y, into.tools);
     if (ran.kind !== 'done') return failure(ran, SYNCTEX_WORDS);
     const source = sourceOf(ran.stdout);
@@ -581,7 +604,7 @@ async function texdocAnswer(
 ): Promise<Response> {
     const name = texdocName(asked.name);
     if (name === null) return refuse(400, 'texdoc-name');
-    const ran = await texdoc(name, into.tools);
+    const ran = await texdoc(name, programFor(into.building().texdocPath, 'texdoc'), into.tools);
     if (ran.kind !== 'done') {
         return failure(ran, {
             missing: 'texdoc-missing',

@@ -19,7 +19,7 @@
 // the row (views/system/workbench/reveal.svelte.ts).
 
 import { z } from 'zod';
-import { hubFileOf } from '../../../data/helpers/hub-names.ts';
+import { hubFileOf } from '../../../data/shapes/hub-keys.ts';
 import { draftsHeld, inSlot, mapOf, type Slot } from './editors/slots.ts';
 
 /** The prefix of the filter that looks at the key path alone. */

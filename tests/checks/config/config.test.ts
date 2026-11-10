@@ -1,9 +1,10 @@
 // Layer 4, tree check. The readers of the config folder (loadConfig, behaviorFindings,
-// settingFindings, themeFindings, vocabCatalog, optionFindings) over synthetic files in a temporary
-// directory, and the one real config they are run over for no finding. The sentences checkLocal
-// answers, and readLocal's problems, are rows of tests/data/sources/config/local/local.test.ts, and
-// the join of the hubs' local.yml files is tests/data/sources/config/local/machine.test.ts. The
-// config folder oculus ships is read by tests/checks/config/config-folder.test.ts.
+// themeFindings, vocabCatalog, optionFindings) over synthetic files in a temporary directory, and
+// the one real config they are run over for no finding; settingFindings is
+// tests/checks/config/setting-findings.test.ts's. The sentences checkLocal answers, and
+// readLocal's problems, are rows of tests/data/sources/config/local/local.test.ts, and the join of
+// the hubs' local.yml files is tests/data/sources/config/local/machine.test.ts. The config folder
+// oculus ships is read by tests/checks/config/config-folder.test.ts.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve, sep } from 'node:path';
@@ -17,21 +18,16 @@ import {
     vocabCatalog,
     type ConfigWhere
 } from '../../../src/lib/data/sources/config.ts';
-import {
-    behaviorFindings,
-    settingFindings
-} from '../../../src/lib/data/sources/config/catalogs.ts';
+import { behaviorFindings } from '../../../src/lib/data/sources/config/catalogs.ts';
 import { optionFindings } from '../../../src/lib/data/sources/config/catalog/option-findings.ts';
 import { themeFindings } from '../../../src/lib/data/sources/config/sections/themes.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { NO_OFFERS } from '../../../src/lib/data/helpers/files/apps/choices.ts';
 import { setAppearance, themes } from '../../../src/lib/state/shared/words/appearance.ts';
 import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
-import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { parse } from 'yaml';
 import { noop } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { WRONG_EDITOR, WRONG_SETTINGS } from '../../data/sources/config/wrong-settings.ts';
 
 function scratch(): string {
     const dir = scratchDir('oculus-config-');
@@ -467,166 +463,6 @@ describe('behaviorFindings', () => {
         );
         expect(behaviorFindings(shippedAt(engine), { ...WORDS, chat: 'opus' })).toEqual([]);
         expect(behaviorFindings(shippedAt(engine), loadConfig(engineDir()).config)).toEqual([]);
-    });
-});
-
-describe('settingFindings', () => {
-    const engine = engineDir();
-    const shipped = loadConfig(engine).config;
-    const WRONG: Record<string, unknown> = { ...WRONG_SETTINGS, editor: WRONG_EDITOR };
-    const file = join(engine, 'config', 'defaults', 'behavior.yml');
-    const said = (config: Record<string, unknown>) =>
-        settingFindings(shippedAt(engine), config).map((one) => `${one.key}: ${one.message}`);
-
-    it('words each wrong setting against behavior.yml from the catalog, and nothing for the shipped files', () => {
-        const findings = settingFindings(shippedAt(engine), { ...shipped, ...WRONG });
-        expect(new Set(findings.map((one) => one.file))).toEqual(new Set([file]));
-        const keys = findings.map((one) => one.key);
-        expect(new Set(keys).size).toBe(keys.length);
-        expect([...keys].sort()).toEqual(
-            [
-                'calendar.days_ahead',
-                'calendar.days_back',
-                'calendar.poll_min',
-                'changes.keep',
-                'editor.autosave',
-                'editor.autosave_delay_ms',
-                'editor.final_newline',
-                'editor.languages.cobolx',
-                'editor.languages.cpp.format_on_save',
-                'editor.languages.cpp.trim_trailing_whitespace',
-                'editor.languages.markdown',
-                'editor.languages.python.final_newline',
-                'editor.languages.python.tab_size',
-                'editor.paint_limit_kb',
-                'editor.tab_size',
-                'editor.trim_trailing_whitespace',
-                'editor.word_wrap',
-                'files.confirm_delete',
-                'git.autofetch_minutes',
-                'latex.aux_dir',
-                'latex.auto_build',
-                'latex.auto_build_interval_ms',
-                'latex.auto_clean',
-                'latex.badness_path',
-                'latex.clean_and_retry',
-                'latex.context_menu',
-                'latex.formatter',
-                'latex.includegraphics_preview',
-                'latex.latexindent_path',
-                'latex.out_dir',
-                'latex.recipe_default',
-                'latex.recipes',
-                'latex.recipes[2]',
-                'latex.recipes[3].tools',
-                'latex.reverse_synctex',
-                'latex.synctex_path',
-                'latex.texcount_autorun',
-                'latex.tex_fmt_path',
-                'latex.texlab_path',
-                'latex.tools',
-                'latex.tools[2].name',
-                'latex.tools[3]',
-                'latex.tools[4].command',
-                'latex.tools[5].args',
-                'latex.unimath_symbols',
-                'lint.chktex',
-                'lint.chktex_args',
-                'lint.chktex_path',
-                'lint.eslint',
-                'lint.ruff',
-                'lint.ruff_path',
-                'lint.shellcheck',
-                'lint.shellcheck_path',
-                'lint.writing',
-                'lint.writing_glyphs',
-                'lint.writing_skip',
-                'literature.cache_min',
-                'literature.per_source',
-                'literature.timeout_s',
-                'mail.per_signal',
-                'mail.poll_min',
-                'open.program_ext..txt',
-                'open.program_ext..x',
-                'open.program_ext.pdf',
-                'processes.patterns',
-                'search.max_hits',
-                'search.max_names',
-                'search.timeout_s',
-                'slurm.days',
-                'slurm.poll_min',
-                'slurm.prewarm',
-                'slurm.quota_min',
-                'slurm.resource',
-                'usage_refresh_min',
-                'usage_refresh_model',
-                'usage_tiers.b'
-            ].sort()
-        );
-        const lines = said({ ...shipped, ...WRONG });
-        expect(lines).toContain(
-            'slurm.days: slurm.days must be a whole number from 0 to 3650; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.tab_size: editor.tab_size must be a whole number from 1 to 8; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.languages.cobolx: editor.languages.cobolx is not a language the editor colours; its record is not read'
-        );
-        expect(lines).toContain(
-            'editor.languages.cpp.format_on_save: editor.languages.cpp.format_on_save must be true or false; the field is not read'
-        );
-        expect(lines).toContain(
-            'editor.languages.cpp.trim_trailing_whitespace: editor.languages.cpp.trim_trailing_whitespace must be true or false; the field is not read'
-        );
-        expect(lines).toContain(
-            'editor.autosave: editor.autosave must be one of off, after_delay, on_focus_change; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.autosave_delay_ms: editor.autosave_delay_ms must be a whole number of at least 0; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.trim_trailing_whitespace: editor.trim_trailing_whitespace must be true or false; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.final_newline: editor.final_newline must be true or false; the default is used'
-        );
-        expect(lines).toContain(
-            'editor.languages.python.final_newline: editor.languages.python.final_newline must be true or false; the field is not read'
-        );
-        const read = readEditorOptions({ ...shipped, ...WRONG }).options;
-        expect(read).toMatchObject({
-            autosave: 'off',
-            autosaveDelay: 1000,
-            trimTrailingWhitespace: false,
-            finalNewline: false
-        });
-        expect(read.languages.cpp).toBeUndefined();
-        expect(read.languages.python).toBeUndefined();
-        const fraction = { ...shipped, editor: { autosave_delay_ms: 1.5 } };
-        expect(readEditorOptions(fraction).options.autosaveDelay).toBe(1000);
-        expect(said(fraction)).toEqual([
-            'editor.autosave_delay_ms: editor.autosave_delay_ms must be a whole number of at least 0; the default is used'
-        ]);
-        expect(lines).toContain(
-            'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
-        );
-        expect(lines).toContain(
-            'slurm.resource: slurm.resource must be a list of words; the default is used'
-        );
-        expect(settingFindings(shippedAt(engine), shipped)).toEqual([]);
-    });
-
-    it('reads an empty slurm.resource as no cluster, with no finding', () => {
-        expect(said({ ...shipped, slurm: { resource: [] } })).toEqual([]);
-    });
-
-    it('says nothing for a merge that dropped behavior.yml, or for a map without the catalog', () => {
-        const dropped = Object.fromEntries(
-            Object.entries({ ...shipped, ...WRONG }).filter(([key]) => !(key in WRONG))
-        );
-        expect(settingFindings(shippedAt(engine), dropped)).toEqual([]);
-        expect(settingFindings(shippedAt(engine), { text: shipped.text, ...WRONG })).toEqual([]);
     });
 });
 

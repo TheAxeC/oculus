@@ -26,13 +26,13 @@ describe('the real folder of a root in the workspaces answer', () => {
             { name: 'linked', dir: link },
             { name: 'missing', dir: join(dir, 'missing') }
         ]);
-        const answer = workspacesAnswer(openWorkspace(state), engineDir(), {
-            set: [],
-            defaults: {},
-            values: {},
-            hubs: {},
-            portRefused: null
-        });
+        const answer = workspacesAnswer(
+            openWorkspace(state),
+            engineDir(),
+            { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
+            () => 'secrets',
+            () => '.oculus/notes'
+        );
         const roots = (await pageWorkspaces(answer)).folders;
         expect(roots.find((one) => one.key === 'linked')).toMatchObject({
             dir: link,

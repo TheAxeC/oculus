@@ -12,6 +12,7 @@
 // control `words`) is checked against the list its `from` names for its words and against that
 // list's flags (`flagged`) for its flags.
 
+import { TASK_NAME } from '../../../helpers/run/tasks.ts';
 import { BLOCK_LISTS, type WordBlock } from '../../../shapes/boards/words.ts';
 import {
     classOfHex,
@@ -81,7 +82,18 @@ export type RuleLists = {
  * placeholder such as `{tenant}` may stand in it; an `https_origin` is the scheme, the host and an
  * optional port and nothing after, so it can name a git credential context with nothing a git
  * config line splits on; a `row_key` is lowercase letters, digits, dashes and underscores, the
- * words a file name may be made of.
+ * words a file name may be made of; a `file_name` is the name of one file, with no slash or
+ * backslash and neither `.` nor `..`; a `task_name` is lowercase letters, digits and dashes that
+ * start with a letter, the name of an update task's file; an `inner_path` is a path written
+ * relative to the folder it is read in and inside it: not absolute, ending in no slash, with no
+ * backslash and no `..` part; a `folder_glob` is such a path of letters, digits, dots, dashes,
+ * underscores and stars alone, a pattern a remote shell expands with nothing in it to quote; an
+ * `absolute_folder` is an absolute path of letters, digits, dots, dashes and underscores between
+ * its slashes, ending in no slash and with no `.` or `..` part, a folder a job script names with
+ * nothing in it to quote; a `partition` is a Slurm partition name, or several joined by commas, of
+ * letters, digits, dots, dashes and underscores; a `cluster_folder` is a folder on the cluster as
+ * a project's `paths.cluster` writes it (data/shapes/shapes.ts `clusterFolder`), `~/` or `/` then
+ * folder names of those characters and `{id}`, which stands for a project's id.
  */
 export const FORM_PATTERNS: Record<Form, RegExp> = {
     program: /^[^/\s]+$/,
@@ -89,7 +101,14 @@ export const FORM_PATTERNS: Record<Form, RegExp> = {
     bundle_id: /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/,
     https_address: /^https:\/\/[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(:[0-9]{1,5})?(\/[^\s'"\\]*)?$/,
     https_origin: /^https:\/\/[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(:[0-9]{1,5})?$/,
-    row_key: /^[a-z0-9_-]+$/
+    row_key: /^[a-z0-9_-]+$/,
+    file_name: /^(?!\.\.?$)[^/\\]+$/,
+    task_name: TASK_NAME,
+    inner_path: /^(?!\/)(?!.*\/$)(?!(?:.*\/)?\.\.(?:\/|$))[^\\]+$/,
+    folder_glob: /^(?!\/)(?!.*\/$)(?!(?:.*\/)?\.\.(?:\/|$))[A-Za-z0-9._*/-]+$/,
+    absolute_folder: /^(?:\/(?!\.\.?(?:\/|$))[A-Za-z0-9._-]+)+$/,
+    partition: /^[A-Za-z0-9._-]+(?:,[A-Za-z0-9._-]+)*$/,
+    cluster_folder: /^~?(?:\/(?!\.\.?(?:\/|$))(?:[A-Za-z0-9._-]|\{id\})+)+$/
 };
 
 /**

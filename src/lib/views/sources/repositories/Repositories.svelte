@@ -68,9 +68,9 @@
     // A repository closed in this tab leaves its list and is never the one shown; it is a filter on
     // what this tab draws, kept in the instance's state, and the channel still carries it. Reopen
     // Closed Repositories, in the title bar and in the `...` menu while any is closed, asks which
-    // in a quick pick (ui/forms/choice/QuickPick.svelte), with All Repositories
-    // after the rule when more than one is closed. With every repository closed the view says so
-    // and offers the same control.
+    // in a quick pick (ui/forms/choice/QuickPick.svelte), with All Repositories after the rule
+    // when more than one is closed. With every repository closed the view says so and offers the
+    // same control.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
@@ -118,6 +118,7 @@
         StashMode,
         WorktreeStart
     } from '$lib/state/sources/repositories/repositories.svelte';
+    import type { AgentId } from '$lib/state/sessions/agents.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -305,15 +306,16 @@
         });
     }
 
-    function createWorktree(root: string, name: string, start: WorktreeStart): void {
+    function createWorktree(root: string, dir: string, name: string, start: WorktreeStart): void {
         const agent = start === 'claude' ? t('sessions.kind_claude') : t('sessions.kind_codex');
+        const path = plannedPath(root, name, dir);
         ask(
             t('repositories.worktree_new_confirm', name),
             start === 'shell'
-                ? t('repositories.worktree_new_detail', plannedPath(root, name))
-                : t('repositories.worktree_new_agent_detail', plannedPath(root, name), agent),
+                ? t('repositories.worktree_new_detail', path)
+                : t('repositories.worktree_new_agent_detail', path, agent),
             () => {
-                void repositories.createWorktree(root, name, start);
+                void repositories.createWorktree(root, name, dir, start);
             }
         );
     }
@@ -464,13 +466,13 @@
                         onswitch={(name: string) => switchTo(shown, name)}
                         onbranch={(name: string) => createBranch(shown, name)}
                         onworktree={(name: string, start: WorktreeStart) =>
-                            createWorktree(shown, name, start)}
+                            createWorktree(shown, held.worktreesDir, name, start)}
                         onremove={(path: string, label: string) =>
                             removeWorktree(shown, path, label)}
                         onmerge={(branch: string, onto: string) => mergeBack(shown, branch, onto)}
                         onterminal={(path: string, label: string) =>
                             void repositories.shellIn(shown, path, label)}
-                        onagent={(path: string, agent: 'claude' | 'codex') =>
+                        onagent={(path: string, agent: AgentId) =>
                             void repositories.agentIn(shown, path, agent)}
                     />
                 {/key}

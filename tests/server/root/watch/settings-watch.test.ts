@@ -1,7 +1,8 @@
 // Layer 2, server test. The git watch (lib/server/root/watch/git.ts) says the workspaces may have
 // changed for an event at a root's own `.oculus/settings.yml`, which reads the folder list again,
-// and for no settings file of a folder below the root. The watch runs over a real folder; a case
-// resumes on the `files` message it waits for and on no timer.
+// and for no settings file of a folder below the root; for the same event it calls its
+// `settingsWritten` option, which tells the language servers. The watch runs over a real folder; a
+// case resumes on the `files` message it waits for and on no timer.
 //
 // Every directory here is under the system temporary directory; nothing reads ~/.oculus.
 
@@ -89,6 +90,8 @@ describe('the git watch of a root with a settings file', () => {
         watcher = watchGit(hub, {
             throttle: 0,
             roots: () => [root],
+            depth: () => 1,
+            worktreesDir: () => 'trees',
             credentials: noCredentials()
         });
         await first;
@@ -108,5 +111,41 @@ describe('the git watch of a root with a settings file', () => {
         writeFileSync(join(root, REPO_SETTINGS), TEXT);
         await files.until((one) => later(one) && workspaces(one));
         expect(since()).toEqual([{ root: '', workspaces: true }]);
+    });
+
+    it("tells settingsWritten of a write in the root's settings file and of no other (G109)", async () => {
+        const root = realpathSync(scratchDir('oculus-settings-written-'));
+        mkdirSync(join(root, '.git'));
+        mkdirSync(join(root, '.oculus'));
+        mkdirSync(join(root, 'sub', '.oculus'), { recursive: true });
+        mkdirSync(join(root, 'probe'));
+        const hub = new Hub();
+        const files = filesOf(hub);
+        const first = read(hub, root);
+        let written = 0;
+        watcher = watchGit(hub, {
+            throttle: 0,
+            roots: () => [root],
+            depth: () => 1,
+            worktreesDir: () => 'trees',
+            settingsWritten: () => {
+                written += 1;
+            },
+            credentials: noCredentials()
+        });
+        await first;
+        writeFileSync(join(root, 'probe', 'ready.txt'), '');
+        await files.until((one) => one.root === root && one.folders?.includes('probe') === true);
+        const from = files.heard.length;
+        const later = (one: FilesPayload): boolean => files.heard.indexOf(one) >= from;
+        writeFileSync(join(root, 'sub', REPO_SETTINGS), TEXT);
+        await files.until(
+            (one) =>
+                later(one) && one.root === root && one.folders?.includes('sub/.oculus') === true
+        );
+        expect(written).toBe(0);
+        writeFileSync(join(root, REPO_SETTINGS), TEXT);
+        await files.until((one) => later(one) && workspaces(one));
+        expect(written).toBe(1);
     });
 });

@@ -15,9 +15,10 @@
 // those records (`records`), which the view opens by their names. The entry's key is no field of
 // its own: the heading names the entry, and neither a card nor a page draws the key again.
 //
-// The rows of the Website section feed the website and are changed in the entry's editor, so
-// neither a card nor the entry's page draws them. Search, the list's columns and the bar's filters
-// read the entry itself, and this rule does not narrow them.
+// The rows of the schema section `website.schema_section` names feed the website and are changed
+// in the entry's editor, so neither a card nor the entry's page draws them; with no section named,
+// every row is drawn. Search, the list's columns and the bar's filters read the entry itself, and
+// this rule does not narrow them.
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`.
 
@@ -68,6 +69,7 @@ export type {
 } from '../../../data/model/index.ts';
 export { optionKeys, optionLabel, primaryKeyOf } from '../../../data/model/index.ts';
 export { joinedRegistries } from './joined.ts';
+export { websiteSection } from '../../../data/sources/config/settings/files.ts';
 
 // The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
 // here, since the boundary table keeps `views/` out of `data/`.
@@ -493,23 +495,22 @@ function drawnRow(
     return { field: field.field, label, kind: 'pairs', values: pairs };
 }
 
-/** The section whose rows feed the website, which the entry's editor changes and no card draws. */
-const WEBSITE_SECTION = 'Website';
-
 /**
  * The fields of one entry in the order a card and its page draw them: the schema's own order
  * first, with a field the entry does not carry left out, and then every field the entry carries
  * that the schema does not name, in the entry's own order, as text under its name as `wordOf`
  * words a key. The field the card's heading shows is neither (`headingField`), nor is the primary
  * key the schema flags, nor a field the schema does not name whose value is the entry's key, so
- * the key is never drawn as a field; a row of the Website section is not drawn either. A
- * collection whose file has no schema draws every field of the entry as text, which is what the
- * last half does on its own. `person` answers whether a `foreign_key:` target names the
- * collection that carries the people registry.
+ * the key is never drawn as a field; a row of the section `website` names, the one that feeds the
+ * website (`website.schema_section`, null or empty for none), is not drawn either. A collection
+ * whose file has no schema draws every field of the entry as text, which is what the last half
+ * does on its own. `person` answers whether a `foreign_key:` target names the collection that
+ * carries the people registry.
  */
 export function drawnFields(
     entry: Entry,
     schema: SchemaField[] | undefined,
+    website: string | null,
     person: (target: string) => boolean = () => false
 ): Drawn[] {
     const drawn: Drawn[] = [];
@@ -519,7 +520,7 @@ export function drawnFields(
     for (const field of schema ?? []) {
         if (named.has(field.field)) continue;
         named.add(field.field);
-        if (field.section === WEBSITE_SECTION) continue;
+        if (website !== null && website !== '' && field.section === website) continue;
         const row = drawnRow(field, entry.fields[field.field], person);
         if (row !== null) drawn.push(row);
     }
@@ -561,8 +562,9 @@ const PATH_FIELDS = ['link', 'url', 'folder'];
 
 /**
  * The fields whose value is a path of the hub whatever its first segment looks like. A `folder`
- * names a folder and never a web address, and this hub has a folder whose name is host-shaped
- * (`theaxec.github.io`), which the address rule would otherwise read as a site.
+ * names a folder and never a web address, and a hub may hold a folder whose name is host-shaped
+ * (a website's checkout named after its address, such as `user.github.io`), which the address rule
+ * would otherwise read as a site.
  */
 const HUB_ONLY_FIELDS = ['folder'];
 

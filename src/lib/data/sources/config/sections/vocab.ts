@@ -1,7 +1,7 @@
 // Layer 1, data. What is wrong with the words of config/catalogs/vocab.yml as the merged config
 // holds them, past the shape of each file (data/shapes/catalog-files/vocab.ts), as findings of the
 // file the caller files each key in: a flag that names the one word a write or a control takes
-// (`SINGLE_USE`) carried by two words or more, filed under the key of the second word; a row of
+// (`SINGLE_USE`) carried by two words or more, filed under the place of the second word; a row of
 // `focus_clusters` whose key an earlier row that reads holds, or whose `label` or `glyph` names no
 // word of the text catalog; a Focus lane naming no cluster or one the board does not draw, which no
 // row of `focus_clusters` that reads has; and a lane's `move_writes` naming both a stage and a
@@ -22,19 +22,25 @@ import { vocabKeys, wordsWith } from '../../../shapes/vocab-keys.ts';
 
 /**
  * The flags that name the one word a write or a control takes, each with the vocabulary map that
- * carries it: the stage of a new idea, the status of a new task and of a new application, the words
- * the decline, apply and reopen controls of a lead write, the category of the project manifests'
- * deadlines and the default tier.
+ * carries it: the stage of a new idea, the status of a new task and of a new application, the
+ * status a task is ticked off with, the words the decline, apply and reopen controls of a lead
+ * write, the category of the project manifests' deadlines, the default tier, the pillar kind of the
+ * lines off the pillars, and the radar bucket and relevance a paper added from Literature is given
+ * at first.
  */
 const SINGLE_USE: readonly { key: string; flag: string }[] = [
     { key: 'stages', flag: 'new_idea' },
     { key: 'statuses', flag: 'default_task' },
+    { key: 'statuses', flag: 'task_done' },
     { key: 'statuses', flag: 'default_application' },
     { key: 'lead_statuses', flag: 'lead_declined' },
     { key: 'lead_statuses', flag: 'lead_applied' },
     { key: 'lead_statuses', flag: 'default_lead' },
     { key: 'ticker_categories', flag: 'manifests' },
-    { key: 'tiers', flag: 'default' }
+    { key: 'tiers', flag: 'default' },
+    { key: 'pillar_kinds', flag: 'archival' },
+    { key: 'radar_buckets', flag: 'default' },
+    { key: 'radar_relevance', flag: 'default' }
 ];
 
 /** The list of the Focus board's lanes. */
@@ -53,15 +59,26 @@ const MOVES = [
 type Note = (key: string, message: string) => void;
 
 /**
- * One finding for each single-use flag two or more words of its map carry, naming the flag and
- * every word carrying it, filed under the key of the second word.
+ * The place of a word of a vocabulary key: `<key>.<word>` in a map, and `<key>[<index>]` in a
+ * list, the index of the first row whose `key` is the word.
+ */
+function wordPlace(config: Record<string, unknown>, key: string, word: string): string {
+    const value = config[key];
+    if (!Array.isArray(value)) return `${key}.${word}`;
+    const at = value.findIndex((row) => isMap(row) && row.key === word);
+    return `${key}[${at}]`;
+}
+
+/**
+ * One finding for each single-use flag two or more words of its map or rows of its list carry,
+ * naming the flag and every word carrying it, filed under the place of the second word.
  */
 function flagFindings(config: Record<string, unknown>, note: Note, catalog: TextCatalog): void {
     for (const { key, flag } of SINGLE_USE) {
         const words = wordsWith(config, key, flag);
         if (words.length < 2) continue;
         note(
-            `${key}.${words[1]}`,
+            wordPlace(config, key, words[1]),
             findingText(catalog, 'findings.config.flag_twice', flag, words.join(', '))
         );
     }

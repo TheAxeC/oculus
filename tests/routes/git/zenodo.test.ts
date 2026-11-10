@@ -331,10 +331,14 @@ describe('the Zenodo token', () => {
         }
     });
 
-    /** The fixture's Recover row `zenodo`, which reads its records under the `downloads` row. */
+    /**
+     * The fixture's Recover row `zenodo`, which reads its records under the `downloads` row, and
+     * the folder under the home folder its datasets are kept in, `recover.data_dir`.
+     */
     function recoverRow(row: string): string[] {
         return [
             'recover:',
+            '    data_dir: data',
             '    sources:',
             '        - key: zenodo',
             '          name: Zenodo',
@@ -423,6 +427,7 @@ describe('the Zenodo token', () => {
         const at = fixture({});
         const shipped = loadConfig(engineDir()).config.deposit as { zenodo: object };
         expect(at.into.config.merged.deposit).toEqual({
+            ...shipped,
             zenodo: { ...shipped.zenodo, address: ZENODO_ADDRESS }
         });
         const zenodo = fakeZenodo();

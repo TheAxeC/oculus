@@ -5,11 +5,17 @@
 //
 // Run it from oculus's folder with `OCULUS_TEST_HUB=<hub> node tests/data/real-hub.probe.ts`.
 
-import { engineDir, loadConfig, localDefaults } from '../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    loadConfig,
+    localDefaults,
+    worktreesDir
+} from '../../src/lib/data/sources/config.ts';
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
-import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/documents/docs.ts';
+import { projectDocs } from '../../src/lib/data/sources/documents/docs.ts';
+import { projectDocList } from '../../src/lib/data/sources/config/settings/hub-rows.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { buildOneHub } from '../fixtures/hubs/hub-build.ts';
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
@@ -74,15 +80,17 @@ for (const asked of COLLECTIONS) {
 }
 report('collection', collections.findings);
 
-// Document presence over every manifest's folder, counted per document name.
-const counts = new Map<string, number>(PROJECT_DOCS.map(({ name }) => [name, 0]));
+// Document presence over every manifest's folder, counted per document the hub's `project_docs`
+// names.
+const docs = projectDocList(config.config);
+const counts = new Map<string, number>(docs.map(({ name }) => [name, 0]));
 for (const manifest of manifests) {
-    for (const doc of projectDocs(join(hub, manifest.folder))) {
+    for (const doc of projectDocs(join(hub, manifest.folder), docs)) {
         if (doc.present) counts.set(doc.name, (counts.get(doc.name) ?? 0) + 1);
     }
 }
 console.log(`project documents, over ${manifests.length} project folders:`);
-for (const { name } of PROJECT_DOCS) console.log(`  ${name}: ${counts.get(name)}`);
+for (const { name } of docs) console.log(`  ${name}: ${counts.get(name)}`);
 
 console.log(`config keys: ${Object.keys(config.config).join(', ')}`);
 report('config', config.findings);
@@ -137,7 +145,9 @@ for (const workspace of first.workspaces) {
 
 // The hub's own git state, through server/core/git/state.ts's four read-only commands and nothing
 // else. It reads the repository and changes nothing in it, like everything else in this file.
-const state = (await readState(noCredentials(), hub, TEXT)).state;
+const state = (
+    await readState(noCredentials(), hub, TEXT, worktreesDir(loadConfig(engineDir()).config))
+).state;
 console.log(
     `git ${hub}: branch ${state.branch || '(none)'}, ahead ${state.ahead}, behind ${state.behind}, ` +
         `staged ${state.staged.length}, unstaged ${state.unstaged.length}, ` +

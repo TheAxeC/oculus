@@ -2,10 +2,11 @@
 // decide which of them are on the plate.
 //
 // The plate is three signals and three drops, and both providers apply the same ones: a thread is
-// on the plate when it is in the inbox and unread, or carries the `todo` label, or is unlabeled;
-// from the unlabeled signal a thread of more than one message, or one whose subject says it is a
-// reply or a forward, is dropped; and from every signal a thread whose newest message is the
-// reader's own, or is in the trash, is dropped. Starred is not a signal.
+// on the plate when it is in the inbox and unread, or carries the label `mail.todo_label` names (a
+// Gmail label, an Outlook category; empty reads no such signal), or is unlabeled; from the
+// unlabeled signal a thread of more than one message, or one whose subject says it is a reply or a
+// forward, is dropped; and from every signal a thread whose newest message is the reader's own, or
+// is in the trash, is dropped. Starred is not a signal.
 //
 // The signals are unioned and deduplicated by thread id, so a thread that is both unread and
 // labelled appears once. The rules are here rather than in either provider reader so that one
@@ -17,10 +18,12 @@ import type { MailProvider } from '../../../data/model/index.ts';
 /** The three signals, in the order they are read. */
 export type Signal = 'unread' | 'todo' | 'unlabeled';
 
-export const SIGNALS: Signal[] = ['unread', 'todo', 'unlabeled'];
+const SIGNALS: Signal[] = ['unread', 'todo', 'unlabeled'];
 
-/** The label a reader puts on a thread to say it is waiting on them. */
-export const TODO_LABEL = 'todo';
+/** The signals an account is read with: all three, the todo signal left out with no label. */
+export function signalsOf(args: Pick<MailReadArgs, 'todoLabel'>): Signal[] {
+    return SIGNALS.filter((signal) => signal !== 'todo' || args.todoLabel !== '');
+}
 
 /** One thread as a provider reader hands it over, before the drops are applied. */
 export type PlateThread = {
@@ -45,9 +48,9 @@ export type Candidate = { signal: Signal; thread: PlateThread };
 
 /**
  * Whether one candidate stays on the plate. Two drops are the unlabeled signal's alone, since a
- * thread a reader has left unread or labelled `todo` is on the plate whatever its shape; the other
- * two are every signal's, because a thread the reader has already answered, or thrown away, is off
- * the plate however it was found.
+ * thread a reader has left unread or labelled with `mail.todo_label` is on the plate whatever its
+ * shape; the other two are every signal's, because a thread the reader has already answered, or
+ * thrown away, is off the plate however it was found.
  */
 export function kept(candidate: Candidate): boolean {
     const { thread } = candidate;
@@ -94,6 +97,11 @@ export type MailReadArgs = {
     /** The account's key, which prefixes every thread id so two accounts cannot collide. */
     key: string;
     perSignal: number;
+    /**
+     * The label (Gmail) or category (Outlook) of the todo signal, `mail.todo_label`; empty reads no
+     * todo signal.
+     */
+    todoLabel: string;
     fetcher: typeof fetch;
 };
 

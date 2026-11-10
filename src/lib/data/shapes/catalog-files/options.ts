@@ -118,6 +118,12 @@ const optionEntry = z.strictObject({
         .optional()
         .describe('The subject the Settings view lists the option under.'),
     section: text.optional().describe('The group inside the heading the option is listed in.'),
+    default: z
+        .unknown()
+        .optional()
+        .describe(
+            "The value of a key of local.yml that no hub's file sets, since local.yml has no defaults file; an option of a defaults file takes its default from that file."
+        ),
     holds: holdsWord,
     sparse: sparseWord,
     key: text

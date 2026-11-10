@@ -551,19 +551,19 @@ describe('what the Files view holds of a folder before its menu opens', () => {
                 { name: 'inside', dir: join(top, 'inside') }
             ])
         );
-        const answer = workspacesAnswer(open, engineDir(), {
-            set: [],
-            defaults: {},
-            values: {},
-            hubs: {},
-            portRefused: null
-        });
+        const answer = workspacesAnswer(
+            open,
+            engineDir(),
+            { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
+            () => 'secrets',
+            () => '.oculus/notes'
+        );
         const roots = (await pageWorkspaces(answer)).folders;
         expect(roots.map((one) => [one.key, one.marks, one.above])).toEqual([
             ['free', undefined, undefined],
             ['inside', undefined, true]
         ]);
-        const listed = await listShown(open.roots, 'free', '', NONE);
+        const listed = await listShown(open.roots, 'free', '', NONE, []);
         expect(
             'entries' in listed ? listed.entries.map((one) => [one.name, one.marks]) : listed
         ).toEqual([
@@ -600,7 +600,8 @@ describe('what the Files view holds of a folder before its menu opens', () => {
             const names = path === '' ? [] : path.split('/');
             const below: FolderMarks[] = [];
             for (let at = 0; at < names.length; at += 1) {
-                const found = await listShown(open.roots, key, names.slice(0, at).join('/'), NONE);
+                const above = names.slice(0, at).join('/');
+                const found = await listShown(open.roots, key, above, NONE, []);
                 const entries = JSON.parse(
                     JSON.stringify('entries' in found ? found.entries : [])
                 ) as { name: string; marks?: FolderMarks }[];

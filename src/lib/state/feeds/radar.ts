@@ -1,5 +1,10 @@
 // Layer 2, client state. Pure Lit Watch grouping, searching, ordering, joins, and saved view state.
-// The view receives ready-to-draw groups and seeds while this module names no component.
+// The view receives ready-to-draw groups and seeds while this module names no component. The
+// bucket an unknown bucket is drawn under, the buckets that offer the Idea form, the order and the
+// tone of a relevance are the flags, the order and the colours of `radar_buckets` and
+// `radar_relevance` of config/catalogs/vocab.yml in the words the caller passes; the tone is taken
+// through state/shared/words/tones.ts `wordsTone`, whose module reads the configuration's
+// generation, a Svelte rune.
 
 import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
@@ -8,12 +13,15 @@ import { holdersOf, resolvedId, type Holders } from '../../data/helpers/hub-name
 import { feedRoot } from '../shared/page/idents.ts';
 import type { ReadMemo } from '../shared/stores/shapes.ts';
 import { instanceFolded } from '../shared/page/folds.ts';
+import { UNKNOWN_TONE, wordsTone } from '../shared/words/tones.ts';
 import {
+    mapShape,
     readAs,
     rowsShape,
     searchRevealShape,
     textOrNumberShape
 } from '../../data/shapes/shapes.ts';
+import { hasWord, oneWordWith, vocabKeys } from '../../data/shapes/vocab-keys.ts';
 
 export type { Project };
 
@@ -54,30 +62,79 @@ function word(entry: RadarEntry, field: string): string {
     return readAs(textOrNumberShape, entry[field]) ?? '';
 }
 
-/** Live entries grouped in vocabulary order, with unknown buckets counted as adjacent. */
-export function bucketsOf(entries: RadarEntry[], buckets: RadarBucket[]): RadarGroup[] {
+/**
+ * The bucket of `radar_buckets` of the words given that carries `default: true`: the one an entry
+ * whose bucket no row names is drawn under, and the one a Literature card's Add form preselects.
+ * None when no row carries it, or when two do, which is a finding of the vocabulary.
+ */
+export function defaultBucket(words: Record<string, unknown>): string | undefined {
+    return oneWordWith(words, 'radar_buckets', 'default');
+}
+
+/** Whether a paper's `maps_to` is `new-idea-candidate`, the radar format's word for no project. */
+export function isCandidate(entry: RadarEntry): boolean {
+    return word(entry, 'maps_to') === 'new-idea-candidate';
+}
+
+/**
+ * Whether a paper offers the card's Idea form: its bucket is one `radar_buckets` of the words given
+ * marks `spark: true`, or it is a candidate (`isCandidate`).
+ */
+export function sparks(entry: RadarEntry, words: Record<string, unknown>): boolean {
+    return hasWord(words, 'radar_buckets', 'spark', word(entry, 'bucket')) || isCandidate(entry);
+}
+
+/**
+ * Live entries grouped in vocabulary order, an entry whose bucket no row names counted in the
+ * bucket `fallback` (`defaultBucket`), and in none when no bucket is given.
+ */
+export function bucketsOf(
+    entries: RadarEntry[],
+    buckets: RadarBucket[],
+    fallback: string | undefined
+): RadarGroup[] {
     return buckets.map((bucket) => ({
         bucket,
         entries: entries.filter((entry) => {
             const named = word(entry, 'bucket');
             return (
                 named === bucket.key ||
-                (bucket.key === 'adjacent' && !buckets.some((one) => one.key === named))
+                (bucket.key === fallback && !buckets.some((one) => one.key === named))
             );
         })
     }));
 }
 
-/** Newest discovery first, then high, medium, and low relevance. */
-export function sortBucket(entries: (RadarEntry | null)[]): RadarEntry[] {
-    const rank: Record<string, number> = { high: 3, med: 2, low: 1 };
+/**
+ * The words of `radar_relevance` of the words given, in its order, the closest relevance first: the
+ * words an entry's `relevance` takes.
+ */
+export function relevanceWords(words: Record<string, unknown>): string[] {
+    return vocabKeys(words.radar_relevance);
+}
+
+/**
+ * The word of `radar_relevance` that carries `default: true`, the relevance a Literature card's Add
+ * form preselects; none when no word carries it, or when two do.
+ */
+export function defaultRelevance(words: Record<string, unknown>): string | undefined {
+    return oneWordWith(words, 'radar_relevance', 'default');
+}
+
+/**
+ * Newest discovery first, then by relevance in the order of `ranks` (`relevanceWords`), the first
+ * word highest, an entry whose relevance it does not hold after every word it holds.
+ */
+export function sortBucket(entries: (RadarEntry | null)[], ranks: string[]): RadarEntry[] {
+    const rank = (entry: RadarEntry): number => {
+        const at = ranks.indexOf(word(entry, 'relevance'));
+        return at < 0 ? 0 : ranks.length - at;
+    };
     return entries
         .filter((entry): entry is RadarEntry => entry !== null)
         .sort(
             (left, right) =>
-                word(right, 'found').localeCompare(word(left, 'found')) ||
-                (byKey(rank, word(right, 'relevance')) ?? 0) -
-                    (byKey(rank, word(left, 'relevance')) ?? 0)
+                word(right, 'found').localeCompare(word(left, 'found')) || rank(right) - rank(left)
         );
 }
 
@@ -91,10 +148,14 @@ export function isDismissed(entry: RadarEntry): boolean {
     return entry.dismissed === true || entry.dismissed === 'true';
 }
 
-export function relevanceTone(relevance: unknown): string {
-    if (relevance === 'high') return 'red';
-    if (relevance === 'med') return 'amber';
-    return 'grey';
+/**
+ * The tone of an entry's relevance: the hue the `palette` of the words given maps the `color` of
+ * its word of `radar_relevance` to, and the unknown tone for a word with no such colour.
+ */
+export function relevanceTone(relevance: unknown, words: Record<string, unknown>): string {
+    const rows = readAs(mapShape, words.radar_relevance) ?? {};
+    const row = typeof relevance === 'string' ? readAs(mapShape, byKey(rows, relevance)) : null;
+    return wordsTone(row?.color, words) ?? UNKNOWN_TONE;
 }
 
 /** Match every typed word against all searchable radar fields. */
@@ -170,7 +231,11 @@ export function dismissedSplit(entries: RadarEntry[]): {
     };
 }
 
-/** The buckets the entries fall into, a bucket that holds none of them left out. */
-export function filledBuckets(entries: RadarEntry[], buckets: RadarBucket[]): RadarGroup[] {
-    return bucketsOf(entries, buckets).filter((group) => group.entries.length > 0);
+/** The buckets the entries fall into (`bucketsOf`), a bucket that holds none of them left out. */
+export function filledBuckets(
+    entries: RadarEntry[],
+    buckets: RadarBucket[],
+    fallback: string | undefined
+): RadarGroup[] {
+    return bucketsOf(entries, buckets, fallback).filter((group) => group.entries.length > 0);
 }

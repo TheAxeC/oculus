@@ -6,7 +6,7 @@
 // it; `local.yml` is governed in the `.oculus` folder of each hub.
 //
 // A hub's own settings file, `.oculus/config.yml`, is governed in the hub: its keys are those of
-// the hub list (data/helpers/hub-names.ts), each as its option gives it, or, for a key no options
+// the hub list (data/shapes/hub-keys.ts), each as its option gives it, or, for a key no options
 // file describes, as its file's whole-file shape gives it; any other key is not declared. A
 // workspace file's `settings:` takes every option of the defaults files and of the catalog options
 // files but the keys of the hub list, with the rows and keys that take oculus's entries out. A key
@@ -43,7 +43,8 @@ import {
     type Groups,
     type Source
 } from '../options.ts';
-import { HUB_FILE, ROOT_FOLDER, hubFileOf, hubKeys } from '../../../../helpers/hub-names.ts';
+import { HUB_FILE, ROOT_FOLDER } from '../../../../helpers/hub-names.ts';
+import { hubFileOf, hubKeys } from '../../../../shapes/hub-keys.ts';
 import { shapeSchema, type JsonSchema } from '../../../../snapshot/schema/json.ts';
 import { SCHEMA_BLOCK, SCHEMA_DEFINITIONS } from '../../../../snapshot/schema/record.ts';
 import { APP_SETTINGS_KEY } from '../../../../helpers/files/apps/settings.ts';

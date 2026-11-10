@@ -1,8 +1,9 @@
 // Layer 4, server test. A Markdown file created or moved on disk while the Markdown server runs is
 // in the server's workspace answers (G72): references to a heading list the links of a file that no
 // tab opened, whether the file was written new, moved from another place, or moved inside a folder
-// that was renamed, and a note written new in the hub's notes folder `.oculus/notes/`, the one
-// folder under a dot folder the server is given.
+// that was renamed, and a note written new in the hub's notes folder (its `notes_dir`, the shipped
+// `.oculus/notes` here, which the served root is marked with), the one folder under a dot folder
+// the server is given.
 //
 // The server is the real `vscode-markdown-languageserver` of oculus's own `node_modules`, started
 // through the relay as the page starts it, over a scratch root; the page is a recording sink. The
@@ -129,7 +130,11 @@ function scene(
 } {
     const wire = tapped();
     const relay = makeRelay({
-        roots: () => [hub ? { key: 'hub', dir: root, hub: true } : { key: 'hub', dir: root }],
+        roots: () => [
+            hub
+                ? { key: 'hub', dir: root, hub: true, notes: '.oculus/notes' }
+                : { key: 'hub', dir: root }
+        ],
         spawn: wire.spawn,
         own: { oculus: ownFolder(), node: process.execPath }
     });

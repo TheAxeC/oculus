@@ -10,7 +10,6 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
-    DEFAULT_PORT,
     engineDir,
     loadConfig,
     localDefaults,
@@ -18,13 +17,11 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { readMachine } from '../../../src/lib/data/sources/config/machine.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
-import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { handleFs, ignoredCache, type FsTarget } from '../../../src/lib/server/files/fs.ts';
+import { handleFs, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { machineDefaults } from '../../../src/lib/server/root/process/context/machine-defaults.ts';
 import { machineValues } from '../../../src/lib/server/root/process/context/machine-values.ts';
-import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
+import { fsServing, plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
 const PORT = '8811';
 const CLAUDE = 'claude-binary-of-the-test-xyz';
@@ -42,10 +39,7 @@ async function answered(primary: boolean) {
         engine: engineDir(),
         workspace,
         machine: { set: read.set, defaults, values: {}, hubs: {}, portRefused: null },
-        bookmarks: null,
-        writes: fsWrites(),
-        ignored: ignoredCache(),
-        credentials: noCredentials()
+        ...fsServing()
     };
     const response = await handleFs(new Request('http://localhost/api/fs'), target);
     return { text: await response.text() };
@@ -58,7 +52,7 @@ describe('GET /api/fs with no root', () => {
             machine: { set: string[]; defaults: Record<string, string> };
         };
         expect(body.machine.set).toEqual(['port', 'claude_bin']);
-        expect(body.machine.defaults.port).toBe(String(DEFAULT_PORT));
+        expect(body.machine.defaults.port).toBe(String(localDefaults().port));
         expect(body.machine.defaults.claude_bin).toBe(localDefaults().claudeBin);
         expect(body.machine.defaults.clusters).toBe(
             words(TEXT, 'server.machine_default.no_accounts')
@@ -107,13 +101,17 @@ async function answeredSecrets(): Promise<string> {
         machine: {
             set: read.set,
             defaults,
-            ...machineValues(read.config, DEFAULT_PORT, read.set, defaults, read.lists, hidden),
+            ...machineValues(
+                read.config,
+                localDefaults().port,
+                read.set,
+                defaults,
+                read.lists,
+                hidden
+            ),
             portRefused: null
         },
-        bookmarks: null,
-        writes: fsWrites(),
-        ignored: ignoredCache(),
-        credentials: noCredentials()
+        ...fsServing()
     };
     const response = await handleFs(new Request('http://localhost/api/fs'), target);
     return response.text();

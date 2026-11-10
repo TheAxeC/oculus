@@ -25,6 +25,7 @@ export const POST: RequestHandler = ({ request, locals }) =>
         redirect: callbackUrl(locals.server.local.port, 'mail'),
         states: locals.server.mailConnects,
         perSignal: mailSettings(locals.config().config).perSignal,
+        todoLabel: mailSettings(locals.config().config).todoLabel,
         fetcher: fetch,
         refresh: () => locals.server.mail.refresh(),
         republish: () => locals.server.mail.republish(),

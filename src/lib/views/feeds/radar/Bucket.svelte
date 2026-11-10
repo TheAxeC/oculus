@@ -13,13 +13,14 @@
     import Reveal from '../../shared/card/Reveal.svelte';
     import type { FeedIdent } from '$lib/state/shared/page/idents';
     import {
+        relevanceWords,
         sortBucket,
         type Project,
         type RadarBucket,
         type RadarEntry
     } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
-    import { toneOf } from '$lib/state/shared/words/tones';
+    import { toneOf, vocabOf } from '$lib/state/shared/words/tones';
 
     type Props = {
         bucket: RadarBucket;
@@ -50,7 +51,7 @@
         open,
         ontoggle
     }: Props = $props();
-    const ordered = $derived(sortBucket(entries));
+    const ordered = $derived(sortBucket(entries, relevanceWords(vocabOf())));
     const tone = $derived(toneOf(bucket.color));
 </script>
 

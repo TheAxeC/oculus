@@ -1,6 +1,6 @@
 // Layer 4, tree check. docs/templates.md against the lists whose keys its templates show: the
 // config.yml template holds every key a hub's settings file may set (`hubKeys` of
-// data/helpers/hub-names.ts) and no other, the local.yml template every key the options folder
+// data/shapes/hub-keys.ts) and no other, the local.yml template every key the options folder
 // lists for local.yml (config/options/local.yml), and the project.yml template every field of
 // config/schemas/manifest-schema.yml but the read-only ones, which the project's folder gives and
 // no file holds. A key added to a list without its template line, or a template line whose key is
@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
-import { hubKeys } from '../../../src/lib/data/helpers/hub-names.ts';
+import { hubKeys } from '../../../src/lib/data/shapes/hub-keys.ts';
 import { keyDifference, templateBlock, templateKeys } from './template-keys.ts';
 
 const ENGINE = engineDir();

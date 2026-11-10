@@ -16,7 +16,7 @@
     import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
     import { backlinksOf, noteOf } from '$lib/state/sources/explorer/notes/note-index';
-    import { notePath } from '$lib/state/sources/explorer/notes/note-tree';
+    import { notePathOf } from '$lib/state/sources/explorer/notes/note-tree';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
     import { useState } from '$lib/state/client/use';
@@ -77,7 +77,8 @@
     function goTo(path: string, line?: number): void {
         if (note === null) return;
         const place = line === undefined ? {} : { line: line + 1, column: 1 };
-        openSourceFile(client, { root: note.root, path: notePath(path), ...place });
+        const at = notePathOf(notes().hubs, note.root, path);
+        openSourceFile(client, { root: note.root, path: at, ...place });
     }
 </script>
 

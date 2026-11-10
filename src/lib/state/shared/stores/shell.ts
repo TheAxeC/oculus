@@ -9,6 +9,8 @@
 // shapes of the shared stores, below both state/sessions and state/sources, since the repositories
 // store may import neither the terminals store nor anything beside it.
 
+import type { AgentId } from '../../../data/model/index.ts';
+
 /**
  * What a shell needs of the terminals store (state/sessions/terminals.svelte.ts), which satisfies
  * it: a shell started in a folder, and a terminal shown.
@@ -27,7 +29,7 @@ export type ShellStarter = {
  * string once the composer is open.
  */
 export type WorktreeStarter = ShellStarter & {
-    composeAt: (at: { cwd: string; agent: 'claude' | 'codex' }) => Promise<string>;
+    composeAt: (at: { cwd: string; agent: AgentId }) => Promise<string>;
 };
 
 /** Start a shell in `cwd` and show it; the refusal's words, or null once it is shown. */

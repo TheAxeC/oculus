@@ -80,12 +80,13 @@ text:
         refused_host: This cluster has no host ssh can connect to.
         refused_kind: Recover runs only a set whose sources are all downloads.
         refused_listing: A source gave no file list; see the line below the actions.
+        refused_noscratch: This cluster has no per-job scratch folder in slurm.scratch_roots, so Verify and Unpack do not run there; it is set in Settings.
         refused_nothing: No file is in the state this action takes.
-        refused_place: The dataset's path is not a folder under ~/data.
+        refused_place: The dataset's path is not a folder under the data folder of recover.data_dir, or the hub names none; it is set in Settings.
         refused_request: The request was not one Recover answers.
         refused_row: 'No row of `recover.sources` in the `.oculus/config.yml` of the hub {1} reads the source kind {0}; add one there.'
         refused_running: A run of this dataset goes; it can be stopped.
-        refused_scratch: The job script does not keep its work under /local/$SLURM_JOB_ID.
+        refused_scratch: The job script does not keep its work under the cluster's scratch folder of slurm.scratch_roots.
         refused_send: The files of the run could not be copied to the cluster.
         refused_start: The fetch did not start on this Mac.
         refused_submit: sbatch did not accept the job.

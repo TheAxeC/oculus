@@ -157,6 +157,7 @@ export function startPollers(
         providers,
         pollMin: mail.pollMin,
         perSignal: mail.perSignal,
+        todoLabel: mail.todoLabel,
         words: mailWords
     });
     return {

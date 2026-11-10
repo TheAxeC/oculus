@@ -48,6 +48,7 @@ import { createDrag } from '../workbench/drag.svelte.ts';
 import {
     caretHere,
     createEditorStatus,
+    selectLineOnScreen,
     sessionFocusKeeper,
     sourceOnScreen
 } from '../workbench/navigation/editor-status.svelte.ts';
@@ -685,31 +686,23 @@ export function createClientState(
             draft: source.sourceDraft,
             saveDraft: source.saveSourceDraft,
             openView: (view) => void layout.openView(view),
-            focusEditor: (file, line) => {
-                const tab = layout.activeInstance();
-                if (tab?.view !== 'source' || editorStatus.statusOf(tab.id)?.file !== file) {
-                    return false;
-                }
-                const at = { line: line - 1, character: 0 };
-                return editorStatus.ask(tab.id, {
-                    kind: 'select',
-                    range: { start: at, end: at },
-                    focus: true
-                });
-            },
+            focusEditor: (file, line) =>
+                selectLineOnScreen(layout.activeInstance(), editorStatus, file, line),
             focusWindow: () => (desktop === undefined ? window.focus() : desktop.bridge.focusMain())
         })
     );
     // The notifications the channels and the writes post: a session that starts waiting, a job
-    // that ends, an update task whose results land, each heard once per message the entities store
-    // keeps, a write that does not land, heard from the writes store, a save of the page state the
-    // server refused, and the offer to save the workspace an option without a file to go to makes.
+    // that ends, an update task the tray offers whose results land, each heard once per message
+    // the entities store keeps, a write that does not land, heard from the writes store, a save of
+    // the page state the server refused, and the offer to save the workspace an option without a
+    // file to go to makes.
     const sources = createNoticeSources(notices, {
         openSession: (id, title) =>
             void layout.openView('session-detail', { session: id, label: title }, undefined, {
                 keep: true
             }),
         openView: (view) => void layout.openView(view),
+        offered: schedule.offered,
         saveWorkspace: () => ui.requestPalette(':workspace-save ')
     });
     entities.afterReceive(sources.heard);

@@ -18,7 +18,7 @@
 // The stores it works through are handed in, so a test drives the whole thing with its own writes,
 // terminals, panes and roots, and no component is mounted.
 
-import { BRANCH_NOT_MERGED } from '../../../data/model/index.ts';
+import { BRANCH_NOT_MERGED, type AgentId } from '../../../data/model/index.ts';
 import { diffState, type DiffSubject } from './diff/subject.ts';
 import { repositoriesViewOf } from './repositories.ts';
 import { plannedPath } from './worktrees.ts';
@@ -163,9 +163,14 @@ export type RepositoriesStore = {
     pushTags: (root: string) => Promise<void>;
     /**
      * Make the worktree and open a shell in it, or the composer there for Claude or Codex; the
-     * path is the view's own rule.
+     * path is the view's own rule, under the worktrees folder `dir` the root's git state carries.
      */
-    createWorktree: (root: string, name: string, start: WorktreeStart) => Promise<void>;
+    createWorktree: (
+        root: string,
+        name: string,
+        dir: string,
+        start: WorktreeStart
+    ) => Promise<void>;
     /**
      * Make the worktree of `name` on the root, the write New worktree sends, and answer whether it
      * went with the sentence a refusal gave; the view's notice says the outcome as for any write.
@@ -176,7 +181,7 @@ export type RepositoriesStore = {
     /** Open a shell in a worktree that is already there. */
     shellIn: (root: string, cwd: string, label: string) => Promise<void>;
     /** Open the composer for Claude or Codex in an existing worktree. */
-    agentIn: (root: string, cwd: string, agent: 'claude' | 'codex') => Promise<void>;
+    agentIn: (root: string, cwd: string, agent: AgentId) => Promise<void>;
     /**
      * Open one diff in a pane of its own beside the one being read. `asker` is the instance of the
      * tool view that asked for it, which the diff opens beside and never over.
@@ -370,7 +375,7 @@ export function createRepositories(
      * Open the composer for Claude or Codex where the reader is looking. A composer that will not
      * open is said after the write's own sentence, as `shellIn` says a shell that will not start.
      */
-    async function agentIn(root: string, cwd: string, agent: 'claude' | 'codex'): Promise<void> {
+    async function agentIn(root: string, cwd: string, agent: AgentId): Promise<void> {
         const refused = await terminals.composeAt({ cwd, agent });
         if (refused === '') return;
         const held = outcome(root);
@@ -566,8 +571,8 @@ export function createRepositories(
         async pushTags(root) {
             await act(root, 'pushTags', {}, true);
         },
-        async createWorktree(root, name, start) {
-            const path = plannedPath(root, name);
+        async createWorktree(root, name, dir, start) {
+            const path = plannedPath(root, name, dir);
             if (!(await makeWorktree(root, name)).ok) return;
             if (start === 'shell') await shellIn(root, path, name);
             else await agentIn(root, path, start);

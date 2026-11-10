@@ -160,7 +160,7 @@ describe('POST /api/terminal, the steer and interrupt actions', () => {
 describe('POST /api/terminal, the fork action', () => {
     const live = record(SESSION, { live: true, state: 'working', cwd: HERE, title: 'A run' });
 
-    it('forks a Claude session, live or not, with --fork-session in its own folder', async () => {
+    it("forks a Claude session, live or not, with the machine's claude_bin and --fork-session in its own folder (G13)", async () => {
         const { response, argv, started } = await post(
             { action: 'fork', tool: 'claude', id: SESSION },
             source(live)
@@ -170,7 +170,7 @@ describe('POST /api/terminal, the fork action', () => {
             'env',
             '-u',
             'CLAUDE_CONFIG_DIR',
-            'claude',
+            BIN,
             '--resume',
             SESSION,
             '--fork-session'

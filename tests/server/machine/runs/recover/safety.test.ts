@@ -305,14 +305,30 @@ const CONFIGS: ConfigRow[] = [
 describe('Recover writes only inside its folders', () => {
     it.each(PLACES)('places $name', (one) => {
         const home = '/Users/someone';
-        const local = localPlace(home, one.hub, one.key, one.path);
-        const cluster = clusterPlace(one.hub, one.key, one.path);
+        const local = localPlace(home, one.hub, one.key, one.path, 'data');
+        const cluster = clusterPlace(one.hub, one.key, one.path, 'data');
         if (one.part === null) {
             expect(local).toBeNull();
             expect(cluster).toBeNull();
         } else {
             expect(local?.folder).toBe(join(home, 'data', one.part));
             expect(cluster?.folder).toBe(`~/data/${one.part}`);
+        }
+    });
+
+    it('places a dataset under the folder of recover.data_dir, and none with no folder (G13)', () => {
+        const home = '/Users/someone';
+        const path = '~/sets/eeg/mitdb';
+        expect(localPlace(home, 'research-hub', 'mitdb', path, 'sets/eeg')?.folder).toBe(
+            join(home, 'sets', 'eeg', 'mitdb')
+        );
+        expect(clusterPlace('research-hub', 'mitdb', path, 'sets/eeg')?.folder).toBe(
+            '~/sets/eeg/mitdb'
+        );
+        expect(localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb', 'sets')).toBeNull();
+        for (const dataDir of ['', '..', 'a/../b']) {
+            expect(localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb', dataDir)).toBeNull();
+            expect(clusterPlace('research-hub', 'mitdb', '~/data/mitdb', dataDir)).toBeNull();
         }
     });
 
@@ -406,7 +422,7 @@ describe('a credential reaches curl only through its config file', () => {
             mkdirSync(files.dir, { recursive: true });
             writeFileSync(files.config('kaggle'), 'left by an earlier run');
             writeFileSync(files.script, 'left by an earlier run');
-            const place = localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb');
+            const place = localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
             if (place === null) throw new Error('the place is refused');
 
             expect(startLocalFetch(place, fetchItems(ROWS), DOWNLOADS, deps)).toBeNull();
@@ -448,7 +464,7 @@ describe('a credential reaches curl only through its config file', () => {
     ])('starts no fetch on this Mac with $name, and leaves no config file', (one) => {
         const startDetached = vi.fn(() => 1);
         const deps = macDeps(startDetached);
-        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb');
+        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
         if (place === null) throw new Error('the place is refused');
         expect(startLocalFetch(place, fetchItems(ROWS.slice(0, 1)), one.downloads, deps)).toBe(
             'credential'
@@ -466,7 +482,7 @@ describe('a credential reaches curl only through its config file', () => {
             const remote = join(node.remoteHome, '.oculus', 'recover', 'research-hub');
             mkdirSync(remote, { recursive: true });
             writeFileSync(join(remote, 'mitdb.kaggle.curl'), 'left by an earlier run');
-            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb');
+            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb', 'data');
             if (place === null) throw new Error('the place is refused');
 
             expect(
@@ -522,7 +538,7 @@ describe('a credential reaches curl only through its config file', () => {
         async () => {
             const stand = standIns(['tmux']);
             const node = loginNode(stand);
-            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb');
+            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb', 'data');
             if (place === null) throw new Error('the place is refused');
             const downloads = [{ service: 'physionet' as const, user: 'u', secret: 'a\nb' }];
             expect(
@@ -565,7 +581,7 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
         async (one) => {
             const stand = standIns(['curl', 'sbatch', 'tmux'], { sbatch: '4567' });
             const node = loginNode(stand);
-            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb');
+            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb', 'data');
             if (place === null) throw new Error('the place is refused');
             const rows = [row({ name: ODD, state: 'present', have: 10, unpack: one.unpack })];
             expect(await startClusterJob(one.action, place, rows, node.deps)).toBeNull();
@@ -589,6 +605,38 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
             expect(
                 existsSync(join(node.deps.home, '.oculus', 'recover', 'research-hub', 'jobs'))
             ).toBe(false);
+        }
+    );
+
+    it(
+        'works under the scratch folder and in the partition of the cluster, and refuses a cluster with no scratch folder (G13)',
+        { tags: ['slow'] },
+        async () => {
+            const place = clusterPlace('research-hub', 'mitdb', '~/data/mitdb', 'data');
+            if (place === null) throw new Error('the place is refused');
+            const rows = [row({ name: ODD, state: 'present', have: 10 })];
+            const script = (home: string): string[] =>
+                readFileSync(
+                    join(home, '.oculus', 'recover', 'jobs', 'research-hub-mitdb-verify.sh'),
+                    'utf8'
+                ).split('\n');
+            const set = loginNode(standIns(['sbatch', 'tmux'], { sbatch: '4567' }));
+            const deps = { ...set.deps, scratchRoot: '/scratch/jobs', partition: 'short,long' };
+            expect(await startClusterJob('verify', place, rows, deps)).toBeNull();
+            expect(script(set.remoteHome)).toContain('WORK=/scratch/jobs/$SLURM_JOB_ID');
+            expect(script(set.remoteHome)).toContain('#SBATCH --partition=short,long');
+            const plain = loginNode(standIns(['sbatch', 'tmux'], { sbatch: '4567' }));
+            expect(
+                await startClusterJob('verify', place, rows, { ...plain.deps, partition: '' })
+            ).toBeNull();
+            expect(script(plain.remoteHome).some((line) => line.includes('--partition'))).toBe(
+                false
+            );
+            const none = loginNode(standIns(['sbatch', 'tmux'], { sbatch: '4567' }));
+            expect(
+                await startClusterJob('verify', place, rows, { ...none.deps, scratchRoot: '' })
+            ).toBe('noscratch');
+            expect(none.sent).toEqual([]);
         }
     );
 
@@ -734,7 +782,7 @@ describe('the cluster jobs and the unpack take each value as one argument', () =
         let told = (): void => undefined;
         const ended = new Promise<void>((resolve) => (told = resolve));
         const deps = localDeps(scratchDir('oculus-recover-home-'), runs, () => told());
-        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb');
+        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
         if (place === null) throw new Error('the place is refused');
         mkdirSync(place.folder, { recursive: true });
         writeFileSync(

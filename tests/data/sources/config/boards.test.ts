@@ -327,7 +327,7 @@ describe('the category rows of a hub that is not the primary', () => {
         [
             'a categories that is no list',
             'categories: 3\n',
-            [['categories', "categories must be a list; oculus's value stands"]]
+            [['categories', "categories must be a list, not 3; oculus's value stands"]]
         ]
     ])('gives the findings of %s, each naming its settings file', (_, text, expected) => {
         const dir = plantScratch('oculus-category-rows-', { [HUB_FILE]: text });
@@ -346,8 +346,11 @@ describe('the category rows of a hub that is not the primary', () => {
 /** oculus's own deck order, which a hub's list of the wrong kind leaves standing. */
 const SHIPPED_ORDER = SHIPPED.deck_order;
 
-/** The finding that oculus's deck order stands for a value of the wrong kind. */
-const NOT_A_LIST = ['deck_order', "deck_order must be a list; oculus's value stands"];
+/** The finding that oculus's deck order stands for a value of the wrong kind, which it names. */
+const notAList = (value: string) => [
+    'deck_order',
+    `deck_order must be a list, not ${value}; oculus's value stands`
+];
 
 describe('the deck_order of the primary hub and of a hub that is not the primary', () => {
     it.each([
@@ -384,8 +387,13 @@ describe('the deck_order of the primary hub and of a hub that is not the primary
                 ]
             ]
         ],
-        ['a text', 'deck_order: publications\n', SHIPPED_ORDER, [NOT_A_LIST]],
-        ['a map', 'deck_order: { publications: 1 }\n', SHIPPED_ORDER, [NOT_A_LIST]],
+        ['a text', 'deck_order: publications\n', SHIPPED_ORDER, [notAList('"publications"')]],
+        [
+            'a map',
+            'deck_order: { publications: 1 }\n',
+            SHIPPED_ORDER,
+            [notAList('{"publications":1}')]
+        ],
         [
             'a list holding a map',
             'deck_order: [publications, { key: idea }]\n',

@@ -27,7 +27,7 @@
     // at most half the row (`EDITOR_LEAST`) and follows how far the editor is scrolled through its
     // text. A file of any other kind is the editor alone.
     //
-    // A note of a hub (a Markdown file of its `.oculus/notes/`) takes a picture pasted into it, and
+    // A note of a hub (a Markdown file of its notes folder) takes a picture pasted into it, and
     // a file dropped on it from outside the page, into `attachments/` of its hub's notes folder and
     // inserts `![[<file name>]]` at the caret (views/shared/explorer/control/note-actions.ts); a
     // file refused inserts nothing and is said on the tab's line (`onsaid`). Any other paste and

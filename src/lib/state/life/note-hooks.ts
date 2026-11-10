@@ -1,13 +1,14 @@
 // Layer 2, client state. What the page's stores ask of the notes, built once in
-// state/client/context.ts: whether a source tab's file is a note (a Markdown file of a hub's
-// `.oculus/notes/`) and how long it waits, which the autosave reads to save it `notes.autosave_ms`
-// after its last edit whatever `editor.autosave` says, and the explorer's three asks
-// (`ExplorerNotes`): the link plan of a rename or a move
+// state/client/context.ts: whether a source tab's file is a note (a Markdown file of a hub's notes
+// folder, its `notes_dir` as the workspaces answer marks the hub with) and how long it waits, which
+// the autosave reads to save it `notes.autosave_ms` after its last edit whatever `editor.autosave`
+// says, and the explorer's three asks (`ExplorerNotes`): the link plan of a rename or a move
 // (state/system/machine/refactor/note-link-plan.ts), the notice a refused link edit is told on, and
 // what a removal does to the tabs of the notes it removed, which close with their waiting saves
 // dropped, so no file is written at the place a note was removed from. The source tab asks the
 // same `isNoteFile` whether its file is a note, which is when it offers Markdown: Add Front Matter.
 
+import { notesMark } from '../../data/helpers/files/private-folders.ts';
 import { inNotes, isNote } from '../../data/prose/markdown/note-names.ts';
 import { autosaveMs } from './notes.ts';
 import type { AutosaveStore } from '../sessions/source/autosave.svelte.ts';
@@ -29,12 +30,14 @@ function placeOfFile(file: string): Place | null {
 export function isNoteFile(roots: readonly FsRoot[], file: string): boolean {
     const place = placeOfFile(file);
     if (place === null) return false;
-    const inside = inNotes(place.path);
-    const hub = roots.some((one) => one.key === place.root && one.hub === true);
-    return hub && inside !== null && inside !== '' && isNote(inside);
+    const inside = inNotes(place.path, notesMark(roots.find((one) => one.key === place.root)));
+    return inside !== null && inside !== '' && isNote(inside);
 }
 
-/** The wait of a tab's file, `root/path`, when it is a note (`notes.autosave_ms`), else null. */
+/**
+ * The wait of a tab's file, `root/path`, when it is a note (`notes.autosave_ms`), else null, and
+ * null for a note too while the config names no wait.
+ */
 export function noteWait(
     roots: readonly FsRoot[],
     file: string,

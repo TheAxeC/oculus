@@ -128,6 +128,14 @@ export type ServerContext = {
      * of another hub's settings is handed that reader.
      */
     configCache: ConfigCache;
+    /**
+     * The folder of secrets of the hub at a folder, its `secrets_dir` read from the hub's kept
+     * parse, which every reader of the private folders marks the hubs among the roots with
+     * (data/helpers/files/private-folders.ts `withSecrets`).
+     */
+    secretsDir: (dir: string) => string;
+    /** The notes folder of the hub of a folder, its `notes_dir` (hub-rows.ts `notesOf`). */
+    notesDir: (dir: string) => string;
     /** The write chain of the workspace file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
     /**

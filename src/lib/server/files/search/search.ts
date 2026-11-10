@@ -20,8 +20,8 @@
 // Nothing is searched outside a served root: the roots come in as the list the route composed, and
 // a key that is not one of them is refused before any process starts. A search leaves out the
 // machine's private folders inside each root, as the names do, and reads each hub's notes folder
-// beside the rest of the hub (query.ts's rootSearchArgs); a root that lies in a private folder is
-// not searched.
+// (its `notes_dir`, which the route marks the hub with) beside the rest of the hub (query.ts's
+// rootSearchArgs); a root that lies in a private folder is not searched.
 //
 // The names of the files of the served roots (`runNames`) are listed by the same call site with
 // `--files`, one run for each root and all of them at once, so the answer waits at most one
@@ -66,6 +66,7 @@ import type {
     SearchFile,
     SearchHit
 } from '../../../data/model/index.ts';
+import { notesMark } from '../../../data/helpers/files/private-folders.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
 import { gitCredentials, type GitCredentials } from '../../core/git/credentials.ts';
 import { ignoredIn } from '../../core/git/files.ts';
@@ -111,6 +112,8 @@ export type SearchOptions = {
     run?: SearchRunner;
     /** Milliseconds one root's search is given, from `search.timeout_s` of the merged config. */
     timeout: number;
+    /** The names of the folders no search descends into, `search.skip_folders`. */
+    skipFolders: readonly string[];
     /** The clock the elapsed time is read from, so a test can hold it still. */
     now?: () => number;
     /**
@@ -460,7 +463,7 @@ function createFold(root: string, room: number, pattern?: string): Fold {
  * Why the folder a query is scoped to cannot be searched, or null. It is resolved by real path
  * under the root it names, so a link to a folder outside the root is `outside`, and a folder that
  * is not there, or a path that is a file, is `missing`. A search of every root scoped to the notes
- * folder is read per root, as each hub's notes folder is there or not.
+ * (`NOTES_SCOPE`) is read per root, as each hub's notes folder is there or not.
  */
 function scopeRefusal(roots: Root[], query: SearchQuery): 'outside' | 'missing' | null {
     if (query.under === '' || query.root === ALL_ROOTS) return null;
@@ -489,7 +492,8 @@ export async function runSearch(
 ): Promise<SearchOutcome> {
     const plan = searchQuery(
         query,
-        roots.map((one) => one.key)
+        roots.map((one) => one.key),
+        options.skipFolders
     );
     if (!plan.ok) return { ok: false, refused: plan.refused };
     const scope = scopeRefusal(roots, query);
@@ -510,8 +514,14 @@ export async function runSearch(
         }
         const place = places.find((one) => one.key === root.key);
         if (place?.private === true) continue;
-        const notes = root.hub === true && notesFolderState(expandHome(root.dir)).state === 'ok';
-        const args = rootSearchArgs(query, { withheld: place?.withheld ?? [], notes });
+        const own = notesMark(root);
+        const there = own !== '' && notesFolderState(expandHome(root.dir), own).state === 'ok';
+        const notes = there ? own : '';
+        const args = rootSearchArgs(query, {
+            withheld: place?.withheld ?? [],
+            notes,
+            skipped: options.skipFolders
+        });
         if (args === null) continue;
         const fold = createFold(root.key, query.max - total, query.regex ? query.q : undefined);
         const outcome = await within(
@@ -545,6 +555,8 @@ export type NamesOptions = {
     timeout: number;
     /** How many names the whole answer carries, from `search.max_names` of the merged config. */
     max: number;
+    /** The names of the folders no list descends into, `search.skip_folders`. */
+    skipFolders: readonly string[];
     /** The folders no name is answered from (`privateFolders`), as absolute paths. */
     withheld: string[];
     /** The repositories of the workspace as the git watcher last found them, as absolute paths. */
@@ -711,7 +723,7 @@ async function listOne(
     let cut = false;
     const run = options.run ?? runRipgrep;
     const outcome = await within(
-        run(dir, namesArgs(withheld), options.timeout, (line) => {
+        run(dir, namesArgs(withheld, options.skipFolders), options.timeout, (line) => {
             const found = pathIn(line);
             const path = found === '' || prefix === '' ? found : `${prefix}/${found}`;
             if (found === '' || skip(path)) return true;

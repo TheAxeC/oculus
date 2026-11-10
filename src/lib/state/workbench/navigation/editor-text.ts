@@ -12,6 +12,7 @@ import { languageOfFile, settingsOf, type FsRoot, type LanguageMap } from '../..
 import { PLAIN } from '../../shared/words/languages.ts';
 import { resolveEditor } from '../../../data/helpers/editor/editor.ts';
 import type {
+    DetectedIndent,
     EditorOptions as ConfiguredEditor,
     LanguageRecords
 } from '../../../data/helpers/editor/editor.ts';
@@ -23,7 +24,7 @@ export type { Indent };
 // data/helpers/editor/editor.ts holds, as the views read them.
 export { REPO_SETTINGS, resolveEditor, toggleWrap } from '../../../data/helpers/editor/editor.ts';
 export type { RepoSettings };
-export type { ConfiguredEditor, LanguageRecords };
+export type { ConfiguredEditor, DetectedIndent, LanguageRecords };
 export type { WordWrap } from '../../../data/helpers/editor/editor.ts';
 
 /** The two line endings a text file is written with. */
@@ -35,9 +36,6 @@ export type Caret = { line: number; column: number; selected: number };
 /** The step sizes the indentation menu offers, VS Code's own three. */
 export const INDENT_SIZES = [2, 4, 8] as const;
 
-/** The step an editor is given before any configuration or file says otherwise, VS Code's. */
-export const DEFAULT_INDENT: Indent = { tabs: false, size: 4 };
-
 /** The widest step a file's spaces are read as. */
 const WIDEST = 8;
 
@@ -46,11 +44,11 @@ export const START: Caret = { line: 1, column: 1, selected: 0 };
 
 /**
  * How a file indents, read from its own lines, or null when it does not indent. More lines opening
- * with a tab than with a space make it a tab file, whose step is the default width and is not the
- * file's to give. A space file's step is the change in leading spaces met most often between one
- * indented line and the next, from one to eight.
+ * with a tab than with a space make it a tab file, whose step is the configured width and is not
+ * the file's to give. A space file's step is the change in leading spaces met most often between
+ * one indented line and the next, from one to eight, the smaller of two met as often.
  */
-export function detectIndent(text: string): Indent | null {
+export function detectIndent(text: string): DetectedIndent | null {
     const lines = text.split('\n').filter((line) => line.trim() !== '');
     let tabbed = 0;
     let spaced = 0;
@@ -67,9 +65,9 @@ export function detectIndent(text: string): Indent | null {
         if (step > 0 && step <= WIDEST) steps.set(step, (steps.get(step) ?? 0) + 1);
         previous = spaces;
     }
-    if (tabbed > spaced) return { tabs: true, size: DEFAULT_INDENT.size };
+    if (tabbed > spaced) return { tabs: true };
     if (steps.size === 0) return null;
-    let size = DEFAULT_INDENT.size;
+    let size = 0;
     let seen = 0;
     for (const [step, count] of steps) {
         if (count > seen || (count === seen && step < size)) {

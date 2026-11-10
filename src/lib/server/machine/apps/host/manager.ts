@@ -734,8 +734,10 @@ export class AppHosts {
     /** Whether one of the roots holds a file the glob matches; the host starts when it does. */
     async #hold(id: string, roots: Root[], glob: string): Promise<void> {
         const limit = this.#options.settings().scanEntries;
+        const hidden = this.#options.tools.hiddenFolders();
         for (const root of roots) {
-            const found = await rootHolds(root.dir, glob, limit, this.#options.list ?? diskList);
+            const list = this.#options.list ?? diskList;
+            const found = await rootHolds(root.dir, glob, limit, hidden, list);
             if (found && !this.#closed) {
                 await this.activate(id, { kind: 'workspaceContains', glob });
                 return;

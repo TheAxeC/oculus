@@ -96,7 +96,8 @@ import {
     notesAnswer,
     workspacesAnswer
 } from './fs-transport.ts';
-import { NOTES_FOLDER, inNotes } from '../../data/prose/markdown/note-names.ts';
+import { notesMark } from '../../data/helpers/files/private-folders.ts';
+import { inNotes } from '../../data/prose/markdown/note-names.ts';
 import { diskPlan } from './explorer/view/disk.ts';
 import {
     SHOWN_DEFAULT,
@@ -380,7 +381,9 @@ export function createFs(
         const plan = diskPlan(payload, heldRoots());
         for (const key of plan.roots) refresh(key, message.version);
         for (const folder of plan.folders) relistFiles(folder.root, folder.path);
-        const notes = plan.folders.some((folder) => inNotes(folder.path) !== null);
+        const notes = plan.folders.some(
+            (folder) => inNotes(folder.path, notesOf(folder.root)) !== null
+        );
         if (plan.roots.length > 0 || notes) queries.mark(NOTES, 'replace');
     });
 
@@ -388,6 +391,11 @@ export function createFs(
     function heldRoots(): FsRoot[] {
         const held = queries.peek<WorkspacesState>(WORKSPACES).data;
         return held === undefined ? [] : held.folders;
+    }
+
+    /** The notes folder of a root as far as it has been read: the empty text for no hub's. */
+    function notesOf(key: string): string {
+        return notesMark(heldRoots().find((one) => one.key === key));
     }
 
     /**
@@ -448,8 +456,9 @@ export function createFs(
     }
 
     function relistFolder(root: string, path: string, below = false): void {
-        const holds = below && (path === '' || `${NOTES_FOLDER}/`.startsWith(`${path}/`));
-        if (inNotes(path) !== null || holds) queries.mark(NOTES, 'replace');
+        const notes = notesOf(root);
+        const holds = below && notes !== '' && (path === '' || `${notes}/`.startsWith(`${path}/`));
+        if (inNotes(path, notes) !== null || holds) queries.mark(NOTES, 'replace');
         const own = treeKey(root, path);
         for (const one of queries.entries<Listing>(['fs', 'listing', root])) {
             const at = one.key[3];

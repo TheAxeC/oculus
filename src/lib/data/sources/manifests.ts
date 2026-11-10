@@ -27,9 +27,6 @@ import { HUB_FILE, MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-na
 import { gitFolderOf, originOf, repositoryStandIns, sameAddress } from './origin.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
-/** The folder of a project that holds its code, which is what the deposit mirrors. */
-export const CODE_FOLDER = 'code';
-
 /**
  * The most a project's manifest may hold. Its keys are a few lines each, so a larger file is not
  * one; the bound keeps a mistaken path (a log, a dump) from being read whole on every rebuild.
@@ -118,9 +115,9 @@ function subdirs(dir: string): string[] {
 
 /**
  * Every folder under `base` that is a project, at any depth, as its path segments from `base`. The
- * walk stops at a project: nothing inside one is a project of its own, which keeps a
- * `code/project.yml` out. A folder that is no project (a filing folder, or a hub) is walked
- * through.
+ * walk stops at a project: nothing inside one is a project of its own, which keeps out a
+ * `project.yml` in a folder of a project, its code folder's among them. A folder that is no project
+ * (a filing folder, or a hub) is walked through.
  */
 function nestedProjects(base: string, segments: string[] = []): string[][] {
     const found: string[][] = [];
@@ -217,7 +214,6 @@ function record(
     const changed = mtimeOf(file);
     if (changed !== undefined) built.fileMtime = changed;
     if (data.id !== undefined) built.manifestId = data.id;
-    if (isDir(join(place.dir, CODE_FOLDER))) built.codeFolder = true;
     return built;
 }
 
@@ -485,4 +481,18 @@ export function manifestDir(
     manifest: Pick<RawManifest, 'folder' | 'workspaceFolder'>
 ): string {
     return manifest.workspaceFolder?.dir ?? join(hub, manifest.folder);
+}
+
+/**
+ * The manifests, each whose project folder holds the folder `code` names (the hub's `code_dir`,
+ * against the project folder) marked `codeFolder`, which is what the deposit mirrors.
+ */
+export function withCodeFolders(
+    hub: string,
+    manifests: RawManifest[],
+    code: string
+): RawManifest[] {
+    return manifests.map((manifest) =>
+        isDir(join(manifestDir(hub, manifest), code)) ? { ...manifest, codeFolder: true } : manifest
+    );
 }

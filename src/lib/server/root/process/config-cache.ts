@@ -23,7 +23,9 @@
 // the event loop as the primary's would, so each of them takes the parse kept here. A parse is kept
 // only for a hub of the workspace open at the call, and every read first drops the parses of the
 // hubs that left the workspace, so a folder outside it is parsed at each read. Its findings are not
-// said here: the rebuild reports them with the build of that hub.
+// said here: the rebuild reports them with the build of that hub. The primary's own folder, which
+// a reader that takes a project's hub by its folder may name, is answered by the primary's kept
+// parse, so such a reader reads the primary as the snapshot and the cards do.
 //
 // The vocabulary of the hubs of the workspace (their domains and theme words, read from each hub's
 // registry files) is kept the same way: its stamp adds the settings file of every other hub and the
@@ -40,7 +42,7 @@
 // made it.
 
 import { readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import type { HubRoot, HubSettings } from '../../../data/index.ts';
@@ -64,7 +66,8 @@ export type ConfigCache = {
     /**
      * The parse of the engine's folder under the settings file of the hub at a folder, a hub of the
      * workspace other than the primary, made again when a file of the folder or that settings file
-     * changed.
+     * changed. The primary's folder is answered by the primary's own parse, as `read` gives it,
+     * with no finding said.
      */
     hub: HubSettings;
     /**
@@ -197,6 +200,10 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     };
     const read = (): LoadedConfig => take(true);
     const hub = (dir: string): LoadedConfig => {
+        const primaryDir = deps.hub();
+        // The primary's folder is answered by the primary's own kept parse, the one the snapshot
+        // and the cards are built from, and says no finding, as a reader of the server's own.
+        if (primaryDir !== null && resolve(primaryDir) === resolve(dir)) return take(false);
         const open = new Set(deps.others().map((one) => one.dir));
         for (const one of heldHubs.keys()) if (!open.has(one)) heldHubs.delete(one);
         const own = configStamp(deps.engine, dir);

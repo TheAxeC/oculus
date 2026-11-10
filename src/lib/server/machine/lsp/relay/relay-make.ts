@@ -54,7 +54,9 @@ export function createState(options: RelayOptions, calls: ServerCalls): RelaySta
             oculus: options.oculus,
             node: options.node,
             latex: options.latex,
-            markdown: options.markdown
+            markdown: options.markdown,
+            hiddenFolders: options.hiddenFolders,
+            indent: options.indent
         });
     const state: RelayState = {
         options,

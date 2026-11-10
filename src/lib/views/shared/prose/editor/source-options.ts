@@ -23,6 +23,7 @@ import {
     shownLanguage,
     toggleWrap,
     type ConfiguredEditor,
+    type DetectedIndent,
     type Indent,
     type LanguageRecords,
     type RepoSettings,
@@ -98,7 +99,7 @@ export function createSourceOptions(input: SourceOptionsInput): SourceOptions {
         options: ConfiguredEditor;
         records: LanguageRecords | null;
     } | null = null;
-    let detected: { text: string; indent: Indent | null } | null = null;
+    let detected: { text: string; indent: DetectedIndent | null } | null = null;
 
     /** The records of the root's settings file, null when it has none that can be read. */
     function repository(options: ConfiguredEditor): LanguageRecords | null {
@@ -112,7 +113,7 @@ export function createSourceOptions(input: SourceOptionsInput): SourceOptions {
     }
 
     /** The indentation the text's own lines give. */
-    function detect(text: string): Indent | null {
+    function detect(text: string): DetectedIndent | null {
         if (detected?.text !== text) detected = { text, indent: detectIndent(text) };
         return detected.indent;
     }

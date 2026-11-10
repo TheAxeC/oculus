@@ -50,6 +50,7 @@ import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { noApps, payloadOf, type AppsHeld } from '../../machine/apps/read/held.ts';
 import { closedToApps } from '../../machine/apps/reach/private.ts';
+import { withSecrets } from '../../../data/helpers/files/private-folders.ts';
 import { scanApps } from '../../machine/apps/read/scan.ts';
 import {
     defaultAppsStatePath,
@@ -118,6 +119,8 @@ export type AppsWatchOptions = {
     from: () => Readonly<Record<string, string>>;
     /** The open workspace as it is now. */
     open: () => OpenWorkspace;
+    /** The folder of secrets of the hub at a folder, its `secrets_dir`, which no app reaches. */
+    secretsDir: (dir: string) => string;
     /**
      * Call the listener when the open workspace moves; the answer takes it away. Without it the
      * folders are read again only on a config push and by `follow()`.
@@ -351,7 +354,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
                 home: options.home ?? homedir(),
                 local,
                 perOculus: perOculus(primary, config),
-                roots
+                roots: withSecrets(roots, options.secretsDir)
             }),
             config,
             settings,

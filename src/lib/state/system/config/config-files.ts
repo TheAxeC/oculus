@@ -6,7 +6,7 @@
 import { joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
 import { ROOT_FOLDER, WORKSPACES_FOLDER } from '../../../data/helpers/hub-names.ts';
-import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
+import { privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { hasText, lookup } from '../../shared/words/text.ts';
 
 /** The extension a configuration file carries. */
@@ -68,26 +68,30 @@ export function workspaceFilePlace(saved: {
 export const LOCAL_PATH = `${ROOT_FOLDER}/${LOCAL_NAME}`;
 
 /**
- * Whether a file of a served root is in a folder that is private to the machine: under the
- * `secrets` folder of any hub or under `~/.oculus`. The folders are the relay's
- * (data/helpers/files/private-folders.ts); the roots are as the file listing answers them, with
- * absolute folders, and `home` is the machine's home folder as that listing gives it. A root whose
- * file system folds letter case (`folds`, which the listing reports) reads `Secrets` as `secrets`,
- * so the file is compared with the folders in one letter case. No edit of a language server is made
- * in such a file.
+ * Whether a file of a served root is in a folder that is private to the machine: under the folder
+ * of secrets of any hub (its `secrets_dir`, which the listing marks each hub with) or under
+ * `~/.oculus`. The folders are the relay's (data/helpers/files/private-folders.ts); the roots are
+ * as the file listing answers them, with absolute folders, and `home` is the machine's home folder
+ * as that listing gives it. A root whose file system folds letter case (`folds`, which the listing
+ * reports) reads `Secrets` as `secrets`, so the file is compared with the folders in one letter
+ * case. No edit of a language server is made in such a file.
  */
 export function isPrivateFile(
     file: { root: string; path: string },
-    roots: readonly { key: string; dir: string; hub?: boolean; folds?: boolean }[],
+    roots: readonly {
+        key: string;
+        dir: string;
+        hub?: boolean;
+        secrets?: string;
+        folds?: boolean;
+    }[],
     home: string
 ): boolean {
     const root = roots.find((one) => one.key === file.root);
     if (root === undefined) return false;
     const same = (path: string): string => (root.folds === true ? path.toLowerCase() : path);
     const absolute = same(joinPath(root.dir, file.path));
-    return privateFolders(hubDirs(roots), home).some(
-        (folder) => pathUnder(same(folder), absolute) !== null
-    );
+    return privateFolders(roots, home).some((folder) => pathUnder(same(folder), absolute) !== null);
 }
 
 /** The folder under config/ that holds oculus's defaults files, which Show Defaults opens. */

@@ -1,8 +1,9 @@
-// Layer 2, server. The deposit over one project, as the decision on git writes and the
-// deposit describes it: a project's `code/` is ordinary tracked content of the hub and never
-// carries a `.git` of its own, and the deposit is a mirror clone per deposit repo under the
-// machine-local state folder, into which each deposit syncs `code/` minus the deposit-exclude rules
-// and commits with a message, and from which the tool pushes, lists, creates and switches branches.
+// Layer 2, server. The deposit over one project, as the decision on git writes and the deposit
+// describes it: a project's code folder (the hub's `code_dir`) is ordinary tracked content of the
+// hub and never carries a `.git` of its own, and the deposit is a mirror clone per deposit repo
+// under the machine-local state folder, into which each deposit syncs the code folder minus the
+// deposit-exclude rules and commits with a message, and from which the tool pushes, lists, creates
+// and switches branches.
 //
 // The order of one deposit is the order of the functions below: `adopt` makes the mirror (a clone
 // when the repository already exists, which is how a project that is also a public repository keeps
@@ -10,11 +11,12 @@
 // the manifest back. `snapshot` is the mode of today kept as a second button: one orphan commit
 // replacing the remote's `main`, after which the history that was there is gone.
 //
-// What ships is `code/` minus `__pycache__`, `*.pyc` and `.git`, with the mirror's `.gitignore`
-// written from the patterns of `code/.gitignore` and `code/.depositignore`; `attic/` is added when
-// there is no `.depositignore` (deposit-tree.ts, which the Zenodo review copy is staged by too).
-// The hub keeps tracking `results/`, `figures/` and `attic/` in full, which is why the exclusion
-// is a file of its own rather than the hub's `.gitignore`.
+// What ships is the code folder minus `__pycache__`, `*.pyc` and `.git`, with the mirror's
+// `.gitignore` written from the patterns of the code folder's `.gitignore` and `.depositignore`;
+// the hub's `deposit.default_ignore` is added when there is no `.depositignore` (deposit-tree.ts,
+// which the Zenodo review copy is staged by too). The hub keeps tracking in full what those
+// patterns leave out, which is why the exclusion is a file of its own rather than the hub's
+// `.gitignore`.
 //
 // Every command runs through deposit-git.ts, which refuses any directory outside the
 // mirrors folder. Nothing here is reachable from a watcher, a timer or the socket: the callers
@@ -30,7 +32,8 @@
 
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { CODE_FOLDER, manifestDir } from '../../../data/sources/manifests.ts';
+import { manifestDir } from '../../../data/sources/manifests.ts';
+import { projectDocList } from '../../../data/sources/config/settings/hub-rows.ts';
 import type {
     DepositChange as Change,
     DepositPlan as Plan,
@@ -160,7 +163,15 @@ export type Deposit = {
     repo: string;
     /** The manifest's `code_availability.url`, or the empty string: where a made deposit lives. */
     url: string;
+    /** The project's code folder, the hub's `code_dir` under the project folder. */
     code: string;
+    /** The hub's `deposit.default_ignore`, added when the code folder has no `.depositignore`. */
+    ignored: readonly string[];
+    /**
+     * The README the deposit must ship, against the code folder: the first `.md` document of the
+     * hub's `project_docs` inside the code folder, or null when it names none.
+     */
+    readme: string | null;
     at: Where;
     about: About;
     visibility: string;
@@ -170,6 +181,18 @@ export type Deposit = {
     /** Where a command runs in `dir` under the folder `mirrors`, with this run's git and signal. */
     where: (dir: string, mirrors: string) => Where;
 };
+
+/**
+ * The README a deposit of the code folder `folder` must ship, against that folder: the first
+ * Markdown document of `docs` (the hub's `project_docs`) inside it, or null for none.
+ */
+function readmeIn(docs: readonly { name: string }[], folder: string): string | null {
+    const under = `${folder}/`;
+    const found = docs.find(
+        (doc) => doc.name.startsWith(under) && doc.name.toLowerCase().endsWith('.md')
+    );
+    return found === undefined ? null : found.name.slice(under.length);
+}
 
 /** A refused or failed action, said by `error`; the Zenodo actions answer through it too. */
 export function failed(error: string): Outcome {
@@ -269,11 +292,14 @@ export function depositFor(
     const named = code.repo;
     const repo = named !== '' ? named : url !== '' ? nameOf(url) : inner;
     const description = code.description;
+    const folder = at.config.layout.codeDir;
     return {
         id,
         repo,
         url,
-        code: join(manifestDir(at.hub, manifest), CODE_FOLDER),
+        code: join(manifestDir(at.hub, manifest), folder),
+        ignored: at.config.layout.depositIgnored,
+        readme: readmeIn(projectDocList(at.config.merged), folder),
         at: where(join(mirrors, repo), mirrors),
         about: {
             description:
@@ -350,9 +376,9 @@ export async function adopt(
 }
 
 /**
- * Put `code/` into the mirror as it stands and answer the plan. This is the dry run of the deposit:
- * it stages, so the plan is git's own answer about what would ship, and it writes nothing outside
- * the mirrors folder.
+ * Put the code folder into the mirror as it stands and answer the plan. This is the dry run of the
+ * deposit: it stages, so the plan is git's own answer about what would ship, and it writes nothing
+ * outside the mirrors folder.
  */
 export async function sync(
     id: string,
@@ -389,7 +415,7 @@ export async function sync(
         remote: await remoteUrl(deposit.at),
         files,
         changes,
-        findings: scan(deposit.at.dir, files)
+        findings: scan(deposit.at.dir, files, deposit.readme)
     };
     options.plans?.set(id, plan);
     return { ok: true, output: '', error: '', plan };
@@ -580,12 +606,12 @@ export async function createBranch(
 }
 
 /**
- * Check a branch out in the mirror and copy its files back into `code/`. A dirty mirror is refused,
- * as it is on a workspace: git carries uncommitted changes across a switch. A file the old branch
- * tracked and the new one does not is deleted from `code/`, so the switch leaves the branch rather
- * than the union of the two. `results/`, `figures/` and `attic/` of `code/` are left as they are,
- * since the mirror never held them; the hub then shows the tracked files of `code/` as modified,
- * which is the record of the switch.
+ * Check a branch out in the mirror and copy its files back into the code folder. A dirty mirror is
+ * refused, as it is on a workspace: git carries uncommitted changes across a switch. A file the old
+ * branch tracked and the new one does not is deleted from the code folder, so the switch leaves the
+ * branch rather than the union of the two. What the ignore patterns leave out of the code folder is
+ * left as it is, since the mirror never held it; the hub then shows the tracked files of the code
+ * folder as modified, which is the record of the switch.
  */
 export async function switchBranch(
     id: string,
@@ -605,9 +631,9 @@ export async function switchBranch(
     if (!state.ok) return state;
     if (records > 0) return failed(words(text, 'server.deposit.mirror_dirty'));
     // Both listings are what the deletion is computed from. Without them there is no difference to
-    // delete, and copying the new branch on top of what the old one left would leave `code/`
-    // holding the union of the two, which is the state the switch is there to avoid: a listing that
-    // failed is a switch that failed, answered with git's own words.
+    // delete, and copying the new branch on top of what the old one left would leave the code
+    // folder holding the union of the two, which is the state the switch is there to avoid: a
+    // listing that failed is a switch that failed, answered with git's own words.
     const before = await lsFiles(deposit.at);
     if (!before.ok) return before;
     const switched = await switchCmd(deposit.at, [name]);
@@ -692,16 +718,17 @@ export async function state(id: string, options: DepositOptions): Promise<Mirror
 // ---------------------------------------------------------------- what the mirror is made of
 
 /**
- * Put `code/` into the mirror's checkout as git stages it (deposit-tree.ts), so the mirror is what
- * ships and a project's `results/` and `figures/` are not kept a second time under
- * `~/.oculus/deposits`.
+ * Put the code folder into the mirror's checkout as git stages it (deposit-tree.ts), so the mirror
+ * is what ships and what the ignore patterns leave out is not kept a second time in the mirrors
+ * folder.
  */
 async function restage(deposit: Deposit): Promise<Outcome> {
-    return (await stageTree(deposit.code, deposit.at)).staged;
+    return (await stageTree(deposit.code, deposit.ignored, deposit.at)).staged;
 }
 
 /**
- * The mirror's checkout back into `code/`, everything but `.git` and the generated `.gitignore`.
+ * The mirror's checkout back into the code folder, everything but `.git` and the generated
+ * `.gitignore`.
  */
 function copyBack(deposit: Deposit): void {
     for (const entry of readdirSync(deposit.at.dir)) {
@@ -714,9 +741,9 @@ function copyBack(deposit: Deposit): void {
 }
 
 /**
- * Delete from `code/` what the branch just left behind: a path the old branch tracked and the new
- * one does not. Only those paths are touched, each one checked to resolve inside `code/`, and a
- * directory the deletion emptied goes with them.
+ * Delete from the code folder what the branch just left behind: a path the old branch tracked and
+ * the new one does not. Only those paths are touched, each one checked to resolve inside the code
+ * folder, and a directory the deletion emptied goes with them.
  */
 function dropGone(deposit: Deposit, before: string[], after: string[]): void {
     const kept = new Set(after);

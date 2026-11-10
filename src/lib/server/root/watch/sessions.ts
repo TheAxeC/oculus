@@ -93,8 +93,11 @@ export type SessionsWatchOptions = {
     cache?: string;
     /** The per-session overrides file; `defaultOverridesPath()` when absent. */
     overrides?: string;
-    /** The roots a workspace is looked for under; `defaultRoots()` when absent. */
-    roots?: string[];
+    /**
+     * The folders a workspace is looked for under, the machine's `sessions_roots`; none when it is
+     * absent.
+     */
+    roots?: readonly string[];
     /**
      * Every project folder with its title, read again at every rescan. It is a function rather than
      * a list so the watcher follows the portfolio's latest snapshot without importing the portfolio

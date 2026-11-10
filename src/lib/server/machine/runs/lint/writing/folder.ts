@@ -3,11 +3,11 @@
 // the files, and POST /api/ops `writing-fix` (server/files/fs/lsp-edit.ts) writes the ticked ones.
 //
 // The walk starts at a folder of a served root and lists the files the writing rules take. It does
-// not follow a link, enter a `node_modules` folder or a folder whose name starts with a dot, or
-// enter the `secrets` folder of every hub or `~/.oculus`, and a plan that starts in one of those,
-// or under one, is refused with a sentence before any file is listed. The walk leaves out the files
-// `lint.writing_skip` skips. A folder that holds more than `MAX_FILES` such files is refused with a
-// sentence that names how many it holds.
+// not follow a link, enter a folder `files.hidden_folders` names or a folder whose name starts with
+// a dot, or enter the folder of secrets of every hub (its `secrets_dir`, which the roots carry) or
+// `~/.oculus`, and a plan that starts in one of those, or under one, is refused with a sentence
+// before any file is listed. The walk leaves out the files `lint.writing_skip` skips. A folder that
+// holds more than `MAX_FILES` such files is refused with a sentence that names how many it holds.
 //
 // Each file is read by the same reader a tab's lint runs (writing.ts). Its edits are the first
 // `kind: 'fix'` fix of each row, a fix whose edits cross an edit already taken left out, as Fix All
@@ -23,7 +23,7 @@
 import { readdirSync, readFileSync, statSync, type Dirent } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
-import { hubDirs, privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
+import { privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
 import { isWholeText } from '../../../../../data/helpers/files/text-kind.ts';
 import {
@@ -47,12 +47,16 @@ import { sameValue } from './yaml.ts';
 /** The most files a folder may hold that the writing rules take. */
 const MAX_FILES = 2000;
 
-/** What a plan runs over: the roots, the settings, the comment thread and the words. */
+/**
+ * What a plan runs over: the roots, the settings, the comment thread, the words and the names of
+ * the folders `files.hidden_folders` gives, which the walk never enters.
+ */
 export type FolderScope = {
     roots: Root[];
     settings: LintSettings;
     comments: WritingOptions['comments'];
     catalog: Record<string, string>;
+    hiddenFolders: readonly string[];
 };
 
 /** Whether a position of the editor is before another. */
@@ -116,8 +120,15 @@ function checkedResult(
     return null;
 }
 
-/** The files under a folder, links not followed and the folders the walk never enters left out. */
-function filesUnder(folder: string, withheld: readonly string[]): string[] {
+/**
+ * The files under a folder, links not followed and the folders the walk never enters left out:
+ * a dot folder, a folder `hidden` names and a folder under one of `withheld`.
+ */
+function filesUnder(
+    folder: string,
+    withheld: readonly string[],
+    hidden: readonly string[]
+): string[] {
     const found: string[] = [];
     let entries: Dirent[];
     try {
@@ -133,11 +144,11 @@ function filesUnder(folder: string, withheld: readonly string[]): string[] {
         if (entry.isFile()) found.push(full);
         else if (
             entry.isDirectory() &&
-            entry.name !== 'node_modules' &&
+            !hidden.includes(entry.name) &&
             !entry.name.startsWith('.') &&
             !under(full, withheld)
         ) {
-            found.push(...filesUnder(full, withheld));
+            found.push(...filesUnder(full, withheld, hidden));
         }
     }
     return found;
@@ -195,13 +206,13 @@ export async function planFolder(
 ): Promise<LintFolderAnswer> {
     const placed = (dir: string): string => realPath(dir) ?? dir;
     const withheld = privateFolders(
-        hubDirs(scope.roots.map((one) => ({ dir: placed(one.dir), hub: one.hub }))),
+        scope.roots.map((one) => ({ dir: placed(one.dir), hub: one.hub, secrets: one.secrets })),
         homedir()
     );
     if (under(folder.real, withheld)) {
         return { ok: false, reason: words(scope.catalog, 'lint.writing_folder_private') };
     }
-    const taken = filesUnder(folder.real, withheld).flatMap((real) => {
+    const taken = filesUnder(folder.real, withheld, scope.hiddenFolders).flatMap((real) => {
         const path = relative(folder.rootReal, real).split(sep).join('/');
         const takes = lintersOf(path).includes('writing') && !isSkipped(path, scope.settings);
         return takes ? [{ path, real }] : [];

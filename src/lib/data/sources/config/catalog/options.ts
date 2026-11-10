@@ -670,6 +670,7 @@ function keysOfRows(value: unknown): string[] {
 
 /** Whether a source's items are held by the merged config alone. */
 const FROM_CONFIG: readonly Source[] = [
+    'agents',
     'models',
     'arrangements',
     'rail_pages',
@@ -744,6 +745,8 @@ export function resourcesOfKind(resources: Record<string, unknown>, kind: string
 export function configItems(source: Source, config: Record<string, unknown>): string[] | null {
     if (!FROM_CONFIG.includes(source)) return null;
     switch (source) {
+        case 'agents':
+            return keysAt(config.agents);
         case 'models': {
             const agents = isMap(config.agents) ? config.agents : {};
             const claude = isMap(agents.claude) ? agents.claude : {};

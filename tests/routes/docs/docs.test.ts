@@ -11,6 +11,7 @@ import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { handleDocs, renderHubDoc, type DocTarget } from '../../../src/lib/server/content/docs.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -39,7 +40,7 @@ function planted(): { dir: string; into: (hub: string) => DocTarget } {
     symlinkSync(join(dir, 'elsewhere', 'secret.md'), join(dir, 'hub', 'engine', 'docs', 'out.md'));
     symlinkSync('../.scratch/plan.md', join(dir, 'hub', 'engine', 'docs', 'hid.md'));
     symlinkSync('../node_modules/pack/README.md', join(dir, 'hub', 'engine', 'docs', 'nm.md'));
-    const config = portfolioConfigFrom({});
+    const config = portfolioConfigFrom(loadConfig(engineDir()).config);
     return {
         dir,
         into: (hub) => ({

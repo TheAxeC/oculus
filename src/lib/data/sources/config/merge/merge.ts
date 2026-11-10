@@ -2,19 +2,20 @@
 // folder: the shipped values of config/defaults/, the catalogs/ and schemas/ files and every text
 // fragment under text/, read in name order into one map (a key defined twice named as a finding),
 // then the descriptions of config/options/ (options-folder.ts). Then the hub's own layer,
-// `<hub>/.oculus/config.yml`, whose values at the keys of HUB_LIST are laid over oculus's, a key of
-// the vocabulary by its shape and any other key whole (hub-layer.ts). Then the open workspace
-// file's `settings:`, the reader's own values of the other options, of oculus's catalogs and of its
-// words (workspace-layer.ts). Last the display language the merged `locale` names, laid over the
-// English words under the workspace's own (language.ts). The text catalog is folded out of the
-// fragments (text.ts). A catalog or text file is also parsed with its whole-file shape
-// (data/shapes/catalog-files/), and each issue of the shape is a finding; the merge keeps every
-// key the file holds, as the readers expect.
+// `<hub>/.oculus/config.yml`, whose values at the keys of the hub list (data/shapes/hub-keys.ts)
+// are laid over oculus's, a key of the vocabulary by its shape and any other key whole
+// (hub-layer.ts). Then the open workspace file's `settings:`, the reader's own values of the other
+// options, of oculus's catalogs and of its words (workspace-layer.ts). Last the display language
+// the merged `locale` names, laid over the English words under the workspace's own (language.ts).
+// The text catalog is folded out of the fragments (text.ts). A catalog or text file is also parsed
+// with its whole-file shape (data/shapes/catalog-files/), and each issue of the shape is a finding;
+// the merge keeps every key the file holds, as the readers expect.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
 import { findingText } from '../../../helpers/finding-text.ts';
-import { HUB_FILE, fromHubFile, hubKeys } from '../../../helpers/hub-names.ts';
+import { HUB_FILE, fromHubFile } from '../../../helpers/hub-names.ts';
+import { hubKeys } from '../../../shapes/hub-keys.ts';
 import type { Finding } from '../../../model/index.ts';
 import { DEFAULTS_DIR, configDir, engineFile } from '../folder.ts';
 import { mergeHub } from './hub-layer.ts';
@@ -135,9 +136,9 @@ export function droppedFile(
  *
  * `from` names the file each value came from, keyed by dotted path: a top-level key and a text key
  * by oculus's file (`sources.yml` for config/defaults/sources.yml, `catalogs/vocab.yml`), every key
- * of HUB_LIST by the hub's settings file (`.oculus/config.yml`) when the hub sets it, every option
- * and every text key the workspace file sets by the workspace file's own path, and every text key a
- * display language sets by the path of the language's file.
+ * of the hub list by the hub's settings file (`.oculus/config.yml`) when the hub sets it, every
+ * option and every text key the workspace file sets by the workspace file's own path, and every
+ * text key a display language sets by the path of the language's file.
  *
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to

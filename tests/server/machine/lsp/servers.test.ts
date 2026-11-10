@@ -23,6 +23,7 @@ import {
     pageFile,
     plantPrograms,
     settle,
+    shippedIndent,
     shippedLatex,
     stubSpawn
 } from './lsp-fixture.ts';
@@ -165,7 +166,10 @@ const ROWS: Row[] = [
                 oculus: '/oculus dir',
                 node: '/a node',
                 exists: () => true,
-                latex: () => shippedLatex()
+                latex: () => shippedLatex(),
+                markdown: () => ['md'],
+                hiddenFolders: () => ['node_modules'],
+                indent: shippedIndent
             });
             const setup = {
                 root: AWKWARD,
@@ -210,7 +214,10 @@ const ROWS: Row[] = [
                 oculus,
                 node: '/a node',
                 exists: () => true,
-                latex: () => shippedLatex()
+                latex: () => shippedLatex(),
+                markdown: () => ['md'],
+                hiddenFolders: () => ['node_modules'],
+                indent: shippedIndent
             });
             const setup = {
                 root: AWKWARD,

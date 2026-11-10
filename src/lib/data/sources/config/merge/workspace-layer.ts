@@ -23,9 +23,9 @@
 
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
-import { findingText, isPluralForm } from '../../../helpers/finding-text.ts';
+import { findingText, isPluralForm, valueShown } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
-import { hubKeys } from '../../../helpers/hub-names.ts';
+import { hubKeys } from '../../../shapes/hub-keys.ts';
 import { catalogOf, flaggedItems, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem } from '../catalog/value-rule.ts';
 import { mustBe } from '../catalog/value-words.ts';
@@ -101,7 +101,7 @@ function catalogValue(
     const shape = CATALOG_SHAPES[path];
     const laid = layInPlace(shape, oculus, value);
     if ('wrong' in laid) {
-        pending.push(wrongKindFinding(at.file, at.key, at.key, laid.wrong));
+        pending.push(wrongKindFinding(at.file, at.key, at.key, laid.wrong, value));
         return null;
     }
     for (const problem of laid.problems) {
@@ -126,7 +126,7 @@ function textValue(
     pending: PendingFinding[]
 ): { value: unknown; own: string[] } | null {
     if (!isMap(value)) {
-        pending.push(wrongKindFinding(at.file, at.key, at.key, 'map'));
+        pending.push(wrongKindFinding(at.file, at.key, at.key, 'map', value));
         return null;
     }
     const catalog = isMap(oculus) ? oculus : {};
@@ -150,7 +150,8 @@ function textValue(
                         words,
                         'findings.config.settings_value',
                         key,
-                        findingText(words, 'findings.words.text')
+                        findingText(words, 'findings.words.text'),
+                        valueShown(word)
                     )
             });
         } else {
@@ -187,7 +188,8 @@ function appliedValue(
                         catalog,
                         'findings.config.settings_value',
                         key,
-                        findingText(catalog, 'findings.words.records')
+                        findingText(catalog, 'findings.words.records'),
+                        valueShown(value)
                     )
             });
             return null;
@@ -209,7 +211,8 @@ function appliedValue(
                         catalog,
                         'findings.config.settings_value',
                         key,
-                        findingText(catalog, 'findings.shape.is_map')
+                        findingText(catalog, 'findings.shape.is_map'),
+                        valueShown(value)
                     )
             });
             return null;
@@ -245,7 +248,8 @@ function appliedValue(
                     catalog,
                     'findings.config.settings_value',
                     key,
-                    mustBe(catalog, entry, problem)
+                    mustBe(catalog, entry, problem),
+                    valueShown(value)
                 )
         });
     }

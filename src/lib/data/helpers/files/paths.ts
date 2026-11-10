@@ -27,12 +27,6 @@ export function nameOf(path: string): string {
     );
 }
 
-/** The folder of a hub's wallpaper pictures when its `sources.yml` names none. */
-export const WALLPAPER_DIR = '.oculus/wallpaper';
-
-/** The folder of a hub's photo wall when its `sources.yml` names none. */
-export const MEMORIES_DIR = '.oculus/memories';
-
 /**
  * The path a hub-relative or absolute path comes to once its `.` and `..` segments are folded, or
  * null when it lies outside the hub. Both the hub and an absolute path are written with `/`.

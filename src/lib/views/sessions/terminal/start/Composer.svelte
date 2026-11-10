@@ -57,6 +57,7 @@
         picksFor,
         relativeIn,
         worktreeRoot,
+        worktreesFolder,
         skipQuestion,
         splitEnded,
         withComposer,
@@ -65,9 +66,13 @@
         type ComposerAgent,
         type ComposerRecord
     } from '$lib/state/sessions/terminal/composer/composer';
-    import { makeChosen, plannedFolder } from '$lib/state/sessions/terminal/composer/worktree';
+    import {
+        ignoreRule,
+        makeChosen,
+        plannedFolder
+    } from '$lib/state/sessions/terminal/composer/worktree';
     import type { WorktreeChoice } from '$lib/state/sessions/terminal/composer/worktree';
-    import type { AgentChoices } from '$lib/state/sessions/agents.svelte';
+    import type { AgentChoices, AgentId } from '$lib/state/sessions/agents.svelte';
     import type { SeedApproval as Approval } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
@@ -79,9 +84,11 @@
         owner: string;
         /** What a start that landed does with the terminal it made, and the words for its tab. */
         onstarted: (id: string, label: string) => void;
+        /** The agent shown while the tab has chosen no kind, `terminal.default_agent`. */
+        startAgent: AgentId;
     };
 
-    let { owner, onstarted }: Props = $props();
+    let { owner, onstarted, startAgent }: Props = $props();
 
     const {
         agents: { agentChoices },
@@ -123,7 +130,7 @@
     const root = $derived(worktreeRoot(workspace, git()));
     const choosing = $derived(worktree !== null && worktree.root === root ? worktree : null);
     const planned = $derived(plannedFolder(choosing, workspace));
-    const agent = $derived(record.agent);
+    const agent = $derived(record.agent ?? startAgent);
     const base = $derived(agentChoices().value);
     const accounts = $derived(accountsOf(base?.accounts ?? [], agent));
     const account = $derived(
@@ -369,7 +376,11 @@
                     {branch}
                     {root}
                     name={choosing?.name ?? null}
-                    ontoggle={() => (worktree = choosing === null ? { root, name: '' } : null)}
+                    ontoggle={() =>
+                        (worktree =
+                            choosing === null
+                                ? { root, name: '', dir: worktreesFolder(git(), root) }
+                                : null)}
                 />
                 <AgentPickers
                     {agent}
@@ -396,7 +407,8 @@
                     name={choosing.name}
                     {planned}
                     ignored={keepsWorktreesOut(git(), root)}
-                    oninput={(name: string) => (worktree = { root, name })}
+                    rule={ignoreRule(choosing.dir)}
+                    oninput={(name: string) => (worktree = { ...choosing, name })}
                     oncancel={() => (worktree = null)}
                     onstart={() => void start()}
                 />

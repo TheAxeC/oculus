@@ -79,6 +79,8 @@ export type LintRouteOptions = {
     catalog: () => Record<string, string>;
     /** The primary hub's `links` rows, which a ShellCheck row's documentation address reads. */
     links: () => readonly LinkRow[];
+    /** The names of the folders `files.hidden_folders` gives, which a folder's Fix All skips. */
+    hiddenFolders: () => readonly string[];
     /** The environment the programs are found and run in. */
     env?: NodeJS.ProcessEnv;
     /** The milliseconds a run is given; `LINT_LIMIT_MS` unless a test says otherwise. */
@@ -330,7 +332,8 @@ async function folder(
                 roots,
                 settings: options.settings(),
                 comments: options.comments,
-                catalog: options.catalog()
+                catalog: options.catalog(),
+                hiddenFolders: options.hiddenFolders()
             },
             found,
             held.signal

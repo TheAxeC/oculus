@@ -9,6 +9,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import { localDate, periodYear } from '../../../data/helpers/dates.ts';
 import { scalar } from '../../../data/helpers/guards.ts';
+import { vocabKeys } from '../../../data/shapes/vocab-keys.ts';
 import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
 import { words } from '../../core/words.ts';
 import { appendEntry, renderEntry, takeOutAppended } from '../entry-edit/index.ts';
@@ -42,19 +43,24 @@ const RADAR_ORDER = [
     'found'
 ];
 
-/** The relevance words the file holds. */
-const RELEVANCE = ['high', 'med', 'low'];
-
 /** The shape of the radar buckets in the vocabulary, each with its key. */
 const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
 
 /**
- * The keys of the radar buckets a hub's merged configuration `config` holds: oculus's, or the list
- * the hub's settings write in their place.
+ * The words a paper added to the radar is checked against: the keys of `radar_buckets`, one of
+ * which its bucket is, and the words of `radar_relevance`, one of which a relevance it gives is.
  */
-export function radarBucketKeys(config: Record<string, unknown>): string[] {
-    const held = config.radar_buckets;
-    return bucketKeysShape.parse(held).map((one) => one.key);
+export type RadarWords = { buckets: string[]; relevances: string[] };
+
+/**
+ * The radar's words a hub's merged configuration `config` holds: oculus's, or the hub's settings'
+ * laid over them.
+ */
+export function radarWords(config: Record<string, unknown>): RadarWords {
+    return {
+        buckets: bucketKeysShape.parse(config.radar_buckets).map((one) => one.key),
+        relevances: vocabKeys(config.radar_relevance)
+    };
 }
 
 /** The text a field of a Lit Watch entry is written as: plain text on one line. */
@@ -89,16 +95,17 @@ function isRefusal(read: FeedRead | WriteOutcome): read is WriteOutcome {
  * or with nothing under it, takes the paper as its first entry. The result is parsed again and
  * kept only when it is the file as it was with this one entry added.
  *
- * `buckets` are the keys of the bucket vocabulary a bucket must be one of. The record carries the
- * text the append added, which the undo takes out again byte for byte. The outcome's `id` is the
- * new paper's value of the file's primary key, which its hub's file names it by; a file with no
+ * `vocab` holds the keys of the bucket vocabulary a bucket must be one of and the relevance words a
+ * relevance, when one is given, must be one of (`radarWords`). The record carries the text the
+ * append added, which the undo takes out again byte for byte. The outcome's `id` is the new
+ * paper's value of the file's primary key, which its hub's file names it by; a file with no
  * primary key, and a paper with no value of it, are refused.
  */
 export function addRadarEntry(
     hub: string,
     config: PortfolioConfig,
     fields: Record<string, unknown>,
-    buckets: string[]
+    vocab: RadarWords
 ): WriteOutcome {
     const full = feedFile(hub, config, 'radar');
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
@@ -115,12 +122,13 @@ export function addRadarEntry(
         return refuse('title', words(config.text, 'server.feeds.paper_needs_title'));
     }
     const bucket = text('bucket');
-    if (!buckets.includes(bucket)) {
+    if (!vocab.buckets.includes(bucket)) {
         return refuse('bucket', words(config.text, 'server.feeds.bucket_unknown'));
     }
     const relevance = text('relevance');
-    if (relevance !== '' && !RELEVANCE.includes(relevance)) {
-        return refuse('relevance', words(config.text, 'server.feeds.relevance_unknown'));
+    if (relevance !== '' && !vocab.relevances.includes(relevance)) {
+        const named = vocab.relevances.join(', ');
+        return refuse('relevance', words(config.text, 'server.feeds.relevance_unknown', named));
     }
     const url = text('url');
     const known = (field: string, same: (held: string) => boolean): boolean =>

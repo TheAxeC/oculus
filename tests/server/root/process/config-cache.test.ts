@@ -2,12 +2,11 @@
 // context's cache parses the engine's config folder and the hub's `.oculus/config.yml` again only
 // when a file of the folder or the settings file was written.
 
-import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { handle } from '../../../../src/hooks.server.ts';
 import * as config from '../../../../src/lib/data/sources/config.ts';
-import type { LocalConfig } from '../../../../src/lib/data/sources/config.ts';
 import { carryingHandler, type OculusRequest } from '../../../../src/lib/server/root/context.ts';
 import { carriedOf, target } from '../../../../src/lib/server/edit/writes.ts';
 import { it, plantScratch } from '../../../fixtures/scratch.ts';
@@ -36,22 +35,10 @@ function layoutOf(...paths: string[]): string {
 function serving(files: Record<string, string>, hubFiles: Record<string, string> = {}) {
     const engine = plantScratch('oculus-hook-config-', files, ['config/catalogs', 'config/text']);
     const hub = plantScratch('oculus-hook-hub-', hubFiles);
-    const local: LocalConfig = {
-        port: 8791,
-        claudeBin: 'claude',
-        riteDapBin: 'rite_dap',
-        accounts: [],
-        calendars: [],
-        mail: [],
-        downloads: [],
-        clusters: [],
-        self: ''
-    };
     const state = plantState([{ name: 'hub', dir: hub }], 'hub');
     const context = contextFixture({
         token: 'hook-token',
         engine,
-        local,
         workspace: workspaceOf(state)
     });
     const request = {} as OculusRequest;
@@ -77,19 +64,31 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         });
         return answer;
     };
-    return { engine, hub, state, local, read, ask, close: () => context.close() };
+    return { engine, hub, state, read, ask, close: () => context.close() };
+}
+
+/** oculus's own file of the config folder at `rel`, which a scratch engine is given a copy of. */
+function shippedFile(rel: string): string {
+    return readFileSync(join(config.engineDir(), 'config', rel), 'utf8');
 }
 
 /**
  * A server context over a scratch engine and a workspace of two hubs, the primary `hub` and `lab`,
  * each with its own `.oculus/config.yml`, and what one request that builds a write target reads of
  * the other hubs. `parsesOf` counts the parses made of a folder's settings since the context was
- * built.
+ * built. The engine holds oculus's sources.yml and behavior.yml, their defaults and their options,
+ * since a write target reads the feed registries, the project documents and each hub's layout by
+ * their rules, and its behavior.yml adds the key `one`.
  */
 function servingHubs() {
     const engine = plantScratch(
         'oculus-hook-config-',
-        { 'config/defaults/behavior.yml': 'one: 1\n' },
+        {
+            'config/defaults/behavior.yml': `${shippedFile('defaults/behavior.yml')}\none: 1\n`,
+            'config/options/behavior.yml': shippedFile('options/behavior.yml'),
+            'config/defaults/sources.yml': shippedFile('defaults/sources.yml'),
+            'config/options/sources.yml': shippedFile('options/sources.yml')
+        },
         ['config/catalogs', 'config/text']
     );
     const hub = plantScratch('oculus-hook-hub-', { '.oculus/config.yml': layoutOf('hub.md') });
@@ -287,6 +286,33 @@ describe('the config cache of the server context', () => {
         );
         cache.read();
         expect(said).toEqual([[finding], [finding]]);
+    });
+
+    it("answers the primary hub's folder with the primary's own read and parses nothing for it (G61)", () => {
+        const engine = plantScratch(
+            'oculus-hook-config-',
+            { 'config/defaults/behavior.yml': 'one: 1\n' },
+            ['config/catalogs', 'config/text']
+        );
+        const primary = plantScratch('oculus-hook-hub-', { '.oculus/config.yml': 'one: 2\n' });
+        const said: Finding[][] = [];
+        const load = vi.fn(() => ({ config: { one: 2 }, findings: [], from: {} }));
+        const loadHub = vi.fn(() => ({ config: { one: 3 }, findings: [], from: {} }));
+        const cache = createConfigCache({
+            engine,
+            hub: () => primary,
+            workspace: () => null,
+            load,
+            loadHub,
+            report: (findings) => said.push(findings),
+            ...NO_HUBS
+        });
+        const own = cache.read();
+        expect(cache.hub(primary)).toBe(own);
+        expect(cache.hub(`${primary}/`)).toBe(own);
+        expect(load).toHaveBeenCalledTimes(1);
+        expect(loadHub).not.toHaveBeenCalled();
+        expect(said).toEqual([[]]);
     });
 
     it("parses the engine's folder alone once for the writes that read it, and again once a file of it is written", () => {

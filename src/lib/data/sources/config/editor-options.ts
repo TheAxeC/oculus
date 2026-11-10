@@ -76,7 +76,7 @@ function readRecord(
         }
         const problem = valueProblem(spec, value);
         if (problem !== null) {
-            problems.push({ key: at, where: 'field', problem, spec });
+            problems.push({ key: at, where: 'field', problem, spec, value });
             continue;
         }
         switch (field) {

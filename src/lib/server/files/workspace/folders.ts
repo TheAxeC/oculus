@@ -44,6 +44,16 @@ export type Root = {
     key: string;
     dir: string;
     hub?: true;
+    /**
+     * A hub's folder of secrets against its folder, its `secrets_dir`, once a reader of the private
+     * folders marks the root with it (data/helpers/files/private-folders.ts `withSecrets`).
+     */
+    secrets?: string;
+    /**
+     * A hub's notes folder against its folder, its `notes_dir`, once a reader of the notes marks
+     * the root with it (data/helpers/files/private-folders.ts `withNotes`).
+     */
+    notes?: string;
     /** The entry's own `repository_scan_depth`; the global depth applies when it is absent. */
     scanDepth?: number;
 };

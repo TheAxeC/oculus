@@ -6,13 +6,14 @@
 //
 // The workspace, the machine's values and the write chain come off the ServerContext, which holds
 // the workspace and the values and reads them again only when a file of theirs changed, so a
-// request reads no workspace file; it reads each hub's `.oculus/local.yml`, whose values with every
-// secret masked the This machine scope of Settings edits (`localFiles`). The bookmarks are kept
+// request reads no workspace file; the answer for the open workspace reads each hub's
+// `.oculus/local.yml`, whose values with every secret masked the This machine scope of Settings
+// edits (`localFiles`). The bookmarks are kept
 // where the merged config's `bookmarks` names, by default the primary hub's
 // `.oculus/bookmarks.yml`, and a workspace with no primary has none at a relative place; the notes
-// are each hub's own `.oculus/notes/` folder, read from the workspace's hubs.
+// are each hub's own notes folder, its `notes_dir`, read from the workspace's hubs.
 
-import { textCatalog } from '$lib/data/sources/config';
+import { hiddenFolders, textCatalog } from '$lib/data/sources/config';
 import { handleFs, handleFsWrite, type FsTarget } from '$lib/server/files/fs';
 import { machineDefaults, secretWord } from '$lib/server/root/process/context/machine-defaults';
 import { localFiles, machineValues } from '$lib/server/root/process/context/machine-values';
@@ -24,31 +25,38 @@ const target = (locals: App.Locals): FsTarget => {
     const open = server.workspace.open();
     const config = locals.config().config;
     const own = perOculus(open.primaryDir, config);
-    const set = server.machineSet();
-    const lists = server.machineLists();
-    const text = textCatalog(config);
-    const defaults = machineDefaults(text);
     return {
         engine: server.engine,
         workspace: { open: () => open, stateFolder: open.stateFolder },
-        machine: {
-            set,
-            defaults,
-            ...machineValues(
-                server.machine(),
-                server.local.port,
+        // Read only by the answer for the open workspace, so a listing or a write builds none
+        // of it: the defaults parse oculus's config/options/local.yml and localFiles reads
+        // each hub's file.
+        get machine() {
+            const set = server.machineSet();
+            const text = textCatalog(config);
+            const defaults = machineDefaults(text);
+            return {
                 set,
                 defaults,
-                lists,
-                secretWord(text)
-            ),
-            portRefused: server.portRefused(),
-            files: localFiles(open.hubs)
+                ...machineValues(
+                    server.machine(),
+                    server.local.port,
+                    set,
+                    defaults,
+                    server.machineLists(),
+                    secretWord(text)
+                ),
+                portRefused: server.portRefused(),
+                files: localFiles(open.hubs)
+            };
         },
         bookmarks: own.bookmarks,
         writes: server.fsWrites,
         ignored: server.ignoredCache,
-        credentials: server.credentials
+        credentials: server.credentials,
+        secretsDir: server.secretsDir,
+        notesDir: server.notesDir,
+        hiddenFolders: hiddenFolders(config)
     };
 };
 

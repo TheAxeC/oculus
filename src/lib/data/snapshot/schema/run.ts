@@ -123,9 +123,16 @@ function hubFiles(config: PortfolioConfig): HubFile[] {
 }
 
 /**
- * The reader's bookmarks file where a hub keeps it, the default of server/files/workspace/paths.ts.
+ * The reader's bookmarks file as a path relative to the hub, the value of the merged config's
+ * `bookmarks` (read as server/files/workspace/paths.ts reads it), or null when that names no path
+ * or one under the home folder or absolute, which is no file of the hub.
  */
-const BOOKMARKS_FILE = `${ROOT_FOLDER}/bookmarks.yml`;
+function bookmarksFile(merged: Readonly<Record<string, unknown>>): string | null {
+    const named = merged.bookmarks;
+    if (typeof named !== 'string' || named.trim() === '') return null;
+    const path = named.trim();
+    return path.startsWith('/') || path === '~' || path.startsWith('~/') ? null : path;
+}
 
 /**
  * A text as the map it parses to: the empty map for a text that parses to anything else, and
@@ -583,13 +590,14 @@ export function runSchemas(
     // not build from: its schema is made from its own `schema:` block as a data file's is, and
     // serves the editor, and its primary key, which every write to a bookmark addresses, is checked
     // as a data file's is.
-    const marks = readText(join(hub, BOOKMARKS_FILE));
+    const marksFile = bookmarksFile(config.merged);
+    const marks = marksFile === null ? undefined : readText(join(hub, marksFile));
     const marked = marks === undefined ? undefined : ownBlock(marks);
-    if (marks !== undefined && marked !== undefined) {
+    if (marksFile !== null && marks !== undefined && marked !== undefined) {
         const own = { kind: 'entries' as const, list: 'entries', written: [], own: true };
-        add('bookmarks', fileSchema(marked, own, context('schema.')), { hub: [BOOKMARKS_FILE] });
+        add('bookmarks', fileSchema(marked, own, context('schema.')), { hub: [marksFile] });
         const block = dataOf(marks)?.schema as unknown[];
-        const file = join(hub, BOOKMARKS_FILE);
+        const file = join(hub, marksFile);
         findings.push(...keyFindings(config.text, file, marks, block, undefined));
     }
 

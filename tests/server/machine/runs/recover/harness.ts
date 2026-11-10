@@ -163,6 +163,8 @@ export function loginNode(stand: Stand): {
             home: scratchDir('oculus-recover-mac-'),
             nodeVersion: 'v24.0.0',
             nodeDownload: 'https://nodejs.org/dist',
+            scratchRoot: '/local',
+            partition: 'main-cpu',
             sevenZip: () =>
                 plantScratch(
                     'oculus-recover-7z-',
@@ -259,6 +261,7 @@ export function targetOf(
         dataset: (hub, key) => (hub === 'research-hub' && key === entry.id ? entry : null),
         downloads: () => DOWNLOADS,
         rows: () => RECOVER_ROWS,
+        dataDir: () => 'data',
         agent: TEST_AGENT,
         fetch,
         local,

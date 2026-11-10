@@ -54,13 +54,15 @@ function clusterLine(row: ClusterAccount): { hub?: string; [field: string]: unkn
 }
 
 /**
- * The keys with one value, each with the text of its value in force; the port is `listening` and
- * the user's key `self` is the key as written.
+ * The keys with one value, each with the text of its value in force; the port is `listening`, the
+ * user's key `self` is the key as written and `sessions_roots` its folders as they resolved, after
+ * commas.
  */
 function scalarsOf(config: LocalConfig, listening: number): [string, string | undefined][] {
     return [
         ['port', String(listening)],
         ['self', config.self],
+        ['sessions_roots', config.sessionsRoots.join(', ')],
         ...[...PROGRAM_KEYS, ...STATE_PATHS].map(([key, field]): [string, string | undefined] => [
             key,
             config[field]

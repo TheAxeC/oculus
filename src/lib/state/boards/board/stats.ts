@@ -13,10 +13,8 @@ import {
     resolvedId,
     rootOf
 } from '../../../data/helpers/hub-names.ts';
-import { setting, type BoardItem, type BoardStats, type VenueCount } from './presets.ts';
-
-/** The `venue_conc_warn` of `focus:` when the config names none. */
-export const VENUE_WARN = 4;
+import { focusNumber } from '../../../data/sources/config/sections/focus.ts';
+import type { BoardItem, BoardStats, VenueCount } from './presets.ts';
 
 /**
  * The counts a project board's controls carry: how many projects it holds, which line 2 of its bar
@@ -29,7 +27,8 @@ export const VENUE_WARN = 4;
  * venue is counted by its name, so the one journal catalogued in two hubs of the workspace is one
  * venue with the papers of both, and carries the registry's short name. `config` gives the
  * settings, and `wordsOf` the words a project's stage and chips are read by, those of the project's
- * hub.
+ * hub; a config that holds no options catalog yet, the page's before its settings arrive, has no
+ * `venue_conc_warn`, and no venue warns.
  */
 export function stats(
     items: BoardItem[],
@@ -37,7 +36,7 @@ export function stats(
     config: Record<string, unknown> = {},
     wordsOf: (hub: string) => Record<string, unknown> = () => config
 ): BoardStats {
-    const warnAt = setting(config, 'venue_conc_warn', VENUE_WARN);
+    const warnAt = focusNumber(config, 'venue_conc_warn');
     const counts = new Map<string, { id: Id; count: number }>();
     let blocked = 0;
     let dated = 0;
@@ -54,7 +53,7 @@ export function stats(
         counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
     const rows: (VenueCount & { name: string })[] = [...counts.entries()]
-        .filter(([, { count }]) => count >= warnAt)
+        .filter(([, { count }]) => warnAt !== null && count >= warnAt)
         .map(([name, { id, count }]) => {
             const venue = byKey(venues, id);
             const short = venueWords(venue?.short, name);

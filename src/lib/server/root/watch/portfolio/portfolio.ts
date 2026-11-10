@@ -6,14 +6,15 @@
 // the real hub was measured at 58 to 109 ms over three runs, so a partial rebuild would buy tens
 // of milliseconds and cost a second definition of what depends on what.
 //
-// The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
-// them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
-// the portfolio on every write. An event counts only when its filename ends in .yml or .md, which
-// the later filter (reads.ts) narrows to the Markdown slide files of a deck, and no segment of its
-// path is `code` or `attic`, which also drops an editor's swap and lock files, or when it is a path
-// the audit reads, a required file inside `code/` included (audited.ts, built again at every
-// rebuild from the hubs' `audit:` settings). The flat LinkedIn folder also accepts the post
-// filenames read by server/edit/feeds/feeds.ts.
+// The filter is what keeps that cheap. A hub's project folders can hold tens of thousands of
+// files, nearly all of them under a project's code folder or a folder of dead ends, so a build
+// there would otherwise rebuild the portfolio on every write. An event counts only when its
+// filename ends in .yml or .md, which the later filter (reads.ts) narrows to the Markdown slide
+// files of a deck, and its path lies in none of the folders the hubs' settings leave out (each
+// hub's `code_dir` and `audit.skip_folders`), which also drops an editor's swap and lock files, or
+// when it is a path the audit reads, a required file inside the code folder included (audited.ts,
+// built again at every rebuild from the hubs' settings). The flat LinkedIn folder also accepts the
+// post filenames read by server/edit/feeds/feeds.ts.
 //
 // An event for a folder names no .yml or .md, so that filter takes none. The store of folder-glob
 // matches the decks are read through, which the server holds and every rebuild reads
@@ -52,7 +53,7 @@ import {
 } from '../../../content/audit/scan.ts';
 import { siteFiles, websiteDir } from '../../../content/audit/website/site.ts';
 import { websiteSettings } from '../../../../data/sources/config/settings/files.ts';
-import { auditFiles, auditPaths, relevantTo } from './audited.ts';
+import { auditFiles, NO_SCOPE, relevantTo, watchScope, type WatchScope } from './audited.ts';
 import { globWatch, type GlobSource } from './glob-watch.ts';
 import { inside } from '../../../core/paths.ts';
 import { namedByConfig, namedByRoots, roleDirectories, watchedDirectories } from './reads.ts';
@@ -83,6 +84,7 @@ import type {
     Finding,
     AuditPayload,
     HostInfo,
+    HubLayout,
     PortfolioConfig,
     RepositoryRoot
 } from '../../../../data/model/index.ts';
@@ -176,6 +178,7 @@ type Audited = {
     key: string;
     dir: string;
     merged: Record<string, unknown>;
+    layout: HubLayout;
     setting: AuditSetting;
 };
 
@@ -259,10 +262,15 @@ export function watchPortfolio(
      */
     let named: (path: string) => boolean = () => true;
     /**
-     * Whether a watch event is one of ours, by its name (audited.ts); replaced by every rebuild
-     * from the hubs' `audit:` settings, and read at each event, so a handle opened before keeps up.
+     * What the filters read of the hubs' settings (audited.ts): the audit paths and the folders
+     * left out of the watch, replaced by every rebuild.
      */
-    let relevant: (filename: string | null) => boolean = relevantTo(auditPaths([]));
+    let scope: WatchScope = NO_SCOPE;
+    /**
+     * Whether a watch event is one of ours, by its name (audited.ts); replaced by every rebuild
+     * from the hubs' settings, and read at each event, so a handle opened before keeps up.
+     */
+    let relevant: (filename: string | null) => boolean = relevantTo(scope);
     let configTouched = false;
     /** The hubs' vocabulary the config channel last carried, as its JSON text. */
     let publishedHubs = '';
@@ -286,6 +294,7 @@ export function watchPortfolio(
         covered: (dir) => [...deep].some((one) => inside(dir, one)),
         scanned: () => scanned,
         projects: () => projectDirs,
+        never: () => scope.never,
         queue: () => queue(false, false)
     });
 
@@ -603,7 +612,7 @@ export function watchPortfolio(
                 isFeed,
                 !linkedin || shared,
                 (filename) =>
-                    (linkedin && isLinkedinFile(filename)) ||
+                    (linkedin && isLinkedinFile(filename, portfolio.layout.linkedinIdeaPrefix)) ||
                     ((!linkedin || shared) &&
                         relevant(filename) &&
                         named(join(watched, filename ?? '')))
@@ -660,36 +669,38 @@ export function watchPortfolio(
             const held = engineConfigIn(workspace.folders, engineConfig);
             // Each hub the audit scans, in the workspace's order, with its merged settings and its
             // `audit:` setting, read from its own settings file: the scan below holds the hub to
-            // it, and the paths it names are what the filters take besides the build's own.
+            // it, and the paths it names and the folders it leaves out are what the filters take
+            // besides the build's own.
             const audits: Audited[] = workspace.hubs
                 .flatMap((one) => {
                     if (one.name === workspace.primary && primaryDir !== null) {
-                        return [{ key: one.name, dir: primaryDir, merged: config }];
+                        const layout = portfolio.layout;
+                        return [{ key: one.name, dir: primaryDir, merged: config, layout }];
                     }
                     const other = others.find((read) => read.key === one.name);
-                    return other === undefined
-                        ? []
-                        : [{ key: other.key, dir: other.dir, merged: other.portfolio.merged }];
+                    if (other === undefined) return [];
+                    const { key, dir, portfolio: held } = other;
+                    return [{ key, dir, merged: held.merged, layout: held.layout }];
                 })
                 .map((one) => ({ ...one, setting: hubAuditSetting(one.dir) }));
-            const auditing = auditPaths(audits.map((one) => one.setting));
+            scope = watchScope(audits);
             // The website the primary hub's files are written into, whose files the audit compares
             // with what the hub's files give and so watches one by one.
             const website = websiteSettings(config);
             const siteDir = primaryDir === null ? '' : websiteDir(primaryDir, website.folder);
-            relevant = relevantTo(auditing);
+            relevant = relevantTo(scope);
             const byHub =
                 primaryDir === null
                     ? [namedByRoots(roots)]
-                    : [namedByConfig(primaryDir, portfolio, auditing, roots)];
-            byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio, auditing)));
+                    : [namedByConfig(primaryDir, portfolio, scope, roots)];
+            byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio, scope)));
             named = (path) => byHub.some((one) => one(path));
             // A workspace repository's project is audited with the primary hub alone.
             watchAuditFiles(
                 auditFiles(
                     siteFiles(siteDir, website.files),
                     primaryDir === null ? [] : roots,
-                    auditing
+                    scope.paths
                 )
             );
             watchRootParents(roots);
@@ -760,7 +771,7 @@ export function watchPortfolio(
                     people,
                     career: entities.career
                 };
-                const scan = ({ key, dir, merged, setting }: Audited): AuditFinding[] =>
+                const scan = ({ key, dir, merged, layout, setting }: Audited): AuditFinding[] =>
                     auditFindings({
                         hub: dir,
                         root: key,
@@ -775,6 +786,7 @@ export function watchPortfolio(
                         self: selfOf(people),
                         rules: auditRules(merged, domains),
                         setting,
+                        layout,
                         website: key === workspace.primary ? check : null,
                         catalog: textCatalog(merged)
                     });

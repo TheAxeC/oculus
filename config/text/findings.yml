@@ -147,7 +147,7 @@ text:
             settings_hub_key: "{0} is a key of the hub's settings file, .oculus/config.yml, which a workspace file does not set; it is not applied"
             settings_unknown: '{0} is not an option; it is not applied'
             settings_not_map: '{0} must be a map holding options; it is not applied'
-            settings_value: "{0} must be {1}; oculus's value stands"
+            settings_value: "{0} must be {1}, not {2}; oculus's value stands"
             settings_empty: "{0} must not be empty; oculus's value stands"
             settings_removed_value: "{0} takes {1} out with a removed that is not true; oculus's entry stands"
             settings_removed_unknown: "{0} takes {1} out, which oculus's list does not hold"
@@ -186,15 +186,22 @@ text:
             icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
             skip_permissions_retired: '{0} is not read; a schedule in the update tray runs unattended through its Run unattended choice'
-            setting_default: '{0} must be {1}; the default is used'
+            setting_default: '{0} must be {1}, not {2}; the default is used'
             setting_empty: '{0} must not be empty; the default is used'
-            setting_block: '{0} must be a map; each of its keys takes its default'
-            setting_family: '{0} must be a map; none of its entries is read'
-            setting_entry: '{0} must be {1}; the entry is not read'
+            setting_block: '{0} must be a map, not {1}; each of its keys takes its default'
+            setting_family: '{0} must be a map, not {1}; none of its entries is read'
+            setting_list: '{0} must be a list, not {1}; none of its rows is read'
+            setting_entry: '{0} must be {1}, not {2}; the entry is not read'
             setting_repeat: '{0} holds the name {1} more than once; the first is read and the others are not'
             setting_unnamed: '{0} has no name; the row is not read'
             setting_this_mac: '{0} holds {1}, which names this Mac and no cluster; it is left out'
-            setting_field: '{0} must be {1}; the field is not read'
+            setting_field: '{0} must be {1}, not {2}; the field is not read'
+            setting_field_unset: '{0} must be {1} and is not set; the field is not read'
+            setting_field_empty: '{0} must not be empty; the field is not read'
+            setting_row_field: '{0} must be {1}, not {2}; its row is not read'
+            setting_row_field_unset: '{0} must be {1} and is not set; its row is not read'
+            setting_row_field_empty: '{0} must not be empty; its row is not read'
+            setting_entry_empty: '{0} must not be empty; the entry is not read'
             row_unknown: 'the row {1} of {0} holds {2}, which is not a key a reader row takes; the row is read without it'
             row_missing: 'the row {1} of {0} has no {2}, which its format needs; the row is not read'
             row_value: 'the row {1} of {0} holds a value at {2} that is not of its shape; the row is not read'
@@ -221,6 +228,7 @@ text:
             move_kind: 'the move_writes of the Focus lane {0} names a {1}, and the lane is placed by its {2}; the lane takes no move'
             counts_block: 'counts must be a map; no view draws a count'
             counts_view: '{0} names no view that draws a count; the row is not read'
+            update_task_view: '{0} must name a view of oculus, not {1}; the update task is not offered'
             counts_field: '{0} is not a field this row takes; it is not read'
             counts_value: '{0} must be {1}; it is not read'
             boards_block: 'boards must be a map; no board is read'
@@ -235,6 +243,7 @@ text:
             categories_row: '{0} must be a map with a key no earlier row holds; the row is not read'
             categories_colour: '{0} names no color, so it is drawn in no colour'
             deck_order_unknown: '{0} names {1}, which no row of categories holds; it is not read'
+            local_value: '{0} must be {1}; the default is used'
             local_row: '{0} must be {1}; the row is not read'
             local_repeat: '{0} repeats the value of an earlier row; the row is not read'
             local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"
@@ -298,6 +307,13 @@ text:
             form_https_address: an https address
             form_https_origin: an https origin, the scheme, the host and an optional port and nothing after
             form_row_key: lowercase letters, digits, dashes and underscores
+            form_file_name: the name of one file, with no folder
+            form_task_name: lowercase letters, digits and dashes starting with a letter
+            form_inner_path: a path inside the folder it is read in, written relative to it, with no .. and no backslash
+            form_folder_glob: a folder pattern inside the folder it is read in, of letters, digits, dots, dashes, underscores, stars and slashes, with no ..
+            form_absolute_folder: an absolute folder of letters, digits, dots, dashes, underscores and slashes, ending in no slash and with no . or .. part
+            form_partition: a Slurm partition name, or several joined by commas, of letters, digits, dots, dashes and underscores
+            form_cluster_folder: a folder on the cluster, ~/ or / followed by folder names of letters, digits, dots, dashes, underscores and {id}, ending in no slash and with no . or .. part
             words: a list of words
             numbers: a list of numbers
             strings: a list of texts

@@ -15,7 +15,6 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, normalize, relative, sep } from 'node:path';
 import type {
     Area,
@@ -40,12 +39,6 @@ export const FILE_POINTS = 1;
 export const SECONDARY_MIN_SCORE = 2;
 export const MAX_SECONDARY = 3;
 
-/** ~/workspace, ~/data and ~, resolved at the call rather than at import. */
-export function defaultRoots(): string[] {
-    const home = homedir();
-    return [join(home, 'workspace'), join(home, 'data'), home];
-}
-
 /** A project folder the caller knows about: its absolute path and the project's title. */
 export type ProjectFolder = string | [string, string];
 
@@ -54,12 +47,14 @@ type Score = { score: number; last: string };
 /**
  * Arrange records into workspaces and areas, newest activity first at every level. Never throws:
  * a record that cannot be placed is left out and the rest come back. The input records are not
- * modified; every grouped session is a copy.
+ * modified; every grouped session is a copy. `roots` are the folders a workspace is looked for
+ * under, the machine's `sessions_roots`; with none, a session outside a repository is its own
+ * working folder.
  */
 export function group(
     records: SessionRecord[],
     projectFolders: ProjectFolder[] = [],
-    roots: string[] | null = null,
+    roots: readonly string[] = [],
     attachedIds: Iterable<string> = [],
     overridesPath?: string
 ): Workspace[] {
@@ -73,7 +68,7 @@ export function group(
 function build(
     records: SessionRecord[],
     projectFolders: ProjectFolder[],
-    roots: string[] | null,
+    roots: readonly string[],
     attachedIds: Iterable<string>,
     overridesPath: string | undefined
 ): Workspace[] {
@@ -405,9 +400,9 @@ function readFolders(projectFolders: ProjectFolder[]): {
     return { folders: [...paths].sort(byDepth), titles };
 }
 
-function readRoots(roots: string[] | null): string[] {
+function readRoots(roots: readonly string[]): string[] {
     const cleaned = new Set<string>();
-    for (const root of roots ?? defaultRoots()) {
+    for (const root of roots) {
         const path = clean(root);
         if (path) cleaned.add(path);
     }

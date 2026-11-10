@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { findingText, valueShown, type TextCatalog } from '../../helpers/finding-text.ts';
 import { isMap } from '../../helpers/guards.ts';
 import { MAC_TARGET, type Finding } from '../../model/index.ts';
 import { standInShape } from '../../shapes/catalog-files/glyphs.ts';
@@ -23,7 +23,9 @@ import { CATALOGS_DIR, keyFile, keyPlace, type ConfigWhere } from './merge/merge
 import { TEXT_KEY, textCatalog } from './merge/text.ts';
 import { catalogOf } from './catalog/options.ts';
 import { closedPaths } from './settings/machine.ts';
+import { feedRegistries, hubLayout, projectDocList, updateTasks } from './settings/hub-rows.ts';
 import { settingProblems } from './settings/problems.ts';
+import type { SettingProblem } from './settings/reader.ts';
 import type { RowIssue } from './settings/rows/check.ts';
 import { focusFindings } from './sections/focus.ts';
 
@@ -269,9 +271,26 @@ function rowText(catalog: TextCatalog, key: string, issue: RowIssue): string {
 function settingText(catalog: TextCatalog, problem: EditorProblem): string {
     switch (problem.where) {
         case 'block':
-            return findingText(catalog, 'findings.config.setting_block', problem.key);
+            return findingText(
+                catalog,
+                'findings.config.setting_block',
+                problem.key,
+                valueShown(problem.value)
+            );
         case 'family':
-            return findingText(catalog, 'findings.config.setting_family', problem.key);
+            return findingText(
+                catalog,
+                'findings.config.setting_family',
+                problem.key,
+                valueShown(problem.value)
+            );
+        case 'list':
+            return findingText(
+                catalog,
+                'findings.config.setting_list',
+                problem.key,
+                valueShown(problem.value)
+            );
         case 'repeat':
             return findingText(
                 catalog,
@@ -302,17 +321,53 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
             break;
     }
     if (problem.problem.kind === 'empty') {
-        return findingText(catalog, 'findings.config.setting_empty', problem.key);
+        switch (problem.where) {
+            case 'value':
+                return findingText(catalog, 'findings.config.setting_empty', problem.key);
+            case 'entry':
+                return findingText(catalog, 'findings.config.setting_entry_empty', problem.key);
+            case 'field':
+                return problem.row === true
+                    ? findingText(catalog, 'findings.config.setting_row_field_empty', problem.key)
+                    : findingText(catalog, 'findings.config.setting_field_empty', problem.key);
+        }
     }
     const words = mustBe(catalog, problem.spec, problem.problem);
+    const value = valueShown(problem.value);
     switch (problem.where) {
         case 'value':
-            return findingText(catalog, 'findings.config.setting_default', problem.key, words);
+            return findingText(
+                catalog,
+                'findings.config.setting_default',
+                problem.key,
+                words,
+                value
+            );
         case 'entry':
-            return findingText(catalog, 'findings.config.setting_entry', problem.key, words);
+            return findingText(catalog, 'findings.config.setting_entry', problem.key, words, value);
         case 'field':
-            return findingText(catalog, 'findings.config.setting_field', problem.key, words);
+            return fieldText(catalog, problem, words, value);
     }
+}
+
+/**
+ * The sentence for a refused field: a field a row leaves out has no value to name, and a refused
+ * field of a row the reader drops whole says its row is not read.
+ */
+function fieldText(
+    catalog: TextCatalog,
+    problem: { key: string; value: unknown; row?: true },
+    words: string,
+    value: string
+): string {
+    if (problem.row === true) {
+        return problem.value === undefined
+            ? findingText(catalog, 'findings.config.setting_row_field_unset', problem.key, words)
+            : findingText(catalog, 'findings.config.setting_row_field', problem.key, words, value);
+    }
+    return problem.value === undefined
+        ? findingText(catalog, 'findings.config.setting_field_unset', problem.key, words)
+        : findingText(catalog, 'findings.config.setting_field', problem.key, words, value);
 }
 
 /**
@@ -348,16 +403,34 @@ export function settingFindings(where: ConfigWhere, config: Record<string, unkno
     });
 }
 
+/**
+ * The findings of the list keys a hub other than the primary sets in its own settings file
+ * (`feed_registries`, `update_tasks` and `project_docs`) and of the keys of its layout
+ * (`hubLayout`), all read in settings/hub-rows.ts, each on that file, `file`, and worded as
+ * settingFindings words the primary's. The primary's are among settingFindings' own.
+ */
+export function hubRowFindings(config: Record<string, unknown>, file: string): Finding[] {
+    const catalog = textCatalog(config);
+    const problems: SettingProblem[] = [];
+    for (const read of [feedRegistries, updateTasks, projectDocList, hubLayout]) {
+        try {
+            read(config, problems);
+        } catch {
+            // A key the catalog holds no rule for is the options file's finding, not the hub's.
+        }
+    }
+    return problems.map((problem) => ({
+        file,
+        key: problem.key,
+        message: settingText(catalog, problem)
+    }));
+}
+
 /** The sentence for one thing wrong with local.yml, with no value the file holds in it. */
 function localText(catalog: TextCatalog, problem: LocalProblem): string {
     switch (problem.kind) {
         case 'value':
-            return findingText(
-                catalog,
-                'findings.config.setting_default',
-                problem.key,
-                problem.words
-            );
+            return findingText(catalog, 'findings.config.local_value', problem.key, problem.words);
         case 'row':
             return findingText(catalog, 'findings.config.local_row', problem.key, problem.words);
         case 'repeat':
@@ -372,7 +445,7 @@ function localText(catalog: TextCatalog, problem: LocalProblem): string {
         case 'label':
             return findingText(
                 catalog,
-                'findings.config.setting_default',
+                'findings.config.local_value',
                 problem.key,
                 findingText(catalog, 'findings.config.claude_label')
             );

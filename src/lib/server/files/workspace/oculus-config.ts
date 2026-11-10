@@ -14,11 +14,21 @@ import { serveFile } from '../files.ts';
 /**
  * One request of the view: the listing of the folder `path` names when `list` is set, else the
  * bytes of the file it names. A path that leaves the folder and one that names nothing answer 404.
+ * `folders` are the names of `files.hidden_folders`, which the listing leaves out like the Files
+ * view does unless `hidden` is asked for.
  */
-export function handleOculusConfig(engine: string, path: string, query: URLSearchParams): Response {
+export function handleOculusConfig(
+    engine: string,
+    path: string,
+    query: URLSearchParams,
+    folders: readonly string[]
+): Response {
     const roots = [{ key: OCULUS_CONFIG_ROOT, dir: configDir(engine) }];
     if (query.get('list') === null) return serveFile(roots, OCULUS_CONFIG_ROOT, path);
-    const found = listDir(roots, OCULUS_CONFIG_ROOT, path, query.get('hidden') === '1');
+    const found = listDir(roots, OCULUS_CONFIG_ROOT, path, {
+        hidden: query.get('hidden') === '1',
+        folders
+    });
     if ('error' in found) return json({ error: found.error }, { status: 404 });
     return json(
         { root: OCULUS_CONFIG_ROOT, path, entries: found.entries },

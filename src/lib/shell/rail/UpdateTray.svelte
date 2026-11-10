@@ -1,18 +1,20 @@
 <script lang="ts">
     // Layer 3, shell. The update tray. It holds two sections under its heading. Schedules
-    // (ScheduleList.svelte) lists the entries of `schedules.yml` in the hub's `.oculus` folder with
-    // their next and latest runs and the controls that edit, pause, run and delete them. Tasks
-    // lists one row for each hub's update task whose file `.oculus/tasks/<task>.md` that hub
-    // holds (the schedule store's `offered`), the primary's first, each named by its hub when two
-    // or more hubs hold that task, and one line in their place when no hub holds a task file or
-    // the workspace holds no hub: each control starts the server-built Claude command in that
-    // hub's folder in a terminal, selects it, and shows it in the Terminal tab of the page on
-    // screen, or a new one (the terminals store's `showTerminal`); beside each control, a cell
-    // gives the last run with its label (that hub's row of the snapshot's feed summary, `byHub`,
-    // supplies it, and the inbox triage's comes from the `inbox` channel, whose notes file is what
-    // that task writes, the same for every hub), a separator, a cell saying which schedule runs
-    // the task of that hub next, and the control that opens the schedule dialog for the task of
-    // that hub.
+    // (ScheduleList.svelte) lists the entries of the schedules file the hub's `schedules` names
+    // with their next and latest runs and the controls that edit, pause, run and delete them. Tasks
+    // lists one row for each row of a hub's `update_tasks` whose file `.oculus/tasks/<task>.md`
+    // that hub holds (the schedule store's `offered`), the primary's first, each named by the
+    // row's label, with its hub beside it when two or more rows have that label, and one line in
+    // their place when no hub offers a task or the workspace holds no hub: each control starts the
+    // server-built Claude command in that hub's folder in a terminal, selects it, and shows it in
+    // the Terminal tab of the page on screen, or a new one (the terminals store's `showTerminal`);
+    // its hover words are the row's note. Beside each control, a cell gives the last run with its
+    // label, read where the row's `last_run` says (that hub's row of the snapshot's feed summary,
+    // `byHub`, for the radar, the scout and the LinkedIn folder, whose date is the last post, and
+    // the `inbox` channel for the inbox triage, whose notes file is the machine's, the same for
+    // every hub, and whose row draws its note under it) and with a separator, both left out for a
+    // row with no `last_run`; then a cell saying which schedule runs the task of that hub next, and
+    // the control that opens the schedule dialog for the task of that hub.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. From the press until the start is answered (the
@@ -37,7 +39,7 @@
     import ScheduleDialog from './ScheduleDialog.svelte';
     import ScheduleList from './ScheduleList.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { UpdateTask } from '$lib/state/sessions/terminals.svelte';
+    import type { LastRun, UpdateTask } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -63,21 +65,18 @@
     let said = $state('');
     /** The schedule a delete is being asked about, by its position and the name read there. */
     let deleting: { at: number; name: string } | null = $state(null);
-    const NOTES: Record<UpdateTask, () => string> = {
-        litwatch: () => t('app.tasks.lit_note'),
-        scout: () => t('app.tasks.scout_note'),
-        linkedin: () => t('app.tasks.linkedin_note'),
-        inbox: () => t('app.tasks.inbox_note')
-    };
     const current = $derived(paletteSource());
     const byHub = $derived(current.snapshot?.entities.feeds.byHub ?? []);
 
-    /** The last run of a task of one hub: that hub's feed, or the machine's inbox triage. */
-    function lastRun(kind: UpdateTask, hub: string): string | null | undefined {
-        if (kind === 'inbox') return current.notesRun ?? undefined;
+    /**
+     * The last run of a task of one hub, read where its row's `last_run` says: that hub's radar,
+     * scout or LinkedIn feed, or the machine's inbox triage.
+     */
+    function lastRun(from: LastRun, hub: string): string | null | undefined {
+        if (from === 'inbox') return current.notesRun ?? undefined;
         const own = byHub.find((one) => one.hub === hub);
-        if (kind === 'litwatch') return own?.radar?.lastRun;
-        if (kind === 'scout') return own?.scout?.lastRun;
+        if (from === 'radar') return own?.radar?.lastRun;
+        if (from === 'scout') return own?.scout?.lastRun;
         return own?.linkedin?.lastPost;
     }
 
@@ -87,16 +86,17 @@
             kind: pair.task,
             hub: pair.hub,
             label: schedule.taskLabel(pair),
-            note: NOTES[pair.task](),
-            last: lastRun(pair.task, pair.hub),
+            note: pair.note,
+            from: pair.lastRun,
+            last: pair.lastRun === null ? undefined : lastRun(pair.lastRun, pair.hub),
             next: schedule.nextOfTask(pair)
         }))
     );
 
     /** The row's last-run words: the date with its label, or that the task has not run yet. */
-    function lastLine(kind: UpdateTask, last: string | null | undefined): string {
+    function lastLine(from: LastRun, last: string | null | undefined): string {
         if (last === null || last === undefined || last === '') return t('app.tasks.last_none');
-        return kind === 'linkedin' ? t('app.tasks.last_post', last) : t('app.tasks.last', last);
+        return from === 'linkedin' ? t('app.tasks.last_post', last) : t('app.tasks.last', last);
     }
 
     async function start(task: { key: string; kind: UpdateTask; hub: string }): Promise<void> {
@@ -189,8 +189,12 @@
                                     disabled={running !== null || chatting}
                                     onclick={() => start(task)}
                                 />
-                                <span class="last">{lastLine(task.kind, task.last)}</span>
-                                <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
+                                {#if task.from !== null}
+                                    <span class="last">{lastLine(task.from, task.last)}</span>
+                                    <span class="sep" aria-hidden="true">
+                                        {t('sessions.meta_sep')}
+                                    </span>
+                                {/if}
                                 <span class="next" data-next>{task.next}</span>
                                 <ToolButton
                                     label={t('app.tasks.schedule')}
@@ -202,7 +206,7 @@
                                             name: task.label
                                         })}
                                 />
-                                {#if task.kind === 'inbox'}
+                                {#if task.from === 'inbox'}
                                     <span class="note">
                                         <Glyph name="info" />
                                         {task.note}

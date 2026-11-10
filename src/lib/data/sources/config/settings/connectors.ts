@@ -1,8 +1,9 @@
 // Layer 1, data. The typed readers of the settings of the services oculus polls or asks: the
-// clusters and the keys Account setup makes for them, the rows that tell a failed connection
-// apart, the sign-in providers, Recover's Node.js download, the calendar, the mail, the Literature
-// search's sources, and the usage tiers and their refresh. Each reads its keys of behavior.yml
-// through settingReader, or a list of records through checkedRows (reader.ts).
+// clusters, their log folders and scratch folders and the keys Account setup makes for them, the
+// rows that tell a failed connection apart, the sign-in providers, Recover's Node.js download,
+// data folder and job partitions, the calendar, the mail, the Literature search's sources, and the
+// usage tiers and their refresh. Each reads its keys of behavior.yml through settingReader, or a
+// list of records through checkedRows (reader.ts).
 
 import { MAC_TARGET, type ToldFailure } from '../../../model/index.ts';
 import {
@@ -25,7 +26,27 @@ export type SlurmSettings = {
     pollMin: number;
     quotaMin: number;
     prewarm: boolean;
+    /**
+     * Where a finished job's log is looked for under its working folder, `slurm.log_dirs` in order:
+     * folder patterns, and `.` for the working folder with Slurm's own file names.
+     */
+    logDirs: string[];
+    /** Each cluster's per-job scratch folder by its key, `slurm.scratch_roots`. */
+    scratchRoots: Map<string, string>;
 };
+
+/** The members of a family whose values are texts, by their names; the reader drops the rest. */
+function textFamily(
+    config: Record<string, unknown>,
+    problems: SettingProblem[],
+    key: string
+): Map<string, string> {
+    const members = new Map<string, string>();
+    for (const [name, value] of settingReader(config, problems).family(key)) {
+        if (typeof value === 'string') members.set(name, value);
+    }
+    return members;
+}
 
 /**
  * The keys of `slurm.resource`: a value that is no list of texts (one text among them, which the
@@ -40,7 +61,7 @@ function resourceKeys(config: Record<string, unknown>, problems: SettingProblem[
         Array.isArray(value) && value.every((one) => typeof one === 'string');
     if (held.present && !texts(held.value)) {
         const spec = settingEntry(config, key);
-        problems.push({ key, where: 'value', problem: { kind: 'words' }, spec });
+        problems.push({ key, where: 'value', problem: { kind: 'words' }, spec, value: held.value });
         return [];
     }
     const keys: string[] = [];
@@ -52,7 +73,10 @@ function resourceKeys(config: Record<string, unknown>, problems: SettingProblem[
     return keys;
 }
 
-/** Read `slurm:`'s five keys, each its default when it is missing or wrong. */
+/**
+ * Read the keys of `slurm:` the poller, the log search and the scratch rule take, each its default
+ * when it is missing or wrong, and a scratch folder member its entry refuses left out.
+ */
 export function slurmSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
@@ -63,7 +87,28 @@ export function slurmSettings(
         days: read.number('slurm.days'),
         pollMin: read.number('slurm.poll_min'),
         quotaMin: read.number('slurm.quota_min'),
-        prewarm: read.flag('slurm.prewarm')
+        prewarm: read.flag('slurm.prewarm'),
+        logDirs: read.strings('slurm.log_dirs'),
+        scratchRoots: textFamily(config, problems, 'slurm.scratch_roots')
+    };
+}
+
+/** Recover's settings of the places it acts in, beside its Node.js download. */
+export type RecoverSettings = {
+    /** The folder under the home folder that holds the datasets, '' for none. */
+    dataDir: string;
+    /** The partition of its jobs by the cluster's key; a cluster with none gets no line. */
+    partitions: Map<string, string>;
+};
+
+/** Read `recover.data_dir` and `recover.partitions`, a member its entry refuses left out. */
+export function recoverSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): RecoverSettings {
+    return {
+        dataDir: settingReader(config, problems).text('recover.data_dir'),
+        partitions: textFamily(config, problems, 'recover.partitions')
     };
 }
 
@@ -152,7 +197,8 @@ export function failureRows(
                 key: `${at}.${empty}`,
                 where: 'field',
                 problem: { kind: 'empty' },
-                spec
+                spec,
+                value: row[empty]
             });
             continue;
         }
@@ -294,15 +340,21 @@ export type MailSettings = {
     pollMin: number;
     /** How many threads each of the plate's three signals is read at most. */
     perSignal: number;
+    /** The label or category a reader puts on a thread to keep it on the plate. */
+    todoLabel: string;
 };
 
-/** Read `mail:`'s two keys, each its default when it is missing or wrong. */
+/** Read `mail:`'s three keys, each its default when it is missing or wrong. */
 export function mailSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
 ): MailSettings {
     const read = settingReader(config, problems);
-    return { pollMin: read.number('mail.poll_min'), perSignal: read.number('mail.per_signal') };
+    return {
+        pollMin: read.number('mail.poll_min'),
+        perSignal: read.number('mail.per_signal'),
+        todoLabel: read.text('mail.todo_label')
+    };
 }
 
 /**

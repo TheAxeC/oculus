@@ -3,12 +3,13 @@
 // file, the main file a source file builds through, and the builds of those roots, which are
 // builds.ts's.
 //
-// A folder is a project, whose main files sit in its `manuscript/` folder, or any folder of a
-// served root (state/sessions/terminal/latex-target.ts); each is held under its own query key, so a
-// project and a folder whose names match never share one. It is state/sources/files.svelte.ts's
-// shape over a different endpoint, and for the same reason: the wire model keeps a folder read out
-// of the snapshot, so a board of fifty projects carries none of it and an open tab asks api/latex
-// for its own. Every path the page holds is against the root (latex-state.ts).
+// A folder is a project, whose main files sit in the folder the answer names for it (the folder of
+// the `.tex` row of its hub's `project_docs`), or any folder of a served root
+// (state/sessions/terminal/latex-target.ts); each is held under its own query key, so a project and
+// a folder whose names match never share one. It is state/sources/files.svelte.ts's shape over a
+// different endpoint, and for the same reason: the wire model keeps a folder read out of the
+// snapshot, so a board of fifty projects carries none of it and an open tab asks api/latex for its
+// own. Every path the page holds is against the root (latex-state.ts).
 //
 // The answer is held in the client state's query client (state/client/queries/queries.svelte.ts).
 // What makes it stale is a build ending, which builds.ts hears, or a `files` message for the

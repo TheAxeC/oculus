@@ -5,6 +5,7 @@ import { workspaceVocabs } from '../../../src/lib/data/index.ts';
 import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { latexBuild } from '../../../src/lib/data/sources/config/settings/writing/latex.ts';
+import { notesOf, secretsOf } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/read/held.ts';
@@ -13,6 +14,7 @@ import { createConfigCache } from '../../../src/lib/server/root/process/config-c
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
 import { createRelay } from '../../../src/lib/server/machine/lsp/relay/relay.ts';
+import { heldIndent } from '../../../src/lib/server/machine/lsp/adapters/web/formatting.ts';
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
 import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
@@ -45,6 +47,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         mail: [],
         downloads: [],
         clusters: [],
+        sessionsRoots: [],
+        codexBin: 'codex',
         self: ''
     };
     const terminals = overrides.terminals ?? new Terminals(hub, { driver: idleDriver(), poll: 0 });
@@ -56,7 +60,10 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             roots: () => [],
             lspFolder: () => '/fixture/lsp',
             approvals: () => '/fixture/approvals.json',
-            latex: () => latexBuild(loadConfig(engineDir()).config)
+            latex: () => latexBuild(loadConfig(engineDir()).config),
+            markdown: () => ['md'],
+            hiddenFolders: () => ['node_modules'],
+            indent: heldIndent({ quiet: () => loadConfig(engineDir()) }, () => [])
         });
     const debug =
         overrides.debug ??
@@ -80,6 +87,34 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
     const comments = new HeldComments();
     let closed = false;
     const workspace = overrides.workspace ?? workspaceWith([]);
+    const configCache =
+        overrides.configCache ??
+        createConfigCache({
+            engine,
+            hub: () => workspace.open().primaryDir,
+            workspace: () => workspace.open().file,
+            load: () => loadConfig(engine, configOptions(workspace.open())),
+            loadHub: (dir) => loadConfig(engine, dir === null ? {} : { hub: dir }),
+            report: () => undefined,
+            primary: () => workspace.open().primary,
+            others: () =>
+                workspace
+                    .open()
+                    .hubs.filter((one) => one.name !== workspace.open().primary)
+                    .map((one) => ({ key: one.name, dir: one.dir })),
+            folders: () => workspace.open().folders.map((one) => one.name),
+            vocabs: (read, others, settings, own) =>
+                workspaceVocabs(
+                    { name: workspace.open().primary, dir: workspace.open().primaryDir },
+                    read,
+                    others,
+                    settings,
+                    {
+                        folders: workspace.open().folders.map((one) => one.name),
+                        own: own.config
+                    }
+                )
+        });
     const context: ServerContext = {
         hub,
         workspace,
@@ -163,34 +198,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         machineLists: () => ({}),
         repositories: () => [],
         engine,
-        configCache:
-            overrides.configCache ??
-            createConfigCache({
-                engine,
-                hub: () => workspace.open().primaryDir,
-                workspace: () => workspace.open().file,
-                load: () => loadConfig(engine, configOptions(workspace.open())),
-                loadHub: (dir) => loadConfig(engine, dir === null ? {} : { hub: dir }),
-                report: () => undefined,
-                primary: () => workspace.open().primary,
-                others: () =>
-                    workspace
-                        .open()
-                        .hubs.filter((one) => one.name !== workspace.open().primary)
-                        .map((one) => ({ key: one.name, dir: one.dir })),
-                folders: () => workspace.open().folders.map((one) => one.name),
-                vocabs: (read, others, settings, own) =>
-                    workspaceVocabs(
-                        { name: workspace.open().primary, dir: workspace.open().primaryDir },
-                        read,
-                        others,
-                        settings,
-                        {
-                            folders: workspace.open().folders.map((one) => one.name),
-                            own: own.config
-                        }
-                    )
-            }),
+        configCache,
+        secretsDir: overrides.secretsDir ?? secretsOf(configCache.hub),
+        notesDir: overrides.notesDir ?? notesOf(configCache.hub),
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         gitRunning: overrides.gitRunning ?? createRunningGit(),

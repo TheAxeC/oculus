@@ -9,9 +9,9 @@
 // No words live here. A line carries what it is and a number; the view turns that into a sentence
 // through the catalogs under config/text/.
 
-import type { HubTask, Snapshot } from '../../data/model/index.ts';
-import type { UpdateTask } from '../../data/helpers/run/tasks.ts';
-import { focusBlock, focusSetting, numericSetting } from '../../data/helpers/guards.ts';
+import type { HubTask, LastRun, Snapshot } from '../../data/model/index.ts';
+import { focusBlock, numericSetting } from '../../data/helpers/guards.ts';
+import { focusNumber } from '../../data/sources/config/sections/focus.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import { hasWord, recordWords, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { daysUntil } from '../boards/board/index.ts';
@@ -35,19 +35,16 @@ export type AttentionItem = {
 };
 
 /**
- * One "refresh live data" nudge: which feed, the hub whose task refreshes it (null for the inbox,
- * whose date is the machine's), and how many days since it ran, or null for never.
+ * One "refresh live data" nudge: which of FEEDS, the offered task that refreshes it and its hub
+ * (null for the inbox, whose date is the machine's), and how many days since it ran, or null for
+ * never.
  */
 export type RefreshItem = {
-    feed: UpdateTask;
+    feed: string;
+    task: HubTask;
     hub: string | null;
     days: number | null;
 };
-
-/** A number under `focus:` of the merged config, and the fallback when it holds none. */
-function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    return focusSetting(config, key) ?? fallback;
-}
 
 /** Whole days since an ISO date, and null when there is no date to count from. */
 export function daysSince(date: string | null, now: number): number | null {
@@ -74,7 +71,9 @@ export function staleAfter(config: Record<string, unknown>, feed: string): numbe
  *
  * The inbox count is not the snapshot's: the plate is read live from the mailboxes on the `inbox`
  * channel, so the caller passes what that channel says and this stays pure over its arguments. A
- * project is in flight by the `stages` of its own hub, given as `wordsOf`.
+ * project is in flight by the `stages` of its own hub, given as `wordsOf`. The cadence and the
+ * venue count are read by their options entries (`focusNumber`); before the page holds the
+ * settings neither is known, and neither line is raised.
  */
 export function attention(
     snapshot: Snapshot,
@@ -88,9 +87,11 @@ export function attention(
 
     if (inbox > 0) out.push({ kind: 'inbox', count: inbox });
 
-    const cadence = setting(config, 'linkedin_cadence_days', 30);
+    const cadence = focusNumber(config, 'linkedin_cadence_days');
     const since = daysSince(feeds.linkedin?.lastPost ?? null, now);
-    if (since !== null && since > cadence) out.push({ kind: 'linkedin', count: since });
+    if (since !== null && cadence !== null && since > cadence) {
+        out.push({ kind: 'linkedin', count: since });
+    }
 
     const warn = venueWarn(config);
     const projects = Object.values(snapshot.entities.projects).filter((project) =>
@@ -110,15 +111,16 @@ export function attention(
  * feed a present file with no run date still nudges for, since a radar that has never run is
  * exactly what the nudge is for.
  *
- * A line names the update task that refreshes its feed, so it is made for each pair of `offered`
- * (the tasks a hub holds a file for, with that hub), from the feed of that hub's row of `byHub`: a
- * feed whose task no hub offers gets no line, since there is no task to run, and each hub's task
- * gets its own.
+ * A line names the update task that refreshes its feed, so it is made for each row of `offered`
+ * (the rows of a hub's `update_tasks` whose file the hub holds, with that hub) whose `last_run`
+ * reads that feed (`radar` the radar, `scout` the leads file's scout), from the feed of that hub's
+ * row of `byHub`: a feed no offered task reads gets no line, since there is no task to run, and
+ * each hub's task gets its own.
  *
  * The inbox nudge is about the triage notes rather than a feed file: the plate itself is read live,
- * and what ages is the classification the inbox update task writes, whose own run date the `inbox`
- * channel carries and the caller passes. That date is the machine's, so the inbox has one line
- * whichever hubs offer its task.
+ * and what ages is the classification an update task whose `last_run` is `inbox` writes, whose own
+ * run date the `inbox` channel carries and the caller passes. That date is the machine's, so the
+ * inbox has one line, for the first offered task that reads it, whichever hubs offer one.
  */
 export function refresh(
     snapshot: Snapshot,
@@ -129,27 +131,30 @@ export function refresh(
 ): RefreshItem[] {
     const out: RefreshItem[] = [];
     const own = (hub: string) => snapshot.entities.feeds.byHub.find((one) => one.hub === hub);
-    const pairs = (task: UpdateTask) => offered.filter((one) => one.task === task);
+    const reading = (place: LastRun) => offered.filter((one) => one.lastRun === place);
 
     const radarAfter = staleAfter(config, 'litwatch');
-    for (const { hub } of radarAfter === Infinity ? [] : pairs('litwatch')) {
-        const radar = own(hub)?.radar ?? null;
+    for (const task of radarAfter === Infinity ? [] : reading('radar')) {
+        const radar = own(task.hub)?.radar ?? null;
         if (radar === null) continue;
         const days = daysSince(radar.lastRun, now);
-        if (days === null || days >= radarAfter) out.push({ feed: 'litwatch', hub, days });
-    }
-    if (notesRun !== null && pairs('inbox').length > 0) {
-        const days = daysSince(notesRun, now);
-        if (days !== null && days >= staleAfter(config, 'inbox')) {
-            out.push({ feed: 'inbox', hub: null, days });
+        if (days === null || days >= radarAfter) {
+            out.push({ feed: 'litwatch', task, hub: task.hub, days });
         }
     }
-    for (const { hub } of pairs('scout')) {
-        const scout = own(hub)?.scout ?? null;
+    const inbox = reading('inbox').at(0);
+    if (notesRun !== null && inbox !== undefined) {
+        const days = daysSince(notesRun, now);
+        if (days !== null && days >= staleAfter(config, 'inbox')) {
+            out.push({ feed: 'inbox', task: inbox, hub: null, days });
+        }
+    }
+    for (const task of reading('scout')) {
+        const scout = own(task.hub)?.scout ?? null;
         if (scout === null) continue;
         const days = daysSince(scout.lastRun, now);
         if (days !== null && days >= staleAfter(config, 'scout')) {
-            out.push({ feed: 'scout', hub, days });
+            out.push({ feed: 'scout', task, hub: task.hub, days });
         }
     }
     return out;

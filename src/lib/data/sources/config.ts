@@ -28,7 +28,6 @@ export {
     type ClusterAccount,
     type DownloadAccount,
     type LocalConfig,
-    DEFAULT_PORT,
     LOCAL_NAME,
     PROGRAM_KEYS,
     STATE_PATHS,
@@ -75,6 +74,7 @@ export {
     literatureSettings,
     mailSettings,
     nodeDownload,
+    recoverSettings,
     refreshSettings,
     signInRows,
     slurmSettings,
@@ -88,9 +88,12 @@ export {
     chatContext,
     confirmDelete,
     fileIconAtArrow,
+    fileIndexSettings,
+    hiddenFolders,
     openSettings,
     repositoryScanDepth,
-    searchSettings
+    searchSettings,
+    worktreesDir
 } from './config/settings/files.ts';
 export {
     type LatexFormatting,

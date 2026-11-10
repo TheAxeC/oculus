@@ -1,7 +1,8 @@
 // Layer 1, data. The one rule that reads a glob in oculus: the Problems view's filter matches a
-// term with it against a file's path, and the writing rules' skip and glyph lists match a file's
-// path from its root with it. It is a pure helper with no I/O, so the page and the server read a
-// glob the same way.
+// term with it against a file's path, the writing rules' skip and glyph lists match a file's path
+// from its root with it, Submit leaves out the files of the hub's `slurm.unsent` by it, and the
+// apps' language rules, triggers, workspace searches and language-server relay read their globs
+// with it. It is a pure helper with no I/O, so the page and the server read a glob the same way.
 
 import picomatch from 'picomatch';
 

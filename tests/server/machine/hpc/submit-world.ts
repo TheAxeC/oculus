@@ -11,12 +11,27 @@ import {
     submitState,
     type SubmitDeps
 } from '../../../../src/lib/server/machine/hpc/submit.ts';
+import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
 import type { SubmitPlan } from '../../../../src/lib/data/model/index.ts';
 import type { Connection } from '../../../../src/lib/server/machine/hpc/ssh.ts';
+import { engineDir, loadConfig, slurmSettings } from '../../../../src/lib/data/sources/config.ts';
 import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { plantScratch } from '../../../fixtures/scratch.ts';
 
 export const SCRIPT = '#!/bin/bash\n#SBATCH --job-name=a\nScratchDir="/local/${SLURM_JOB_ID}"\n';
+
+/**
+ * The hub's settings file: the cluster folder a project with no `paths.cluster` is copied to, the
+ * files of the code folder a Submit leaves out, and the scratch folder of the cluster `utwente`
+ * alone, as a hub of the cases sets them.
+ */
+const HUB_SETTINGS = [
+    'slurm:',
+    "  cluster_folder: '~/projects/{id}'",
+    "  unsent: [__pycache__, '*.npy', 'results/**', 'logs/**']",
+    '  scratch_roots: { utwente: /local }',
+    ''
+].join('\n');
 export const OK = { stdout: '', stderr: '', code: 0 };
 
 /** The files under a folder, relative to it, as a `kept` list reads them: every file, no git. */
@@ -33,13 +48,18 @@ export function listed(code: string): Promise<{ ok: true; value: string[] }> {
     return Promise.resolve({ ok: true, value: found });
 }
 
-/** A hub with projects `p` and `q`, `p` holding the given files in its code folder, and deps. */
+/**
+ * A hub with projects `p` and `q`, `p` holding the given files in its code folder, its settings
+ * file `settings`, and deps.
+ */
 export function world(
     files: Record<string, string>,
     manifest = 'id: p\n',
-    kept: SubmitDeps['kept'] = listed
+    kept: SubmitDeps['kept'] = listed,
+    settings = HUB_SETTINGS
 ) {
     const planted: Record<string, string> = {
+        '.oculus/config.yml': settings,
         'projects/p/project.yml': manifest,
         'projects/q/project.yml': 'id: q\n',
         'projects/q/code/hpc/a.slurm': SCRIPT,
@@ -48,6 +68,11 @@ export function world(
     for (const [path, text] of Object.entries(files)) planted[`projects/p/code/${path}`] = text;
     const hub = plantScratch('oculus-submit-', planted);
     const code = join(hub, 'projects', 'p', 'code');
+    // The hub's layout and scratch folders, read from its merged settings as the server's config
+    // cache holds them.
+    const merged = loadConfig(engineDir(), { hub }).config;
+    const layout = portfolioConfigFrom(merged).layout;
+    const scratchRoots = slurmSettings(merged).scratchRoots;
     const copy = vi.fn((_input: unknown) => Promise.resolve(OK));
     const ssh = vi.fn(
         (_connection: Connection, _remote: string, _timeout: number, _signal?: AbortSignal) =>
@@ -70,10 +95,12 @@ export function world(
             })
         ],
         catalog: () => ({}),
+        layout: () => layout,
         connection: (resource) =>
             resource === 'utwente' || resource === 'b'
                 ? { connection: { resource, name: resource, host: resource } }
                 : { missing: `${resource} is not listed`, unlisted: true },
+        scratchRoot: (resource) => scratchRoots.get(resource) ?? '',
         clusters: () => [
             { resource: 'utwente', name: 'utwente', id: 'hub:utwente' },
             { resource: 'b', name: 'b', id: 'hub:b' }

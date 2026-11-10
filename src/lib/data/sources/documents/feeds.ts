@@ -17,7 +17,9 @@ import {
     primaryKeyOf,
     type Feeds,
     type FeedFiles,
+    type FeedKind,
     type Finding,
+    type HubLayout,
     type Lead,
     type RawFeeds
 } from '../../model/index.ts';
@@ -36,8 +38,17 @@ import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { errorLine, readYamlMap } from '../yaml-file.ts';
 
-/** A `meta.log` line of the leads feed that records a scout run, and the date it ran on. */
-const SCOUT_RUN = /^\s*(\d{4}-\d{2}-\d{2})\b.*?scout/i;
+/**
+ * The date a `meta.log` line of the leads feed records a run of the position scout on: the
+ * line's leading date, when the line holds the hub's `leads_run_word` in any case after it. An
+ * empty word records no run.
+ */
+function scoutRun(line: string, word: string): string | null {
+    if (word === '') return null;
+    const found = /^\s*(\d{4}-\d{2}-\d{2})\b/.exec(line);
+    if (found === null) return null;
+    return line.slice(found[0].length).toLowerCase().includes(word.toLowerCase()) ? found[1] : null;
+}
 
 /** A `date:` line of a LinkedIn post's front matter. */
 const FRONT_DATE = /^date:\s*["']?(\d{4}-\d{2}-\d{2})/m;
@@ -67,12 +78,14 @@ function lead(entry: Record<string, unknown>): Lead {
  * own run date, which the file records as the leading date of a `meta.log` line rather than as a
  * run field of its own. It also reports the identity findings of every lead of the file and each
  * status that is no word of `lead_statuses:`, since the live leads alone carry no file and no
- * position the snapshot could check them by.
+ * position the snapshot could check them by. `word` is the hub's `leads_run_word`; an empty word
+ * gives no scout feed, since no line of the log can then record a run.
  */
 function leads(
     file: string,
     catalog: TextCatalog,
     merged: Record<string, unknown>,
+    word: string,
     findings: Finding[],
     named: boolean
 ): { leads: Feeds['leads']; scout: Feeds['scout'] } {
@@ -88,11 +101,10 @@ function leads(
     findings.push(...leadStatusFindings(file, entries, vocabKeys(merged.lead_statuses), catalog));
     const live = entries.filter((entry) => !isLeadClosed(merged, entry.status)).map(lead);
     const runs = readOr(itemsShape, metaOf(data).log, [])
-        .map((line) => SCOUT_RUN.exec(str(line)))
-        .filter((found): found is RegExpExecArray => found !== null)
-        .map((found) => found[1]);
+        .map((line) => scoutRun(str(line), word))
+        .filter((found): found is string => found !== null);
     const newest = runs.sort().at(-1);
-    return { leads: live, scout: { lastRun: newest ?? null } };
+    return { leads: live, scout: word === '' ? null : { lastRun: newest ?? null } };
 }
 
 /** The Lit Watch radar: the day the last sweep ran. */
@@ -110,11 +122,17 @@ function radar(
 
 /**
  * The LinkedIn pipeline: the newest `date:` among the posted files, each a name ending in `.md` in
- * any case, as the LinkedIn view and Mark posted read the suffix. A file whose name starts `xx`
- * is an unposted idea and carries no date that counts. The folder lives in the website repository
- * beside the hub, which is a separate checkout, so an absent folder is the ordinary case.
+ * any case, as the LinkedIn view and Mark posted read the suffix. A file whose name starts with
+ * the hub's idea prefix `idea` (`linkedin_idea_prefix`, empty for none) is an unposted idea and
+ * carries no date that counts. The folder lives in the website repository beside the hub, which is
+ * a separate checkout, so an absent folder is the ordinary case.
  */
-function linkedin(dir: string, catalog: TextCatalog, findings: Finding[]): Feeds['linkedin'] {
+function linkedin(
+    dir: string,
+    idea: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+): Feeds['linkedin'] {
     let names: string[];
     try {
         if (!statSync(dir).isDirectory()) return null;
@@ -124,7 +142,7 @@ function linkedin(dir: string, catalog: TextCatalog, findings: Finding[]): Feeds
     }
     const dates: string[] = [];
     for (const name of names.sort()) {
-        if (!/\.md$/i.test(name) || name.startsWith('xx')) continue;
+        if (!/\.md$/i.test(name) || (idea !== '' && name.startsWith(idea))) continue;
         let text: string;
         try {
             text = readFileSync(join(dir, name), 'utf8');
@@ -151,23 +169,38 @@ function missing(catalog: TextCatalog, named: boolean): () => string | null {
 /**
  * Read the three feed sources. Each is independent: a broken radar costs the radar line and nothing
  * else. Nothing here throws and no value is repaired. `unnamed` are the YAML feeds the hub's
- * settings file does not name, whose missing file is no finding; absent, both are named.
+ * settings file does not name, whose missing file is no finding; absent, both are named. A YAML
+ * feed whose file is the empty text, one the hub's `feed_registries` leaves out, is not read and
+ * is no finding, and neither is the LinkedIn folder of a hub whose `linkedin_dir` is empty. The
+ * scout's run word and the LinkedIn idea prefix are the hub's `layout`.
  */
 export function readFeeds(
     hub: string,
     files: FeedFiles,
     catalog: TextCatalog,
     merged: Record<string, unknown>,
-    unnamed: readonly ('leads' | 'radar')[] = []
+    layout: HubLayout,
+    unnamed: readonly FeedKind[] = []
 ): { feeds: RawFeeds; findings: Finding[] } {
     const findings: Finding[] = [];
     const named = !unnamed.includes('leads');
-    const both = leads(join(hub, files.leads), catalog, merged, findings, named);
+    const word = layout.leadsRunWord;
+    const both =
+        files.leads === ''
+            ? { leads: null, scout: null }
+            : leads(join(hub, files.leads), catalog, merged, word, findings, named);
+    const radarNamed = !unnamed.includes('radar');
     const feeds: RawFeeds = {
         leads: both.leads,
-        radar: radar(join(hub, files.radar), catalog, findings, !unnamed.includes('radar')),
+        radar:
+            files.radar === ''
+                ? null
+                : radar(join(hub, files.radar), catalog, findings, radarNamed),
         scout: both.scout,
-        linkedin: linkedin(join(hub, files.linkedin), catalog, findings)
+        linkedin:
+            files.linkedin === ''
+                ? null
+                : linkedin(join(hub, files.linkedin), layout.linkedinIdeaPrefix, catalog, findings)
     };
     return { feeds, findings };
 }

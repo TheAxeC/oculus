@@ -79,6 +79,6 @@ export {
     mutedSignatures,
     signatureOf
 } from './rules.ts';
-export { AUDIT_PATHS, firstMarker } from './projects.ts';
+export { firstMarker } from './projects.ts';
 export { hubAuditSetting, type AuditSetting } from './setting.ts';
 export type { WebsiteCheck } from './publications.ts';

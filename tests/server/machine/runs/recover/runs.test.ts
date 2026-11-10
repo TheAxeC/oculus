@@ -190,7 +190,7 @@ describe('a Recover run on this Mac', () => {
     it.each(PIDS)('after a restart, a pid file naming $name', (one) => {
         const { deps, signal } = macDeps((pid) => (pid === 4242 ? one.now : null));
         pidFile(deps.home, one.hub, one.record);
-        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb');
+        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
         if (place === null) throw new Error('the place is refused');
         expect(localState(place, deps)).toEqual(one.running ? { action: 'fetch' } : null);
         expect(stopLocal(place, deps)).toBe(one.running);
@@ -205,7 +205,7 @@ describe('a Recover run on this Mac', () => {
         const other = { action: 'unpack' as const, done: 0, total: 2, stop: vi.fn() };
         runs.set('research-hub/other', other);
         const { deps, signal, ended } = macDeps(() => null, runs);
-        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb');
+        const place = localPlace(deps.home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
         if (place === null) throw new Error('the place is refused');
         mkdirSync(place.folder, { recursive: true });
         writeFileSync(`${place.folder}/a.dat`, '0123456789');
@@ -238,7 +238,7 @@ describe('a Recover run on this Mac', () => {
             const stand = standIns(['curl'], {}, { curl: 30 });
             vi.stubEnv('PATH', `${stand.bin}:${process.env.PATH ?? ''}`);
             const home = scratchDir('oculus-recover-home-');
-            const place = localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb');
+            const place = localPlace(home, 'research-hub', 'mitdb', '~/data/mitdb', 'data');
             if (place === null) throw new Error('the place is refused');
             const files = recoverFiles(home, 'research-hub', 'mitdb');
             mkdirSync(files.dir, { recursive: true });
@@ -248,6 +248,7 @@ describe('a Recover run on this Mac', () => {
             const options = {
                 home,
                 places: () => [{ hub: 'research-hub', key: 'mitdb', path: '~/data/mitdb' }],
+                dataDir: () => 'data',
                 hubs: () => ['research-hub'],
                 pollCluster: () => undefined,
                 readCluster: () => undefined
@@ -382,7 +383,7 @@ describe('a Recover run on the cluster', () => {
                 JSON.stringify({ id: one.job, action: 'verify' })
             );
         }
-        const place = clusterPlace(one.hub, 'mitdb', '~/data/mitdb');
+        const place = clusterPlace(one.hub, 'mitdb', '~/data/mitdb', 'data');
         if (place === null) throw new Error('the place is refused');
         expect(await clusterState(place, node.deps)).toEqual(one.state);
         const before = stand.calls().length;
@@ -405,6 +406,7 @@ describe('a Recover run on the cluster', () => {
             const options = {
                 home: scratchDir('oculus-recover-mac-'),
                 places: () => [{ hub: 'research-hub', key: 'mitdb', path: '~/data/mitdb' }],
+                dataDir: () => 'data',
                 hubs: () => ['research-hub'],
                 pollCluster: () => undefined,
                 readCluster: () => undefined
@@ -458,6 +460,7 @@ describe('a Recover run on the cluster', () => {
         const watcher = watchRecover(channels, {
             home: scratchDir('oculus-recover-mac-'),
             places: () => [{ hub: 'research-hub', key: 'mitdb', path: '~/data/mitdb' }],
+            dataDir: () => 'data',
             hubs: () => ['research-hub'],
             pollCluster: () => undefined,
             readCluster
@@ -519,6 +522,7 @@ describe('a Recover run on the cluster', () => {
                 pollMin: 20,
                 quotaMin: 60,
                 prewarm: false,
+                logDirs: ['.'],
                 words: { sshExited: 'ssh exited {0}', slurmLate: 'late', overrun: 'overrun' },
                 recover: { command: () => 'echo section', take },
                 runner: (_connection, command) => {

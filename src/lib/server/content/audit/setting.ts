@@ -1,7 +1,11 @@
 // Layer 2, server. The reader of a hub's `audit:` setting, the conventions the audit holds the
 // hub's projects to: the files a project must hold (`required_files`), the headings a file must
 // hold while a manifest key has a value (`required_sections`) and the folders a project at a stage
-// is kept under (`stage_folders`). Each is off unless the hub sets it.
+// is kept under (`stage_folders`). Each is off unless the hub sets it. The setting's three single
+// values, the open markers (`markers`), the mark of a result that is not final (`provisional_mark`)
+// and the folders the audit's events leave out (`skip_folders`), are read with the hub's layout
+// (`hubLayout`, data/sources/config/settings/hub-rows.ts), whose reader names a value the options
+// refuse.
 //
 // The value is read from the hub's own `.oculus/config.yml`, where the setting lives: the merge of
 // the hub's file (data/sources/config/merge/hub-layer.ts) applies only the keys of the hub list, so
@@ -56,8 +60,16 @@ function noSetting(): AuditSetting {
 /** The key the setting is written under in the hub's settings file. */
 const AUDIT = 'audit';
 
-/** The parts `audit:` takes. */
+/** The parts `audit:` takes as rows, each read here. */
 const PARTS = ['required_files', 'required_sections', 'stage_folders'];
+
+/**
+ * The parts `audit:` takes as one value each: the markers, the provisional mark and the folders the
+ * audit's events leave out. They are read, and a value the options refuse is named, by the hub's
+ * layout (`hubLayout`, data/sources/config/settings/hub-rows.ts), so this reader only takes them
+ * as parts.
+ */
+const VALUES = ['markers', 'provisional_mark', 'skip_folders'];
 
 /** A text with a character in it. */
 const filledShape = z.string().min(1);
@@ -148,7 +160,7 @@ function auditSetting(value: unknown): AuditSetting {
     const problems: string[] = [];
     if (!isMap(value)) return { ...noSetting(), problems: [AUDIT] };
     for (const key of Object.keys(value)) {
-        if (!PARTS.includes(key)) problems.push(`${AUDIT}.${key}`);
+        if (!PARTS.includes(key) && !VALUES.includes(key)) problems.push(`${AUDIT}.${key}`);
     }
     const part = <T>(key: string, fields: Fields, needed: string[]): T[] =>
         Object.hasOwn(value, key)

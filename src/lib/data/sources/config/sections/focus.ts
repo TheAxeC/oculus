@@ -3,11 +3,12 @@
 // each value was read from: a block that is no map, a value its options-catalog entry refuses (a
 // horizon that is no number, a list of statuses that is no list of words), a `focus.sections` that
 // is no list or names a word that is no section of the board or a section twice, and a field of a
-// word of `ticker_categories` that names no word of the text catalog. The page reads the block and
-// the words itself (state/boards/ticker.ts, focus.ts, focus/focus-lanes.ts, and the sections
-// through data/shapes/boards/focus-sections.ts, which Focus.svelte draws its sections by) and
-// passes over what it cannot read, so each finding says the value or the field is not read. They
-// are worded from the merged catalog, as iconFindings' are.
+// word of `ticker_categories` that names no word of the text catalog. The page reads the block's
+// numbers through `focusNumber`, which reads a refused number's default, and the rest of the block
+// and the words itself (state/boards/ticker.ts, focus.ts, focus/focus-lanes.ts, and the sections
+// through data/shapes/boards/focus-sections.ts, which Focus.svelte draws its sections by), passing
+// over what it cannot read, so each finding says the value or the field is not read. They are
+// worded from the merged catalog, as iconFindings' are.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { focusBlock, isMap } from '../../../helpers/guards.ts';
@@ -16,9 +17,24 @@ import { FOCUS_SECTIONS, focusSections } from '../../../shapes/boards/focus-sect
 import { catalogOf, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem } from '../catalog/value-rule.ts';
 import { mustBe } from '../catalog/value-words.ts';
+import { settingReader } from '../settings/reader.ts';
 
 /** The block the findings are about, and the prefix of its entries in the options catalog. */
 const FOCUS = 'focus';
+
+/**
+ * The number `focus.<key>` of the merged config by its options entry: the value when the entry
+ * takes it, and the entry's default for a value it refuses or a key the block does not hold, the
+ * refused value one of `focusFindings`. Null for a configuration that holds no options catalog,
+ * which is the page's before the config channel's first message, and for a key with no entry.
+ */
+export function focusNumber(config: Record<string, unknown>, key: string): number | null {
+    try {
+        return settingReader(config).number(`${FOCUS}.${key}`);
+    } catch {
+        return null;
+    }
+}
 
 /** The entries of the options catalog that describe config/defaults/behavior.yml. */
 function behaviorEntries(config: Record<string, unknown>): Partial<Record<string, CatalogEntry>> {

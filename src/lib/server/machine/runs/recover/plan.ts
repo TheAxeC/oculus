@@ -46,12 +46,15 @@ export function validName(value: string): boolean {
 }
 
 /**
- * The part of a dataset's `path:` below `~/data/`, or null when the path is not under `~/data` or
- * holds a part that climbs or is not a plain name, so Recover writes nowhere else.
+ * The part of a dataset's `path:` below `~/<dataDir>/`, `dataDir` being `recover.data_dir`, or null
+ * when the path is not under it, holds a part that climbs or is not a plain name, or the hub names
+ * no such folder, so Recover writes nowhere else.
  */
-export function dataPart(path: string | undefined): string | null {
-    if (!path?.startsWith('~/data/')) return null;
-    const rest = path.slice('~/data/'.length).replace(/\/+$/, '');
+export function dataPart(path: string | undefined, dataDir: string): string | null {
+    if (!safeName(dataDir)) return null;
+    const root = `~/${dataDir}/`;
+    if (!path?.startsWith(root)) return null;
+    const rest = path.slice(root.length).replace(/\/+$/, '');
     return safeName(rest) ? rest : null;
 }
 

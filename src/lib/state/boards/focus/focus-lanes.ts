@@ -9,7 +9,8 @@
 import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { readPeriod } from '../../../data/helpers/dates.ts';
-import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
+import { text as str } from '../../../data/helpers/guards.ts';
+import { focusNumber } from '../../../data/sources/config/sections/focus.ts';
 import {
     bareId,
     flaggedCollections,
@@ -107,7 +108,7 @@ export function manifestsBehind(
     config: Record<string, unknown>,
     wordsOf?: WordsOf
 ): ManifestBehind | null {
-    const grace = focusSetting(config, 'stale_lag_days');
+    const grace = focusNumber(config, 'stale_lag_days');
     if (grace === null) return null;
     const stale = projects
         .filter(

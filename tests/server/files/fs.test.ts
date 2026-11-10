@@ -32,8 +32,13 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
     return realpathSync(dir);
 }
 
-function entriesOf(list: Root[], key: string, path: string): string[] {
-    const found = listDir(list, key, path);
+function entriesOf(
+    list: Root[],
+    key: string,
+    path: string,
+    shown: { hidden: boolean; folders: readonly string[] } = { hidden: false, folders: [] }
+): string[] {
+    const found = listDir(list, key, path, shown);
     return 'entries' in found ? found.entries.map((entry) => entry.name) : [`error:${found.error}`];
 }
 
@@ -46,5 +51,21 @@ describe('one directory under a root', () => {
         expect(entriesOf(list, 'other', '')).toEqual(['error:outside']);
         expect(entriesOf(list, 'one', 'a.txt')).toEqual(['error:missing']);
         expect(entriesOf(list, 'one', 'nowhere')).toEqual(['error:missing']);
+    });
+
+    it('lists the folders the hidden folders setting names only when hidden files are (G13)', () => {
+        const dir = folder({ 'a.txt': 'a\n', '.env': 'x\n' }, ['vendor', 'node_modules']);
+        const list: Root[] = [{ key: 'one', dir }];
+
+        expect(entriesOf(list, 'one', '', { hidden: false, folders: ['vendor'] })).toEqual([
+            'node_modules',
+            'a.txt'
+        ]);
+        expect(entriesOf(list, 'one', '', { hidden: true, folders: ['vendor'] })).toEqual([
+            'node_modules',
+            'vendor',
+            '.env',
+            'a.txt'
+        ]);
     });
 });

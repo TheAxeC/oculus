@@ -54,13 +54,15 @@ export type GlobWatch = {
 /**
  * The watcher's handling of the store `source`: `covered` says whether a recursive watch of the
  * watcher's own holds a folder, `scanned` gives the scan folders of the last rebuild, `projects`
- * the folders of the projects its snapshot names, and `queue` queues a rebuild.
+ * the folders of the projects its snapshot names, `never` the folders of a project the hubs'
+ * settings leave out of the watch (audited.ts), as segments, and `queue` queues a rebuild.
  */
 export function globWatch(options: {
     source: GlobSource;
     covered: (dir: string) => boolean;
     scanned: () => readonly string[];
     projects: () => readonly string[];
+    never: () => readonly string[][];
     queue: () => void;
 }): GlobWatch {
     const { source } = options;
@@ -79,8 +81,9 @@ export function globWatch(options: {
             manifest: () => (manifest ??= holdsProject(path))
         };
         const held = source.store.held();
-        const moved = movedFolder(event, held, options.scanned(), options.projects());
-        for (const key of droppedKeys(event, held)) source.store.drop(key);
+        const never = options.never();
+        const moved = movedFolder(event, held, options.scanned(), options.projects(), never);
+        for (const key of droppedKeys(event, held, never)) source.store.drop(key);
         return moved;
     };
 

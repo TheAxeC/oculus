@@ -48,7 +48,8 @@ export type ComposerAgent = AgentId | 'shell';
 /** What one tab keeps of its composer. */
 export type ComposerRecord = {
     workspace: string;
-    agent: ComposerAgent;
+    /** The kind the tab chose, or null for a tab that chose none, which shows the default agent. */
+    agent: ComposerAgent | null;
     /** The account label per agent. */
     accounts: Partial<Record<AgentId, string>>;
     /** The value id per list key, per agent. */
@@ -79,10 +80,10 @@ export type ComposerRecord = {
 /** The instance-state field the record is kept under. */
 export const COMPOSER_FIELD = 'composer';
 
-/** A tab that has not started anything yet. */
+/** A tab that has not started anything yet, and has chosen no kind. */
 export const COMPOSER_EMPTY: ComposerRecord = {
     workspace: '',
-    agent: 'claude',
+    agent: null,
     accounts: {},
     picks: {}
 };
@@ -102,7 +103,7 @@ const picksShape = z
 const composerShape = z
     .object({
         workspace: z.string().catch(''),
-        agent: z.enum(['claude', 'codex', 'shell']).catch('claude'),
+        agent: z.enum(['claude', 'codex', 'shell']).nullable().catch(null),
         accounts: wordsShape.transform((words) => ({ claude: words.claude, codex: words.codex })),
         picks: picksShape,
         split: filledTextShape,
@@ -438,20 +439,33 @@ export function promptKey(event: {
 /**
  * The repository a folder lies in: the deepest root of the `git` channel that holds it, or nothing
  * when no watched root holds it. A folder inside a worktree under that root's worktrees folder
- * (`<root>/.agents/worktrees/<name>`) lies in that worktree, which is a repository of its own, as
- * the Repositories view takes it.
+ * (`<root>/<worktreesDir>/<name>`, the folder its state carries) lies in that worktree, which is a
+ * repository of its own, as the Repositories view takes it.
  */
-function repositoryOf(workspace: string, git: Readonly<Record<string, unknown>> | null): string {
+function repositoryOf(workspace: string, git: WorktreeStates | null): string {
     if (git === null || workspace === '') return '';
     let best = '';
     for (const root of Object.keys(git)) {
         if (inside(workspace, root) && root.length > best.length) best = root;
     }
     if (best === '') return '';
-    const folder = worktreePath(best, '');
+    const dir = worktreesFolder(git, best);
+    if (dir === '') return best;
+    const folder = worktreePath(best, '', dir);
     if (!workspace.startsWith(folder)) return best;
     const name = workspace.slice(folder.length).split('/')[0];
-    return validName(name) ? worktreePath(best, name) : best;
+    return validName(name) ? worktreePath(best, name, dir) : best;
+}
+
+/** The states of the `git` channel by root, as far as the worktree rules read them. */
+type WorktreeStates = Readonly<Record<string, { worktreesDir?: string }>>;
+
+/**
+ * The worktrees folder of the repository at `root`, as its state on the `git` channel carries it,
+ * and the empty text for a root the channel does not hold.
+ */
+export function worktreesFolder(git: WorktreeStates | null, root: string): string {
+    return byKey(git ?? {}, root)?.worktreesDir ?? '';
 }
 
 /**
@@ -459,10 +473,7 @@ function repositoryOf(workspace: string, git: Readonly<Record<string, unknown>> 
  * `git` channel watches it, since a git write names only a root of the channel's last payload, and
  * nothing otherwise.
  */
-export function worktreeRoot(
-    workspace: string,
-    git: Readonly<Record<string, unknown>> | null
-): string {
+export function worktreeRoot(workspace: string, git: WorktreeStates | null): string {
     const root = repositoryOf(workspace, git);
     return git !== null && byKey(git, root) !== undefined ? root : '';
 }
@@ -493,7 +504,14 @@ function inside(folder: string, root: string): boolean {
 export function branchOf(
     workspace: string,
     git: Readonly<
-        Record<string, { branch: string; worktrees?: readonly { path: string; branch: string }[] }>
+        Record<
+            string,
+            {
+                branch: string;
+                worktreesDir?: string;
+                worktrees?: readonly { path: string; branch: string }[];
+            }
+        >
     > | null
 ): string {
     const root = repositoryOf(workspace, git);
@@ -510,7 +528,8 @@ export function branchOf(
  */
 export type CustomizationScopeState = {
     open: boolean;
-    agent: AgentId;
+    /** The agent the section chose, or null for none, which reads the default agent's. */
+    agent: AgentId | null;
     account: string;
     workspace: string;
     expanded: string[];
@@ -522,7 +541,7 @@ export const CUSTOM_FIELD = 'custom';
 /** The section's scope as the list keeps it, each field as typed or at its default. */
 const scopeShape = z.object({
     open: z.boolean().catch(true),
-    agent: z.enum(['claude', 'codex']).catch('claude'),
+    agent: z.enum(['claude', 'codex']).nullable().catch(null),
     account: z.string().catch(''),
     workspace: z.string().catch(''),
     expanded: stringItemsShape.catch([])

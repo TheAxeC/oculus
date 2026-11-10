@@ -26,9 +26,9 @@ import {
     MANIFEST,
     ROOT_FOLDER,
     addressOfId,
-    hubFileOf,
     type RegistryWord
 } from '../../../data/helpers/hub-names.ts';
+import { hubFileOf } from '../../../data/shapes/hub-keys.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { chosenHub } from '../../shared/page/hubs.ts';

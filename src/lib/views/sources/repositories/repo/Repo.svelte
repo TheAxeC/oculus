@@ -50,6 +50,7 @@
     import RepoMessage from './RepoMessage.svelte';
     import { createChangePicks } from '$lib/views/shared/changes/groups/change-picks.svelte';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
+    import type { AgentId } from '$lib/state/sessions/agents.svelte';
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
@@ -83,7 +84,7 @@
         onremove: (path: string, label: string) => void;
         onmerge: (branch: string, onto: string) => void;
         onterminal: (path: string, label: string) => void;
-        onagent: (path: string, agent: 'claude' | 'codex') => void;
+        onagent: (path: string, agent: AgentId) => void;
         /** The ids of the change rows the reader selected, kept in the view's instance state. */
         picked: string[];
         /** The selection changed to these rows. */

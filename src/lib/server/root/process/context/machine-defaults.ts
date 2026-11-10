@@ -2,7 +2,7 @@
 // the text the Settings view shows beside the key: the value the server uses. No value of any
 // `local.yml` is read here, so the answer is the same for every machine and every file.
 
-import { DEFAULT_PORT, localDefaults } from '../../../../data/sources/config.ts';
+import { localDefaults } from '../../../../data/sources/config.ts';
 import { words } from '../../../core/words.ts';
 import { defaultChangesPath } from '../../../core/changes.ts';
 import { defaultConnectDir } from '../../../accounts/connect/store.ts';
@@ -28,17 +28,19 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
     const noAccounts = words(text, 'server.machine_default.no_accounts');
     const noKey = words(text, 'server.machine_default.no_key');
     return {
-        port: String(DEFAULT_PORT),
+        port: String(defaults.port),
         self: defaults.self,
         clusters: noAccounts,
         sessions_cache: defaultCachePath(),
         sessions_overrides: defaultOverridesPath(),
+        sessions_roots: defaults.sessionsRoots.join(', '),
         changes: defaultChangesPath(),
         history: defaultHistoryDir(),
         approvals: defaultApprovalsPath(),
         lsp: defaultLspPath(),
         schedule_record: defaultRecordPath(),
         claude_bin: defaults.claudeBin,
+        codex_bin: defaults.codexBin,
         commit_message_account: '',
         open_bin: openProgram() ?? words(text, 'server.machine_default.no_opener'),
         rite_dap_bin: defaults.riteDapBin,

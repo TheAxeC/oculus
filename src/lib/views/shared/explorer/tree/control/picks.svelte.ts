@@ -42,7 +42,7 @@ import {
     rowStores
 } from '../menu/row-menu';
 import { holdsContents, rowNaming, rowOpsPicker, shownAt, type NamingHooks } from '../menu/row-ops';
-import { landingRefusal } from '$lib/state/sources/explorer/notes/note-tree';
+import { landingRefusal, rootNotes } from '$lib/state/sources/explorer/notes/note-tree';
 import type { Asking } from './asking.svelte';
 import { createFixing } from './fixing.svelte';
 import { createMaking } from './making.svelte';
@@ -170,11 +170,7 @@ export function createPicks(deps: PicksDeps) {
                     folder.root
                 ),
             refuse: (root: string, path: string) =>
-                landingRefusal(
-                    client.fs.roots().some((one) => one.key === root && one.hub === true),
-                    path,
-                    t
-                ),
+                landingRefusal(rootNotes(client.fs.roots(), root), path, t),
             open: (file) => deps.opened?.(file),
             get hooks() {
                 return deps.naming;

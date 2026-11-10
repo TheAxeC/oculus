@@ -72,6 +72,23 @@ options:
             folders:
                 help: the folders of the hub, relative to it, one of which a project at those stages lies under
                 control: list
+    audit.markers:
+        heading: boards
+        section: Audit checks
+        help: The open markers the audit looks for in a project's documents (the Markdown documents of project_docs and the slides of its deck) and in every collection entry, each matched as it is written and, when it starts and ends with a letter or a digit, as a whole word, such as %TODO, TODO or FIXME. A document that holds one is a finding of the Open markers section. Empty looks for none. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: list
+    audit.provisional_mark:
+        heading: boards
+        section: Audit checks
+        help: The mark that tags a manifest result as not final, such as [PROVISIONAL], matched without regard to letter case; a project at a public stage whose results hold it is a finding. Empty asks for none. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        empty: true
+    audit.skip_folders:
+        heading: boards
+        section: Audit checks
+        help: The folders of a project, besides its code folder (code_dir), whose files never change what the audit finds, such as a folder of dead ends that holds many files, each a path inside the project folder; a change inside one rebuilds nothing, and a required file inside one is still heard. Empty names none. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: list
+        form: inner_path
     website.folder:
         heading: sources
         section: Website
@@ -206,6 +223,12 @@ options:
         section: Website
         help: "The address a DOI resolves at, which an entry's code link starts with."
         control: text
+    website.schema_section:
+        heading: sources
+        section: Website
+        help: "The section: word of a collection schema's fields that feed the website, such as Website. An entry's card and page do not draw the fields of that section, and the entry's editor shows them in their section. Empty names none, and every field is drawn. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
     website.file_header:
         heading: sources
         section: Website
@@ -599,6 +622,11 @@ options:
         section: Thresholds and horizons
         help: The number of in-flight papers aimed at one venue at which the Focus board raises its venue load line and a project board's Venue button marks the venue.
         control: number
+    focus.venue_card_warn:
+        heading: boards
+        section: Thresholds and horizons
+        help: The number of live projects aimed at one venue at which the venue's card carries its violet ring and concentration mark, and its tooltip says how many.
+        control: number
     focus.linkedin_cadence_days:
         heading: boards
         section: Thresholds and horizons
@@ -612,19 +640,57 @@ options:
     file_index.max_per_project:
         heading: boards
         section: File finder
-        help: How many files the finder lists for one project, the newest first. A value that is not a number above zero means 400.
+        help: How many files the finder lists for one project, the newest first. A value that is not a whole number of at least 1 is a finding, and oculus's value stands.
         control: number
+        min: 1
+        whole: true
     file_index.ext:
         heading: boards
         section: File finder
-        help: The extensions, each with its dot, of the files the finder lists, compared in lower case. An empty list means the built-in list of common document and code extensions.
+        help: The extensions, each with its dot, of the files the finder lists, compared in lower case. An empty list lists no file.
         control: list
+    file_index.skip_folders:
+        heading: boards
+        section: File finder
+        help: The names of the folders the finder never enters, at any depth of a project's folder, such as node_modules or a virtual environment's venv. A name with a dot first is never entered whether it is here or not. An empty list enters every folder.
+        control: list
+        form: file_name
     slurm.resource:
         heading: cluster
         section: Slurm
         help: "The clusters the Live HPC poller queries, each the key of a cluster entry of the resources registry, in the order the HPC view draws them. A cluster entry's host is the ssh alias, the DNS name or the address ssh connects to, and the user name and the key file are this machine's, a row of clusters: in local.yml. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. The empty list sets no cluster, and the HPC view says so and polls nothing. A value that is not a list is a finding and no cluster is polled, a key named twice is a finding and polled once, mac, which names this Mac, is a finding and is not polled, and a key that names no cluster with a host shows why in the HPC view."
         control: multi
         from: clusters
+    slurm.cluster_folder:
+        heading: cluster
+        section: Slurm
+        help: "The folder on the cluster a Submit copies a project's code to and runs its job script in when the project's manifest names no paths.cluster, written as paths.cluster is, ~/ or / followed by folder names, with {id} standing for the project's id, such as ~/projects/{id}. Empty names none, and Submit refuses a project whose manifest names no paths.cluster. Another value is a finding naming it, and the default is used. This is a setting of the hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+        form: cluster_folder
+    slurm.unsent:
+        heading: cluster
+        section: Slurm
+        help: "The globs of the files of a project's code folder a Submit does not copy to the cluster, each held against the file's path from the code folder and against each folder on it, and a glob with no slash against each of their names: __pycache__ leaves out every file under such a folder at any depth, *.npy every .npy file, and results/** the files of the top results folder. Empty leaves out none of the files git keeps. This is a setting of the hub, kept in its .oculus/config.yml."
+        control: list
+    slurm.log_dirs:
+        heading: cluster
+        section: Slurm
+        help: "Where the log of a finished job Slurm no longer holds the record of is looked for, in order, under the job's working folder: each a folder pattern holding a file whose name has the job id, such as logs or */logs, and . the working folder itself, where Slurm's own slurm-<id>.out and then any .out file with the id are looked for. The first that holds one wins, the newest file within it. Empty looks nowhere. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: list
+        form: folder_glob
+    slurm.scratch_roots:
+        heading: cluster
+        section: Slurm
+        help: "Each cluster's per-job scratch folder, by its key in slurm.resource: the absolute folder holding one folder per job named by $SLURM_JOB_ID, such as /local. Submit warns about a job script that never names <folder>/$SLURM_JOB_ID, and Recover's Verify and Unpack jobs keep their work there. A cluster with no member gets no such warning, and Recover refuses its Verify and Unpack and says where this is set. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            key:
+                help: the cluster's key in slurm.resource
+                control: text
+            value:
+                help: the absolute folder that holds one folder per job
+                control: text
+                form: absolute_folder
     clusters.key_type:
         heading: cluster
         section: Cluster keys
@@ -734,6 +800,25 @@ options:
         control: text
         form: https_address
         empty: true
+    recover.data_dir:
+        heading: cluster
+        section: Recover
+        help: 'The folder under the home folder, written relative to it, that holds the datasets on this Mac and on every cluster alike, such as data for ~/data. Recover acts only on a dataset of the data registry whose path: is under ~/<folder>/, and puts it in the same place on the cluster. Empty, Recover refuses every dataset. This is a setting of the primary hub, kept in its .oculus/config.yml.'
+        control: text
+        form: inner_path
+        empty: true
+    recover.partitions:
+        heading: cluster
+        section: Recover
+        help: "The Slurm partition of Recover's Verify and Unpack jobs, by the cluster's key in slurm.resource. A cluster with no member gets no partition line, so Slurm puts the job in the cluster's default partition. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        fields:
+            key:
+                help: the cluster's key in slurm.resource
+                control: text
+            value:
+                help: the partition, or several joined by commas
+                control: text
+                form: partition
     slurm.days:
         heading: cluster
         section: Slurm
@@ -812,6 +897,12 @@ options:
         min: 1
         max: 500
         whole: true
+    mail.todo_label:
+        heading: calendar
+        section: Mail reads
+        help: The Gmail label, or the Outlook category, a reader puts on a thread to keep it on the plate; a thread in the inbox that carries it is read by the plate's todo signal. Empty reads no todo signal. A change reads every account again at once.
+        control: text
+        empty: true
     editor.paint_limit_kb:
         heading: editor
         section: Source editor
@@ -821,7 +912,7 @@ options:
     editor.tab_size:
         heading: editor
         section: Source editor
-        help: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
+        help: The width of one step of indentation, from 1 to 8, VS Code's editor.tabSize. A file that indents with spaces keeps the step it is written with; this is the width for a file with no indented line and for a file indented with tabs. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. The TypeScript language server indents the text its own edits insert, such as an added import, by the same order, read when it first asks for a file.
         control: number
         min: 1
         max: 8
@@ -829,7 +920,7 @@ options:
     editor.insert_spaces:
         heading: editor
         section: Source editor
-        help: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it.
+        help: Whether a file with no indented line is indented with spaces (true) or a tab (false), VS Code's editor.insertSpaces. A file that already indents keeps its own. A language's record in editor.languages, or a repository's .oculus/settings.yml, overrides it. The TypeScript language server takes the same choice for the text its own edits insert.
         control: toggle
     editor.word_wrap:
         heading: editor
@@ -938,6 +1029,12 @@ options:
         control: number
         min: 1
         whole: true
+    latex.main_file:
+        heading: editor
+        section: LaTeX
+        help: The name of the main file a manuscript has when it has one, with no folder. A folder's main files are listed with it first and the rest by name, and a file two mains of its folder could build through is taken through it first.
+        control: text
+        form: file_name
     latex.recipe_default:
         heading: editor
         section: LaTeX
@@ -971,6 +1068,54 @@ options:
         help: Where the synctex program is, which finds the PDF position of a source line and the source line of a PDF click. Empty finds it on PATH.
         control: path
         empty: true
+    latex.texdoc_path:
+        heading: editor
+        section: LaTeX
+        help: Where the texdoc program is, which opens the documentation of a package. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.texcount_path:
+        heading: editor
+        section: LaTeX
+        help: Where the texcount program is, which counts the words of a main file. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.checkcites_path:
+        heading: editor
+        section: LaTeX
+        help: Where the checkcites program is, which lists the citations a build left undefined or unused. Empty finds it on PATH.
+        control: path
+        empty: true
+    latex.clean_path:
+        heading: editor
+        section: LaTeX
+        help: Where the latexmk program Clean runs is, which removes what a build left and keeps the PDF and the SyncTeX file. Empty finds latexmk on PATH.
+        control: path
+        empty: true
+    latex.literate_recipes:
+        heading: editor
+        section: LaTeX
+        help: The recipe a literate source builds with, by its extension, when neither the file nor the reader names one. A member whose recipe latex.recipes does not hold is listed in the Findings view and picks nothing.
+        fields:
+            key:
+                help: an extension with its dot, compared in lower case
+                control: text
+                form: extension
+            value:
+                help: the name of a recipe of latex.recipes
+                control: text
+    latex.program_recipes:
+        heading: editor
+        section: LaTeX
+        help: 'The recipe a % !TEX program = <program> comment picks, by the program it names, compared in lower case, when latex.recipe_default is first. A member whose recipe latex.recipes does not hold is listed in the Findings view and picks nothing.'
+        fields:
+            key:
+                help: the program the comment names
+                control: text
+                form: program
+            value:
+                help: the name of a recipe of latex.recipes
+                control: text
     latex.reverse_synctex:
         heading: editor
         section: LaTeX
@@ -1134,6 +1279,12 @@ options:
         section: Files
         help: Whether a file's row in the Files view drops the empty slot of a folder's arrow, so the file's icon sits where its sibling folders' arrows sit. false lines its icon up with its sibling folders' icons, as VS Code's Explorer does.
         control: toggle
+    files.hidden_folders:
+        heading: editor
+        section: Files
+        help: The names of the folders, at any depth, that the Files view lists only when hidden files are shown, beside every file or folder whose name starts with a dot, as VS Code's files.exclude. No walk of a served folder enters them either, with every dot folder beside them, so an app's file search with no exclude of its own, the look for a file an app's workspaceContains names, a folder's Fix All and the Markdown server's list of files leave them out. Each is a folder name with no slash.
+        control: list
+        form: file_name
     git.message_model:
         heading: editor
         section: Git
@@ -1149,6 +1300,17 @@ options:
         min: 0
         max: 35791
         whole: true
+    git.worktrees_dir:
+        heading: editor
+        section: Git
+        help: The folder, written relative to a repository, that holds the worktrees the Repositories view and a session's composer make, one folder per name inside it. The Repositories view says so when the repository's .gitignore does not carry /<folder>/, since a worktree made there would become content of the repository.
+        control: text
+        form: inner_path
+    deposit.default_ignore:
+        heading: editor
+        section: Deposit
+        help: The patterns, in .gitignore's form, that the deposit's generated .gitignore adds when a project's code folder holds no .depositignore, such as a folder of dead ends the hub keeps and a deposit never ships. A code folder that holds a .depositignore is deposited by its own patterns alone. Empty adds none. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: list
     deposit.zenodo.address:
         heading: editor
         section: Deposit
@@ -1206,6 +1368,12 @@ options:
         control: number
         min: 1
         whole: true
+    search.skip_folders:
+        heading: editor
+        section: Search
+        help: The names of the folders, at any depth, that the Search view and the palette's list of file names never descend into, whatever a .gitignore says, as VS Code's search.exclude. Each is a folder name with no slash. An empty list skips none but the folders a .gitignore names and the machine's private folders.
+        control: list
+        form: file_name
     literature.timeout_s:
         heading: editor
         section: Literature search

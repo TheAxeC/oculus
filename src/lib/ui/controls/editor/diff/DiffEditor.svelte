@@ -117,8 +117,11 @@
         oninput?: (text: string) => void;
         /** A value that changes with the tokens, the text size and every pick of a code theme. */
         look?: string;
-        /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
-        codeTheme?: string;
+        /**
+         * The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme; null
+         * while the page holds no config, when the editor is painted once one arrives.
+         */
+        codeTheme: string | null;
         /** Whether to grow to the content's height rather than fill the box. */
         sized?: boolean;
         /** A view state kept from before, restored once the first diff is drawn. */
@@ -156,7 +159,7 @@
         oninput,
         options,
         look = '',
-        codeTheme = 'tokens',
+        codeTheme,
         sized = false,
         view = null,
         bars = [],
@@ -272,8 +275,10 @@
         models = pair;
         kit = loaded;
         mounted = true;
-        painted = painting;
-        void paintCode(loaded, codeTheme, () => (painted = null));
+        if (codeTheme !== null) {
+            painted = painting;
+            void paintCode(loaded, codeTheme, () => (painted = null));
+        }
         grown(made);
     }
 
@@ -416,7 +421,7 @@
         const code = codeTheme;
         const loaded = kit;
         const made = diff;
-        if (loaded === null || made === null || wanted === painted) return;
+        if (loaded === null || made === null || code === null || wanted === painted) return;
         return repaint(loaded, made, host, code, (ok) => (painted = ok ? wanted : null));
     });
 

@@ -7,8 +7,7 @@
 // of the merge walk it (merge/tree.ts).
 
 import { isMap } from '../../../helpers/guards.ts';
-import { hubFileOf } from '../../../helpers/hub-names.ts';
-import { OWN_HUB_KEYS } from '../../../shapes/hub-keys.ts';
+import { OWN_HUB_KEYS, hubFileOf } from '../../../shapes/hub-keys.ts';
 import { setAt, valueAt } from '../merge/tree.ts';
 
 /** The key of the merged config that holds the options catalog's entries, by file and key. */

@@ -61,6 +61,20 @@ describe('what an lsp-edit writes', () => {
         expect(refused.body).toMatchObject({ ok: false, error: 'outside', failed: `hub/${other}` });
         expect(bytes(w, other).toString()).toBe('foo\n');
     });
+
+    it('writes the edit of a note of the notes folder notes_dir names in a dot folder, and refuses a file of another folder of it as outside (G13)', async () => {
+        const note = '.lab/notes/A.md';
+        const other = '.lab/drafts/x.md';
+        const w = replaceWorld({ [note]: 'foo [[Kickoff]]\n', [other]: 'foo\n' });
+        for (const root of w.ops.roots) root.notes = '.lab/notes';
+        const edits = [lspEdit([0, 6], [0, 13], 'Plan')];
+        const written = await lspEditPost(w, [lspFile(note, 'foo [[Kickoff]]\n', edits)]);
+        expect(written.body).toEqual({ ok: true, paths: [`hub/${note}`] });
+        expect(bytes(w, note).toString()).toBe('foo [[Plan]]\n');
+        const refused = await lspEditPost(w, [lspFile(other, 'foo\n', edits)]);
+        expect(refused.body).toMatchObject({ ok: false, error: 'outside', failed: `hub/${other}` });
+        expect(bytes(w, other).toString()).toBe('foo\n');
+    });
 });
 
 describe("an lsp-edit of a hub's own .oculus folder (case 28)", () => {

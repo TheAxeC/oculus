@@ -240,6 +240,22 @@ export function caretHere(
     };
 }
 
+/**
+ * Put the caret at the start of a line, counted from 1, of the source tab on screen and the focus
+ * in its editor, when that tab shows the file at the absolute path `file`; false, with nothing
+ * asked, for any other tab and for none. A debug stop shows its line this way.
+ */
+export function selectLineOnScreen(
+    tab: { id: string; view: string } | null,
+    status: Pick<EditorStatusStore, 'statusOf' | 'ask'>,
+    file: string,
+    line: number
+): boolean {
+    if (tab?.view !== 'source' || status.statusOf(tab.id)?.file !== file) return false;
+    const at = { line: line - 1, character: 0 };
+    return status.ask(tab.id, { kind: 'select', range: { start: at, end: at }, focus: true });
+}
+
 /** The views whose tab lists editor actions for the palette: a source tab and a diff pane. */
 const ACTION_VIEWS: readonly string[] = ['source', 'repositories-diff'];
 

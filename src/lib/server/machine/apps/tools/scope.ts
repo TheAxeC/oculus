@@ -31,6 +31,11 @@ export type ToolsEnv = {
     maxBytes: () => number;
     /** The most names a folder lists. */
     scanEntries: () => number;
+    /**
+     * The names of the folders `files.hidden_folders` gives, which a file search with no exclude
+     * and a `workspaceContains` look leave out as the Files view does.
+     */
+    hiddenFolders: () => readonly string[];
     languages: () => LanguageMap;
     /**
      * Run one operation that writes in the write chain the Files view's writes run in, recorded in

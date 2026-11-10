@@ -551,6 +551,18 @@ describe('findFiles exclude', () => {
             ['__pycache__/y.md', 'a.md', 'dir/n.md']
         ]);
     });
+
+    it('leaves out the folders the hidden folders setting names when undefined (G13)', async () => {
+        const { w, root, call } = setup({
+            roots: { r: { 'a.md': 'a\n', 'vendor/v.md': 'v\n', 'node_modules/p/x.md': 'x\n' } },
+            hiddenFolders: ['vendor']
+        });
+        const found = ((await call('find', '**/*.md', 'default')).value as string[])
+            .map((one) => one.slice(root.length + 1))
+            .sort();
+        await w.hosts.close();
+        expect(found).toEqual(['a.md', 'node_modules/p/x.md']);
+    });
 });
 
 describe('a glob', () => {

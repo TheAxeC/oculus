@@ -33,7 +33,8 @@ import { entryFollowups, entrySubtasks } from './collection/index.ts';
 import { lineNames } from './person.ts';
 import { hasWord, oneWordWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
-import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
+import { focusNumber } from '../../data/sources/config/sections/focus.ts';
+import { DEADLINE_SOON, daysUntil } from './board/index.ts';
 import {
     dueFollowups,
     item,
@@ -54,7 +55,6 @@ import {
     closesDeadline,
     deadlineMet,
     focusLabel,
-    setting,
     settled,
     snoozed,
     statusFlag,
@@ -124,10 +124,10 @@ function glyphOf(categories: readonly TickerCategory[], category: string): strin
 
 /**
  * How many in-flight papers aimed at one venue make it a venue-load line: `venue_conc_warn` under
- * `focus:`, and `VENUE_WARN` when the config holds no finite number there.
+ * `focus:` by its options entry (`focusNumber`), null before the page holds the settings.
  */
-export function venueWarn(config: Record<string, unknown>): number {
-    return setting(config, 'venue_conc_warn', VENUE_WARN);
+export function venueWarn(config: Record<string, unknown>): number | null {
+    return focusNumber(config, 'venue_conc_warn');
 }
 
 /**
@@ -187,7 +187,9 @@ export function collectionStatuses(collection: Collection | undefined): string[]
  * venues' calls are found through `lists`, each record by the entry its own hub reads the registry
  * by, whose `ticker:` gives the category its lines carry. A date a record holds is a line of the
  * command center inside `deadline_horizon_days`; a follow-up, a subtask and an entry of the file
- * flagged `tasks` are lines of the tasks section, with their date and whatever it is.
+ * flagged `tasks` are lines of the tasks section, with their date and whatever it is. Each horizon
+ * is read by its options entry (`focusNumber`); before the page holds the settings there is none,
+ * and no dated line lies inside it.
  */
 export function ticker(
     snapshot: Snapshot,
@@ -197,8 +199,11 @@ export function ticker(
     lists: TickerLists = null
 ): Ticker {
     const at = (record: Rooted): Record<string, unknown> => wordsOf?.(rootOf(record)) ?? config;
-    const horizon = setting(config, 'deadline_horizon_days', 90);
-    const months = setting(config, 'conf_horizon_months', 1);
+    const horizon = focusNumber(config, 'deadline_horizon_days');
+    const months = focusNumber(config, 'conf_horizon_months');
+    /** Whether a count of days or months ahead lies inside a horizon the settings name. */
+    const inside = (ahead: number, limit: number | null): boolean =>
+        limit !== null && ahead <= limit;
     const warn = venueWarn(config);
     const labelMode = config.focus_label_mode;
     const projects = Object.values(snapshot.entities.projects);
@@ -245,7 +250,7 @@ export function ticker(
         const deadline = (project.deadline ?? '').trim();
         if (paper === undefined || deadline === '' || settled(project, at(project))) continue;
         const days = daysUntil(deadline, now);
-        if (days !== null && days > horizon) continue;
+        if (days !== null && !inside(days, horizon)) continue;
         const line = item(paper, glyphOf(categories, paper), focusLabel(project, labelMode), days, {
             id: project.id,
             ...rootMark(project),
@@ -291,7 +296,7 @@ export function ticker(
             continue;
         }
         const days = daysUntil(isoOf(scheme.deadline), now);
-        if (days === null || days > horizon) continue;
+        if (days === null || !inside(days, horizon)) continue;
         const key = fundingKey(scheme);
         const line = item(grant, glyphOf(categories, grant), scheme.title, days, {
             entry: key,
@@ -331,7 +336,7 @@ export function ticker(
             // open work rather than a date, so it is a task line; an undated entry of any other
             // file names no moment and is on no list at all.
             if (days === null && source.undated !== true) continue;
-            if (days !== null && days > horizon && !isTasks) continue;
+            if (days !== null && !inside(days, horizon) && !isTasks) continue;
             const line = item(category, glyphOf(categories, category), entry.title, days, {
                 entry: key,
                 status,
@@ -357,12 +362,12 @@ export function ticker(
      * gives, `lead` on oculus's own list, so the leads stand in a command center group of their own
      * beside the applications the entry loop above found.
      */
-    const leadsWindow = setting(config, 'leads_horizon_days', 21);
+    const leadsWindow = focusNumber(config, 'leads_horizon_days');
     for (const lead of snapshot.entities.feeds.leads ?? []) {
         const scouted = registryCategory(lead, 'leads');
         if (scouted === undefined || isLeadClosed(at(lead), lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
-        if (days === null || days < 0 || days > leadsWindow) continue;
+        if (days === null || days < 0 || !inside(days, leadsWindow)) continue;
         dated.push({
             category: scouted,
             line: item(scouted, glyphOf(categories, scouted), lead.title, days, {
@@ -385,7 +390,7 @@ export function ticker(
         const target: TickerTarget = { kind: 'venue', id: venue.id };
         const over = { entry: venuesView, ...rootMark(venue), target };
         if (days !== null) {
-            if (days < 0 || days > horizon) continue;
+            if (days < 0 || !inside(days, horizon)) continue;
             dated.push({
                 category: call,
                 line: item(call, glyphOf(categories, call), venueLabel(venue), days, over)
@@ -393,7 +398,7 @@ export function ticker(
             continue;
         }
         const ahead = monthsAhead(venue.deadlineMonth ?? '', now);
-        if (ahead === null || ahead > months) continue;
+        if (ahead === null || !inside(ahead, months)) continue;
         dated.push({
             category: call,
             line: item(call, glyphOf(categories, call), venueLabel(venue), null, {
@@ -591,8 +596,14 @@ export function monthsAhead(month: string, now: number): number | null {
 /**
  * The venues carrying too many in-flight papers, most-loaded first. A venue is counted by its
  * name, so the one journal catalogued in two hubs of the workspace carries the papers of both.
+ * With no warning count, before the page holds the settings, no venue carries too many.
  */
-export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: number): Tally[] {
+export function venueLoad(
+    projects: Project[],
+    venues: Record<Id, Venue>,
+    warn: number | null
+): Tally[] {
+    if (warn === null) return [];
     const counts = new Map<string, { id: Id; count: number }>();
     for (const project of projects) {
         const id = project.venueId;

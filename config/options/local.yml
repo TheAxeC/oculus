@@ -1,6 +1,6 @@
 # ===========================================================================
 # options/local.yml
-# Every key a hub's .oculus/local.yml takes described once, the machine's own values, and a help line for each group of its dotted keys, in the shape the head of options/appearance.yml describes. local.yml has no defaults file in oculus: each key is edited in the This machine scope of Settings, in the file of the hub picked there, the primary's taking every key and any other hub's the lists whose rows every hub's file joins. loadConfig() reads it into the merged map's `options` and `option_groups` under local.yml; readLocalText() in src/lib/data/sources/config/local.ts reads a local.yml, whose keys (LOCAL_KEYS there) are the ones described here.
+# Every key a hub's .oculus/local.yml takes described once, the machine's own values, and a help line for each group of its dotted keys, in the shape the head of options/appearance.yml describes. local.yml has no defaults file in oculus: an entry's default is its `default`, which readLocal reads (localDefaults() in src/lib/data/sources/config/local.ts), and a path under ~/.oculus, oculus's own state folder, has none here and is named by the module that owns the file. Each key is edited in the This machine scope of Settings, in the file of the hub picked there, the primary's taking every key and any other hub's the lists whose rows every hub's file joins. loadConfig() reads it into the merged map's `options` and `option_groups` under local.yml; readLocalText() in src/lib/data/sources/config/local.ts reads a local.yml, whose keys (LOCAL_KEYS there) are the ones described here.
 # ===========================================================================
 
 options:
@@ -8,13 +8,15 @@ options:
         section: Server
         control: number
         whole: true
-        help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it, or with a value that is not one, the port is the server's default, 8790 unless the server was started with another. Only the primary hub's file sets it. The server moves to a port written to the file at once, and stays on the port it listens on when that port cannot be used.
+        help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it, or with a value that is not one, the port is the server's default, this entry's default unless the server was started with another. Only the primary hub's file sets it. The server moves to a port written to the file at once, and stays on the port it listens on when that port cannot be used.
+        default: 8790
     self:
         section: You
         help: "Your own person: the key of a person of the people registry of any hub. It is read from the primary hub's file only, and resolved from the primary hub: the primary's person of that key, else the person of the one other hub that holds it. The Person page draws its this is me button pressed on that person, and the portfolio chat names them as its user. It is set from this row or from the button on a Person page, and stays out of git with the rest of the file. Empty or without it nobody is marked; a key no hub holds, or one that two hubs other than the primary hold, marks nobody and is a finding. A change is read again at once."
         control: choice
         empty: nobody is marked as you
         from: people
+        default: ''
     clusters:
         section: Cluster accounts
         help: "This machine's account on each cluster of slurm.resource, a list of resource, user and key_file: the user name ssh logs in with and the key file it offers, each passed to ssh as its own argument. A cluster with no row connects as ssh's own configuration says. The user is letters, digits, dots, dashes and underscores, starting with a letter, a digit or an underscore; the key file is an absolute path or one under ~/, holding no single quote and not ending in .pub. A row that breaks either is a finding and is not used, and so is a row of the resource mac, which names this Mac. The rows of every hub's file are read together, the primary hub's first, each marked with its hub; a second row for one cluster is a finding and the first is used. Account setup's Save and this row write it. A change is read again at once."
@@ -25,12 +27,18 @@ options:
                 from: clusters
             user: the user name on that cluster
             key_file: the key file ssh offers, an absolute path or one under ~/
+        default: []
     sessions_cache:
         section: Sessions
         help: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
     sessions_overrides:
         section: Sessions
         help: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
+    sessions_roots:
+        section: Sessions
+        help: "The folders the Sessions view files a session under, a list of paths: a session whose working folder lies in a repository is filed under the repository, and any other under the folder one level below the deepest of these that holds its working folder, so with ~/workspace and ~ a session in ~/workspace/notes/drafts is filed under ~/workspace/notes and one in ~/papers/a under ~/papers. A session under none of them is filed under its own working folder. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. Only the primary hub's file sets it. A change is read again at once."
+        control: list
+        default: ['~/workspace', '~/data', '~']
     changes:
         section: Saved files
         help: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
@@ -48,7 +56,12 @@ options:
         help: Where the schedules' run record lives, each schedule's latest runs and the last due time it handled. Without it the file is ~/.oculus/schedule.json, mode 0600 when oculus creates it. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
     claude_bin:
         section: Programs
-        help: The Claude command line that the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
+        help: The Claude command line that a Claude terminal, its resume and its fork, a Claude start of the composer, the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages are started with, an absolute path or a name resolved on PATH. Without it the name is this entry's default, claude. A change is read again at once.
+        default: claude
+    codex_bin:
+        section: Programs
+        help: The Codex command line that a Codex terminal, its resume and its fork, and a Codex start of the composer are started with, an absolute path or a name resolved on PATH. Without it the name is this entry's default, codex. A change holds from the next start.
+        default: codex
     commit_message_account:
         section: Programs
         help: The Claude account that the suggested commit message runs under, the label of a claude row of accounts in any hub's file, compared once reduced to lowercase letters, digits and dashes. Empty or without it the run takes the default folder, ~/.claude. A label that is not a Claude row's is a finding and the default folder is used. It is read from the primary hub's file only. A change is read again at once.
@@ -57,7 +70,8 @@ options:
         help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to the platform's opener, which is /usr/bin/open on macOS, xdg-open on Linux and wslview under WSL2. A change is read again at once.
     rite_dap_bin:
         section: Programs
-        help: The rite debug adapter that the Debug view starts, rite_dap of a cathedra build, an absolute path, a path under ~/ or a name resolved on PATH. Without it the name is rite_dap. A change is read again at once.
+        help: The rite debug adapter that the Debug view starts, rite_dap of a cathedra build, an absolute path, a path under ~/ or a name resolved on PATH. Without it the name is this entry's default, rite_dap. A change is read again at once.
+        default: rite_dap
     accounts:
         section: Usage accounts
         help: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. The rows of every hub's file are read together, each marked with its hub. Without a row in any hub's file the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes across the hubs; a later repeat is left out with a finding. A change is read again at once.
@@ -68,6 +82,9 @@ options:
                 options: [claude, codex]
             dir: the configuration folder the Usage view reads, an absolute path, a path under ~/ or one relative to the folder of the hub that holds this file
             label: the words the Usage view shows the account under
+        default:
+            - { tool: claude, dir: ~/.claude, label: claude }
+            - { tool: codex, dir: ~/.codex, label: codex }
     calendars:
         section: Calendar accounts
         help: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. The rows of every hub's file are read together, each marked with its hub. Without it no calendar is read. A change is read again at once.
@@ -77,6 +94,7 @@ options:
                 control: choice
                 options: [google, microsoft, ics]
             label: the account's name, lowercase letters, digits and dashes, unique per provider
+        default: []
     calendar_dir:
         section: Calendar accounts
         help: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
@@ -89,6 +107,7 @@ options:
                 control: choice
                 options: [google, microsoft]
             label: the account's name, lowercase letters, digits and dashes, unique per provider
+        default: []
     mail_dir:
         section: Mail accounts
         help: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
@@ -104,5 +123,6 @@ options:
             secret:
                 help: the password, API key or token, shown as set or not set and never as itself; a new one replaces it, and Clear takes it out
                 control: secret
+        default: []
 groups:
     literature: The contact address the Literature search's sources are called with from this machine.

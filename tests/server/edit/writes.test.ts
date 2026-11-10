@@ -12,7 +12,14 @@
 // @module-tag slow: its cases write a hub of their own and time out under the load of a full npm
 // test, so npm test leaves it out.
 
-import { mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readFileSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { createEntry, createIdea, writeManifest } from '../../../src/lib/server/edit/writes.ts';
@@ -572,6 +579,34 @@ describe('adding an idea', () => {
         const folder = join(root, row.parent, 'new-idea');
         expect(readFileSync(join(folder, 'project.yml'), 'utf8')).toBe(row.manifest);
         expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(row.readme);
+    });
+
+    it('names the README by project_docs and its heading by the catalog, and writes none with no row (G13)', () => {
+        const root = wider();
+        const shipped = configFor();
+        const docs = (rows: { name: string; label: string }[]): PortfolioConfig => ({
+            ...shipped,
+            merged: { ...shipped.merged, project_docs: rows },
+            text: { ...shipped.text, 'server.manifest_write.idea_next_heading': 'Then' }
+        });
+        const own = docs([
+            { name: 'code/README.md', label: 'C' },
+            { name: 'NOTES.md', label: 'N' }
+        ]);
+        const named = createIdea(root, own, { ...FORM, id: 'named-idea', tier: 'research' });
+        const none = createIdea(root, docs([{ name: 'manuscript/main.tex', label: 'M' }]), {
+            ...FORM,
+            id: 'bare-idea',
+            tier: 'research'
+        });
+        expect([named.changed, none.changed]).toEqual([
+            ['projects/ideas/named-idea/project.yml', 'projects/ideas/named-idea/NOTES.md'],
+            ['projects/ideas/bare-idea/project.yml']
+        ]);
+        expect(readFileSync(join(root, 'projects/ideas/named-idea/NOTES.md'), 'utf8')).toBe(
+            `# A new idea\n\nwhat it is\n\n## Then\n\n${RESEARCH_NEXT}\n`
+        );
+        expect(existsSync(join(root, 'projects/ideas/bare-idea/README.md'))).toBe(false);
     });
 
     /** The shipped configuration with the `new_idea` flag of `stages:` on the stages `on` alone. */

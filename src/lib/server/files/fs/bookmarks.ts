@@ -1,5 +1,6 @@
-// Layer 2, server. The reader's own bookmarks: a collection file in the hub's own shape, kept in
-// the hub's own `.oculus` folder, bookmarks.yml, which the portfolio does not build from.
+// Layer 2, server. The reader's own bookmarks: a collection file in the hub's own shape, kept where
+// the configuration's `bookmarks` names (the primary hub's `.oculus/bookmarks.yml` by default),
+// which the portfolio does not build from.
 //
 // It is a collection file and not a JSON store so that the write path that edits every other
 // collection edits this one too: the same schema, the same field-by-field surgery that keeps the

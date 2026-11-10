@@ -64,6 +64,7 @@ const REFUSALS: Record<string, () => string> = {
     nothing: () => t('recover.refused_nothing'),
     start: () => t('recover.refused_start'),
     send: () => t('recover.refused_send'),
+    noscratch: () => t('recover.refused_noscratch'),
     scratch: () => t('recover.refused_scratch'),
     submit: () => t('recover.refused_submit'),
     download: () => t('recover.refused_download'),

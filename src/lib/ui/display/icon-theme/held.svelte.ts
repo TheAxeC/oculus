@@ -2,8 +2,9 @@
 // config/defaults/appearance.yml names one. The app declares a VS Code icon theme file; the server
 // reads it and answers it with the paths of its pictures and fonts turned into the addresses of the
 // app's files (GET /api/app-icons), and this holds the theme read, puts the theme's `@font-face`
-// rules in the document, and answers the icon a file or a folder gets. With no theme held every
-// answer is null, and FileIcon draws Seti as it does for `file_icons: seti`.
+// rules in the document, and answers the icon a file or a folder gets. With no theme held, and
+// until the colour theme drawn has said whether it is dark, every answer is null, and FileIcon
+// draws Seti as it does for `file_icons: seti`.
 //
 // The theme is held once for the page, as the app colour theme's rules are (ui/theme/app-rules.ts):
 // every file icon of the page asks it, and it is a rune so that an icon is drawn again when the
@@ -22,12 +23,13 @@ import {
 const STYLE_ID = 'oculus-icon-fonts';
 
 /**
- * The theme in force, whether the colour theme drawn is dark, and the language each file name
- * has, which the theme's `languageIds` rules are looked up by.
+ * The theme in force, whether the colour theme drawn is dark (null until the first theme is
+ * drawn), and the language each file name has, which the theme's `languageIds` rules are looked
+ * up by.
  */
-const held: { theme: IconTheme | null; dark: boolean; languages: LanguageMap } = $state({
+const held: { theme: IconTheme | null; dark: boolean | null; languages: LanguageMap } = $state({
     theme: null,
-    dark: true,
+    dark: null,
     languages: new Map()
 });
 
@@ -80,22 +82,27 @@ export function setIconLanguages(languages: LanguageMap): void {
     held.languages = languages;
 }
 
-/** Whether an app's icon theme is held, so a file the theme names no icon for draws none. */
+/**
+ * Whether an app's icon theme is in force, held and with the colour theme's darkness known, so a
+ * file the theme names no icon for draws none.
+ */
 export function iconThemeHeld(): boolean {
-    return held.theme !== null;
+    return held.theme !== null && held.dark !== null;
 }
 
-/** The icon the held theme gives a file, or null with no theme or no icon for it. */
+/** The icon the held theme gives a file, or null with no theme in force or no icon for it. */
 export function themedFile(name: string): IconFace | null {
-    return held.theme === null
+    const { theme, dark } = held;
+    return theme === null || dark === null
         ? null
-        : themedFileIcon(held.theme, name, languageOf(name, held.languages), held.dark);
+        : themedFileIcon(theme, name, languageOf(name, held.languages), dark);
 }
 
 /**
- * The icon the held theme gives a folder, or null with no theme or none for folders, in which case
- * the folder row draws its own glyph.
+ * The icon the held theme gives a folder, or null with no theme in force or none for folders, in
+ * which case the folder row draws its own glyph.
  */
 export function themedFolder(name: string, open: boolean): IconFace | null {
-    return held.theme === null ? null : themedFolderIcon(held.theme, name, open, held.dark);
+    const { theme, dark } = held;
+    return theme === null || dark === null ? null : themedFolderIcon(theme, name, open, dark);
 }

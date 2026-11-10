@@ -28,6 +28,7 @@ import type {
     Career,
     Collection,
     CollectionEntry,
+    FeedKind,
     Feeds,
     HubVocabs,
     RawFeeds,
@@ -65,12 +66,45 @@ export type RawPortfolio = {
      */
     docs: Record<Id, DocPresence[]>;
     /**
-     * The deck each project's `present/` folder holds, by project id, from sources/deck/. It sits
-     * beside `docs` for the same reason: no manifest key names it, it is read from the folder. A
-     * project with no `present/present.yml` has no entry.
+     * The deck each project's deck folder (the hub's `deck_dir`) holds, by project id, from
+     * sources/deck/. It sits beside `docs` for the same reason: no manifest key names it, it is
+     * read from the folder. A project whose deck folder holds no `present.yml` has no entry.
      */
     decks: Record<Id, RawDeck>;
     findings: Finding[];
+};
+
+/**
+ * The layout of one hub's projects and the words of its own content, each the hub's value of its
+ * key or the key's default (`hubLayout`, data/sources/config/settings/hub-rows.ts).
+ */
+export type HubLayout = {
+    /** The folder of a project that holds its code, against the project folder, `code_dir`. */
+    codeDir: string;
+    /** The folder of a project that holds its deck, against the project folder, `deck_dir`. */
+    deckDir: string;
+    /** The word of a scout run's `meta.log` line after its date, `leads_run_word`; empty none. */
+    leadsRunWord: string;
+    /** The LinkedIn posts folder, `linkedin_dir`; empty names none. */
+    linkedinDir: string;
+    /** The start of a LinkedIn idea's file name, `linkedin_idea_prefix`; empty marks none. */
+    linkedinIdeaPrefix: string;
+    /** The hub's folder of secrets, against the hub folder, `secrets_dir`; empty names none. */
+    secretsDir: string;
+    /** The hub's notes folder, against the hub folder, `notes_dir`. */
+    notesDir: string;
+    /** What a deposit's generated .gitignore adds, `deposit.default_ignore`. */
+    depositIgnored: string[];
+    /** The folder a Submit copies code to, `{id}` the project's, `slurm.cluster_folder`, or ''. */
+    clusterFolder: string;
+    /** The globs of the code folder's files a Submit does not copy, `slurm.unsent`. */
+    unsent: string[];
+    /** The open markers the audit looks for, `audit.markers`. */
+    auditMarkers: string[];
+    /** The mark of a manifest result that is not final, `audit.provisional_mark`; or empty. */
+    provisionalMark: string;
+    /** The folders of a project the audit's events leave out besides the code folder. */
+    auditSkipFolders: string[];
 };
 
 /** Everything a portfolio build needs: where to read, and what to check what it read against. */
@@ -92,6 +126,8 @@ export type PortfolioConfig = {
     feeds: FeedFiles;
     /** The configured interval between LinkedIn posts. */
     linkedinCadenceDays: number;
+    /** The layout of the hub's projects and the words of its own content. */
+    layout: HubLayout;
     /** The career file, hub-relative, or null for a hub whose career is not read. */
     career: string | null;
     /**
@@ -121,7 +157,7 @@ export type PortfolioConfig = {
      */
     unnamed?: {
         registries: RegistryName[];
-        feeds: ('leads' | 'radar')[];
+        feeds: FeedKind[];
         collections: boolean;
         /**
          * Whether its list names no entry of the `literature` registry, so oculus's own entry of it
@@ -610,7 +646,7 @@ export type {
 export { queueIsCurrent } from './machine/model-hpc.ts';
 
 export { DECK_GAP, FACT_FIELDS, SLIDE_PAGE_PT, SLIDE_SHAPE, slideHeight } from './model-deck.ts';
-export { confirmValues } from './model-agents.ts';
+export { AGENT_IDS, confirmValues } from './model-agents.ts';
 export { CV_FIELD_ROLES, domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
 export {
@@ -682,9 +718,9 @@ export {
     STEER_MAX,
     TERMINAL_COLORS,
     TERMINAL_REFUSALS,
-    UPDATE_TASKS,
     WEBSITE_REFUSALS
 } from './machine/model-machine.ts';
+export { LAST_RUNS, type HubTask, type LastRun, type UpdateTask } from './machine/model-tasks.ts';
 export {
     byHandPane,
     isOwnTerminal,
@@ -722,7 +758,6 @@ export type {
     LspState,
     LspToPage,
     LspToServer,
-    HubTask,
     ProcessesPayload,
     ProcessRow,
     PtyPayload,
@@ -744,7 +779,6 @@ export type {
     TerminalResize,
     TerminalResume,
     UnchosenKey,
-    UpdateTask,
     WebsiteRefusal
 } from './machine/model-machine.ts';
 export type {

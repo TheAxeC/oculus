@@ -208,22 +208,26 @@ export function linkedinFrontMatter(
 }
 
 /**
- * Whether a file's base name is a LinkedIn idea: `xx-`, at least one character, then `.md` in any
- * case, with no path separator. The folder's feed marks each entry by it (`idea`), the LinkedIn
- * view offers Mark posted on the entries so marked, and Mark posted promotes only such a file.
+ * Whether a file's base name is a LinkedIn idea: the hub's idea prefix `idea`
+ * (`linkedin_idea_prefix`), at least one character, then `.md` in any case, with no path
+ * separator. An empty prefix marks no file. The folder's feed marks each entry by it (`idea`), the
+ * LinkedIn view offers Mark posted on the entries so marked, and Mark posted promotes only such a
+ * file.
  */
-function isLinkedinIdea(name: string): boolean {
-    return /^xx-[^/\\]+\.[mM][dD]$/.test(name);
+function isLinkedinIdea(name: string, idea: string): boolean {
+    if (idea === '' || !name.startsWith(idea)) return false;
+    return /^[^/\\]+\.[mM][dD]$/.test(name.slice(idea.length));
 }
 
 /**
  * A flat LinkedIn post or idea filename, with a case-insensitive Markdown suffix: an idea by
- * `isLinkedinIdea`, or a name that starts with a number and a dash.
+ * `isLinkedinIdea` under the idea prefix `idea`, or a name that starts with a number and a dash.
  */
-export function isLinkedinFile(file: string | null): boolean {
+export function isLinkedinFile(file: string | null, idea: string): boolean {
     return (
         file !== null &&
-        (isLinkedinIdea(file) || (!/[/\\]/.test(file) && /\.md$/i.test(file) && /^\d+-/.test(file)))
+        (isLinkedinIdea(file, idea) ||
+            (!/[/\\]/.test(file) && /\.md$/i.test(file) && /^\d+-/.test(file)))
     );
 }
 
@@ -232,8 +236,9 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
     if (!statSync(folder).isDirectory()) {
         throw new Error(words(config.text, 'server.feeds.not_a_directory', folder));
     }
+    const idea = config.layout.linkedinIdeaPrefix;
     const entries = readdirSync(folder)
-        .filter(isLinkedinFile)
+        .filter((file) => isLinkedinFile(file, idea))
         .sort((left, right) => left.localeCompare(right))
         .map((file) => {
             const parsed = linkedinFrontMatter(readFileSync(join(folder, file), 'utf8'));
@@ -243,7 +248,7 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
                 date: parsed.date ?? '',
                 category: parsed.category ?? '',
                 body: parsed.body,
-                idea: isLinkedinIdea(file)
+                idea: isLinkedinIdea(file, idea)
             };
         });
     return {
@@ -251,7 +256,8 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
         file: config.feeds.linkedin,
         meta: {},
         entries,
-        cadenceDays: config.linkedinCadenceDays
+        cadenceDays: config.linkedinCadenceDays,
+        ideaPrefix: idea
     };
 }
 
@@ -273,8 +279,10 @@ function linkedinFolder(hub: string, config: PortfolioConfig): string | null {
 const SLUG_MAX = 80;
 
 /**
- * Add one empty LinkedIn idea file without leaving its configured folder. The outcome's `id` is the
- * file's name, which the page opens the new file by.
+ * Add one empty LinkedIn idea file without leaving its configured folder, named by the hub's idea
+ * prefix (`linkedin_idea_prefix`) and the title's slug; a hub whose prefix is empty has no name for
+ * an idea, and the add is refused. The outcome's `id` is the file's name, which the page opens the
+ * new file by.
  */
 export function addLinkedinIdea(
     hub: string,
@@ -289,14 +297,21 @@ export function addLinkedinIdea(
             [{ field: 'title', reason: words(config.text, 'server.feeds.idea_needs_title') }]
         );
     }
+    const idea = config.layout.linkedinIdeaPrefix;
+    if (idea === '') {
+        return outcome(
+            [],
+            [{ field: 'file', reason: words(config.text, 'server.feeds.idea_needs_prefix') }]
+        );
+    }
     const folder = linkedinFolder(hub, config);
     if (folder === null) return { found: false, changed: [], refused: [] };
     const category = typeof categoryValue === 'string' ? categoryValue.trim() : '';
     const slug = slugOf(title, SLUG_MAX) || 'post';
-    let file = `xx-${slug}.md`;
+    let file = `${idea}${slug}.md`;
     let suffix = 2;
     while (existsSync(join(folder, file))) {
-        file = `xx-${slug}-${suffix}.md`;
+        file = `${idea}${slug}-${suffix}.md`;
         suffix += 1;
     }
     writeTextAtomic(join(folder, file), ideaStub(title, category, localDate(Date.now())));
@@ -424,7 +439,8 @@ export function markLinkedinPosted(
     fileValue: unknown
 ): WriteOutcome {
     const file = typeof fileValue === 'string' ? basename(fileValue) : '';
-    if (!isLinkedinIdea(file) || file !== fileValue) {
+    const idea = config.layout.linkedinIdeaPrefix;
+    if (!isLinkedinIdea(file, idea) || file !== fileValue) {
         return outcome(
             [],
             [{ field: 'file', reason: words(config.text, 'server.feeds.post_needs_idea') }]
@@ -444,9 +460,9 @@ export function markLinkedinPosted(
     const prefix = String(highest + 1).padStart(2, '0');
     const stem = file.slice(0, -'.md'.length);
     const moving = names.filter(
-        (name) => name === file || (name.startsWith(`${stem}.`) && !isLinkedinIdea(name))
+        (name) => name === file || (name.startsWith(`${stem}.`) && !isLinkedinIdea(name, idea))
     );
-    const targets = moving.map((name) => `${prefix}-${name.slice('xx-'.length)}`);
+    const targets = moving.map((name) => `${prefix}-${name.slice(idea.length)}`);
     const refusal = (reason: string): WriteOutcome => outcome([], [{ field: 'file', reason }]);
     // The highest number of the folder sets the next, so a target exists only when a file was made
     // between the listing and this check.

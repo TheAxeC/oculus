@@ -18,12 +18,13 @@
     import { datasetUsers } from '$lib/state/sources/registries/datasets';
     import { venueUsers } from '$lib/state/sources/registries/venues';
     import {
-        OFFPILLAR,
+        archivalKind,
         domainMembers,
         lineMembers,
         registryRecord,
         venueTiers
     } from '$lib/state/boards/structure/lines';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { themeLabeller } from '$lib/state/shared/words/themes';
     import { vocabOf } from '$lib/state/shared/words/tones';
     import type {
@@ -90,7 +91,7 @@
     <LineCard
         {...shared}
         {line}
-        muted={line.kind === OFFPILLAR}
+        muted={line.kind !== undefined && line.kind === archivalKind(vocabOf(rootOf(line)))}
         projects={lineMembers(line, projects())}
         venues={venues()}
         tiers={venueTiers(vocabOf().venue_tiers)}

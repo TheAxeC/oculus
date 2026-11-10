@@ -165,9 +165,10 @@ export function openWorkbench(client: ClientState, item: BoardItem, tab: string)
 }
 
 /**
- * The deck a card's presentation control opens: the project's own `present/` folder, relative to
- * the hub, and nothing for a project that holds none. It is the whole of what the control decides,
- * so which deck a card opens is a plain call rather than a rendered page.
+ * The deck a card's presentation control opens: the project's own deck folder (the hub's
+ * `deck_dir`), relative to the hub, and nothing for a project that holds none. It is the whole
+ * of what the control decides, so which deck a card opens is a plain call rather than a rendered
+ * page.
  */
 export function deckOf(project: BoardItem['project']): string | null {
     return project.deck ?? null;

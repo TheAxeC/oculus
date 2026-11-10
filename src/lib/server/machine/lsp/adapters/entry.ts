@@ -147,8 +147,11 @@ export type ServerEntry = {
     source?: string;
     /** What it is asked at `initialize`, as `initializationOptions`. */
     initializationOptions(setup: Setup): Record<string, unknown>;
-    /** The answer to one item of a `workspace/configuration` request. */
-    configuration(section: string | undefined, setup: Setup): unknown;
+    /**
+     * The answer to one item of a `workspace/configuration` request. `language` is the language of
+     * the document the item names by its `scopeUri`, null when it names none the server holds.
+     */
+    configuration(section: string | undefined, setup: Setup, language?: string | null): unknown;
     /** The capabilities the page is told for one of its languages, each with its selector. */
     capabilities(language: string): Record<string, unknown>;
     /** The commands the server may be asked to run, which the page registers. */
@@ -219,6 +222,12 @@ export type ServerEntry = {
      * asked again when the answer for one changes.
      */
     followed?: readonly string[];
+    /**
+     * The sections of `workspace/configuration` whose answer for a document the server keeps for
+     * as long as it runs and never asks again: the server is started again when the answer for
+     * one it was given changes.
+     */
+    kept?: readonly string[];
 };
 
 /** A request of the page, as it came: the method and its params with the page's addresses. */
@@ -275,6 +284,20 @@ export type ServersOptions = {
     exists?: (path: string) => boolean;
     /** The LaTeX settings in force, read at each start and each configuration answer. */
     latex: () => LatexBuilding;
-    /** The extensions of Markdown files, without the dot; `md` alone when absent. */
-    markdown?: () => string[];
+    /** The extensions of Markdown files, without the dot, read at each start of that server. */
+    markdown: () => string[];
+    /**
+     * The names of the folders `files.hidden_folders` gives, which the Markdown server's list of
+     * files never enters.
+     */
+    hiddenFolders: () => readonly string[];
+    /**
+     * The indentation the editor's options give a language's documents in a root, by the root's
+     * real path, which the TypeScript server is answered for its `formattingOptions`; null before
+     * the configuration holds a catalog. Read at each answer.
+     */
+    indent: (language: string | null, root: string) => Formatting | null;
 };
+
+/** The formatting options a server is answered: the width of a step and whether it is spaces. */
+export type Formatting = { tabSize: number; insertSpaces: boolean };

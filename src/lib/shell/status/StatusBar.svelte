@@ -101,6 +101,11 @@
     const dirty = $derived(unsavedCount(held, unsaved));
     const hidden = $derived(statusHidden());
 
+    /** Whether an item is hidden: every item is while no settings are installed. */
+    function isHidden(key: string): boolean {
+        return hidden === null || hidden.includes(key);
+    }
+
     /** The source tab on screen last, which the bar keeps while a view tab of another pane is. */
     let kept = $state<string | null>(null);
     $effect(() => {
@@ -119,24 +124,24 @@
         ...STATUS_ITEMS.map((item) => ({
             id: item,
             label: itemName(item),
-            active: !hidden.includes(item)
+            active: !isHidden(item)
         })),
         ...(['left', 'right'] as const).flatMap((side) =>
             appShell.statusItems(side).map(({ key, appTitle, item }) => ({
                 id: key,
                 label: t('statusbar.item_app', item.name === '' ? item.id : item.name, appTitle),
-                active: !hidden.includes(key)
+                active: !isHidden(key)
             }))
         )
     ]);
 
     function shown(item: StatusItem): boolean {
-        return !hidden.includes(item);
+        return !isHidden(item);
     }
 
     function toggled(id: string): void {
         if (isStatusItem(id)) setStatusHidden(id, shown(id));
-        else setStatusHidden(id, !hidden.includes(id));
+        else setStatusHidden(id, !isHidden(id));
     }
 
     /** The problems of the page by severity, which the problems item counts. */
@@ -327,7 +332,9 @@
             {#if shown('latex')}
                 <LatexItem />
             {/if}
-            <AppItems side="left" {hidden} />
+            {#if hidden !== null}
+                <AppItems side="left" {hidden} />
+            {/if}
         </div>
         <div class="group" data-status-group="right">
             {#if source !== null}
@@ -339,7 +346,9 @@
                     {ongoto}
                 />
             {/if}
-            <AppItems side="right" {hidden} />
+            {#if hidden !== null}
+                <AppItems side="right" {hidden} />
+            {/if}
             {#if shown('sessions')}
                 <span data-status="sessions">
                     <ToolButton

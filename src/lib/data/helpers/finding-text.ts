@@ -167,6 +167,15 @@ export function pluralIssues(forms: Record<string, unknown>): {
 }
 
 /**
+ * A value a finding names, as JSON writes it, which YAML's flow form reads back as the same value:
+ * a text quoted, so an empty text and a text of spaces show. A key left out, which JSON writes
+ * nothing for, is written `undefined`.
+ */
+export function valueShown(value: unknown): string {
+    return value === undefined ? String(value) : JSON.stringify(value);
+}
+
+/**
  * The sentence for a finding key, with its arguments in place, or the key followed by its arguments
  * when the catalog lacks the key. It never throws: a finding is reported while the files it is
  * about are broken, config/text/findings.yml among them, and a sentence file that does not parse

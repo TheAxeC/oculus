@@ -22,13 +22,20 @@ const BUILD_DEFAULTS = {
     autoBuildIntervalMs: 2500,
     cleanAndRetry: false,
     autoClean: 'on_built',
+    literateRecipes: new Map(),
+    programRecipes: new Map(),
     synctexPath: '/a/synctex',
+    texdocPath: '/a/texdoc',
+    texcountPath: '/a/texcount',
+    checkcitesPath: '/a/checkcites',
+    cleanPath: '/a/latexmk',
     reverseSynctex: 'double_click',
     texcountAutorun: 'on_save',
     contextMenu: true,
     texlabPath: '/a/texlab',
     unimathSymbols: true,
-    includegraphicsPreview: false
+    includegraphicsPreview: false,
+    mainFile: 'paper.tex'
 };
 
 describe('latexFormatting and the auto build', () => {
@@ -136,6 +143,28 @@ describe('latexBuild', () => {
         });
     });
 
+    it('reads the recipe of a literate extension and of a program, and drops a lost recipe (G13)', () => {
+        const picks = {
+            tools: TOOLS,
+            recipes: RECIPES,
+            literate_recipes: { '.RNW': 'chain', '.jnw': 'gone' },
+            program_recipes: { XeLaTeX: 'plain', lualatex: 'gone' }
+        };
+        expect(read(picks)).toStrictEqual({
+            value: {
+                ...BUILD_DEFAULTS,
+                tools: TOOLS,
+                recipes: RECIPES,
+                literateRecipes: new Map([['.rnw', 'chain']]),
+                programRecipes: new Map([['xelatex', 'plain']])
+            },
+            problems: [
+                'latex.literate_recipes..jnw: choice',
+                'latex.program_recipes.lualatex: choice'
+            ]
+        });
+    });
+
     it.each([
         ['auto_build_interval_ms', 0, 'range', { autoBuildIntervalMs: 2500 }],
         ['auto_build_interval_ms', 1.5, 'whole', { autoBuildIntervalMs: 2500 }],
@@ -145,12 +174,18 @@ describe('latexBuild', () => {
         ['clean_and_retry', 'yes', 'boolean', { cleanAndRetry: false }],
         ['auto_clean', 'x', 'choice', { autoClean: 'on_built' }],
         ['synctex_path', 'synctex', 'path', { synctexPath: '/a/synctex' }],
+        ['texdoc_path', 'texdoc', 'path', { texdocPath: '/a/texdoc' }],
+        ['texcount_path', 3, 'text', { texcountPath: '/a/texcount' }],
+        ['checkcites_path', 'checkcites', 'path', { checkcitesPath: '/a/checkcites' }],
+        ['clean_path', 'latexmk', 'path', { cleanPath: '/a/latexmk' }],
         ['reverse_synctex', 'x', 'choice', { reverseSynctex: 'double_click' }],
         ['texcount_autorun', 'x', 'choice', { texcountAutorun: 'on_save' }],
         ['context_menu', 'yes', 'boolean', { contextMenu: true }],
         ['texlab_path', 3, 'text', { texlabPath: '/a/texlab' }],
         ['unimath_symbols', 'yes', 'boolean', { unimathSymbols: true }],
-        ['includegraphics_preview', 'yes', 'boolean', { includegraphicsPreview: false }]
+        ['includegraphics_preview', 'yes', 'boolean', { includegraphicsPreview: false }],
+        ['main_file', 5, 'text', { mainFile: 'paper.tex' }],
+        ['main_file', 'a/b.tex', 'form', { mainFile: 'paper.tex' }]
     ])('answers the default for a wrong %s and names the key', (key, bad, kind, value) => {
         expect(read({ [key]: bad })).toMatchObject({
             value,
@@ -181,7 +216,7 @@ describe('latexBuild', () => {
             problems: [
                 'latex.tools: repeat',
                 'latex.tools[2].name: text',
-                'latex.tools[3]: records',
+                'latex.tools[3]: record',
                 'latex.tools[4].command: empty',
                 'latex.tools[5].args: strings',
                 'latex.recipes: repeat',
@@ -192,10 +227,10 @@ describe('latexBuild', () => {
         });
     });
 
-    it('names a list that is no list as a family problem', () => {
+    it('names a list that is no list as a list problem (G13)', () => {
         expect(read({ tools: 'x', recipes: { a: 1 } })).toMatchObject({
             value: { tools: [], recipes: [] },
-            problems: ['latex.tools: family', 'latex.recipes: family']
+            problems: ['latex.tools: list', 'latex.recipes: list']
         });
     });
 });

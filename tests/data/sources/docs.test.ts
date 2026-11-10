@@ -5,6 +5,7 @@
 import { describe, expect } from 'vitest';
 import { isFinding, projectDocs, readDoc } from '../../../src/lib/data/sources/documents/docs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { projectDocList } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import type { DocPresence } from '../../../src/lib/data/model/index.ts';
 import { it, plantFile, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -17,8 +18,11 @@ function present(docs: DocPresence[]): string[] {
     return docs.filter((d) => d.present).map((d) => d.name);
 }
 
-/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
-const CATALOG = textCatalog(loadConfig(engineDir()).config);
+/** The config oculus ships, read as the server reads it. */
+const CONFIG = loadConfig(engineDir()).config;
+
+/** The catalog the findings are worded from: the one oculus ships. */
+const CATALOG = textCatalog(CONFIG);
 
 describe('readDoc', () => {
     it('splits a leading frontmatter block from the body', () => {
@@ -40,13 +44,13 @@ describe('readDoc', () => {
 });
 
 describe('projectDocs', () => {
-    it('finds the documents that are there and no others', () => {
+    it('finds the documents of the shipped project_docs that are there and no others (G32)', () => {
         const root = scratch();
         plantFile(root, 'README.md', 'readme\n');
         plantFile(root, 'code/README.md', 'deposit root\n');
         plantFile(root, 'manuscript/main.tex', '\\documentclass{article}\n');
 
-        expect(present(projectDocs(root))).toEqual([
+        expect(present(projectDocs(root, projectDocList(CONFIG)))).toEqual([
             'README.md',
             'code/README.md',
             'manuscript/main.tex'

@@ -7,27 +7,28 @@
 // or the top of a folder of the workspace, kept in the primary hub's `.oculus` folder, so a
 // workspace with no primary has none and the list answers empty. A bookmark is written by the
 // collection write path, since it is a collection file and the entry writers edit it. The notes are
-// the files of each hub's `.oculus/notes/` folder, read by fs/notes.ts, one answer per hub in the
-// workspace's folder order; a note is written, renamed, moved and trashed by the file operations
-// like any file of its hub, so the only note write here is the order they are listed in.
+// the files of each hub's notes folder, its `notes_dir`, read by fs/notes.ts, one answer per hub in
+// the workspace's folder order; a note is written, renamed, moved and trashed by the file
+// operations like any file of its hub, so the only note write here is the order they are listed in.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
-// one readdir of whatever folder is on screen. Dotfiles and the three build folders are left out
-// unless the request carries `hidden=1`, because a tree that is mostly node_modules is a tree
-// nobody reads; every entry git ignores is left out unless it carries `ignored=1`, read by
-// server/core/git/files.ts's ignoredIn, the module of the read-only git forms this server runs. The
-// two are the reader's own toggles on the tab, so the same folder is listed either way on request.
-// The file route still serves what a listing leaves out, since what is served and what is offered
-// are different questions. A symbolic link is resolved and then listed as the kind its target is,
-// under the same rule the file route serves one by: inside the root it is an ordinary entry, and
-// pointing out of the root it is left out. A folder of a listing, and each folder of the
-// workspace, carries what it holds that Make Folder a Hub and Make Folder a Project are offered by
-// (project/make.ts, `folderMarks`), three stats of each folder listed, and a folder of the
-// workspace also whether a folder above it is a hub, so the Files view's menu draws the two items
-// as it opens. Each folder of the workspace also carries the text of its `.oculus/settings.yml`,
-// so the page's readers of the editor's per-folder records take it from the folder list and ask
-// for nothing; the git watch marks the workspaces changed when that file changes.
+// one readdir of whatever folder is on screen. Dotfiles and the folders `files.hidden_folders`
+// names are left out unless the request carries `hidden=1`, because a tree that is mostly
+// node_modules is a tree nobody reads; every entry git ignores is left out unless it carries
+// `ignored=1`, read by server/core/git/files.ts's ignoredIn, the module of the read-only git forms
+// this server runs. The two are the reader's own toggles on the tab, so the same folder is listed
+// either way on request. The file route still serves what a listing leaves out, since what is
+// served and what is offered are different questions. A symbolic link is resolved and then listed
+// as the kind its target is, under the same rule the file route serves one by: inside the root it
+// is an ordinary entry, and pointing out of the root it is left out. A folder of a listing, and
+// each folder of the workspace, carries what it holds that Make Folder a Hub and Make Folder a
+// Project are offered by (project/make.ts, `folderMarks`), three stats of each folder listed, and a
+// folder of the workspace also whether a folder above it is a hub, so the Files view's menu draws
+// the two items as it opens. Each folder of the workspace also carries the text of its
+// `.oculus/settings.yml`, so the page's readers of the editor's per-folder records take it from the
+// folder list and ask for nothing; the git watch marks the workspaces changed when that file
+// changes.
 //
 // The workspace is the open workspace file of server/files/workspace and nothing else: a GET with
 // no root answers it, and the actions on it as a whole are Save Workspace As (`save-workspace`, a
@@ -102,6 +103,16 @@ type AnsweredFolder = {
     real: string;
     hub: boolean;
     folds?: true;
+    /**
+     * A hub's folder of secrets against its folder, its `secrets_dir`, which the page withholds
+     * from every language server's edit (`isPrivateFile`); absent on a folder that is no hub.
+     */
+    secrets?: string;
+    /**
+     * A hub's notes folder against its folder, its `notes_dir`, which the Notes section and the
+     * note readers of the page place the notes by; absent on a folder that is no hub.
+     */
+    notes?: string;
     /** What the folder holds that the two make controls are offered by (project/make.ts). */
     marks?: FolderMarks;
     /** A folder above it, up to the home folder and not including it, is a hub. */
@@ -151,15 +162,9 @@ type MachineAnswer = {
     files?: Record<string, LocalFile>;
 };
 
-/**
- * The folders a tree offers only when hidden files are asked for. Dotfiles are left out beside
- * them.
- */
-const SKIPPED = ['node_modules', '__pycache__', '.git'];
-
 /** What one listing request asks to see beside what the tree offers by default. */
 export type Shown = {
-    /** Dotfiles and the three build folders. */
+    /** Dotfiles and the folders of `files.hidden_folders`. */
     hidden: boolean;
     /** Entries git ignores in the folder listed. */
     ignored: boolean;
@@ -229,14 +234,20 @@ export type FsTarget = {
     ignored: IgnoredCache;
     /** The server context's git credentials, which the ignored names are asked of git with. */
     credentials: GitCredentials;
+    /** The folder of secrets of the hub at a folder, its `secrets_dir`, which the answer marks. */
+    secretsDir: (dir: string) => string;
+    /** The notes folder of the hub at a folder, its `notes_dir`, which the answer marks. */
+    notesDir: (dir: string) => string;
+    /** The names of the folders a listing leaves out unless hidden files are asked for. */
+    hiddenFolders: readonly string[];
 };
 
 /**
  * Whether a name is one the tree leaves out unless hidden files are asked for: a dotfile, or one
- * of the three build folders.
+ * of `hidden`, the names of `files.hidden_folders`.
  */
-export function skipped(name: string): boolean {
-    return name.startsWith('.') || SKIPPED.includes(name);
+export function skipped(name: string, hidden: readonly string[]): boolean {
+    return name.startsWith('.') || hidden.includes(name);
 }
 
 /**
@@ -260,7 +271,8 @@ function described(dir: string, name: string): Entry | null {
  * The entries of one directory under a named root, folders first and then files, each side by name,
  * and the directory's own path. A path that leaves the root, a root nothing names and a path that
  * is not a directory are all the same refusal to the caller, which is what the route answers 404
- * for. Dotfiles and the build folders are listed only when `hidden` is true.
+ * for. Dotfiles and the folders `folders` names (`files.hidden_folders`) are listed only when
+ * `hidden` is true.
  *
  * An entry is kept only when its real path is still inside the root, which is the check the file
  * route applies before serving one: a link out of the root is not offered, since pressing it would
@@ -270,7 +282,7 @@ export function listDir(
     list: Root[],
     key: string,
     path: string,
-    hidden = false
+    shown: { hidden: boolean; folders: readonly string[] }
 ): { entries: Entry[]; at: string } | { error: 'outside' | 'missing' } {
     const found = resolveRootPath(list, key, path);
     if ('error' in found) return found;
@@ -281,7 +293,7 @@ export function listDir(
     try {
         if (!statSync(found.path).isDirectory()) return { error: 'missing' };
         entries = readdirSync(found.path, { withFileTypes: true })
-            .filter((entry) => hidden || !skipped(entry.name))
+            .filter((entry) => shown.hidden || !skipped(entry.name, shown.folders))
             .filter((entry) => {
                 if (!entry.isSymbolicLink()) return true;
                 const target = realPath(join(found.path, entry.name));
@@ -303,17 +315,19 @@ export function listDir(
  * One directory as a listing request asks for it: listDir's entries, without the ones git ignores
  * there unless the request asks for those too, in which case each of them carries `ignored: true`.
  * A folder carries the marks the Files view's menu offers Make Folder a Hub and Make Folder a
- * Project by (project/make.ts, `folderMarks`), read through a link as its target's.
+ * Project by (project/make.ts, `folderMarks`), read through a link as its target's. `folders` are
+ * the names of `files.hidden_folders`.
  */
 export async function listShown(
     list: Root[],
     key: string,
     path: string,
     credentials: GitCredentials,
+    folders: readonly string[],
     shown: Shown = DEFAULT_SHOWN,
     cache: IgnoredCache = ignoredCache()
 ): Promise<{ entries: Entry[] } | { error: 'outside' | 'missing' }> {
-    const found = listDir(list, key, path, shown.hidden);
+    const found = listDir(list, key, path, { hidden: shown.hidden, folders });
     if ('error' in found) return found;
     const marked = withMarks(found.at, found.entries);
     const ignored = await cachedIgnored(
@@ -377,8 +391,9 @@ function configPlace(open: OpenWorkspace, engine: string): { root: string; path:
  * The text of a folder's `.oculus/settings.yml`, read under the file route's guards: resolved by
  * `resolveRootFileResult`, so a missing file and a link out of the folder give null, and read as
  * the page reads a text, so a file over TEXT_LIMIT and one that is not whole UTF-8 text give null.
+ * The language servers' formatting answer reads a served root's file by the same guards.
  */
-function settingsText(roots: Root[], name: string): string | null {
+export function settingsText(roots: Root[], name: string): string | null {
     const found = resolveRootFileResult(roots, name, REPO_SETTINGS);
     if ('error' in found) return null;
     try {
@@ -392,12 +407,16 @@ function settingsText(roots: Root[], name: string): string | null {
 }
 
 /**
- * The answer a GET with no root gives: the open workspace and the files that can be switched to.
+ * The answer a GET with no root gives: the open workspace and the files that can be switched to,
+ * each hub's folder marked with its folder of secrets (`secretsDir`) and its notes folder
+ * (`notesDir`).
  */
 export function workspacesAnswer(
     open: OpenWorkspace,
     engine: string,
-    machine: MachineAnswer
+    machine: MachineAnswer,
+    secretsDir: (dir: string) => string,
+    notesDir: (dir: string) => string
 ): WorkspacesAnswer {
     const home = realHome();
     return {
@@ -421,6 +440,7 @@ export function workspacesAnswer(
                 real: real ?? '',
                 hub: one.hub,
                 ...(foldsCase(one.dir) ? { folds: true as const } : {}),
+                ...(one.hub ? { secrets: secretsDir(one.dir), notes: notesDir(one.dir) } : {}),
                 ...(Object.keys(marks).length === 0 ? {} : { marks }),
                 ...(real !== null && hubAbove(real, home) ? { above: true as const } : {}),
                 settings: settingsText(open.roots, one.name)
@@ -453,14 +473,33 @@ export async function handleFs(request: Request, into: FsTarget): Promise<Respon
         );
     }
     if (url.searchParams.get('notes') !== null) {
-        return json({ hubs: readAllNotes(open.hubs, open.primary) }, { headers: NO_STORE });
+        return json(
+            { hubs: readAllNotes(open.hubs, open.primary, into.notesDir) },
+            { headers: NO_STORE }
+        );
     }
     const key = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
-    if (key === '')
-        return json(workspacesAnswer(open, into.engine, into.machine), { headers: NO_STORE });
+    if (key === '') {
+        const answer = workspacesAnswer(
+            open,
+            into.engine,
+            into.machine,
+            into.secretsDir,
+            into.notesDir
+        );
+        return json(answer, { headers: NO_STORE });
+    }
     const shown = shownOf(url.searchParams);
-    const found = await listShown(open.roots, key, path, into.credentials, shown, into.ignored);
+    const found = await listShown(
+        open.roots,
+        key,
+        path,
+        into.credentials,
+        into.hiddenFolders,
+        shown,
+        into.ignored
+    );
     if ('error' in found) return json({ error: found.error }, { status: 404, headers: NO_STORE });
     return json({ root: key, path, entries: found.entries }, { headers: NO_STORE });
 }
@@ -519,13 +558,18 @@ function actionAnswer(
  * and a notes folder that is not there, or is a link out of its hub, `no-such-note`, with nothing
  * written.
  */
-function orderNotes(fields: FsFields, hubs: readonly { name: string; dir: string }[]): Response {
+function orderNotes(
+    fields: FsFields,
+    hubs: readonly { name: string; dir: string }[],
+    notesDir: (dir: string) => string
+): Response {
     const hub = hubs.find((one) => one.name === fields.root);
     if (hub === undefined)
         return json({ error: 'no-such-hub' }, { status: 400, headers: NO_STORE });
-    if (notesFolderState(hub.dir).state !== 'ok')
+    const notes = notesDir(hub.dir);
+    if (notesFolderState(hub.dir, notes).state !== 'ok')
         return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
-    const refused = writeNoteOrder(notesFolderOf(hub.dir), fields.ids);
+    const refused = writeNoteOrder(notesFolderOf(hub.dir, notes), fields.ids);
     if (refused !== null) return json({ error: refused }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
@@ -535,7 +579,9 @@ function orderNotes(fields: FsFields, hubs: readonly { name: string; dir: string
  */
 function act(fields: FsFields, into: FsTarget): Response {
     const action = fields.action;
-    if (action === 'order-notes') return orderNotes(fields, into.workspace.open().hubs);
+    if (action === 'order-notes') {
+        return orderNotes(fields, into.workspace.open().hubs, into.notesDir);
+    }
     if (action === 'save-workspace') {
         return actionAnswer(saveWorkspaceAs(into.workspace.stateFolder, fields.name));
     }

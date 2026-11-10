@@ -14,7 +14,8 @@ import { noCredentials } from '../../../../fixtures/doubles.ts';
 import { it } from '../../../../fixtures/scratch.ts';
 import { lineOf, tmux } from '../../../../routes/sessions/terminal-fixture.ts';
 import { TEXT } from '../../../text.ts';
-import { CLAUDE, plantCommands, world, type World } from './schedules-fixture.ts';
+import type { TaskHubs } from '../../../../../src/lib/server/machine/runs/schedules/task.ts';
+import { CLAUDE, LISTED, plantCommands, world, type World } from './schedules-fixture.ts';
 
 const SIZE = { cols: 80, rows: 24 };
 
@@ -41,6 +42,8 @@ type Row = {
     roots?: (w: World) => string[];
     /** The task files the second hub `B` holds; none when absent. */
     tasks?: string[];
+    /** Whether the `update_tasks` of the second hub `B` lists Lit Watch; none when absent. */
+    listed?: boolean;
     /** The answer and, for a start, what tmux was told. */
     expected:
         | { refused: (w: World) => { refused: string; names: string[] } }
@@ -70,10 +73,19 @@ const ROWS: Row[] = [
         name: 'an update task that names a hub starts in that hub',
         entry: () => entry({ task: 'litwatch', hub: 'B' }),
         tasks: ['litwatch'],
+        listed: true,
         expected: {
             cwd: (w) => w.other,
             words: [`'${CLAUDE}' '${LITWATCH}'`],
             terminalName: 'task litwatch'
+        }
+    },
+    {
+        name: 'an update task its hub holds a file of and does not list is refused with update-task-unlisted',
+        entry: () => entry({ task: 'litwatch', hub: 'B' }),
+        tasks: ['litwatch'],
+        expected: {
+            refused: () => ({ refused: 'update-task-unlisted', names: ['litwatch', 'B'] })
         }
     },
     {
@@ -83,8 +95,9 @@ const ROWS: Row[] = [
         expected: { refused: () => ({ refused: 'hub-unknown', names: ['nope'] }) }
     },
     {
-        name: 'an update task whose hub holds no file of it is refused with task-file-missing',
+        name: 'an update task whose hub lists it and holds no file of it is refused with task-file-missing',
         entry: () => entry({ task: 'litwatch', hub: 'B' }),
+        listed: true,
         expected: {
             refused: () => ({
                 refused: 'task-file-missing',
@@ -169,11 +182,18 @@ describe('runEntry', () => {
                 mkdirSync(join(w.other, '.oculus', 'tasks'), { recursive: true });
                 writeFileSync(join(w.other, '.oculus', 'tasks', `${kind}.md`), `# ${kind}\n`);
             }
+            const hubs: TaskHubs =
+                row.listed === true
+                    ? {
+                          ...w.hubs,
+                          settingsOf: (dir) => (dir === w.other ? LISTED : w.hubs.settingsOf(dir))
+                      }
+                    : w.hubs;
             const driver = tmux();
             const roots = row.roots === undefined ? [w.repo] : row.roots(w);
             const answer = await runEntry(row.entry(w), SIZE, {
                 run: driver.run,
-                hubs: w.hubs,
+                hubs,
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor: () => roots,

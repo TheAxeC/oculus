@@ -1,7 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/literature/Literature.svelte. The small form on a card
-    // that adds its paper to Lit Watch: the bucket (the radar's own vocabulary, `adjacent`
-    // preselected), an optional project, the relevance (`med` preselected) and an optional note.
+    // that adds its paper to Lit Watch: the bucket (the radar's own vocabulary, the bucket of
+    // `radar_buckets` that carries `default: true` preselected), an optional project, the relevance
+    // (a word of `radar_relevance`, the one that carries `default: true` preselected, each drawn as
+    // the word itself, as the radar's card draws it) and an optional note.
     // Saving sends one `radar-add` write; the radar feed republishes the file, so Lit Watch shows
     // the paper without a reload and the card reads `In Lit Watch`. Escape closes it only while it
     // is on screen: a pane keeps the view of a tab it hides mounted.
@@ -12,7 +14,9 @@
     import { answerWords } from '../../shared/forms/answer-words';
     import { radarFields, type RadarChoice } from '$lib/state/feeds/literature/radar';
     import type { MergedHit } from '$lib/state/feeds/literature/merge';
+    import { defaultBucket, defaultRelevance, relevanceWords } from '$lib/state/feeds/radar';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -29,19 +33,15 @@
 
     let { hit, buckets, projects, onclose, onsaid }: Props = $props();
     let choice: RadarChoice = $state({
-        bucket: 'adjacent',
+        bucket: defaultBucket(vocabOf()) ?? '',
         project: '',
-        relevance: 'med',
+        relevance: defaultRelevance(vocabOf()) ?? '',
         why: ''
     });
     let saving = $state(false);
     let box: HTMLDivElement | undefined = $state();
 
-    const relevances = $derived([
-        { id: 'high', label: t('literature.relevance_high') },
-        { id: 'med', label: t('literature.relevance_med') },
-        { id: 'low', label: t('literature.relevance_low') }
-    ]);
+    const relevances = $derived(relevanceWords(vocabOf()).map((id) => ({ id, label: id })));
 
     function keyed(event: KeyboardEvent): void {
         if (event.key === 'Escape' && box?.checkVisibility() === true) onclose();

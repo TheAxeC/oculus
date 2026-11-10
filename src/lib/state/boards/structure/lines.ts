@@ -27,6 +27,7 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import {
     hasWord,
+    oneWordWith,
     recordWords,
     skippedTiers,
     wordsNumbered,
@@ -242,9 +243,16 @@ export function domainsWithMembers(
 /**
  * One section of the Pillars view: a row of `pillar_kinds` with the lines of its kind, or the Other
  * section, whose key is the empty text, of the lines whose kind no row names. `color` is the row's
- * colour as written, the empty text for a row without one and for Other.
+ * colour as written, the empty text for a row without one and for Other. `archival` marks the
+ * section of the kind that carries `archival: true` (`archivalKind`).
  */
-export type KindSection = { key: string; label: string; color: string; lines: Pillar[] };
+export type KindSection = {
+    key: string;
+    label: string;
+    color: string;
+    archival: boolean;
+    lines: Pillar[];
+};
 
 /**
  * A row of `pillar_kinds` as the sections read it: a text key of at least one character, so none is
@@ -263,8 +271,14 @@ const kindRowShape = z
         color: typeof row.color === 'string' ? row.color : ''
     }));
 
-/** The kind of the off-pillar lines: a card muted, and the section that holds the Archival card. */
-export const OFFPILLAR = 'offpillar';
+/**
+ * The kind of `pillar_kinds` of the words given that carries `archival: true`, the kind of the
+ * lines off the pillars: their cards are drawn muted, and its section holds the Archival card. None
+ * when no row carries it, or when two do, which is a finding of the vocabulary.
+ */
+export function archivalKind(words: Record<string, unknown>): string | undefined {
+    return oneWordWith(words, 'pillar_kinds', 'archival');
+}
 
 /** The record of a registry's map under `id`, null for none, a name off the prototype included. */
 export function registryRecord<T>(records: Record<string, T> | undefined, id: string): T | null {
@@ -278,19 +292,21 @@ export function registryRecord<T>(records: Record<string, T> | undefined, id: st
  * Other section of the lines whose kind no row names, a line with no kind among them. A value of
  * the list that is no row reads as no section. Each section holds its lines in the order given, and
  * a section that holds none is kept, since the view draws the Orphans card in the first row's
- * section and the Archival card in the section of `offpillar` whatever lines they hold.
+ * section and the Archival card in the archival section (`archivalKind`) whatever lines they hold.
  */
 export function lineKinds(lines: readonly Pillar[], words: Record<string, unknown>): KindSection[] {
     const rows = readAs(rowsShape(kindRowShape), words.pillar_kinds) ?? [];
+    const archival = archivalKind(words);
     const named = new Set<string>();
     const sections: KindSection[] = [];
     for (const row of rows) {
         if (named.has(row.key)) continue;
         named.add(row.key);
-        sections.push({ ...row, lines: lines.filter((line) => line.kind === row.key) });
+        const held = lines.filter((line) => line.kind === row.key);
+        sections.push({ ...row, archival: row.key === archival, lines: held });
     }
     const other = lines.filter((line) => !named.has(line.kind ?? ''));
-    sections.push({ key: '', label: '', color: '', lines: other });
+    sections.push({ key: '', label: '', color: '', archival: false, lines: other });
     return sections;
 }
 

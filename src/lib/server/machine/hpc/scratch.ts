@@ -1,7 +1,8 @@
 // Layer 2, server. The scratch rule of Submit: whether a job script, or a file it sources that the
-// rule can find, names `/local/$SLURM_JOB_ID`, the cluster's per-job scratch folder every job's
-// input and output goes through. A script that never names it gets a warning before the reader
-// submits it.
+// rule can find, names `<root>/$SLURM_JOB_ID`, the cluster's per-job scratch folder every job's
+// input and output goes through, where `<root>` is the cluster's member of `slurm.scratch_roots`.
+// A script that never names it gets a warning before the reader submits it; a cluster with no
+// member has no rule.
 //
 // Each file is read through the shell parser's printer (`print` of sh-syntax with `minify`), which
 // drops every comment, keeps quotes and here-document bodies and prints one statement a line, so
@@ -22,14 +23,24 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { print } from 'sh-syntax';
 import { inside, realPath } from '../../core/paths.ts';
 
-/** What the rule found: whether the folder is named, and the sources it could not read. */
-export type ScratchResult = { named: boolean; unread: string[] };
+/**
+ * What the rule found: the scratch folder it looked for (`root`, '' when the cluster names none and
+ * there is no rule), whether it is named, and the sources it could not read.
+ */
+export type ScratchResult = { root: string; named: boolean; unread: string[] };
 
 /**
- * `/local/` followed at once by `$SLURM_JOB_ID` that no name character follows, by
- * `${SLURM_JOB_ID}`, or by `${SLURM_JOB_ID` with an operator and a word (`:-$$`, `-x`).
+ * The root and a slash followed at once by `$SLURM_JOB_ID` that no name character follows, by
+ * `${SLURM_JOB_ID}`, or by `${SLURM_JOB_ID` with an operator and a word (`:-$$`, `-x`). The root
+ * holds no character a pattern reads (its form, `absolute_folder`, but the dot), and each dot is
+ * escaped.
  */
-const SCRATCH = /\/local\/(\$SLURM_JOB_ID(?![A-Za-z0-9_])|\$\{SLURM_JOB_ID(\}|:?[-=+?][^}]*\}))/;
+function scratchPattern(root: string): RegExp {
+    const folder = root.replaceAll('.', '\\.');
+    return new RegExp(
+        `${folder}/(\\$SLURM_JOB_ID(?![A-Za-z0-9_])|\\$\\{SLURM_JOB_ID(\\}|:?[-=+?][^}]*\\}))`
+    );
+}
 
 /** The most files one plan reads. */
 const MAX_READ = 20;
@@ -118,25 +129,32 @@ async function printed(file: string): Promise<string[] | null> {
 }
 
 /**
- * Whether a script's own text names `/local/$SLURM_JOB_ID` in a line of code, the rule a job
- * script Recover writes passes before it is sent; false for a text that does not parse.
+ * Whether a script's own text names `<root>/$SLURM_JOB_ID` in a line of code, the rule a job
+ * script Recover writes passes before it is sent; false for a text that does not parse and for the
+ * empty root.
  */
-export async function scratchText(text: string): Promise<boolean> {
+export async function scratchText(text: string, root: string): Promise<boolean> {
+    if (root === '') return false;
+    const scratch = scratchPattern(root);
     const lines = await printedLines(text);
-    return lines?.some((line) => SCRATCH.test(line)) ?? false;
+    return lines?.some((line) => scratch.test(line)) ?? false;
 }
 
 /**
- * Whether the job script, or a file it sources, names `/local/$SLURM_JOB_ID`, and the sources the
+ * Whether the job script, or a file it sources, names `<root>/$SLURM_JOB_ID`, and the sources the
  * rule could not read. `code` is the real path of the code folder and `cluster` the folder on the
- * cluster that holds its contents, whose `~/` form lets a script name its own place.
+ * cluster that holds its contents, whose `~/` form lets a script name its own place. With the
+ * empty root there is no rule and nothing is read.
  */
 export async function scratchRule(
     script: string,
     code: string,
-    cluster: string
+    cluster: string,
+    root: string
 ): Promise<ScratchResult> {
-    const result: ScratchResult = { named: false, unread: [] };
+    const result: ScratchResult = { root, named: false, unread: [] };
+    if (root === '') return result;
+    const scratch = scratchPattern(root);
     const seen = new Set<string>();
     const pending = [script];
     const unread = (entry: string): void => {
@@ -155,7 +173,7 @@ export async function scratchRule(
             continue;
         }
         for (const line of lines) {
-            if (SCRATCH.test(line)) result.named = true;
+            if (scratch.test(line)) result.named = true;
             const words = /^(?:source|\.)\s+(.*)$/.exec(line.trim());
             const word = words === null ? null : SOURCE_WORD.exec(words[1])?.[0];
             if (word === null || word === undefined) continue;

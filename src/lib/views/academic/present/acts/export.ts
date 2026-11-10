@@ -19,8 +19,8 @@
 // line goes once the print page has been answered or the hold has ended, when it is still the line
 // on show, so a later act's is kept.
 //
-// `<name>` is the deck folder's name, the project's name for a project's `present/` folder, and
-// the root's folder name for a deck at the top of a root (the deck's own `name`).
+// `<name>` is the deck folder's name, the project's name for a project's deck folder (the hub's
+// `deck_dir`), and the root's folder name for a deck at the top of a root (the deck's own `name`).
 
 import {
     MAX_UPLOAD_MB,

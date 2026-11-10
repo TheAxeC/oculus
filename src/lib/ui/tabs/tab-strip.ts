@@ -142,10 +142,11 @@ export function controlsFit(strip: number, least: number, controls: number): boo
 
 /**
  * Whether a strip wraps its tabs onto several rows: when the reader asked for it and the strip
- * draws every tab, which is `show_tabs: multiple`. Under any other value the setting is ignored.
+ * draws every tab, which is `show_tabs: multiple`. Under any other value the setting is ignored,
+ * and before a config, when both are null, the strip does not wrap.
  */
-export function stripWraps(wrapTabs: boolean, bar: string): boolean {
-    return wrapTabs && bar === 'multiple';
+export function stripWraps(wrapTabs: boolean | null, bar: string | null): boolean {
+    return wrapTabs === true && bar === 'multiple';
 }
 
 /**

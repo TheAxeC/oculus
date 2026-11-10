@@ -10,7 +10,7 @@ import { vi } from 'vitest';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts';
+import { handleFsWrite, ignoredCache, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { openWorkspace, type OpenWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
@@ -105,6 +105,23 @@ export function workspaceWith(folders: readonly FolderSpec[], primary?: string):
 /** The write token the requests of `writeFs` carry. */
 const FS_TOKEN = 'a-write-token';
 
+/**
+ * What the fs route serves a test's workspace with past the workspace and the machine: no
+ * bookmarks, the plain writer, a fresh ignore cache, no credentials, the shipped folders of
+ * secrets and notes and `node_modules` hidden.
+ */
+export function fsServing(): Omit<FsTarget, 'engine' | 'workspace' | 'machine'> {
+    return {
+        bookmarks: null,
+        writes: fsWrites(),
+        ignored: ignoredCache(),
+        credentials: noCredentials(),
+        secretsDir: () => 'secrets',
+        notesDir: () => '.oculus/notes',
+        hiddenFolders: ['node_modules']
+    };
+}
+
 /** One write of `action` to /api/fs over the workspace of the state folder `state`. */
 export async function writeFs(
     state: string,
@@ -125,10 +142,7 @@ export async function writeFs(
         engine: engineDir(),
         workspace: workspaceOf(state),
         machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
-        bookmarks: null,
-        writes: fsWrites(),
-        ignored: ignoredCache(),
-        credentials: noCredentials()
+        ...fsServing()
     });
     return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }

@@ -123,17 +123,16 @@ export type BodyLooks = { crt: boolean; brackets: boolean; monospace: boolean };
 /**
  * The looks of the merged config, the one reader of `crt.on`, `rice.brackets` and
  * `rice.monospace`: the page's look (state/shared/words/appearance.ts, `lookShape`) and the class
- * the server sends the page with both take them from here. An option that is not a boolean, or
- * sits under a key that is not a map, has its default, the overlay off and both rice toggles on.
+ * the server sends the page with both take them from here. Null when one of the three is not a
+ * boolean under a map, which the merged config, holding oculus's defaults, always gives: the body
+ * then carries the theme's classes alone.
  */
-export function configLooks(config: Record<string, unknown>): BodyLooks {
-    const crt = isMap(config.crt) ? config.crt : {};
+export function configLooks(config: Record<string, unknown>): BodyLooks | null {
+    const crt = isMap(config.crt) ? config.crt.on : undefined;
     const rice = isMap(config.rice) ? config.rice : {};
-    return {
-        crt: typeof crt.on === 'boolean' ? crt.on : false,
-        brackets: typeof rice.brackets === 'boolean' ? rice.brackets : true,
-        monospace: typeof rice.monospace === 'boolean' ? rice.monospace : true
-    };
+    const { brackets, monospace } = rice;
+    if (typeof crt !== 'boolean' || typeof brackets !== 'boolean') return null;
+    return typeof monospace === 'boolean' ? { crt, brackets, monospace } : null;
 }
 
 /**

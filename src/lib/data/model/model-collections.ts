@@ -440,7 +440,8 @@ export type Lead = Rooted & {
  * is not a finding; a broken one is.
  *
  * `scout` is the position scout's own run date, which lives in the leads file's `meta.log` rather
- * than in a file of its own, so it is null exactly when `leads` is.
+ * than in a file of its own, so it is null when `leads` is, and when the hub's `leads_run_word` is
+ * empty, since no line of the log can then record a run.
  *
  * This is one hub's feeds as sources/documents/feeds.ts reads them; the summary the snapshot
  * carries (`Feeds`) adds each hub's run dates.
@@ -472,6 +473,11 @@ export type FeedData = {
     entries: FeedEntry[];
     /** The configured posting interval, present on the LinkedIn folder feed. */
     cadenceDays?: number;
+    /**
+     * The start of an idea's name in the folder, the hub's `linkedin_idea_prefix`, present on the
+     * LinkedIn folder feed of a folder that was read.
+     */
+    ideaPrefix?: string;
     /** The file's own ordered entry schema, when it carries one. */
     schema?: SchemaField[];
     /** The field an entry is addressed by (`primaryKeyOf`), absent when the file has none. */
@@ -503,6 +509,11 @@ export type FeedsPayload = Record<
          * hub's name. Absent before the hubs are merged.
          */
         hubPrimaryKeys?: Record<string, string>;
+        /**
+         * The start of an idea's name in the LinkedIn folder of each hub whose folder was read, by
+         * the hub's name (`ideaPrefix`). Absent before the hubs are merged.
+         */
+        hubIdeaPrefixes?: Record<string, string>;
         missing?: boolean;
         error?: string;
     }

@@ -61,6 +61,9 @@ let remote = '';
  */
 let ROOTS: string[] = [];
 
+/** The worktrees folder of every repository here, as `git.worktrees_dir` would name it. */
+const TREES = 'kept/trees';
+
 /** A git command inside the throwaway directory, and nowhere else, for setting a case up. */
 function git(root: string, ...args: string[]): string {
     return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' });
@@ -225,14 +228,14 @@ describe('branches', () => {
 describe('worktrees', () => {
     const name = 'package-one';
     /** The worktree's path. It is read in each case, since the repository is made in beforeAll. */
-    const where = (): string => worktreePath(repo, name);
+    const where = (): string => worktreePath(repo, name, TREES);
 
-    it('makes one under the repository worktrees folder, on a branch of its name', async () => {
+    it('makes one under the worktrees folder the setting names, on a branch of its name (G13)', async () => {
         const path = where();
-        const answer = await createWorktree(gitAt(repo), name, TEXT, ROOTS);
+        const answer = await createWorktree(gitAt(repo), name, TREES, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(path, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(name);
-        expect(path.endsWith(`.agents/worktrees/${name}`)).toBe(true);
+        expect(path).toBe(`${repo}/kept/trees/${name}`);
     });
 });
 
@@ -334,8 +337,8 @@ describe('the merge back', () => {
     );
 
     it('removes a worktree that is clean, and its branch with it', async () => {
-        const path = worktreePath(repo, name);
-        const answer = await removeWorktree(gitAt(repo), path, TEXT, ROOTS);
+        const path = worktreePath(repo, name, TREES);
+        const answer = await removeWorktree(gitAt(repo), path, TREES, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(existsSync(path)).toBe(false);
         expect(git(repo, 'branch', '--list', name).trim()).toBe('');

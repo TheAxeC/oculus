@@ -115,7 +115,7 @@ export async function attachFiles(
     const { t } = deps;
     const said: string[] = [];
     const links: string[] = [];
-    const into: Place = { root: hub.root, path: notePath(ATTACHMENTS_FOLDER) };
+    const into: Place = { root: hub.root, path: notePath(hub, ATTACHMENTS_FOLDER) };
     if (files.length === 0) return { inserted: '', said: '' };
     if (!holdsFolder(hub)) {
         const making = noteMaking(hub, ATTACHMENTS_FOLDER);

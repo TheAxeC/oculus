@@ -66,13 +66,16 @@ export function notePressed(
     const hub = hubs.find((one) => one.root === root && one.state !== 'refused');
     if (link === null || hub === undefined) return null;
     const found = resolveNote(link.name, filesOf(hub));
-    if (found !== null) return { kind: 'open', root, path: notePath(found), heading: link.heading };
+    if (found !== null) {
+        return { kind: 'open', root, path: notePath(hub, found), heading: link.heading };
+    }
     const refused = refusalOf(link.name, t);
     if (refused !== null) return { kind: 'refused', sentence: refused };
     const parts = link.name.split('/').map((part) => part.trim().normalize('NFC'));
     const inside = `${parts.join('/')}${NOTE_SUFFIX}`;
     const making = noteMaking(hub, inside);
-    return { kind: 'make', root, path: notePath(inside), into: making.into, name: making.name };
+    const path = notePath(hub, inside);
+    return { kind: 'make', root, path, into: making.into, name: making.name };
 }
 
 /** The line, from one, of a note's heading of these words (without letter case), or 0 for none. */
@@ -101,7 +104,7 @@ export function noteDrawing(
     const files = filesOf(hub);
     return {
         resolve: (name) => resolveNote(name, files),
-        fileAddress: (path) => fileBytesUrl(file.root, notePath(path)),
+        fileAddress: (path) => fileBytesUrl(file.root, notePath(hub, path)),
         refusal: (name) => refusalOf(name, t),
         text
     };

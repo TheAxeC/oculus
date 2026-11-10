@@ -62,6 +62,16 @@ export type FsRoot = {
     hub?: true;
     /** Its file system reads a path in another letter case as the same path. */
     folds?: true;
+    /**
+     * A hub's folder of secrets against its folder, its `secrets_dir` as the answer marks it, which
+     * no language server's edit is made in (config-files.ts `isPrivateFile`).
+     */
+    secrets?: string;
+    /**
+     * A hub's notes folder against its folder, its `notes_dir` as the answer marks it, which the
+     * Notes section and the note readers place the hub's notes by (private-folders.ts `notesMark`).
+     */
+    notes?: string;
     marks?: FolderMarks;
     above?: true;
     /**

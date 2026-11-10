@@ -1,8 +1,9 @@
-// Layer 1, data. What a note is called and where it lives: a note is `<name>.md` in a hub's
-// `.oculus/notes/` folder or a folder under it, its name is its title, and the name follows one
-// rule, which the server checks when a file operation lands in a notes folder (server/files/fs/
-// ops.ts) and the page checks while the name is typed (the Notes tree's name input), so the two
-// cannot disagree.
+// Layer 1, data. What a note is called and where it lives: a note is `<name>.md` in a hub's notes
+// folder (its `notes_dir`, `.oculus/notes` unless the hub names another) or a folder under it, its
+// name is its title, and the name follows one rule, which the server checks when a file operation
+// lands in a notes folder (server/files/fs/ops.ts) and the page checks while the name is typed (the
+// Notes tree's name input), so the two cannot disagree. Every function here that asks where a path
+// lies takes the hub's notes folder as a path under the hub, the empty text for a root with none.
 //
 // A name holds none of `/ \ : [ ] # ^ |`, since a link names a note by `[[folder/name#heading|shown
 // text]]` and an embed by `![[name]]`, and each of those characters would end or split the link; it
@@ -14,10 +15,7 @@
 // The same rule names a note's folder and a file of `attachments/`, since a folder is part of the
 // `[[folder/name]]` a link may need, and a file is named in an embed.
 
-/** The folder of a hub that holds its notes, as a path under the hub. */
-export const NOTES_FOLDER = '.oculus/notes';
-
-/** The folder of a hub that holds its own files: its notes, settings, data and `local.yml`. */
+/** The folder of a hub that holds its own files: its settings, data and `local.yml`. */
 const HUB_OWN_FOLDER = '.oculus';
 
 /** The extension every note is written under. */
@@ -120,12 +118,14 @@ function segmentsOf(path: string): string[] {
 }
 
 /**
- * The path inside the notes folder of a path under a hub, or null for a path outside it: the
- * folder's own path is the empty path.
+ * The path inside the notes folder `notes` of a path under a hub, or null for a path outside it
+ * and for every path of a root with no notes folder (`notes` empty): the folder's own path is the
+ * empty path.
  */
-export function inNotes(pathInHub: string): string | null {
+export function inNotes(pathInHub: string, notes: string): string | null {
     const parts = segmentsOf(pathInHub);
-    const own = segmentsOf(NOTES_FOLDER);
+    const own = segmentsOf(notes);
+    if (own.length === 0) return null;
     if (parts.length < own.length || own.some((part, at) => parts[at] !== part)) return null;
     return parts.slice(own.length).join('/');
 }
@@ -141,38 +141,46 @@ export function noteTitle(path: string): string {
     return name.toLowerCase().endsWith(NOTE_SUFFIX) ? name.slice(0, -NOTE_SUFFIX.length) : name;
 }
 
-/**
- * Whether a path under a root lies in a folder whose name starts with a dot, or in
- * `node_modules`, the folders no language server's file event reaches, with one exception:
- * a hub's notes folder and every folder under it that is not a dot folder itself. `hub` says
- * whether the root is a hub; a folder that is not one holds no notes.
- */
-export function inHiddenFolder(pathInRoot: string, hub: boolean): boolean {
-    const folders = pathInRoot
+/** The folders a path under a root lies in, from the root down, without its own name. */
+function foldersOf(pathInRoot: string): string[] {
+    return pathInRoot
         .split(/[/\\]/)
         .filter((one) => one !== '')
         .slice(0, -1);
-    const own = segmentsOf(NOTES_FOLDER);
-    const notes = hub && own.every((part, at) => folders[at] === part);
-    return folders
-        .slice(notes ? own.length : 0)
-        .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
+}
+
+/** How many of a path's first folders are the folders of `under`, all of them or none. */
+function leading(folders: readonly string[], under: string): number {
+    const own = segmentsOf(under);
+    return own.length > 0 && own.every((part, at) => folders[at] === part) ? own.length : 0;
+}
+
+/** Whether a folder's name keeps it from a language server: a dot folder or `node_modules`. */
+function hiddenName(part: string): boolean {
+    return part === 'node_modules' || part.startsWith('.') || part === '..';
+}
+
+/**
+ * Whether a path under a root lies in a folder whose name starts with a dot, or in
+ * `node_modules`, the folders no language server's file event reaches, with one exception:
+ * a hub's notes folder `notes` and every folder under it that is not a dot folder itself. `notes`
+ * is empty for a root that is no hub, which holds no notes.
+ */
+export function inHiddenFolder(pathInRoot: string, notes: string): boolean {
+    const folders = foldersOf(pathInRoot);
+    return folders.slice(leading(folders, notes)).some(hiddenName);
 }
 
 /**
  * Whether a path under a root lies where no edit a language server asks for is made: a folder whose
- * name starts with a dot, or `node_modules`, with one exception: a hub's own `.oculus` folder and
- * every folder under it that is not a dot folder or `node_modules` itself, which hold the hub's
- * notes and the files a rename of a hub key reaches (its data files, its settings and the primary's
- * `local.yml`). `hub` says whether the root is a hub; a folder that is not one has no such folder.
+ * name starts with a dot, or `node_modules`, with two exceptions: a hub's own `.oculus` folder and
+ * its notes folder `notes`, and every folder under them that is not a dot folder or `node_modules`
+ * itself, which hold the hub's notes and the files a rename of a hub key reaches (its data files,
+ * its settings and the primary's `local.yml`). `hub` says whether the root is a hub; a folder that
+ * is not one has no such folder, and `notes` is then empty.
  */
-export function outsideEdits(pathInRoot: string, hub: boolean): boolean {
-    const folders = pathInRoot
-        .split(/[/\\]/)
-        .filter((one) => one !== '')
-        .slice(0, -1);
-    const own = hub && folders[0] === HUB_OWN_FOLDER;
-    return folders
-        .slice(own ? 1 : 0)
-        .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
+export function outsideEdits(pathInRoot: string, hub: boolean, notes: string): boolean {
+    const folders = foldersOf(pathInRoot);
+    const own = hub && folders[0] === HUB_OWN_FOLDER ? 1 : 0;
+    return folders.slice(Math.max(own, hub ? leading(folders, notes) : 0)).some(hiddenName);
 }

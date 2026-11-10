@@ -1,10 +1,12 @@
 // Layer 1, data. This machine's own values: the `local.yml` in a hub's `.oculus/` folder, read by
 // readLocal alone and never merged into the shared map, so a machine's paths, port, accounts and
 // user stay its own (data/sources/config/machine.ts joins the files of the hubs of a workspace).
-// Every key has a default. A key whose value the file gets wrong takes its default and is a problem
-// naming the key, a row of a list that fails is left out and is a problem naming the row, and a
-// file that does not read at all is every default and one problem: no read throws, so the server
-// starts and every other key is applied.
+// Every key has a default: the `default` of its entry in oculus's config/options/local.yml, or for
+// a path under `~/.oculus`, oculus's own state folder, the one the module that owns the file names.
+// A key whose value the file gets wrong takes its default and is a problem naming the key, a row of
+// a list that fails is left out and is a problem naming the row, and a file that does not read at
+// all is every default and one problem: no read of a hub's file throws, so the server starts and
+// every other key is applied.
 
 import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
@@ -20,7 +22,10 @@ import {
 } from '../../model/index.ts';
 import { isAccountLabel, isCalendarProvider, isProvider } from '../../accounts/connect.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../../shapes/shapes.ts';
+import { isMap } from '../../helpers/guards.ts';
 import { ROOT_FOLDER } from '../../helpers/hub-names.ts';
+import { engineDir } from '../../places/engine-dir.ts';
+import { configDir, OPTIONS_DIR } from './folder.ts';
 
 /** A port: a whole number. */
 const portShape = z.number().refine(Number.isInteger);
@@ -58,6 +63,12 @@ export type LocalConfig = {
      */
     sessionsOverrides?: string;
     /**
+     * The folders a session's workspace is looked for under, `sessions_roots` in the file, each
+     * resolved as a path of the file is: a session outside a repository is filed under the folder
+     * one level below the deepest of them that holds its working directory.
+     */
+    sessionsRoots: string[];
+    /**
      * Where the change log lives, `changes` in the file. Absent unless the machine sets it, and the
      * write path then uses ~/.oculus/changes.jsonl.
      */
@@ -86,9 +97,16 @@ export type LocalConfig = {
      */
     scheduleRecord?: string;
     /**
-     * Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with.
+     * The Claude command line, `claude_bin` in the file, that a Claude terminal, its resume and its
+     * fork, a composed Claude start, the update tasks and the chat terminal run: an absolute path
+     * or a name resolved on PATH.
      */
     claudeBin: string;
+    /**
+     * The Codex command line, `codex_bin` in the file, that a Codex terminal, its resume and its
+     * fork, and a composed Codex start run: an absolute path or a name resolved on PATH.
+     */
+    codexBin: string;
     /**
      * The account the suggested commit message runs under, `commit_message_account` in the file:
      * the label of a `claude` row of the accounts joined from every hub's file, compared reduced
@@ -157,9 +175,6 @@ export const USER_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
  */
 export type DownloadAccount = { service: string; user?: string; secret: string };
 
-/** The default development port. */
-export const DEFAULT_PORT = 8790;
-
 /** The name of the machine-local file inside a hub's `.oculus/` folder. */
 export const LOCAL_NAME = 'local.yml';
 
@@ -170,12 +185,14 @@ export const LOCAL_KEYS = [
     'clusters',
     'sessions_cache',
     'sessions_overrides',
+    'sessions_roots',
     'changes',
     'history',
     'approvals',
     'lsp',
     'schedule_record',
     'claude_bin',
+    'codex_bin',
     'commit_message_account',
     'open_bin',
     'rite_dap_bin',
@@ -191,25 +208,68 @@ export const LOCAL_KEYS = [
 /** The keys under `literature:`, with the field of LiteratureKeys each sets. */
 const LITERATURE_KEYS = [['mailto', 'mailto']] as const;
 
+/** The keys the values always hold, each taking its entry's default when no file sets it. */
+const REQUIRED_DEFAULTS = [
+    'port',
+    'self',
+    'clusters',
+    'sessions_roots',
+    'claude_bin',
+    'codex_bin',
+    'rite_dap_bin',
+    'accounts',
+    'calendars',
+    'mail',
+    'downloads'
+];
+
+/** The file of oculus's own config that describes the keys and carries their defaults. */
+function shippedFile(): string {
+    return join(configDir(engineDir()), OPTIONS_DIR, LOCAL_NAME);
+}
+
 /**
- * The defaults: the port is 8790, nobody is the user, and Claude and the rite debug adapter are
- * resolved on PATH.
+ * The `default` of each entry of oculus's `config/options/local.yml`, by its key; an entry with no
+ * default, such as a path under `~/.oculus` the module that owns the file defaults, is left out.
+ */
+function shippedDefaults(file: string): Record<string, unknown> {
+    const entries = readAs(mapShape, readAs(mapShape, parse(readFileSync(file, 'utf8')))?.options);
+    const defaults: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(entries ?? {})) {
+        if (isMap(entry) && Object.hasOwn(entry, 'default')) defaults[key] = entry.default;
+    }
+    return defaults;
+}
+
+/**
+ * The defaults: the `default` of each entry of oculus's `config/options/local.yml`, read as a
+ * file's value of the key is read, a path under the home folder. The file is oculus's own, so a
+ * default that does not read, or a key of REQUIRED_DEFAULTS with none, is a defect of oculus and
+ * throws, naming the key.
  */
 export function localDefaults(): LocalConfig {
-    return {
-        port: DEFAULT_PORT,
+    const file = shippedFile();
+    const record = shippedDefaults(file);
+    const missing = REQUIRED_DEFAULTS.find((key) => !Object.hasOwn(record, key));
+    if (missing !== undefined) throw new Error(`${file}: ${missing} has no default`);
+    // Each field is set from the record below, which holds every key of REQUIRED_DEFAULTS.
+    const config: LocalConfig = {
+        port: 0,
         self: '',
         clusters: [],
-        claudeBin: 'claude',
-        riteDapBin: 'rite_dap',
-        accounts: [
-            { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
-            { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
-        ],
+        sessionsRoots: [],
+        claudeBin: '',
+        codexBin: '',
+        riteDapBin: '',
+        accounts: [],
         calendars: [],
         mail: [],
         downloads: []
     };
+    const problems: LocalProblem[] = [];
+    readKeys(record, { base: homedir(), config, problems, unknown: [] });
+    if (problems.length > 0) throw new Error(`${file}: ${problems[0].sentence}`);
+    return config;
 }
 
 /**
@@ -551,6 +611,7 @@ export function localFile(hub: string): string {
 /** The keys of the file that name a program, with the field each sets. */
 export const PROGRAM_KEYS = [
     ['claude_bin', 'claudeBin'],
+    ['codex_bin', 'codexBin'],
     ['open_bin', 'openBin'],
     ['rite_dap_bin', 'riteDapBin']
 ] as const;
@@ -615,7 +676,27 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
     const problems: LocalProblem[] = [];
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
     const carried = Object.keys(record).filter((key) => LOCAL_KEYS.includes(key));
+    readKeys(record, { base, hub, config, problems, unknown });
+    const wrongKeys = new Set(problems.filter((one) => one.kind === 'value').map((one) => one.key));
+    const set = carried.filter((key) => !wrongKeys.has(key));
+    return { config, problems, unknown, set, unread: false };
+}
 
+/** What a read of the keys writes into, and the folder and hub its paths and rows are of. */
+type KeysRead = {
+    base: string;
+    hub?: string;
+    config: LocalConfig;
+    problems: LocalProblem[];
+    unknown: string[];
+};
+
+/**
+ * Each key `record` carries read into `into.config`, every key on its own: a value that is wrong
+ * leaves the field as it was and is a problem, and a row of a list that fails is left out.
+ */
+function readKeys(record: Record<string, unknown>, into: KeysRead): void {
+    const { base, hub, config, problems, unknown } = into;
     if (record.port !== undefined) {
         const port = readAs(portShape, record.port);
         if (port === null) problems.push(wrong('port', 'an integer'));
@@ -682,9 +763,15 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
         if (value === undefined) problems.push(wrong(key, 'a path'));
         else config[field] = localPath(value, base);
     }
-    const wrongKeys = new Set(problems.filter((one) => one.kind === 'value').map((one) => one.key));
-    const set = carried.filter((key) => !wrongKeys.has(key));
-    return { config, problems, unknown, set, unread: false };
+    if (record.sessions_roots !== undefined) {
+        const roots = readAs(itemsShape, record.sessions_roots);
+        const named = (roots ?? []).flatMap((one) => filledText(one) ?? []);
+        if (named.length !== roots?.length) {
+            problems.push(wrong('sessions_roots', 'a list of paths'));
+        } else {
+            config.sessionsRoots = named.map((one) => localPath(one, base));
+        }
+    }
 }
 
 /** The rows with the name of the hub whose file holds them, when there is one. */

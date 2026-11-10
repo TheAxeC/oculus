@@ -10,8 +10,14 @@
 import { validName, worktreePath } from '../../../../data/helpers/worktrees.ts';
 import { t } from '../../../shared/words/text.ts';
 
-/** The New worktree choice as the composer holds it: the repository's root and the name typed. */
-export type WorktreeChoice = { root: string; name: string };
+/** The .gitignore line a repository needs for its worktrees folder, which the warning names. */
+export { ignoreRule } from '../../../../data/helpers/worktrees.ts';
+
+/**
+ * The New worktree choice as the composer holds it: the repository's root, the name typed and the
+ * worktrees folder the root's git state carries.
+ */
+export type WorktreeChoice = { root: string; name: string; dir: string };
 
 /** What the write answers: whether the worktree was made, and the sentence a refusal gave. */
 export type WorktreeWrite = (root: string, name: string) => Promise<{ ok: boolean; error: string }>;
@@ -23,7 +29,7 @@ export type WorktreeWrite = (root: string, name: string) => Promise<{ ok: boolea
  */
 export function plannedFolder(choice: WorktreeChoice | null, folder: string): string {
     if (choice === null || !validName(choice.name.trim())) return folder;
-    const made = worktreePath(choice.root, choice.name.trim());
+    const made = worktreePath(choice.root, choice.name.trim(), choice.dir);
     const below = folder.startsWith(`${choice.root}/`) ? folder.slice(choice.root.length) : '';
     return `${made}${below}`;
 }

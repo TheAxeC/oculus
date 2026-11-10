@@ -1,9 +1,9 @@
-// Layer 2, server. The notes of each hub: the Markdown files of the hub's `.oculus/notes/` folder
-// and of every folder under it, each named by its title (data/prose/markdown/note-names.ts), read
-// for the Notes section, Backlinks, Tags and the Notes Graph, and the order the reader keeps them
-// in. A note is written, renamed, moved and trashed by the file operations (fs/ops.ts) like any
-// other file of the hub, so it is logged and undone like one; this module reads the folder and
-// writes only the order.
+// Layer 2, server. The notes of each hub: the Markdown files of the hub's notes folder (its
+// `notes_dir`, which the caller reads from the hub's settings) and of every folder under it, each
+// named by its title (data/prose/markdown/note-names.ts), read for the Notes section, Backlinks,
+// Tags and the Notes Graph, and the order the reader keeps them in. A note is written, renamed,
+// moved and trashed by the file operations (fs/ops.ts) like any other file of the hub, so it is
+// logged and undone like one; this module reads the folder and writes only the order.
 //
 // A notes folder that is a link to a folder outside its hub is refused for that hub: its notes are
 // not listed. A file or folder inside it that is a link out of the folder is not listed either, so
@@ -33,7 +33,6 @@ import { z } from 'zod';
 import type { HubNotes, NoteEntry } from '../../../data/model/index.ts';
 import { resolveNote, scanNote } from '../../../data/prose/markdown/note-links.ts';
 import {
-    NOTES_FOLDER,
     NOTE_SUFFIX,
     ORDER_FILE,
     isNote,
@@ -49,17 +48,24 @@ const SCAN_MAX = 1024 * 1024;
 /** The most characters of a link's line kept for the Backlinks section. */
 const LINE_MAX = 200;
 
-/** The folder of a hub its notes live in. */
-export function notesFolderOf(hubDir: string): string {
-    return join(hubDir, ...NOTES_FOLDER.split('/'));
+/** A hub as its notes are read: its folder and its notes folder against it, its `notes_dir`. */
+export type NotesHub = { dir: string; notes: string };
+
+/** The folder of a hub its notes live in, `notes` its `notes_dir`. */
+export function notesFolderOf(hubDir: string, notes: string): string {
+    return join(hubDir, ...notes.split('/').filter((one) => one !== ''));
 }
 
 /** Why a notes folder is not read: a link out of its hub, or a read that failed. */
 type FolderState = { state: 'ok' | 'none' | 'refused' } | { state: 'unreadable'; error: string };
 
-/** What a hub's notes folder is: there and in the hub, not there yet, a link out, unreadable. */
-export function notesFolderState(hubDir: string): FolderState {
-    const folder = notesFolderOf(hubDir);
+/**
+ * What a hub's notes folder is: there and in the hub, not there yet, a link out or no folder at all
+ * (an empty `notes`, which the hub's settings never give), unreadable.
+ */
+export function notesFolderState(hubDir: string, notes: string): FolderState {
+    if (notes === '') return { state: 'refused' };
+    const folder = notesFolderOf(hubDir, notes);
     try {
         lstatSync(folder);
     } catch {
@@ -237,18 +243,22 @@ function linksOf(text: string, paths: readonly string[]): Pick<NoteEntry, 'links
  * order, each note with its links and tags. A folder that is not there, a link out of the hub and
  * a folder that does not read answer their state with no entries.
  */
-function readHubNotes(hub: { name: string; dir: string }, primary: boolean): HubNotes {
+function readHubNotes(hub: { name: string } & NotesHub, primary: boolean): HubNotes {
     const answer = (state: HubNotes['state'], error = ''): HubNotes => ({
         root: hub.name,
         primary,
+        folder: hub.notes
+            .split('/')
+            .filter((one) => one !== '')
+            .join('/'),
         state,
         error,
         entries: []
     });
-    const held = notesFolderState(hub.dir);
+    const held = notesFolderState(hub.dir, hub.notes);
     if (held.state === 'unreadable') return answer('unreadable', held.error);
     if (held.state !== 'ok') return answer(held.state);
-    const dir = notesFolderOf(hub.dir);
+    const dir = notesFolderOf(hub.dir, hub.notes);
     const found = walk(dir);
     const paths = found.flatMap((one) => (one.kind === 'file' ? [one.path] : []));
     const entries = ordered(found, readNoteOrder(dir) ?? []).map((one): NoteEntry => {
@@ -261,11 +271,12 @@ function readHubNotes(hub: { name: string; dir: string }, primary: boolean): Hub
 
 /**
  * The notes of every hub, in the workspace's folder order, a folder served under two names read
- * once, under its first.
+ * once, under its first, each hub's notes read from its notes folder as `notesDir` gives it.
  */
 export function readAllNotes(
     hubs: readonly { name: string; dir: string }[],
-    primary: string | null
+    primary: string | null,
+    notesDir: (dir: string) => string
 ): HubNotes[] {
     const seen = new Set<string>();
     const out: HubNotes[] = [];
@@ -273,7 +284,7 @@ export function readAllNotes(
         const real = realPath(hub.dir) ?? resolve(hub.dir);
         if (seen.has(real)) continue;
         seen.add(real);
-        out.push(readHubNotes(hub, hub.name === primary));
+        out.push(readHubNotes({ ...hub, notes: notesDir(hub.dir) }, hub.name === primary));
     }
     return out;
 }
@@ -326,19 +337,21 @@ function wouldBeReal(path: string): string {
  * is there and through its nearest folder that is there where it is not, so a folder of a hub with
  * no notes folder yet is inside the folder the first note makes.
  */
-function inNotesFolder(hubs: readonly string[], folder: string): boolean {
+function inNotesFolder(hubs: readonly NotesHub[], folder: string): boolean {
     const real = wouldBeReal(folder);
-    return hubs.some((hub) => inside(real, wouldBeReal(notesFolderOf(hub))));
+    return hubs.some(
+        (hub) => hub.notes !== '' && inside(real, wouldBeReal(notesFolderOf(hub.dir, hub.notes)))
+    );
 }
 
 /**
  * The name an item takes when it lands in `folder` under `name`, by the rule of a notes folder when
- * the folder lies in one (`hubs` the folders of the served hubs), else the name unchanged. `own` is
- * the item's own name in that folder for a rename there, which never takes its own name, so a
- * rename that changes only the case of a name lands.
+ * the folder lies in one (`hubs` the served hubs with their notes folders), else the name
+ * unchanged. `own` is the item's own name in that folder for a rename there, which never takes its
+ * own name, so a rename that changes only the case of a name lands.
  */
 export function noteLanding(
-    hubs: readonly string[],
+    hubs: readonly NotesHub[],
     folder: string,
     name: string,
     own?: string

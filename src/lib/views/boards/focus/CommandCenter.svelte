@@ -184,7 +184,9 @@
                 id,
                 glyph: attentionGlyph(one.kind),
                 label: t('focus.command.venue_count', one.label ?? '', one.count),
-                tail: t('focus.command.venue_load_tail', warnAt),
+                // A venue line is raised only under a warning count, so the null of a page that
+                // holds no settings yet draws no tail.
+                tail: warnAt === null ? '' : t('focus.command.venue_load_tail', warnAt),
                 tone: 'amber'
             };
         });
@@ -199,10 +201,10 @@
         const rows = nudges.map((one, at): TickerRow => {
             const id = `refresh:${one.feed}:${at}`;
             index[id] = one;
-            const task = taskLabel({ task: one.feed, hub: one.hub ?? '' });
+            const task = taskLabel(one.task);
             const label =
                 one.feed === 'inbox'
-                    ? t('focus.command.refresh_inbox_plain', one.days ?? 0)
+                    ? t('focus.command.refresh_inbox_plain', one.days ?? 0, task)
                     : one.feed === 'scout'
                       ? t('focus.command.refresh_scout_plain', task, one.days ?? 0)
                       : t(

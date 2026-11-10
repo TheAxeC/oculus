@@ -10,13 +10,14 @@
 // the page: every file is read and checked before any is written, and a request that fails a check
 // writes nothing. The checks are made per file in the order `outside` (a root not served, a path
 // out of it, a path under a `node_modules` folder or a folder whose name starts with a dot other
-// than a hub's own `.oculus/` folder, or a file in the `secrets` folder of every hub or in
-// `~/.oculus`, none of which is ever edited here), `missing`, `denied`
-// (the file's mode locks it), `binary` (a NUL byte in the first 8 KB), `too_large` (over the most a
-// copy of the operation's kind is kept for, 5 MB for `lsp-edit` and 256 KB for `writing-fix`, as
-// the file is and as the edit would leave it), `changed` (the bytes are not the ones the edit was
-// computed for, or a range names a line the file lacks), and after `changed` `binary` again for a
-// file with a NUL byte anywhere or bytes that are not UTF-8 throughout (the whole-file rule of
+// than a hub's own `.oculus/` folder and its notes folder (its `notes_dir`, which the served root
+// is marked with), or a file in the folder of secrets of every hub (its `secrets_dir`) or in
+// `~/.oculus`, none of which is ever edited here), `missing`, `denied` (the file's mode locks it),
+// `binary` (a NUL byte in the first 8 KB), `too_large` (over the most a copy of the operation's
+// kind is kept for, 5 MB for `lsp-edit` and 256 KB for `writing-fix`, as the file is and as the
+// edit would leave it), `changed` (the bytes are not the ones the edit was computed for, or a range
+// names a line the file lacks), and after `changed` `binary` again for a file with a NUL byte
+// anywhere or bytes that are not UTF-8 throughout (the whole-file rule of
 // data/helpers/files/text-kind.ts), and last `local` for a hub's `.oculus/local.yml` (the machine's
 // own file, recognised by server/files/workspace/machine-file.ts) the edit would leave with a key
 // the machine does not read, refused with the reader's sentence for it as a save of the file is
@@ -32,6 +33,7 @@
 
 import { readFileSync } from 'node:fs';
 import type { FileStamp, LspEditFile, OpsAnswer } from '../../../data/file-ops.ts';
+import { notesMark } from '../../../data/helpers/files/private-folders.ts';
 import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
 import { outsideEdits } from '../../../data/prose/markdown/note-names.ts';
 import { LOCAL_NAME, checkLocal } from '../../../data/sources/config.ts';
@@ -48,7 +50,7 @@ import { fail, readChecked, refused, type Fail } from './operations/replace.ts';
 /** What an `lsp-edit` runs over: the roots, the folders withheld, the history and the record. */
 export type LspEditScope = {
     roots: Root[];
-    /** The folders no file of is edited: the `secrets` folder of every hub and `~/.oculus`. */
+    /** The folders no file of is edited: every hub's folder of secrets and `~/.oculus`. */
     withheld: readonly string[];
     /** The local history folder a copy is kept in before a file is written; none keeps none. */
     history?: string;
@@ -71,8 +73,8 @@ function plan(
     file: LspEditFile,
     operation: LspEditOperation
 ): Planned | LocalFail | Fail {
-    const hub = scope.roots.find((one) => one.key === file.root)?.hub === true;
-    if (outsideEdits(file.path, hub)) return fail('outside');
+    const root = scope.roots.find((one) => one.key === file.root);
+    if (outsideEdits(file.path, root?.hub === true, notesMark(root))) return fail('outside');
     const found = resolveRootPath(scope.roots, file.root, file.path);
     if ('path' in found && under(found.path, scope.withheld)) return fail('outside');
     const limit = copyLimit(operation);

@@ -212,6 +212,8 @@ describe('the folders closed to every app', () => {
             mail: [],
             downloads: [],
             clusters: [],
+            sessionsRoots: [],
+            codexBin: 'codex',
             self: '',
             history: join(base, 'placed', 'history')
         };
@@ -223,7 +225,7 @@ describe('the folders closed to every app', () => {
                 schedules: null,
                 appsDir: null
             },
-            roots: [{ key: 'hub', dir: join(base, 'hub'), hub: true }]
+            roots: [{ key: 'hub', dir: join(base, 'hub'), hub: true, secrets: 'secrets' }]
         });
         const real = (path: string) => realpathSync(join(base, path));
         expect(set.sort()).toEqual(

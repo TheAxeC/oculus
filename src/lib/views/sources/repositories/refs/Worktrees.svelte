@@ -16,11 +16,11 @@
     // a detached HEAD has nothing to merge into.
     //
     // The new-worktree row makes the worktree and opens a shell in it (Create, or Enter in the
-    // name field), or opens the
-    // composer there for Claude or Codex (Create with Claude, Create with Codex). A worktree row
-    // opens a right-click menu (menus/repo-menu.ts) of its shell, Start Claude Here, Start Codex
-    // Here, Open Worktree, Open Worktree in New Window and Delete Worktree. The shell and the
-    // removal run the row's own terminal and removal controls, the removal behind its question.
+    // name field), or opens the composer there for Claude or Codex (Create with Claude, Create
+    // with Codex). A worktree row opens a right-click menu (menus/repo-menu.ts) of its shell,
+    // Start Claude Here, Start Codex Here, Open Worktree, Open Worktree in New Window and Delete
+    // Worktree. The shell and the removal run the row's own terminal and removal controls, the
+    // removal behind its question.
     // Open Worktree adds the worktree's folder as a root of the workspace and shows it in the Files
     // view (state/sources/repositories/worktrees.ts's openWorktree), and the new-window form
     // opens this page's address again as well; a folder the workspace refuses is said in one muted
@@ -43,6 +43,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { DiffSubject } from '$lib/state/sources/repositories/diff/subject';
     import {
+        ignoreRule,
         linkedWorktrees,
         openWorktree,
         plannedPath,
@@ -50,6 +51,7 @@
     } from '$lib/state/sources/repositories/worktrees';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
+    import type { AgentId } from '$lib/state/sessions/agents.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -66,7 +68,7 @@
         onmerge: (branch: string, onto: string) => void;
         onterminal: (path: string, label: string) => void;
         /** Start Claude or Codex in an existing worktree. */
-        onagent: (path: string, agent: 'claude' | 'codex') => void;
+        onagent: (path: string, agent: AgentId) => void;
         oncreate: (name: string, start: WorktreeStart) => void;
     };
 
@@ -94,7 +96,7 @@
     /** Why the last Open Worktree was refused, or the empty string. */
     let refused = $state('');
 
-    const planned = $derived(name.trim() === '' ? '' : plannedPath(root, name));
+    const planned = $derived(name.trim() === '' ? '' : plannedPath(root, name, git.worktreesDir));
     const others = $derived(linkedWorktrees(git));
 
     function made(start: WorktreeStart): void {
@@ -145,7 +147,11 @@
     >
         {#if !git.ignoresWorktrees}
             <li role="none">
-                <TreeItem label={t('repositories.worktrees_unignored')} depth={1} tone="warn" />
+                <TreeItem
+                    label={t('repositories.worktrees_unignored', ignoreRule(git.worktreesDir))}
+                    depth={1}
+                    tone="warn"
+                />
             </li>
         {/if}
         {#if refused !== ''}

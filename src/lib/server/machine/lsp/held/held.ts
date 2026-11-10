@@ -35,6 +35,11 @@ import { emptySchemaSet, type SchemaSet } from '../../../../data/snapshot/schema
 import type { ChangeKind, Prepared, ServerAsk, ServerEntry, Setup } from '../servers.ts';
 import { docKey } from './doc-key.ts';
 import { Calls } from './requests/calls.ts';
+import {
+    configurationAnswers,
+    settingsChange,
+    type AnsweredMap
+} from './requests/configuration.ts';
 import { Followed } from './requests/followed.ts';
 import { Pulls } from './diagnostics/pulls.ts';
 import { RootWatch, entryFiles, globsOf, type FileChange } from './watch.ts';
@@ -156,8 +161,8 @@ export class Held {
     readonly output: string[] = [];
     /** What the server last registered, by the id it registered with. */
     readonly registrations = new Map<string, string>();
-    /** The text of the last answer to each section of `workspace/configuration`. */
-    readonly #answered = new Map<string, string>();
+    /** The last answer to each section of `workspace/configuration`, by section and language. */
+    readonly #answered: AnsweredMap = new Map();
     #host: HeldHost;
     #proc: ServerProcess | null = null;
     #setup: Setup | null = null;
@@ -253,7 +258,10 @@ export class Held {
         });
     }
 
-    /** The reader's Restart, and a change of what the server is started with. */
+    /**
+     * The reader's Restart, and a change of what the server is started with or of an answer it
+     * keeps.
+     */
     async restart(): Promise<void> {
         this.blocked = false;
         this.#exits = [];
@@ -416,23 +424,13 @@ export class Held {
     }
 
     /**
-     * Whether a section the entry follows would be answered differently now than it was last
-     * answered. The text now answered is remembered, so the next call for the same settings says
-     * no; a section the server has not asked for yet is not a change.
+     * What a change of the shipped settings asks of the running server (`settingsChange`): a start
+     * again, to be asked again, or nothing; nothing for a server that is not running.
      */
-    takeSettingsChange(): boolean {
+    takeSettingsChange(): 'restart' | 'ask' | null {
         const setup = this.#setup;
-        if (setup === null || !this.running) return false;
-        let changed = false;
-        for (const section of this.entry.followed ?? []) {
-            const last = this.#answered.get(section);
-            if (last === undefined) continue;
-            const text = JSON.stringify(this.entry.configuration(section, setup));
-            if (text === last) continue;
-            this.#answered.set(section, text);
-            changed = true;
-        }
-        return changed;
+        if (setup === null || !this.running) return null;
+        return settingsChange(this.entry, setup, this.#answered);
     }
 
     /**
@@ -447,19 +445,16 @@ export class Held {
             return true;
         };
         switch (message.method) {
-            case 'workspace/configuration': {
-                const items = Array.isArray(params.items) ? params.items : [];
-                const setup = this.#setup;
+            case 'workspace/configuration':
                 return reply(
-                    items.map((item) => {
-                        const section = isRecord(item) ? item.section : undefined;
-                        if (setup === null || typeof section !== 'string') return null;
-                        const answer = this.entry.configuration(section, setup);
-                        this.#answered.set(section, JSON.stringify(answer));
-                        return answer;
-                    })
+                    configurationAnswers(
+                        params.items,
+                        this.entry,
+                        this.#setup,
+                        this.docs,
+                        this.#answered
+                    )
                 );
-            }
             case 'client/registerCapability':
                 this.#registered(params.registrations, true);
                 this.#host.ready(this);
@@ -573,6 +568,7 @@ export class Held {
     #rootWatch(): RootWatch {
         this.#watch ??= new RootWatch({
             root: this.root.real,
+            notes: this.root.notes ?? '',
             open: (real) => this.docs.has(docKey(pathToFileURL(real).href)),
             changed: (changes: FileChange[]) => this.#notices.tell(changes),
             folders: (folders) => this.#notices.folders(folders),
@@ -846,10 +842,7 @@ export type Page = {
     tabs: Set<string>;
     /** The diagnostics each server of a document on several servers published, by its address. */
     joined: Map<string, Map<Held | string, unknown[]>>;
-    /**
-     * The features registered with the page's client, by channel: each registration's method, by
-     * its id.
-     */
+    /** The registrations with the page's client, by channel: each one's method, by its id. */
     registered: Map<string, Map<string, string>>;
 };
 

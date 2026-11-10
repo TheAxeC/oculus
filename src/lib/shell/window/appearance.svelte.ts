@@ -55,9 +55,9 @@ export type Appearance = {
      * The layer's style: the image's address, which names the `wallpaper.image` value (a pick's
      * while its write is out, else the config's), so a new choice is a new address the browser
      * fetches rather than the picture it holds, and no address while the value is empty, which
-     * names no image, and the image's
-     * own two numbers, as the properties its layer's filter reads: the dim is how much light is
-     * taken out of the picture, so the brightness left is what the filter wants.
+     * names no image, and the image's own two numbers, as the properties its layer's filter reads:
+     * the dim is how much light is taken out of the picture, so the brightness left is what the
+     * filter wants.
      */
     image: () => string;
 };
@@ -117,6 +117,10 @@ export function useAppearance(
 
     $effect(() => {
         const choice = theme();
+        const bracketed = brackets();
+        const mono = monospace();
+        // No look is installed before the page has its settings, and no theme is drawn then.
+        if (bracketed === null || mono === null) return;
         const acting = appShell.offers();
         const failed = unloaded.offers === acting ? unloaded.names : [];
         const offers = withoutThemes(acting, failed);
@@ -142,8 +146,8 @@ export function useAppearance(
                 classes: [classes, extra].join(' '),
                 extra,
                 crt: crt(),
-                brackets: brackets(),
-                monospace: monospace(),
+                brackets: bracketed,
+                monospace: mono,
                 file: app ? firstFile(shown) : undefined
             },
             () => current

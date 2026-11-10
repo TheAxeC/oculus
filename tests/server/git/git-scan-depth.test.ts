@@ -107,6 +107,7 @@ function watching(hub: Hub, root: string, depth: number, own: [string, number][]
         throttle: 0,
         roots: () => [root],
         depth: () => depth,
+        worktreesDir: () => 'trees',
         rootDepths: () => new Map(own)
     });
     return watcher;
@@ -166,7 +167,8 @@ describe('the top folder and the workspace mark of each root', { tags: ['slow'] 
             credentials: NONE,
             throttle: 0,
             roots: () => [root, inner],
-            depth: () => 1
+            depth: () => 1,
+            worktreesDir: () => 'trees'
         });
         await until(hub, [root, inner, nested, away]);
         const payload = hub.latest('git')?.payload as GitPayload;
@@ -196,6 +198,7 @@ describe('the repositories cloned for projects', () => {
             throttle: 0,
             roots: () => [root],
             depth: () => 1,
+            worktreesDir: () => 'trees',
             cloned: () => listed
         });
         await until(hub, [root]);
@@ -236,6 +239,8 @@ describe('the block of nested repositories of a hub', { tags: ['slow'] }, () => 
             credentials: NONE,
             throttle: 0,
             roots: () => [dir],
+            depth: () => 1,
+            worktreesDir: () => 'trees',
             hubs: () => [dir],
             found: (found) => {
                 writing = writing.then(async () => {

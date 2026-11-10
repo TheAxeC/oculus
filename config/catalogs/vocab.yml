@@ -1,7 +1,7 @@
 # ===========================================================================
 # vocab.yml
 # oculus's own configuration: the words of its vocabularies, their colours, and the flags that say what each word decides: the palette every hex maps onto, the project stages, forms and chips, the statuses of collection entries and of Position Leads, the project tiers, the user's roles, the categories a project is filed under, and the lane and bucket words the surfaces group by. A decision the code makes on a stage, a chip, a status, a role or a category is a flag on its word here or a list here, never a word written in the code. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
-# A hub lays its own vocabulary over these words in its .oculus/config.yml, every key of this file by its shape (src/lib/data/sources/config/merge/in-place.ts), and its records are read under the result: a map (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, data_access, and leads_fit, which oculus ships none of) merges by word, a word the hub names replacing oculus's row in oculus's place, a new word coming after oculus's words and `<word>: null` taking one out; `categories` merges by `key` the same way, `{ key: <key>, removed: true }` taking a row out; focus_clusters, focus_lanes, fund_stages, position_stages, teaching_stages, roles, venue_categories, pillar_kinds, venue_tiers, radar_buckets and deck_order are replaced whole, since their order is their meaning, and a hub's list other than focus_clusters with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages, one word in deck_order), is a finding and oculus's list stands, while focus_clusters is read row by row as its note below says; and the hub's `rail_color` replaces oculus's. A word a hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole, is also taken out of every word list that names it (the categories' stage and form words, the Focus lanes' stages and chips and the words of their `move_writes`, the funding, position and teaching stages' statuses, the boards' tier and role, research_audit's skip_tiers): in oculus's own values a row left with no word stays and a single word becomes an empty list, and in a list the hub writes itself each such word is a finding naming the hub's file. A list drawn over the records of several hubs holds every hub's words, each once, the primary's first.
+# A hub lays its own vocabulary over these words in its .oculus/config.yml, every key of this file by its shape (src/lib/data/sources/config/merge/in-place.ts), and its records are read under the result: a map (palette, stages, forms, chips, statuses, lead_statuses, focus_lane_tones, ticker_categories, facet_tones, tiers, research_audit, data_access, venue_ranks, venue_costs, radar_relevance, and leads_fit, which oculus ships none of) merges by word, a word the hub names replacing oculus's row in oculus's place, a new word coming after oculus's words and `<word>: null` taking one out; `categories` merges by `key` the same way, `{ key: <key>, removed: true }` taking a row out; focus_clusters, focus_lanes, fund_stages, position_stages, teaching_stages, roles, venue_categories, pillar_kinds, venue_tiers, venue_biennial, venue_no_jif, radar_buckets and deck_order are replaced whole, since their order is their meaning, and a hub's list other than focus_clusters with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages, one text in deck_order, venue_biennial or venue_no_jif), is a finding and oculus's list stands, while focus_clusters is read row by row as its note below says; and the hub's `rail_color` replaces oculus's. A word a hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole, is also taken out of every word list that names it (the categories' stage and form words, the Focus lanes' stages and chips and the words of their `move_writes`, the funding, position and teaching stages' statuses, the boards' tier and role, research_audit's skip_tiers): in oculus's own values a row left with no word stays and a single word becomes an empty list, and in a list the hub writes itself each such word is a finding naming the hub's file. A list drawn over the records of several hubs holds every hub's words, each once, the primary's first.
 # ===========================================================================
 
 
@@ -107,6 +107,7 @@ chips:
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `default_application`: the status of the Applications entry a Position Lead's apply control makes, carried by one word at most; that word is written, two words carrying it are a finding naming both and the entry is then made with no status, and nothing is compared with it.
 # - `default_task`: the status of a task added from the palette, carried by one word at most; that word is written, two words carrying it are a finding naming both and the task is then added with no status, and nothing is compared with it.
+# - `task_done`: the status a task is ticked off with, whose button a Focus board row keeps drawn when the pointer is elsewhere, carried by one word at most; two words carrying it are a finding naming both, and no row then keeps a status button drawn; the row's buttons are compared with it as written.
 statuses:
   submitted:     { color: "#b45309", deadline_met: true, waiting: true }
   revision:      { color: "#b45309" }
@@ -136,7 +137,7 @@ statuses:
   # these statuses close an entry
   ongoing:       { color: "#16a34a", closes_deadline: true, live_subtasks: true }
   completed:     { color: "#0ea5e9", closes_deadline: true }
-  done:          { color: "#0ea5e9", closes_deadline: true }
+  done:          { color: "#0ea5e9", closes_deadline: true, task_done: true }
   awarded:       { color: "#16a34a", closes_deadline: true, acknowledged: true }
   granted:       { color: "#16a34a", closes_deadline: true }
   contributing:  { color: "#0891b2", closes_deadline: true, acknowledged: true }
@@ -298,11 +299,11 @@ venue_categories:
   - { key: thesis,     label: Theses }
   - { key: meeting,    label: Meetings }
 
-# Pillar kinds: the words a pillar line's `kind:` (the pillars registry) takes, in the order the Pillars view draws one section per row. `key` is the word a line writes, `label` the words its section is headed by, and `color` the colour of that heading. The Orphans card is drawn in the first row's section and the Archival card in the section of `offpillar`, or under Other when the list holds no such row. A line whose kind no row names, or that has none, is drawn under Other, after them. A hub's list replaces oculus's whole.
+# Pillar kinds: the words a pillar line's `kind:` (the pillars registry) takes, in the order the Pillars view draws one section per row. `key` is the word a line writes, `label` the words its section is headed by, and `color` the colour of that heading. `archival: true` marks the kind of the lines off the pillars: their cards are drawn muted, and its section holds the Archival card; one row at most carries it, two being a finding. The Orphans card is drawn in the first row's section, and the Archival card under Other when no row carries `archival: true`. A line whose kind no row names, or that has none, is drawn under Other, after them. A hub's list replaces oculus's whole.
 pillar_kinds:
   - { key: pillar,      label: Pillar,      color: "#2563eb" }
   - { key: provisional, label: Provisional, color: "#d97706" }
-  - { key: offpillar,   label: Off-pillar,  color: "#9ca3af" }
+  - { key: offpillar,   label: Off-pillar,  color: "#9ca3af", archival: true }
 
 # Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (the venues registry). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). A row is (key, glyph name, label, colour): `glyph` is a `glyphs:` key, the icon a project card's Venue tag draws in the tier's colour, with the label as its tip; a tier with no glyph draws the venue glyph. The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
 venue_tiers:
@@ -311,9 +312,35 @@ venue_tiers:
   - { key: specialist, glyph: target, color: "#0891b2", label: "specialist" }
   - { key: unrated,                   color: "#94a3b8", label: "unrated", assignable: false }
 
-# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. A bucket's label and colour are set here.
+# Venue rank colours: a fragment of a venue's free-text `quartile:` (the venues registry) and the colour its tag on the venue's card is drawn in. The first fragment, in this order, that the text holds with case ignored decides; a text that holds none is drawn grey. A hub's map is laid over oculus's word by word.
+venue_ranks:
+  q1: "#7c5cff"
+  "a*": "#7c5cff"
+  prestige: "#7c5cff"
+  q2: "#2563eb"
+  core a: "#2563eb"
+
+# Venue cost colours: a fragment of a venue's free-text `free:` (its fee and open-access status) and the colour its tag on the venue's card is drawn in, read as venue_ranks is.
+venue_costs:
+  free: "#16a34a"
+  hybrid: "#b45309"
+  apc: "#dc2626"
+
+# The texts that, held by a venue's `quartile:` or `timing:` with case ignored, say the venue runs every other year: the month ribbon of the Venues view marks its chips and names it in their tips. A hub's list replaces oculus's whole.
+venue_biennial: [biennial]
+
+# The texts a venue's `jif:` is written as when the venue has no impact factor, compared trimmed and with case ignored: the venue line of a project card and the venue's card leave such a JIF out, as they leave out an empty one. A hub's list replaces oculus's whole.
+venue_no_jif: [none, "-"]
+
+# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. A bucket's label and colour are set here. `default: true` marks the bucket an entry whose bucket no row names is drawn under and the one a Literature card's Add form preselects; one row at most carries it, two being a finding. `spark: true` marks a bucket whose papers offer the card's Idea form, which seeds a new idea from the paper; any number of rows may carry it, and a paper whose `maps_to` is `new-idea-candidate` offers it in any bucket.
 radar_buckets:
   - { key: preemption,    glyph: red,    label: "Pre-emption risk", color: "#dc2626" }
-  - { key: idea,          glyph: purple, label: "Idea sparks",      color: "#7c5cff" }
+  - { key: idea,          glyph: purple, label: "Idea sparks",      color: "#7c5cff", spark: true }
   - { key: cite_baseline, glyph: green,  label: "Cite / baseline",  color: "#16a34a" }
-  - { key: adjacent,      glyph: white,  label: "Adjacent",         color: "#94a3b8" }
+  - { key: adjacent,      glyph: white,  label: "Adjacent",         color: "#94a3b8", default: true }
+
+# Lit-Watch relevance: the words a radar entry's `relevance:` takes, the closest first, which order the papers found on one day, each with the colour its tag and its card's bar are drawn in. A paper added from a Literature card offers them in this order, `default: true` marking the one preselected (one word at most, two being a finding), and the write refuses a relevance not listed. A hub's map is laid over oculus's word by word.
+radar_relevance:
+  high: { color: "#dc2626" }
+  med:  { color: "#b45309", default: true }
+  low:  { color: "#9ca3af" }

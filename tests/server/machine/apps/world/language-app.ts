@@ -15,6 +15,9 @@ import { SchemaFeed } from '../../../../../src/lib/server/machine/lsp/schema-fee
 import { createServers } from '../../../../../src/lib/server/machine/lsp/servers.ts';
 import { appFeed } from '../../../../../src/lib/server/root/process/context/app-feed.ts';
 import { latexBuild } from '../../../../../src/lib/data/sources/config/settings/writing/latex.ts';
+import { hiddenFolders } from '../../../../../src/lib/data/sources/config/settings/files.ts';
+import { markdownExtensions } from '../../../../../src/lib/server/machine/lsp/adapters/markdown/settings.ts';
+import { heldIndent } from '../../../../../src/lib/server/machine/lsp/adapters/web/formatting.ts';
 import type { LspRpc } from '../../../../../src/lib/data/model/index.ts';
 import { config } from '../../../../routes/apps/apps-fixture.ts';
 import { frame, recordingSink, settle } from '../../lsp/lsp-fixture.ts';
@@ -197,8 +200,12 @@ export function languageWorld(
     const { feed, attach } = appFeed();
     attach(w.hosts.tools, new SchemaFeed());
     const latex = () => latexBuild(config);
+    const markdown = () => markdownExtensions(config);
+    const hidden = () => hiddenFolders(config);
+    const indent = heldIndent({ quiet: () => ({ config }) }, () => w.held().apps);
     const own = over.shipped === true ? OWN : '/oculus';
     const node = over.shipped === true ? process.execPath : '/node';
+    const shared = { oculus: own, node, latex, markdown, hiddenFolders: hidden, indent };
     const relay = new Relay({
         oculus: own,
         node,
@@ -206,12 +213,11 @@ export function languageWorld(
         lspFolder: () => join(w.fixture.base, 'lsp'),
         approvals: () => join(w.fixture.base, 'approvals.json'),
         latex,
+        markdown,
+        hiddenFolders: hidden,
+        indent,
         env: over.shipped === true ? process.env : {},
-        servers: createServers(
-            over.shipped === true
-                ? { oculus: own, node, latex }
-                : { oculus: own, node, exists: () => true, latex }
-        ),
+        servers: createServers(over.shipped === true ? shared : { ...shared, exists: () => true }),
         appServers: feed
     });
     relay.gate(() => true);

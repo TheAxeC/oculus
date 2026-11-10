@@ -17,6 +17,7 @@
 import type { AgentId, StartKind, TaskRef } from '../../../../data/model/index.ts';
 import { addressOfId, splitHubId } from '../../../../data/helpers/hub-names.ts';
 import { t } from '../../../shared/words/text.ts';
+import { defaultAgent } from '../../../shared/words/appearance.ts';
 import type { TerminalAnswer } from '../pty/pty-io.ts';
 import {
     composingIn,
@@ -39,10 +40,10 @@ import {
 export type HeldTask = { ref: TaskRef; seed: string; cwd: string; name: string };
 
 /**
- * Where a start opens its composer: a folder, or a task. The agent defaults to Claude. A folder
- * start with `documents` set, on a page with no Terminal tab, opens the Terminal tab it needs in
- * the page's documents pane. `asNew` says the folder start is New pressed in a list limited to a
- * folder, which takes the tab New takes.
+ * Where a start opens its composer: a folder, or a task. A task start that names no agent opens
+ * with the `terminal.default_agent` option. A folder start with `documents` set, on a page with no
+ * Terminal tab, opens the Terminal tab it needs in the page's documents pane. `asNew` says the
+ * folder start is New pressed in a list limited to a folder, which takes the tab New takes.
  */
 export type ComposeAt =
     | { cwd: string; agent: AgentId; documents?: boolean; asNew?: boolean }
@@ -118,10 +119,12 @@ export function createComposerOpening(host: OpeningHost) {
 
     /**
      * The composer shown in a tab, which keeps the terminals it owns. It starts in the tab's folder
-     * and in the kind given, Claude when none is, with the accounts and picks the tab held.
+     * and in the kind given, the `terminal.default_agent` option when none is, with the accounts
+     * and picks the tab held. Before the page has its settings no composer is shown.
      */
-    function showComposer(target: TerminalTab, agent: StartKind = 'claude'): void {
-        if (workbench === undefined) return;
+    function showComposer(target: TerminalTab, given?: StartKind): void {
+        const agent = given ?? defaultAgent();
+        if (workbench === undefined || agent === null) return;
         const tabState = readTab(target.state);
         const folder = host.folderOf(target);
         const now = workbench.instanceState(target.id);
@@ -180,13 +183,10 @@ export function createComposerOpening(host: OpeningHost) {
             return answer.error === '' ? t('sessions.terminal_start_failed') : answer.error;
         }
         const target = targetTab(workbench.currentPage(), false, false);
-        if (target === null) return '';
+        const agent = at.agent ?? defaultAgent();
+        if (target === null || agent === null) return '';
         held.tasks[target.id] = { ref: at.task, ...answer.seeded };
-        showAt(
-            target,
-            { cwd: answer.seeded.cwd, agent: at.agent ?? 'claude', task: at.task },
-            readTab(target.state)
-        );
+        showAt(target, { cwd: answer.seeded.cwd, agent, task: at.task }, readTab(target.state));
         return '';
     }
 

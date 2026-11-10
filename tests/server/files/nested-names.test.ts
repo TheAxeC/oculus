@@ -89,6 +89,7 @@ describe('the names of a workspace folder holding a repository', () => {
             const outcome = await runNames([{ key: 'hub', dir }], 'all', {
                 timeout: 10000,
                 max: 100,
+                skipFolders: ['node_modules', '.git'],
                 withheld: [],
                 repositories: [dir, `${dir}/${row.inner}`]
             });

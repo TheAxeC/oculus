@@ -36,6 +36,12 @@ function held() {
 
 const BOTH = [`${ROOT}\n${FOLDERS}`, `${ROOT}\n${FILES}`];
 
+/**
+ * The folders the hubs' settings leave out of the watch, as segments: the code folder `code` of
+ * `code_dir` and the folder `attic` of a hub's `audit.skip_folders`.
+ */
+const NEVER = [['code'], ['attic']];
+
 type Row = {
     row: string;
     type: string;
@@ -157,7 +163,7 @@ const ROWS: Row[] = [
 describe('the keys one watch event drops (case C15)', () => {
     it.each(ROWS)('$row', ({ type, root, path, now, drops }) => {
         const event = { type, root: root ?? ROOT, path, now: () => now, manifest: () => false };
-        expect(droppedKeys(event, held())).toEqual(drops);
+        expect(droppedKeys(event, held(), NEVER)).toEqual(drops);
     });
 });
 
@@ -265,6 +271,6 @@ describe('the events that rebuild the snapshot, the rule of case C4', () => {
             now: () => now,
             manifest: () => manifest === true
         };
-        expect(movedFolder(event, held(), SCANNED, PROJECTS)).toBe(rebuilds);
+        expect(movedFolder(event, held(), SCANNED, PROJECTS, NEVER)).toBe(rebuilds);
     });
 });

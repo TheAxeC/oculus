@@ -29,10 +29,10 @@
     // action over the marks from the caret's line are gutter/editor-gutter.ts's, which this file
     // calls with the editor, the model and the values it holds. The `actions` prop adds the actions
     // the parent owns (Alt+Z's toggle of word wrap), each bound to its key when it has one and
-    // listed to the palette. A parent may also tint runs of lines (`highlights`, the merge editor's
-    // conflicts) and draw bars of its own above lines (`bars`, rendered by its `bar` snippet,
-    // placed by bars/zones.ts), and add to the model what it needs once the model exists
-    // (`extension`, types.ts).
+    // listed to the palette; keys/actions.ts adds both kinds. A parent may also tint runs of lines
+    // (`highlights`, the merge editor's conflicts) and draw bars of its own above lines (`bars`,
+    // rendered by its `bar` snippet, placed by bars/zones.ts), and add to the model what it needs
+    // once the model exists (`extension`, types.ts).
     //
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (keys/tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it,
@@ -52,27 +52,22 @@
 
     import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
-    import { eolOf, keyCode, keysCode, modelUri, type EditorKit } from './kit/load';
+    import { eolOf, modelUri, type EditorKit } from './kit/load';
     import { buildWhenHosted } from './kit/built.svelte';
     import { shikiId } from './kit/languages/grammars';
     import { font, paintCode, repaint } from './kit/look';
-    import { chordActions, ownListing } from './chords';
+    import { chordActions } from './chords';
+    import type { EditorBlame, EditorBreakpoint, EditorMark } from './gutter/gutter';
     import {
-        changeActions,
-        type EditorBlame,
-        type EditorBreakpoint,
-        type EditorMark
-    } from './gutter/gutter';
-    import {
-        actOnMarks,
         drawGutter,
         drawHighlights,
         followGutter,
         gutterCollections,
         type GutterCollections
     } from './gutter/editor-gutter';
+    import { addActions } from './keys/actions';
     import { tabOut } from './keys/tab-out';
-    import { followSuggest, suggestListing } from './keys/suggest';
+    import { followSuggest } from './keys/suggest';
     import { followFirstLine, reachText, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions, Widgets } from './options';
@@ -124,8 +119,11 @@
         path: string;
         /** A value that changes with the tokens, the text size and every pick of a code theme. */
         look?: string;
-        /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
-        codeTheme?: string;
+        /**
+         * The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme; null
+         * while the page holds no config, when the editor is painted once one arrives.
+         */
+        codeTheme: string | null;
         marks?: EditorMark[];
         blame?: EditorBlame[];
         /** The breakpoints, each on its line and drawn by its state. */
@@ -178,7 +176,7 @@
         model: name,
         path,
         look = '',
-        codeTheme = 'tokens',
+        codeTheme,
         marks = [],
         blame = [],
         breakpoints = [],
@@ -273,6 +271,7 @@
         editor = made;
         kit = loaded;
         mounted = true;
+        if (codeTheme === null) return;
         painted = painting;
         void paintCode(loaded, codeTheme, () => (painted = null));
     }
@@ -283,40 +282,20 @@
     // The actions over the marks, added under the parent's labels while the text holds a mark, and
     // the actions the parent owns (in the right-click menu too, when one names a group), added
     // again when the labels, the mark state or the parent's actions change, and said to the
-    // palette.
+    // palette (keys/actions.ts).
     $effect(() => {
         const loaded = kit;
         const made = editor;
-        const words = changeWords;
         if (loaded === null || made === null) return;
-        const listed = words === undefined ? [] : changeActions(words, loaded.mac, marked);
-        const added = listed.map(({ id, label, press, does }) => {
-            const keybindings = press === null ? [] : [keyCode(loaded.monaco, press)];
-            return made.addAction({
-                id,
-                label,
-                keybindings,
-                run: () => actOnMarks(made, does, marks, model?.getLineCount() ?? lines, onmark)
-            });
+        const { added, said } = addActions(loaded, made, {
+            words: changeWords,
+            marked,
+            marks: () => marks,
+            lines: () => model?.getLineCount() ?? lines,
+            onmark: (mark) => onmark?.(mark),
+            actions,
+            suggest
         });
-        const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
-        for (const { id, label, key, menu, order, disabled, run } of actions) {
-            const keybindings = key === undefined ? [] : [keysCode(loaded.monaco, key)];
-            const at = order === undefined ? {} : { contextMenuOrder: order };
-            const group = menu === undefined ? {} : { contextMenuGroupId: menu, ...at };
-            const precondition = disabled === true ? { precondition: 'false' } : {};
-            added.push(
-                made.addAction({
-                    id,
-                    label,
-                    keybindings,
-                    ...group,
-                    ...precondition,
-                    run: () => run()
-                })
-            );
-        }
-        said.push(...ownListing(actions, loaded.mac), ...suggestListing(suggest, loaded.mac));
         untrack(() => onactions?.([...said, ...chordActions(made, loaded.mac)]));
         return () => {
             for (const action of added) action.dispose();
@@ -459,7 +438,7 @@
         const code = codeTheme;
         const loaded = kit;
         const made = editor;
-        if (loaded === null || made === null || wanted === painted) return;
+        if (loaded === null || made === null || code === null || wanted === painted) return;
         return repaint(loaded, made, host, code, (ok) => (painted = ok ? wanted : null));
     });
 

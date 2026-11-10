@@ -12,6 +12,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { venueLabel } from '$lib/state/boards/focus';
     import {
         SPARK_HEIGHT,
@@ -25,7 +26,7 @@
 
     let { venues, todayMonth }: Props = $props();
 
-    const data = $derived(timeline(venues, todayMonth));
+    const data = $derived(timeline(venues, todayMonth, vocabOf));
     const bars = $derived(sparkBars(data.counts));
     const monthLabels = $derived(t('venues.months').split(','));
 

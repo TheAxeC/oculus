@@ -28,6 +28,7 @@ import {
 import {
     anyWord,
     hasWord,
+    oneWordWith,
     vocabKeys,
     wordFlag,
     type WordsOf
@@ -45,7 +46,6 @@ import {
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
-export { setting } from './board/index.ts';
 // The words of `tiers:` are data/shapes/boards/tiers.ts's, which the board's Tier facet reads too;
 // the Focus view reaches them from here, as it reaches the model types.
 import { tierWords } from '../../data/shapes/boards/tiers.ts';
@@ -196,6 +196,14 @@ export function statusFlag(config: Record<string, unknown>, status: string, flag
 /** Whether a status carries `closes_deadline`, which takes its entry off the deadline radar. */
 export function closesDeadline(config: Record<string, unknown>, status: string): boolean {
     return statusFlag(config, status, 'closes_deadline');
+}
+
+/**
+ * The status a task is ticked off with, the one word of `statuses` carrying `task_done`, or none
+ * when no word or two words carry it: the status button a Focus board row keeps drawn.
+ */
+export function tickedStatus(config: Record<string, unknown>): string | undefined {
+    return oneWordWith(config, 'statuses', 'task_done');
 }
 
 /**

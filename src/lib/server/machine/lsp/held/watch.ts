@@ -12,9 +12,10 @@
 // reported yet.
 //
 // A folder whose name starts with a dot, and `node_modules`, are no place a server hears of, with
-// one exception: in a hub, the notes folder `.oculus/notes/` and the folders under it that are not
-// dot folders themselves (data/prose/markdown/note-names.ts's inHiddenFolder), whose notes the
-// Markdown server reads as it reads the hub's other Markdown files.
+// one exception: in a hub, the notes folder (its `notes_dir`, which the caller names) and the
+// folders under it that are not dot folders themselves (data/prose/markdown/note-names.ts's
+// inHiddenFolder), whose notes the Markdown server reads as it reads the hub's other Markdown
+// files.
 //
 // A document open in a tab is the tab's text and not the disk's, so its own path's events are not
 // sent. The library audit kept `fs.watch` over a watching library, as the other watchers of this
@@ -27,12 +28,7 @@
 import { existsSync, lstatSync, statSync, watch, type FSWatcher } from 'node:fs';
 import { join, matchesGlob, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-    NOTES_FOLDER,
-    inHiddenFolder,
-    inNotes
-} from '../../../../data/prose/markdown/note-names.ts';
-import { isHubFolder } from '../../../../data/sources/manifests.ts';
+import { inHiddenFolder, inNotes } from '../../../../data/prose/markdown/note-names.ts';
 import type { Hub, Sink } from '../../../core/channels.ts';
 
 /** The kinds of change a `didChangeWatchedFiles` carries. */
@@ -62,16 +58,17 @@ export type WatchOptions = {
     /** The watch of the platform; `fs.watch` unless a test says otherwise. */
     watchFolder?: typeof watch;
     /**
-     * Whether the root is a hub, whose notes folder is heard of; read from the root when absent.
+     * The root's notes folder under it, a hub's `notes_dir`, which is heard of; the empty text or
+     * absent for a root that is no hub.
      */
-    hub?: boolean;
+    notes?: string;
 };
 
 /**
- * Whether a path relative to the root is one a registration wants to hear of, with whether the
- * root is a hub.
+ * Whether a path relative to the root is one a registration wants to hear of, with the root's
+ * notes folder, the empty text for a root that has none.
  */
-export type Match = (relative: string, hub?: boolean) => boolean;
+export type Match = (relative: string, notes?: string) => boolean;
 
 /** The globs one server registered, by registration id, and the watch they share. */
 export class RootWatch {
@@ -83,11 +80,11 @@ export class RootWatch {
     #timer: ReturnType<typeof setTimeout> | null = null;
     #folderTimer: ReturnType<typeof setTimeout> | null = null;
     #closed = false;
-    #hub: boolean;
+    #notes: string;
 
     constructor(options: WatchOptions) {
         this.#options = options;
-        this.#hub = options.hub ?? isHubFolder(options.root);
+        this.#notes = options.notes ?? '';
     }
 
     /** Take the globs of a registration, starting the watch of the root with the first one. */
@@ -134,8 +131,8 @@ export class RootWatch {
         const relative = raw.normalize('NFC');
         if (relative.split(sep).includes('.git')) return;
         const real = join(this.#options.root, raw);
-        if (![...this.#globs.values()].some((match) => match(relative, this.#hub))) {
-            const hidden = inHiddenFolder(`${relative}${sep}.`, this.#hub);
+        if (![...this.#globs.values()].some((match) => match(relative, this.#notes))) {
+            const hidden = inHiddenFolder(`${relative}${sep}.`, this.#notes);
             if (event === 'rename' && this.#options.folders !== undefined && !hidden) {
                 const there = existsSync(real);
                 if (there && !isFolder(real)) return;
@@ -262,24 +259,26 @@ export function entryFiles(
     globs: readonly string[],
     refused: (relative: string) => boolean
 ): Match {
-    return (relative, hub = false) => {
-        if (inHiddenFolder(relative, hub)) return false;
-        const notes = hub && inNotes(relative.split(sep).join('/')) !== null;
-        return globs.some((glob) => matches(relative, glob, notes)) && !refused(relative);
+    return (relative, notes = '') => {
+        if (inHiddenFolder(relative, notes)) return false;
+        const inside = inNotes(relative.split(sep).join('/'), notes) !== null;
+        return (
+            globs.some((glob) => matches(relative, glob, inside ? notes : '')) && !refused(relative)
+        );
     };
 }
 
 // Whether a path relative to the root matches a glob a server registered. A glob led by `**/`
 // means any folders, as the protocol's globs do, but node's matcher takes no folder whose name
-// starts with a dot for it; for a path of a hub's notes folder (`notes`) the glob is also tried
-// on the path from each folder of `.oculus/notes/` on, so the Markdown entry's `**/*.md` takes a
-// note.
-function matches(relative: string, glob: string, notes = false): boolean {
+// starts with a dot for it; for a path of a hub's notes folder (`notes`, empty for a path of none)
+// the glob is also tried on the path from each folder of the notes folder on, so the Markdown
+// entry's `**/*.md` takes a note.
+function matches(relative: string, glob: string, notes = ''): boolean {
     try {
         if (matchesGlob(relative, glob)) return true;
-        if (!notes || !glob.startsWith('**/')) return false;
+        if (notes === '' || !glob.startsWith('**/')) return false;
         const parts = relative.split(sep);
-        const own = NOTES_FOLDER.split('/').length;
+        const own = notes.split('/').filter((one) => one !== '').length;
         for (let at = 1; at <= own; at += 1) {
             if (matchesGlob(parts.slice(at).join(sep), glob)) return true;
         }

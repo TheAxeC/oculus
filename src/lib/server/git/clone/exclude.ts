@@ -6,7 +6,7 @@
 //
 //     # BEGIN nested-repos
 //     /side-projects/p/
-//     /side-projects/theaxec.github.io/
+//     /sites/user.github.io/
 //     # END nested-repos
 //
 // The block keeps those folders out of the hub's status and out of `git add -A`. The lines come

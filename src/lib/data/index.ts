@@ -12,8 +12,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { focusBlock, isMap, str } from './helpers/guards.ts';
-import { MEMORIES_DIR, WALLPAPER_DIR } from './helpers/files/paths.ts';
+import { isMap, str } from './helpers/guards.ts';
 import { filledTextShape, mapShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
 import {
     MANIFEST_FIELDS_KEY,
@@ -22,7 +21,8 @@ import {
     withManifestFields,
     wordsWith
 } from './shapes/vocab-keys.ts';
-import { manifestDir, readHubManifests } from './sources/manifests.ts';
+import { manifestDir, readHubManifests, withCodeFolders } from './sources/manifests.ts';
+import { settingReader } from './sources/config/settings/reader.ts';
 import {
     REGISTRY_NAMES,
     readRegistries,
@@ -44,15 +44,14 @@ import { projectDocs } from './sources/documents/docs.ts';
 import type { TextCatalog } from './helpers/finding-text.ts';
 import {
     DATA_FOLDER,
-    FEED_REGISTRIES,
     HUB_FILE,
     fromHubFile,
     hasCardList,
-    hubKeysOf,
-    isFeedEntry,
-    type FeedRegistry,
     type RegistryWord
 } from './helpers/hub-names.ts';
+import { hubKeysOf } from './shapes/hub-keys.ts';
+import { feedRegistries, hubLayout, projectDocList } from './sources/config/settings/hub-rows.ts';
+import { hubRowFindings } from './sources/config/catalogs.ts';
 import { engineDir } from './places/engine-dir.ts';
 import { engineFile } from './sources/config/folder.ts';
 import { readDecks } from './sources/documents/decks.ts';
@@ -104,6 +103,7 @@ import type {
     CollectionEntry,
     DocPresence,
     FeedFiles,
+    FeedKind,
     Finding,
     HubSnapshot,
     HubVocab,
@@ -149,15 +149,8 @@ export function sourcesFindings(
             files.newProjectDir,
             text
         ).findings,
-        ...pictureFolderFindings(
-            merged,
-            hub,
-            'wallpaper_dir',
-            WALLPAPER_DIR,
-            files.wallpaperDir,
-            text
-        ),
-        ...pictureFolderFindings(merged, hub, 'memories_dir', MEMORIES_DIR, files.memoriesDir, text)
+        ...pictureFolderFindings(merged, hub, 'wallpaper_dir', files.wallpaperDir, text),
+        ...pictureFolderFindings(merged, hub, 'memories_dir', files.memoriesDir, text)
     ];
 }
 
@@ -176,21 +169,23 @@ const pathShape = z.string();
 
 /**
  * The portfolio's half of the merged config. The `collections:` list gives the eight registry
- * paths, each registry being the entry of the list whose `registry:` names it, and the two YAML
- * feeds' paths, the entries naming `leads` and `radar`, which are no collection. A registry, feed
- * or career file the merged config does not name is read from oculus's own entry of it in
- * config/defaults/sources.yml (`engineDefaults`, read only then), so a config that leaves one of
- * them out builds. The text catalog travels with it, since every reader words its findings from
- * config/text/findings.yml.
+ * paths, each registry being the entry of the list whose `registry:` names it, and the YAML feeds'
+ * paths, the entries naming a word of `feed_registries` (`leads`, `radar` or both), which are no
+ * collection; a feed the list leaves out has no file and is not read, and its entry is read as a
+ * collection. A registry, feed or career file the merged config does not name is read from
+ * oculus's own entry of it in config/defaults/sources.yml (`engineDefaults`, read only then), so a
+ * config that leaves one of them out builds. The text catalog travels with it, since every reader
+ * words its findings from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
     from?: Readonly<Partial<Record<string, string>>>
 ): PortfolioConfig {
-    const path = (key: string, fallback: string): string =>
-        readOr(pathShape, merged[key], fallback);
     const listed = collectionFiles(merged.collections, listWords(merged));
-    const unnamed = from === undefined ? undefined : unnamedBy(from, listed);
+    const feedWords = feedRegistries(merged);
+    const isFeed = (file: CollectionEntry): boolean =>
+        feedWords.some((feed) => feed === file.registry);
+    const unnamed = from === undefined ? undefined : unnamedBy(from, listed, feedWords);
     let engine: EngineDefaults | undefined;
     const defaults = (): EngineDefaults => (engine ??= engineDefaults());
     const engineEntry = (registry: RegistryWord): CollectionEntry[] =>
@@ -198,14 +193,18 @@ export function portfolioConfigFrom(
             .collections.filter((file) => file.registry === registry)
             .slice(0, 1);
     const collections = [
-        ...listed.filter((file) => !isFeedEntry(file)),
+        ...listed.filter((file) => !isFeed(file)),
         ...(unnamed?.literature === true ? engineEntry('literature') : [])
     ];
     const registries = registryFiles(collections, () => defaults().collections);
-    const feedFile = (registry: FeedRegistry): string =>
-        listed.find((file) => file.registry === registry)?.file ??
-        engineEntry(registry).at(0)?.file ??
-        '';
+    const feedFile = (registry: 'leads' | 'radar'): string => {
+        if (!feedWords.includes(registry)) return '';
+        return (
+            listed.find((file) => file.registry === registry)?.file ??
+            engineEntry(registry).at(0)?.file ??
+            ''
+        );
+    };
 
     const vocab: Vocabulary = {
         statuses: coloredWords(merged.statuses),
@@ -214,11 +213,13 @@ export function portfolioConfigFrom(
         forms: vocabKeys(merged.forms)
     };
 
+    // The finding passes run the same reader with the list they word (settings/hub-rows.ts).
+    const layout = hubLayout(merged, []);
     // The LinkedIn folder is the hub's own, so a config that names none has no LinkedIn feed.
     const feeds: FeedFiles = {
         leads: feedFile('leads'),
         radar: feedFile('radar'),
-        linkedin: path('linkedin_dir', '')
+        linkedin: layout.linkedinDir
     };
 
     const scan = scanRules(merged.scan);
@@ -237,7 +238,9 @@ export function portfolioConfigFrom(
         registries,
         collections,
         feeds,
-        linkedinCadenceDays: Number(focusBlock(merged).linkedin_cadence_days),
+        // A refused cadence is a finding of the focus block's pass (sections/focus.ts).
+        linkedinCadenceDays: settingReader(merged).number('focus.linkedin_cadence_days'),
+        layout,
         career: readAs(pathShape, merged.career_file) ?? defaults().career,
         schema: withManifestFields(merged.manifest_schema, merged[MANIFEST_FIELDS_KEY]),
         vocab,
@@ -257,17 +260,18 @@ function named(from: Readonly<Partial<Record<string, string>>>, key: string): bo
 /**
  * What the hub's own settings file leaves to the engine's defaults, see `PortfolioConfig.unnamed`.
  * A registry or a feed is named when an entry of the hub's `collections:` list names it in
- * `registry:`.
+ * `registry:`; the feeds are the words of `feed_registries`.
  */
 function unnamedBy(
     from: Readonly<Partial<Record<string, string>>>,
-    collections: readonly CollectionEntry[]
+    collections: readonly CollectionEntry[],
+    feedWords: readonly FeedKind[]
 ): NonNullable<PortfolioConfig['unnamed']> {
     const listed = named(from, 'collections');
-    const names = (registry: RegistryWord): boolean =>
+    const names = (registry: string): boolean =>
         listed && collections.some((file) => file.registry === registry);
     const registries = REGISTRY_NAMES.filter((name) => !names(name));
-    const feeds = FEED_REGISTRIES.filter((feed) => !names(feed));
+    const feeds = feedWords.filter((feed) => !names(feed));
     const literature = listed && !names('literature');
     return {
         registries,
@@ -290,12 +294,20 @@ function heldUnnamed(hub: string, unnamed: PortfolioConfig['unnamed']): Portfoli
 }
 
 /**
- * Which of the fixed documents each project folder holds, by project id. It is existence only, four
- * `stat` calls per folder, so it runs on every rebuild beside the manifests themselves.
+ * Which of the documents of the hub's `project_docs` each project folder holds, by project id. It
+ * is existence only, one `stat` call per document and folder, so it runs on every rebuild beside
+ * the manifests themselves.
  */
-function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresence[]> {
+function documents(
+    hub: string,
+    manifests: RawManifest[],
+    merged: Record<string, unknown>
+): Record<Id, DocPresence[]> {
+    const docs = projectDocList(merged);
     const found: Record<Id, DocPresence[]> = {};
-    for (const manifest of manifests) found[manifest.id] = projectDocs(manifestDir(hub, manifest));
+    for (const manifest of manifests) {
+        found[manifest.id] = projectDocs(manifestDir(hub, manifest), docs);
+    }
     return found;
 }
 
@@ -430,18 +442,25 @@ export function readHubBeforeDecks(
         listFileOf(hub, config),
         config.text
     );
-    const feeds = readFeeds(hub, config.feeds, config.text, config.merged, unnamed?.feeds);
+    const feeds = readFeeds(
+        hub,
+        config.feeds,
+        config.text,
+        config.merged,
+        config.layout,
+        unnamed?.feeds
+    );
     const career =
         config.career === null
             ? { career: null, findings: [] }
             : readCareer(hub, config.career, config.text);
     const raw: RawPortfolio = {
-        manifests: manifests.manifests,
+        manifests: withCodeFolders(hub, manifests.manifests, config.layout.codeDir),
         registries,
         collections: collections.collections,
         feeds: feeds.feeds,
         career: career.career,
-        docs: documents(hub, manifests.manifests),
+        docs: documents(hub, manifests.manifests, config.merged),
         decks: {},
         findings: [
             ...manifests.findings,
@@ -550,12 +569,12 @@ export function readFolders(config: PortfolioConfig): RawPortfolio {
         REGISTRIES.map((name) => [name, { entries: [], meta: {} }])
     ) as unknown as RawPortfolio['registries'];
     return {
-        manifests: manifests.manifests,
+        manifests: withCodeFolders('', manifests.manifests, config.layout.codeDir),
         registries,
         collections: {},
         feeds: { leads: null, radar: null, scout: null, linkedin: null },
         career: null,
-        docs: documents('', manifests.manifests),
+        docs: documents('', manifests.manifests, config.merged),
         decks: {},
         findings: manifests.findings
     };
@@ -615,7 +634,8 @@ const VOCAB_FILE = 'catalogs/vocab.yml';
 
 /**
  * The settings of a hub other than the primary, from the parse `loaded` of its settings. Its
- * findings are those of its settings file, those of the folders it names, then, when its settings
+ * findings are those of its settings file, those of the folders it names, those of the lists of
+ * its feeds, its update tasks and its project documents (`hubRowFindings`), then, when its settings
  * file sets `categories`, those of the category check over its own merged config, then, when its
  * settings file sets any key of config/catalogs/vocab.yml, those of the vocabulary check
  * (`vocabFindings`) over the same merged config. Each finding of the two checks names the hub's
@@ -650,6 +670,7 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
                 },
                 root.dir
             ),
+            ...hubRowFindings(config, sources),
             ...categories,
             ...words
         ]

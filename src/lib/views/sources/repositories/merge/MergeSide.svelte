@@ -29,7 +29,7 @@
         path: string;
         language: string;
         look: string;
-        codeTheme: string;
+        codeTheme: string | null;
         onchoose: (region: number, choice: Choice) => void;
     };
 

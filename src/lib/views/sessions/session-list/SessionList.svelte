@@ -113,6 +113,7 @@
     import { createSessionMarks } from './session-marks.svelte';
     import { hubPlaces, placeNames } from '$lib/views/shared/sessions/place-names';
     import { useState } from '$lib/state/client/use';
+    import { defaultAgent } from '$lib/state/shared/words/appearance';
 
     const {
         agents: { exportSession },
@@ -183,6 +184,8 @@
     /** The folder a workbench limits this list to, and its absolute path; null when not served. */
     const folder = $derived(limitOf(instanceState(instance.id)));
     const dir = $derived(folder === null ? null : limitDir(roots(), folder));
+    /** The agent New and Customizations take while none is chosen, or null before the settings. */
+    const startAgent = $derived(defaultAgent());
     const tree = $derived(
         folder === null
             ? sessionsByWorkspace(true)
@@ -253,7 +256,9 @@
      */
     function newSession(): void {
         if (dir === null) composeIn(undefined, true);
-        else void composeAt({ cwd: dir, agent: 'claude', documents: true, asNew: true });
+        else if (startAgent !== null) {
+            void composeAt({ cwd: dir, agent: startAgent, documents: true, asNew: true });
+        }
     }
 
     /**
@@ -455,7 +460,9 @@
         {#if followed !== null}
             <SessionSections owner={instance.id} record={followed} {fields} divided />
         {/if}
-        <Customizations owner={instance.id} divided={followed === null} />
+        {#if startAgent !== null}
+            <Customizations owner={instance.id} divided={followed === null} {startAgent} />
+        {/if}
     </div>
 </Pane>
 

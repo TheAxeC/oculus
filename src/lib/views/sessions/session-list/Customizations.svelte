@@ -33,7 +33,11 @@
         withCustomizationScope,
         type CustomizationScopeState
     } from '$lib/state/sessions/terminal/composer/composer';
-    import type { CustomizationKind, CustomizationItem } from '$lib/state/sessions/agents.svelte';
+    import type {
+        AgentId,
+        CustomizationKind,
+        CustomizationItem
+    } from '$lib/state/sessions/agents.svelte';
     import { rootHolding } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
@@ -44,9 +48,11 @@
         owner: string;
         /** Whether the list's line stands right above the section, which then draws none itself. */
         divided?: boolean;
+        /** The agent read while the section has chosen none, `terminal.default_agent`. */
+        startAgent: AgentId;
     };
 
-    let { owner, divided = false }: Props = $props();
+    let { owner, divided = false, startAgent }: Props = $props();
 
     const {
         agents: { agentChoices, customizations, refreshCustomizations },
@@ -63,9 +69,10 @@
         held.workspace !== '' && places.includes(held.workspace) ? held.workspace : (hub ?? '')
     );
     const allAccounts = $derived(agentChoices().value?.accounts ?? []);
-    const accounts = $derived(accountsOf(allAccounts, held.agent));
-    const account = $derived(accountFor(allAccounts, held.agent, held.account || undefined));
-    const scope = $derived({ agent: held.agent, account, workspace });
+    const agent = $derived(held.agent ?? startAgent);
+    const accounts = $derived(accountsOf(allAccounts, agent));
+    const account = $derived(accountFor(allAccounts, agent, held.account || undefined));
+    const scope = $derived({ agent, account, workspace });
     const read = $derived(workspace === '' ? null : customizations(scope));
     const rows = $derived(read?.value?.rows ?? []);
 
@@ -185,7 +192,7 @@
                 <li class="scope" role="none">
                     <span data-custom-picker="agent">
                         <Menu
-                            label={held.agent === 'codex'
+                            label={agent === 'codex'
                                 ? t('sessions.kind_codex')
                                 : t('sessions.kind_claude')}
                             placement="up"
@@ -193,12 +200,12 @@
                                 {
                                     id: 'claude',
                                     label: t('sessions.kind_claude'),
-                                    active: held.agent === 'claude'
+                                    active: agent === 'claude'
                                 },
                                 {
                                     id: 'codex',
                                     label: t('sessions.kind_codex'),
-                                    active: held.agent === 'codex'
+                                    active: agent === 'codex'
                                 }
                             ]}
                             onpick={(id: string) =>

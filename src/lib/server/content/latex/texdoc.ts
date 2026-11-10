@@ -18,9 +18,9 @@ export function texdocName(value: unknown): string | null {
     return typeof value === 'string' && NAME.test(value) ? value : null;
 }
 
-/** Open the documentation of one package. */
-export function texdoc(name: string, tools?: Tools): Promise<Run> {
-    return run('texdoc', ['-I', name], {}, tools);
+/** Open the documentation of one package with the texdoc program at `program`. */
+export function texdoc(name: string, program: string, tools?: Tools): Promise<Run> {
+    return run(program, ['-I', name], {}, tools);
 }
 
 /**

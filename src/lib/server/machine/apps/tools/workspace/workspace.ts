@@ -262,6 +262,7 @@ export function workspaceHandlers(host: HostTools): {
                 }
             }
         };
+        const hidden = scope.env.hiddenFolders();
         for (const folder of scope.folders(app)) {
             const included = globIn(params.include, folder.real);
             // `exclude` as VS Code reads it: undefined leaves out what the Files view hides, null
@@ -269,7 +270,7 @@ export function workspaceHandlers(host: HostTools): {
             const skip = params.exclude;
             const excluded =
                 skip === undefined
-                    ? (_whole: string, name: string) => skipped(name)
+                    ? (_whole: string, name: string) => skipped(name, hidden)
                     : skip === null
                       ? () => false
                       : globIn(skip, folder.real);

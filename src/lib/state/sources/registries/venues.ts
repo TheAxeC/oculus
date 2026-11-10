@@ -1,20 +1,34 @@
 // Layer 2, client state. Pure venue filtering, project joins, tones and conference timing, and the
 // sections of the Venues view, one per row of `venue_categories` of config/catalogs/vocab.yml and
 // one for the venues no row names. The view receives ready-to-draw sections and month columns, so
-// its markup contains no data rules and names no category.
+// its markup contains no data rules and names no category. The tones of a venue's rank and cost,
+// its biennial mark and whether its JIF names none are read from `venue_ranks`, `venue_costs`,
+// `venue_biennial` and `venue_no_jif` of the words the caller passes; a tone is taken through
+// state/shared/words/tones.ts `wordsTone`, whose module reads the configuration's generation, a
+// Svelte rune.
 
 import { z } from 'zod';
 import type { Project, Venue } from '../../../data/model/index.ts';
 import { categoriesBy, isArchival } from '../../../data/shapes/boards/categories.ts';
+import { focusNumber } from '../../../data/sources/config/sections/focus.ts';
+import { byKey } from '../../../data/helpers/guards.ts';
+import { rootOf } from '../../../data/helpers/hub-names.ts';
 import {
     fieldItemsShape,
+    mapShape,
     readAs,
+    readOr,
     rowsShape,
     searchRevealShape
 } from '../../../data/shapes/shapes.ts';
 import { hasWord, recordWords, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
+import { UNKNOWN_TONE, wordsTone } from '../../shared/words/tones.ts';
 
-export type VenueUse = { projects: Project[]; concentrated: boolean };
+/**
+ * The projects targeting a venue, and `concentrated`, the warning count their real live ones reach
+ * (`venue_conc_warn`), null while they reach none.
+ */
+export type VenueUse = { projects: Project[]; concentrated: number | null };
 export type TimelineChip = { venue: Venue; biennial: boolean };
 export type TimelineMonth = {
     index: number;
@@ -56,8 +70,9 @@ export function realProjects(
 
 /**
  * The projects targeting one venue, dead ends included, the one list the venue's card, its page's
- * row and its board read, with the concentration marker: two or more real ones among them at a
- * stage carrying `live` in `stages` of their own hub's words.
+ * row and its board read, with the concentration marker: `venue_card_warn` of `focus:`
+ * (`focusNumber`) or more real ones among them at a stage carrying `live` in `stages` of their own
+ * hub's words; no marker before the page holds the settings.
  */
 export function venueUsers(
     venue: Venue,
@@ -69,24 +84,29 @@ export function venueUsers(
     const live = realProjects(users, config, wordsOf).filter((project) =>
         hasWord(recordWords(config, wordsOf, project), 'stages', 'live', project.stage)
     );
-    return { projects: users, concentrated: live.length >= 2 };
+    const warnAt = focusNumber(config, 'venue_card_warn');
+    const reached = warnAt !== null && live.length >= warnAt;
+    return { projects: users, concentrated: reached ? warnAt : null };
 }
 
-/** Tone of a venue's rank, kept for the card's hue although the rank is drawn as a plain tag. */
-export function quartileTone(value: string | undefined): string {
-    const word = (value ?? '').toLowerCase();
-    if (word.includes('q1') || word.includes('a*') || word.includes('prestige')) return 'violet';
-    if (word.includes('q2') || word.includes('core a')) return 'blue';
-    return 'grey';
-}
-
-/** Tone of a venue's cost, kept for the card's hue although the cost is drawn as a plain tag. */
-export function freeTone(value: string | undefined): string {
-    const word = (value ?? '').toLowerCase();
-    if (word.includes('free')) return 'green';
-    if (word.includes('hybrid')) return 'amber';
-    if (word.includes('apc')) return 'red';
-    return 'grey';
+/**
+ * The tone of a venue's free-text field by a map of `words` from a fragment to a colour,
+ * `venue_ranks` for its `quartile` and `venue_costs` for its `free`: the hue the palette of
+ * `words` maps the colour of the first fragment of the map, in the map's order, that the text
+ * holds with case ignored to, and the unknown tone when it holds none.
+ */
+export function venueTone(
+    value: string | undefined,
+    key: 'venue_ranks' | 'venue_costs',
+    words: Record<string, unknown>
+): string {
+    const text = (value ?? '').toLowerCase();
+    const colours = readAs(mapShape, words[key]) ?? {};
+    const fragment = Object.keys(colours).find(
+        (one) => one !== '' && text.includes(one.toLowerCase())
+    );
+    const hex = fragment === undefined ? undefined : byKey(colours, fragment);
+    return wordsTone(hex, words) ?? UNKNOWN_TONE;
 }
 
 /** One-based month number from a month word, or zero when it is not a month. */
@@ -97,13 +117,35 @@ export function monthIndex(word: string | undefined): number {
     return at < 0 ? 0 : at + 1;
 }
 
-/** Whether the catalogue says the venue runs every other year. */
-export function isBiennial(venue: Venue): boolean {
-    return `${venue.quartile ?? ''} ${venue.timing ?? ''}`.toLowerCase().includes('biennial');
+/**
+ * Whether the catalogue says the venue runs every other year: its `quartile` or its `timing` holds
+ * a text of `venue_biennial` of `words`, case ignored.
+ */
+export function isBiennial(venue: Venue, words: Record<string, unknown>): boolean {
+    const text = `${venue.quartile ?? ''} ${venue.timing ?? ''}`.toLowerCase();
+    const marks = readOr(z.array(z.string()), words.venue_biennial, []);
+    return marks.some((mark) => mark !== '' && text.includes(mark.toLowerCase()));
 }
 
-/** Twelve conference month columns and the seven nearest deadlines from the current month. */
-export function timeline(venues: Venue[], todayMonth: number | string): VenueTimeline {
+/**
+ * Whether a venue's `jif` names no impact factor: it is empty once trimmed, or, trimmed and with
+ * case ignored, a text of `venue_no_jif` of `words`.
+ */
+export function noJif(jif: string | undefined, words: Record<string, unknown>): boolean {
+    const text = (jif ?? '').trim().toLowerCase();
+    const none = readOr(z.array(z.string()), words.venue_no_jif, []);
+    return text === '' || none.some((one) => one.trim().toLowerCase() === text);
+}
+
+/**
+ * Twelve conference month columns and the seven nearest deadlines from the current month, each
+ * venue's biennial mark read under the words of its own hub (`wordsOf`).
+ */
+export function timeline(
+    venues: Venue[],
+    todayMonth: number | string,
+    wordsOf: WordsOf
+): VenueTimeline {
     const current =
         typeof todayMonth === 'number'
             ? Math.min(12, Math.max(1, todayMonth))
@@ -118,7 +160,7 @@ export function timeline(venues: Venue[], todayMonth: number | string): VenueTim
     for (const venue of venues) {
         const deadline = monthIndex(venue.deadlineMonth);
         const held = monthIndex(venue.heldMonth);
-        const chip = { venue, biennial: isBiennial(venue) };
+        const chip = { venue, biennial: isBiennial(venue, wordsOf(rootOf(venue))) };
         if (deadline > 0) months[deadline - 1].deadlines.push(chip);
         if (held > 0) months[held - 1].held.push(chip);
     }

@@ -1,21 +1,22 @@
-// Layer 1, data. The rule for one entry of the schedules file, `schedules.yml` in the hub's
-// `.oculus` folder, shared by the update tray's dialog, which checks an entry before it sends it,
-// and by the server, which reads the file and runs the timer by the same rule, so the two cannot
-// disagree on what runs. It looks at the shape and the values of an entry and nothing on the
-// machine: the checks that need the disk (a folder that exists, a command the repository's
-// `.oculus/commands.yml` holds, a repository the file browser serves) are the server's
-// (server/machine/runs/schedules/file.ts).
+// Layer 1, data. The rule for one entry of the schedules file, the file the hub's `schedules`
+// names, shared by the update tray's dialog, which checks an entry before it sends it, and by the
+// server, which reads the file and runs the timer by the same rule, so the two cannot disagree on
+// what runs. It looks at the shape and the values of an entry and nothing on the machine: the
+// checks that need the disk or a hub's settings (a folder that exists, a command the repository's
+// `.oculus/commands.yml` holds, a repository the file browser serves, a task the hub's
+// `update_tasks` lists) are the server's (server/machine/runs/schedules/file.ts).
 //
 // An entry is `{ name, runs, when, paused?, unattended? }`. `runs` holds exactly one of `task` (an
-// update task, with the `hub` whose task it is, the primary's when `hub` is absent), `command` (the
-// name of a command of a repository's `.oculus/commands.yml`, with that repository's `folder`) or
-// `prompt` (the first message of a Claude session, with the `folder` the session starts in). A
-// `hub` is a name as written, compared with the hubs' names by the server's disk checks, so text
-// that is empty or only white space, or a value that is not text, is `hub-wrong` here. An entry
-// that is not a map, or whose name or `runs` has no readable shape, has no entry to edit; one whose
-// shape reads but whose value is refused keeps its entry, so its row can be edited, and says why it
-// does not run. Of several problems an entry has, the first in the order of the checks below is the
-// one it says.
+// update task's name, held to its form here, run/tasks.ts, so that it names no path outside a
+// hub's tasks folder, with the `hub` whose task it is, the primary's when `hub` is absent),
+// `command` (the name of a command of a repository's `.oculus/commands.yml`, with that
+// repository's `folder`) or `prompt` (the first message of a Claude session, with the `folder` the
+// session starts in). A `hub` is a name as written, compared with the hubs' names by the server's
+// disk checks, so text that is empty or only white space, or a value that is not text, is
+// `hub-wrong` here. An entry that is not a map, or whose name or `runs` has no readable shape, has
+// no entry to edit; one whose shape reads but whose value is refused keeps its entry, so its row
+// can be edited, and says why it does not run. Of several problems an entry has, the first in the
+// order of the checks below is the one it says.
 
 import type {
     ScheduleEntry,
@@ -25,7 +26,7 @@ import type {
 } from '../../model/index.ts';
 import { byKey, isMap } from '../guards.ts';
 import { cronRuns } from './cron.ts';
-import { UPDATE_TASKS, isUpdateTask } from './tasks.ts';
+import { isTaskName } from './tasks.ts';
 
 /** The largest prompt a Claude session starts with, far past anything typed into a box. */
 export const PROMPT_MAX = 100_000;
@@ -147,11 +148,13 @@ function readRuns(
     const keyProblem = unknown === undefined ? null : problem('key-unknown', unknown);
     if (kind === 'task') {
         const task = byKey(raw, 'task');
-        if (!isUpdateTask(task)) {
-            const named = problem('update-task-unknown', written(task), UPDATE_TASKS.join(', '));
-            return { target: { task: UPDATE_TASKS[0] }, problem: named };
-        }
         const hub = readHub(raw);
+        const named = 'word' in hub ? {} : hub;
+        if (!isTaskName(task)) {
+            const held = typeof task === 'string' ? task : '';
+            const refused = problem('update-task-unknown', written(task));
+            return { target: { task: held, ...named }, problem: refused };
+        }
         if ('word' in hub) return { target: { task }, problem: keyProblem ?? hub };
         return { target: { task, ...hub }, problem: keyProblem };
     }
@@ -199,17 +202,17 @@ function readFlag(
 
 /**
  * The keys of a raw entry whose value is there and does not read: the task of a `runs` that names
- * a task, when it is not an update task, its hub when that is `hub-wrong`, and an `unattended`
- * that is not true or false. The reader gives each a default (the first task, the primary's hub,
- * off), which the entry shows but the file does not hold, so the dialog opens such a key with no
- * value chosen and a save writes the one chosen.
+ * a task, when it is not a task's name, its hub when that is `hub-wrong`, and an `unattended` that
+ * is not true or false. The reader holds each as no value (the text of a task that is text and
+ * the empty text otherwise, the primary's hub, off), which the file does not hold, so the dialog
+ * opens such a key with no value chosen and a save writes the one chosen.
  */
 export function unchosenKeys(raw: unknown): UnchosenKey[] {
     if (!isMap(raw)) return [];
     const keys: UnchosenKey[] = [];
     const runs = byKey(raw, 'runs');
     if (isMap(runs) && kindOf(runs) === 'task') {
-        if (!isUpdateTask(byKey(runs, 'task'))) keys.push('task');
+        if (!isTaskName(byKey(runs, 'task'))) keys.push('task');
         if ('word' in readHub(runs)) keys.push('hub');
     }
     const flag = byKey(raw, 'unattended');

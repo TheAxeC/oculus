@@ -478,6 +478,20 @@ function formMessage(form: Form): Message {
             return message('notHttpsOrigin');
         case 'row_key':
             return message('notRowKey');
+        case 'file_name':
+            return message('notFileName');
+        case 'task_name':
+            return message('notTaskName');
+        case 'inner_path':
+            return message('notInnerPath');
+        case 'folder_glob':
+            return message('notFolderGlob');
+        case 'absolute_folder':
+            return message('notAbsoluteFolder');
+        case 'partition':
+            return message('notPartition');
+        case 'cluster_folder':
+            return message('notClusterFolder');
     }
 }
 

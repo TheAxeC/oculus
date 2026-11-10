@@ -38,8 +38,10 @@ import type {
     TerminalKind,
     TerminalResume
 } from '../../../data/model/index.ts';
+import type { LocalConfig } from '../../../data/sources/config.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';
 import { PREFIX, USAGE_PREFIX } from '../../transcripts/names.ts';
+import { shellWord } from './shell-word.ts';
 import { captureArgs } from './panes/capture.ts';
 import { sessionName, targetOf } from './panes/target.ts';
 import { TerminalRefused } from './refusal.ts';
@@ -207,6 +209,11 @@ export type StartOptions = RunOptions & {
     taskEnv?: Record<string, string>;
     /** The server context's git credentials, whose `GIT_CONFIG_*` pairs the session carries. */
     credentials: GitCredentials;
+    /**
+     * The programs of the two agents, which a start of an agent's kind with no `argv` and no
+     * `command` runs; such a start without them is refused.
+     */
+    programs?: AgentPrograms;
 };
 
 /** The environment names a start may set: the two agents' account folders. */
@@ -302,28 +309,42 @@ export function kindOf(id: string): TerminalKind {
     return 'shell';
 }
 
-/**
- * What a kind runs: the two agents by name, and the user's own shell for a plain terminal, the
- * platform's when `SHELL` names none.
- */
-export function commandFor(kind: TerminalKind): string {
-    if (kind === 'claude') return 'claude';
-    if (kind === 'codex') return 'codex';
-    return fallbackShell();
+/** The programs the two agents are started with: the machine's `claude_bin` and `codex_bin`. */
+export type AgentPrograms = { claude: string; codex: string };
+
+/** The programs of the two agents in the machine's values. */
+export function agentPrograms(local: Pick<LocalConfig, 'claudeBin' | 'codexBin'>): AgentPrograms {
+    return { claude: local.claudeBin, codex: local.codexBin };
+}
+
+/** The programs, or a throw naming the tool when the start was given none. */
+function programsFor(tool: string, programs: AgentPrograms | undefined): AgentPrograms {
+    if (programs === undefined) throw new Error(`a ${tool} terminal names its program`);
+    return programs;
 }
 
 /**
- * The argv that continues one session: what the tool's own CLI is called with. `claude --resume
- * <id>` and `codex resume <id>` are the documented forms, and the id is a UUID, so the argv holds
+ * What a kind runs: an agent's program as one word of the shell tmux runs it in, and the user's
+ * own shell for a plain terminal, the platform's when `SHELL` names none.
+ */
+export function commandFor(kind: TerminalKind, programs: AgentPrograms | undefined): string {
+    if (kind !== 'claude' && kind !== 'codex') return fallbackShell();
+    return shellWord(programsFor(kind, programs)[kind]);
+}
+
+/**
+ * The argv that continues one session: what the tool's own CLI is called with. `<claude> --resume
+ * <id>` and `<codex> resume <id>` are the documented forms, and the id is a UUID, so the argv holds
  * nothing a shell would read as anything but three words.
  */
-export function resumeArgs(resume: TerminalResume): string[] {
+export function resumeArgs(resume: TerminalResume, programs: AgentPrograms | undefined): string[] {
     if (!RESUME_TOOLS.includes(resume.tool)) {
         throw new Error(`tool must be one of ${RESUME_TOOLS.join(', ')}`);
     }
     if (!isSessionId(resume.id)) throw new TerminalRefused('not-a-session');
-    if (resume.tool === 'claude') return ['claude', '--resume', resume.id];
-    return ['codex', 'resume', resume.id];
+    const program = programsFor(resume.tool, programs)[resume.tool];
+    if (resume.tool === 'claude') return [program, '--resume', resume.id];
+    return [program, 'resume', resume.id];
 }
 
 /** What the `@oculus_resumes` option holds for a resume, and what parseResumes reads back. */
@@ -635,7 +656,9 @@ export async function startTerminal(
     const command =
         options.argv ??
         options.command ??
-        (resume === undefined ? commandFor(kind) : resumeArgs(resume));
+        (resume === undefined
+            ? commandFor(kind, options.programs)
+            : resumeArgs(resume, options.programs));
     if (Array.isArray(command) && command.length === 0) throw new Error('argv must not be empty');
     const exec = options.run ?? run;
     const labels: [string, string][] = [

@@ -31,9 +31,11 @@ export type SearchSettings = {
     timeoutS: number;
     /** How many file names the palette's file mode lists before it says the list was cut. */
     maxNames: number;
+    /** The names of the folders no search and no name list descends into. */
+    skipFolders: string[];
 };
 
-/** Read `search:`'s three keys, each its default when it is missing or wrong. */
+/** Read `search:`'s four keys, each its default when it is missing or wrong. */
 export function searchSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
@@ -42,7 +44,8 @@ export function searchSettings(
     return {
         maxHits: read.number('search.max_hits'),
         timeoutS: read.number('search.timeout_s'),
-        maxNames: read.number('search.max_names')
+        maxNames: read.number('search.max_names'),
+        skipFolders: read.strings('search.skip_folders')
     };
 }
 
@@ -84,6 +87,19 @@ export function programApps(config: Record<string, unknown>): ProgramApps {
 }
 
 /**
+ * The names of the folders `files.hidden_folders` gives: the folders the Files view lists only when
+ * hidden files are asked for, and that no walk of a served folder (an app's file search and its
+ * `workspaceContains` look, a folder's Fix All, the Markdown server's file list) enters. Its
+ * default when it is missing or wrong.
+ */
+export function hiddenFolders(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): string[] {
+    return settingReader(config, problems).strings('files.hidden_folders');
+}
+
+/**
  * Whether a move to the Trash asks first: `files.confirm_delete`, its default when it is missing
  * or wrong, and true for a configuration that holds no catalog yet, so a delete asks until the
  * setting says it need not.
@@ -99,19 +115,59 @@ export function confirmDelete(
     }
 }
 
+/** The file finder of a project card, as the `file_index` block sets it. */
+type FileIndex = { enabled: boolean; ext: string[]; cap: number; skipFolders: string[] };
+
+/**
+ * The file finder of a project card: whether it lists at all (`file_index.enabled`), the
+ * extensions it lists in lower case (`file_index.ext`), how many files of one project at most
+ * (`file_index.max_per_project`) and the names of the folders it never enters
+ * (`file_index.skip_folders`), each the entry's default when it is missing or wrong.
+ */
+export function fileIndexSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): FileIndex {
+    const read = settingReader(config, problems);
+    return {
+        enabled: read.flag('file_index.enabled'),
+        ext: read.strings('file_index.ext').map((one) => one.toLowerCase()),
+        cap: read.number('file_index.max_per_project'),
+        skipFolders: read.strings('file_index.skip_folders')
+    };
+}
+
 /**
  * Whether a file's row in the Files view drops the empty slot of a folder's arrow:
- * `files.file_icon_at_arrow`, its default when it is missing or wrong, and true for a configuration
- * that holds no catalog yet.
+ * `files.file_icon_at_arrow`, its default when it is missing or wrong, and null for a configuration
+ * that holds no catalog yet, which is what the page holds until the config channel's first message
+ * lands; the tree draws the slot until then.
  */
 export function fileIconAtArrow(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
-): boolean {
+): boolean | null {
     try {
         return settingReader(config, problems).flag('files.file_icon_at_arrow');
     } catch {
-        return true;
+        return null;
+    }
+}
+
+/**
+ * The `section:` word of a collection schema's fields that feed the website, which a card does not
+ * draw: `website.schema_section` trimmed, the empty text for none, and null for a configuration
+ * that holds no catalog yet, which is what the page holds until the config channel's first message
+ * lands; a card draws every field until then.
+ */
+export function websiteSection(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): string | null {
+    try {
+        return settingReader(config, problems).text('website.schema_section').trim();
+    } catch {
+        return null;
     }
 }
 
@@ -124,8 +180,19 @@ export function autofetchMin(
 }
 
 /**
+ * Read `git.worktrees_dir`, the folder relative to a repository that holds the worktrees oculus
+ * makes, the entry's default when the key is missing or wrong.
+ */
+export function worktreesDir(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): string {
+    return settingReader(config, problems).text('git.worktrees_dir');
+}
+
+/**
  * Read `repository_scan_depth` of sources.yml: how many folder levels below a root the
- * Repositories view looks for repositories, 1 when the key is missing or wrong.
+ * Repositories view looks for repositories, the entry's default when the key is missing or wrong.
  */
 export function repositoryScanDepth(
     config: Record<string, unknown>,
@@ -175,8 +242,14 @@ export function chatContext(
     if (entry === undefined) throw noRule(CHAT_CONTEXT, 'sources.yml');
     const held = heldAt(config, CHAT_CONTEXT, problems);
     const written = held.present ? contextWords(entry, held.value) : null;
-    if (written !== null && 'problem' in written) {
-        problems.push({ key: CHAT_CONTEXT, where: 'value', problem: written.problem, spec: entry });
+    if (held.present && written !== null && 'problem' in written) {
+        problems.push({
+            key: CHAT_CONTEXT,
+            where: 'value',
+            problem: written.problem,
+            spec: entry,
+            value: held.value
+        });
     }
     const read =
         written !== null && 'words' in written ? written : contextWords(entry, entry.default);
@@ -355,7 +428,7 @@ export type WebsiteSettings = {
 /**
  * The Zenodo deposit of a hub's projects: the base of every call, the seconds one upload is given,
  * and the entries the token is read and sent by. A field the hub's file does not set is oculus's
- * own, since each is a key of the hub list of its own (data/helpers/hub-names.ts).
+ * own, since each is a key of the hub list of its own (data/shapes/hub-keys.ts).
  */
 export type ZenodoSettings = { address: string; timeoutS: number; auth: Auth[] };
 
@@ -418,7 +491,7 @@ const keyOf = (row: { key: string }): string => row.key;
 
 /**
  * Read `website:`'s keys, each its default when it is missing or wrong. A key of `website.files` is
- * a key of the hub list of its own (data/helpers/hub-names.ts), so a hub that sets one keeps
+ * a key of the hub list of its own (data/shapes/hub-keys.ts), so a hub that sets one keeps
  * oculus's other three, and so is a key of `website.cv_words`, `website.cv_fields`,
  * `website.code_statuses` and `website.author_places`. A row of a list of rows its own shape
  * refuses is left out with a `shape` problem at the row, and a row whose name an earlier row holds

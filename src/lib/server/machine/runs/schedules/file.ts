@@ -1,12 +1,14 @@
-// Layer 2, server. The schedules file, `schedules.yml` in the hub's `.oculus` folder: a YAML list
-// of entries that the reader writes by hand or through the update tray's dialog. This module reads
-// it, checks each entry against the disk, and plans and commits a write.
+// Layer 2, server. The schedules file, the file the hub's `schedules` names
+// (`.oculus/schedules.yml` by default): a YAML list of entries that the reader writes by hand or
+// through the update tray's dialog. This module reads it, checks each entry against the disk, and
+// plans and commits a write.
 //
 // Reading is the shared rule of data/helpers/run/schedules.ts for the shape of an entry, with the
 // checks that need the disk on top: a task's `hub` that names a hub of the open workspace, compared
-// as written (`hub-unknown` otherwise), a folder that exists, a prompt's folder that the hub or a
-// served root holds, a command's repository the file browser serves and a plain entry of that name
-// in its `.oculus/commands.yml` (`scheduledCommands`), a file that does not read being
+// as written (`hub-unknown` otherwise), a task that hub's `update_tasks` lists (the primary's for
+// no `hub`; `update-task-unknown` otherwise), a folder that exists, a prompt's folder that the hub
+// or a served root holds, a command's repository the file browser serves and a plain entry of that
+// name in its `.oculus/commands.yml` (`scheduledCommands`), a file that does not read being
 // `commands-unread`. Whether the named hub holds the task's file is checked at the run, as the
 // primary's is. The names are compared over the whole list, so two entries of one name both carry
 // `name-twice`.
@@ -87,6 +89,11 @@ export type Disk = {
     roots: string[];
     /** The names of the open workspace's hubs, which a task's `hub` must be one of. */
     hubs: string[];
+    /**
+     * The name of the hub a task's `hub` names (the primary for none) and the tasks its
+     * `update_tasks` lists, which the task must be one of; null when there is no such hub.
+     */
+    tasks: (hub: string | undefined) => { hub: string; tasks: readonly string[] } | null;
 };
 
 /** One entry of the file as the page reads it. */
@@ -162,8 +169,13 @@ export function diskChecker(disk: Disk): DiskChecker {
         problem(entry): ScheduleProblem | null {
             const runs = entry.runs;
             if ('task' in runs) {
-                if (runs.hub === undefined || disk.hubs.includes(runs.hub)) return null;
-                return { word: 'hub-unknown', names: [runs.hub] };
+                if (runs.hub !== undefined && !disk.hubs.includes(runs.hub)) {
+                    return { word: 'hub-unknown', names: [runs.hub] };
+                }
+                const listed = disk.tasks(runs.hub);
+                if (listed === null || listed.tasks.includes(runs.task)) return null;
+                const names = [runs.task, listed.hub, listed.tasks.join(', ')];
+                return { word: 'update-task-unknown', names };
             }
             if ('prompt' in runs) {
                 const found = promptFolder(runs.folder, disk);

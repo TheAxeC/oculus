@@ -58,6 +58,8 @@ export type HpcSettings = Connection & {
     pollMin: number;
     quotaMin: number;
     prewarm: boolean;
+    /** The folders a finished job's log is looked for in, `slurm.log_dirs`. */
+    logDirs: readonly string[];
     words: PollWords;
     failures: readonly FailureRow[];
 };
@@ -120,6 +122,9 @@ const SQUEUE = `squeue --me -h -o '%i|%j|%P|%T|%M|%l|%D|%C|%b|%m|%Q|%S|%R'`;
 const SQUEUE_SECS = 12;
 const SACCT_SECS = 8;
 const SINFO_SECS = 5;
+
+/** Milliseconds the runner gives one poll's command when the options name no time limit. */
+const POLL_TIMEOUT_MS = 40000;
 
 /**
  * The one command of a poll. It prints the connected marker first, so an answer cut short says
@@ -300,7 +305,10 @@ export function connectionOf(settings: HpcSettings): Connection {
     };
 }
 
-/** The settings out of the options, the connection, the cluster and the cadences alone. */
+/**
+ * The settings out of the options alone: the connection, the cluster, the cadences, the folders of
+ * the log search, the poll's words and the failure rows.
+ */
 function settingsOf(options: HpcSettings): HpcSettings {
     return {
         ...connectionOf(options),
@@ -311,6 +319,7 @@ function settingsOf(options: HpcSettings): HpcSettings {
         pollMin: options.pollMin,
         quotaMin: options.quotaMin,
         prewarm: options.prewarm,
+        logDirs: options.logDirs,
         words: options.words,
         failures: options.failures
     };
@@ -327,7 +336,7 @@ export function watchHpc(out: ClusterOut, options: HpcOptions): HpcWatcher {
     /** Counts the changes of connection alone: a quota read does not depend on the window. */
     let hosts = 0;
     const runner = options.runner ?? run;
-    const timeout = options.timeoutMs ?? 40000;
+    const timeout = options.timeoutMs ?? POLL_TIMEOUT_MS;
     let quota: HpcPayload['quota'] = [];
     let rows: Rows = NO_ROWS;
     let times: Times = NO_TIMES;
@@ -527,7 +536,13 @@ export function watchHpc(out: ClusterOut, options: HpcOptions): HpcWatcher {
                 .map((job) => job.id);
             if (todo.length > 0) {
                 for (const id of todo) asked.add(id);
-                const found = await prewarmLogs(connectionOf(current), todo, current.days, runner);
+                const found = await prewarmLogs(
+                    connectionOf(current),
+                    todo,
+                    current.days,
+                    current.logDirs,
+                    runner
+                );
                 if (stopped() || began !== asking) {
                     // Dropped under an older host or window: the next prewarm asks about them.
                     for (const id of todo) asked.delete(id);
@@ -652,6 +667,12 @@ export function watchHpc(out: ClusterOut, options: HpcOptions): HpcWatcher {
                 asking += 1;
                 prewarmDue = false;
                 void refresh();
+            }
+            // Other folders resolve other paths, so what the prewarm found and asked about under
+            // the old ones is asked again.
+            if (next.logDirs.join('\n') !== before.logDirs.join('\n')) {
+                asked.clear();
+                options.logPaths?.clear();
             }
         },
         close(): void {

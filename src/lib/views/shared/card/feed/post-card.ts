@@ -16,11 +16,12 @@ export function postState(
 
 /**
  * The numbered file among `files` that the idea `file` was renamed to by Mark posted, which keeps
- * the name after its `xx-`, or null for a file that is no idea or was not renamed.
+ * the name after the hub's idea prefix `idea` (`linkedin_idea_prefix`), or null for a file that is
+ * no idea or was not renamed. An empty prefix marks no file as an idea.
  */
-export function promotedFile(file: string, files: readonly string[]): string | null {
-    if (!file.startsWith('xx-')) return null;
-    const rest = file.slice('xx-'.length);
+export function promotedFile(file: string, files: readonly string[], idea: string): string | null {
+    if (idea === '' || !file.startsWith(idea)) return null;
+    const rest = file.slice(idea.length);
     return files.find((one) => /^\d+-/.test(one) && one.replace(/^\d+-/, '') === rest) ?? null;
 }
 

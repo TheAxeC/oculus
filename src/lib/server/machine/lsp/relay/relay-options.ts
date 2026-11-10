@@ -11,7 +11,7 @@ import type { SchemaFeed } from '../schema-feed.ts';
 import type { Run } from '../adapters/pyright/interpreter.ts';
 import type { Spawn } from '../held/process.ts';
 import type { LibraryRules } from '../library/rules.ts';
-import type { Servers } from '../servers.ts';
+import type { Servers, ServersOptions } from '../servers.ts';
 import type { AppServersFeed } from './relay-apps.ts';
 
 /** What the relay needs of the machine. */
@@ -57,7 +57,17 @@ export type RelayOptions = {
     /** The LaTeX settings in force, read at each texlab start and each answer it is given. */
     latex: () => LatexBuilding;
     /** The extensions of Markdown files, without the dot, read at each start of that server. */
-    markdown?: () => string[];
+    markdown: () => string[];
+    /**
+     * The names of the folders `files.hidden_folders` gives, which a list of a root's Markdown
+     * files never enters.
+     */
+    hiddenFolders: () => readonly string[];
+    /**
+     * The indentation the editor's options give a language's documents in a root, by its real
+     * path, read at each answer of the TypeScript server's `formattingOptions`.
+     */
+    indent: ServersOptions['indent'];
     /** oculus's own environment, whose PATH finds a server's program; `process.env` by default. */
     env?: NodeJS.ProcessEnv;
     now?: () => number;

@@ -61,7 +61,10 @@ function blocks(html: string): string[] {
 
 /** The first token the Markdown server reads, when it is the front matter's. */
 async function headerToken(text: string): Promise<Token> {
-    const parse = markdownRequests(() => ['.md'])['markdown/parse'];
+    const parse = markdownRequests(
+        () => ['.md'],
+        () => []
+    )['markdown/parse'];
     const tokens = (await parse({ text }, {} as never)) as {
         type: string;
         hidden: boolean;

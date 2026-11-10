@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { sourcesFindings } from '../../../src/lib/data/index.ts';
-import { WALLPAPER_DIR, hubFolderIn } from '../../../src/lib/data/helpers/files/paths.ts';
+import { hubFolderIn } from '../../../src/lib/data/helpers/files/paths.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { HubPictures } from '../../../src/lib/server/content/images.ts';
 import {
@@ -20,6 +20,9 @@ import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const { config } = loadConfig(engineDir());
 const CATALOG = textCatalog(config);
+
+/** The wallpaper folder oculus ships, `wallpaper_dir` of config/defaults/sources.yml. */
+const WALLPAPER_DIR = String(config.wallpaper_dir);
 
 /** Two hubs, each with a wallpaper folder holding the named images. */
 function hubs(): HubPictures[] {

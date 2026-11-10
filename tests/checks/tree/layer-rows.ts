@@ -37,45 +37,46 @@
 // entries the map dropped; `data/helpers/files/nesting`, the reader of the `patterns:` map of
 // file-nesting.yml and the rule that nests a folder's names: the server words its findings from it
 // and the Files view nests the rows it draws through it, so the two cannot disagree about which
-// patterns were dropped; `data/helpers/run/tasks`, the server starting an update task and the tray
-// listing the four; `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one
-// entry of the schedules file and the runs a cron pattern has: the schedule dialog checks an entry
-// and previews a pattern before it sends, and the server reads the file and runs the timer by the
-// same rule, so the two cannot disagree on what runs; `data/helpers/run/marker`, the line a
-// project command's chain prints before each command, which the server writes into the chain's
-// line and the page reads the task's output by; `data/helpers/run/chain`, the chain a press of a
-// project command runs, which the server resolves a press and approves a save by and the command
-// form draws under its fields, so the lines the form shows are the lines its Save approves;
-// `data/helpers/run/limiter`, the sliding-window count of the app limits, which the page applies
-// to a frame's calls and the server to a host's, so the two count by one rule;
-// `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
-// types, which the source tab and the diff view resolve a tab's options through; and
-// `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
-// route refusing the same query when it arrives, from one rule and one argument list (`query`), and
-// the Search view drawing the replacement of each hit with the rules the server writes it by
-// (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the client's t()
-// fills a catalog string with and the one the server words every finding with before the snapshot
-// carries it; `data/helpers/editor/code-themes`, the code themes read from `code_themes.vscode`
-// and Shiki's bundled themes, each with its group, which the server words the finding for a bad
-// `code_theme:` from, the appearance store checks a saved pick against and the Settings view offers
-// on its Code theme row; `data/helpers/editor/start-theme`, the rule over the `theme` and
-// `app_theme` options that picks the theme a window starts on, which the appearance store reads
-// for the theme a page shows and the desktop host for the colours a window takes before its page
-// paints, so the two start on one theme; and `data/sources/config/rail`, the rule over the `rail:`
-// list of config/defaults/layout.yml, which the page drawing the rail, the Settings view editing it
-// and the server writing it and wording its findings all read, so the three agree on which entries
-// are pages; and the seven files of `data/sources/config/settings/`, the typed readers of single
+// patterns were dropped; `data/helpers/run/tasks`, the form of a task's name, which the schedule
+// dialog and the server hold a schedule's task to; `data/helpers/run/schedules` and
+// `data/helpers/run/cron`, the rule for one entry of the schedules file and the runs a cron
+// pattern has: the schedule dialog checks an entry and previews a pattern before it sends, and
+// the server reads the file and runs the timer by the same rule, so the two cannot disagree on
+// what runs; `data/helpers/run/marker`, the line a project command's chain prints before each
+// command, which the server writes into the chain's line and the page reads the task's output
+// by; `data/helpers/run/chain`, the chain a press of a project command runs, which the server
+// resolves a press and approves a save by and the command form draws under its fields, so the
+// lines the form shows are the lines its Save approves; `data/helpers/run/limiter`, the
+// sliding-window count of the app limits, which the page applies to a frame's calls and the
+// server to a host's, so the two count by one rule; `data/helpers/editor`, the order that
+// resolves a tab's editor options (`resolveEditor`) and their types, which the source tab and
+// the diff view resolve a tab's options through; and `data/helpers/search/**`, the Search view
+// refusing a query before it sends it and the search route refusing the same query when it arrives,
+// from one rule and one argument list (`query`), and the Search view drawing the replacement of
+// each hit with the rules the server writes it by (`replace`); and `data/helpers/finding-text`,
+// whose placeholder rule is the one the client's t() fills a catalog string with and the one the
+// server words every finding with before the snapshot carries it;
+// `data/helpers/editor/code-themes`, the code themes read from `code_themes.vscode` and Shiki's
+// bundled themes, each with its group, which the server words the finding for a bad `code_theme:`
+// from, the appearance store checks a saved pick against and the Settings view offers on its Code
+// theme row; `data/helpers/editor/start-theme`, the rule over the `theme` and `app_theme` options
+// that picks the theme a window starts on, which the appearance store reads for the theme a page
+// shows and the desktop host for the colours a window takes before its page paints, so the two
+// start on one theme; and `data/sources/config/rail`, the rule over the `rail:` list of
+// config/defaults/layout.yml, which the page drawing the rail, the Settings view editing it and the
+// server writing it and wording its findings all read, so the three agree on which entries are
+// pages; and the seven files of `data/sources/config/settings/`, the typed readers of single
 // settings, which the page reads by the rule the server reads by: the Files view
 // `files.confirm_delete`, so a delete asks only while the setting says so, and `lint.writing`, the
 // source editor the paint limit, the cards and the file view the `open.program_ext` map, the Usage
-// view the refresh cadence, the apps' frames their limits and the LaTeX tab what a build is set
-// by; and `data/sources/config/settings/rows/grammar`, `rows/links` and `rows/read`, the grammar
-// of a reader row, the addresses of the `links` rows and the readers of `links` and
-// `literature.prefer`, which the Literature page reads by the rule the server reads them by, so
-// the links it draws and the order its merge takes a paper's fields in are the server's; and
-// `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its
-// control, `min`, `max` and values), which the Settings view refuses a value by before it is sent
-// and the server's write and readers by after it, so the three agree; and
+// view the refresh cadence, the apps' frames their limits and the LaTeX tab what a build is set by;
+// and `data/sources/config/settings/rows/grammar`, `rows/links` and `rows/read`, the grammar of a
+// reader row, the addresses of the `links` rows and the readers of `links` and `literature.prefer`,
+// which the Literature page reads by the rule the server reads them by, so the links it draws and
+// the order its merge takes a paper's fields in are the server's; and
+// `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its control,
+// `min`, `max` and values), which the Settings view refuses a value by before it is sent and the
+// server's write and readers by after it, so the three agree; and
 // `data/sources/config/editor-options`, the reader of the editor's options and of a repository's
 // `.oculus/settings.yml` by that rule, which the source tab, the diff view and the Settings view's
 // lines under `editor.languages` read; and `data/sources/config/catalog/options`, the options
@@ -112,9 +113,9 @@
 // file browser's place vocabulary, the schema set, the write routes and the page's lookups each
 // read it, so the rule is written once.
 // `data/helpers/files/private-folders` holds the folders no YAML language server is given a file
-// of, the `secrets` folder of every hub and `~/.oculus`, which the relay refuses by and the page
-// refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads the keys of a vocabulary key
-// of vocab.yml, which the schema check and the entry forms read the same way.
+// of, the folder of secrets of every hub (its `secrets_dir`) and `~/.oculus`, which the relay
+// refuses by and the page refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads the
+// keys of a vocabulary key of vocab.yml, which the schema check and the entry forms read alike.
 // `data/shapes/config-save` is the Save of one Settings scope, its body, its changes and the
 // digest of the text it was read as, which the Settings view sends and the server writes and
 // checks the digest by, so the shape of a save and the hash are one rule on both sides.
@@ -131,7 +132,11 @@
 // rail, the Pillars view and the collections on the page, and the audit and the New project write
 // on the server, read them through it, so a board, a category and a role are one rule on both
 // sides. It holds the Focus board's sections of `focus.sections` too, which the Focus view draws
-// and the config check words its findings from.
+// and the config check words its findings from. `data/sources/config/sections/focus` holds
+// `focusNumber`, the reader of a number of `focus:` by its options entry: the Focus board, the
+// project boards and the rail read the horizons, the thresholds and the cadence through it, and
+// the config check words the finding of a refused one by the same entry, so a refused number reads
+// its default on the page as on the server.
 // `data/shapes/project-facts` holds the words a project's records are drawn by (a person's name
 // else key, a pillar's or a domain's title else key, a venue's short name else name, a vocabulary
 // word's label else the word, a code-deposit state's words): the project card, the boards' filter
@@ -360,6 +365,7 @@ export const ALLOWED: Record<string, string[]> = {
         'data/sources/config/catalog/options',
         'data/sources/config/catalog/value-rule',
         'data/sources/config/settings/hub-slice',
+        'data/sources/config/sections/focus',
         'data/places/hub-address',
         'data/prose/languages',
         'data/prose/literature',

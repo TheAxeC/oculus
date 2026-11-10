@@ -16,22 +16,19 @@
 // (`tagPattern`), and the hits on a line the index does not hold are left out (`taggedHits`).
 
 import type { HubNotes, NoteEntry, NoteLinkRow, SearchFile } from '../../../../data/model/index.ts';
-import {
-    NOTES_FOLDER,
-    inNotes,
-    isNote,
-    noteTitle
-} from '../../../../data/prose/markdown/note-names.ts';
+import { NOTES_SCOPE } from '../../../../data/helpers/search/query.ts';
+import { inNotes, isNote, noteTitle } from '../../../../data/prose/markdown/note-names.ts';
 
 /** A note of a hub: the hub's root key and the note's path inside its notes folder. */
 export type NotePlace = { root: string; path: string };
 
 /** The note a file of a served root is, or null for a file of no hub's notes folder. */
 export function noteOf(hubs: readonly HubNotes[], root: string, path: string): NotePlace | null {
-    const inside = inNotes(path);
-    if (inside === null || inside === '' || !isNote(inside)) return null;
     const hub = hubs.find((one) => one.root === root && one.state === 'ok');
-    return hub === undefined ? null : { root, path: inside };
+    if (hub === undefined) return null;
+    const inside = inNotes(path, hub.folder);
+    if (inside === null || inside === '' || !isNote(inside)) return null;
+    return { root, path: inside };
 }
 
 /** The notes of a hub, in the order the section lists them. */
@@ -171,5 +168,5 @@ export function taggedHits(
     });
 }
 
-/** The folder under every hub the search a tag press opens is scoped to. */
-export const TAGGED_UNDER = NOTES_FOLDER;
+/** The scope of the search of every root a tag press opens: the notes folder of each hub. */
+export const TAGGED_UNDER = NOTES_SCOPE;

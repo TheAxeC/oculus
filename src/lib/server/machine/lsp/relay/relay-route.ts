@@ -113,7 +113,8 @@ function oculusContext(state: RelayState): OculusContext {
 function linksContext(state: RelayState): LinksContext {
     return {
         ...oculusContext(state),
-        extensions: () => state.options.markdown?.() ?? ['md'],
+        extensions: () => state.options.markdown(),
+        hiddenFolders: () => state.options.hiddenFolders(),
         orphans: state.orphans,
         ending: state.ending,
         make: (page, entry, root, key) => makeHeld(state, page, entry, root, key),

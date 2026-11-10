@@ -8,10 +8,11 @@
 //
 // A row's buttons are drawn only under the pointer or the keyboard
 // (ui/display/ticker/Ticker.svelte's `reveal`), except the one the row exists for, which the
-// builder names by the row's id: a subtask's or a follow-up's done, and a task entry's `done`
-// status, since ticking a task off is what its row is for. Another entry's statuses are all left
-// under the pointer: the palette's `closes_deadline` says a status drops off the deadline radar,
-// which is not the same as the status a reader closes it with.
+// builder names by the row's id: a subtask's or a follow-up's done, and an entry's button of the
+// status carrying `task_done` in the words of the entry's hub, since ticking a task off is what
+// its row is for. The entry's other statuses are left under the pointer: `closes_deadline` says a
+// status drops off the deadline radar, which is not the same as the status a task is ticked off
+// with.
 //
 // A line whose buttons write an entry or a subtask of a collection file has them disabled, with the
 // words naming the file as their title, while a source tab holds unsaved text of that file. The
@@ -41,6 +42,8 @@ import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 import type { ClientState } from '$lib/state/client/context';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
 import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+import { vocabOf } from '$lib/state/shared/words/tones';
+import { tickedStatus } from '$lib/state/boards/focus';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** What the command center and the tasks section are each given by the board that draws them. */
@@ -102,12 +105,23 @@ export type Rows = {
 };
 
 /**
- * The button one row exists for: its done, or a task entry's `done` status. Any other row (a
- * project's snoozes, a lead, an event) keeps none.
+ * The button one row exists for: its done, or the button of `ticked`, the status carrying
+ * `task_done` in the words of the row's hub, compared as written. Any other row (a project's
+ * snoozes, a lead, an event) keeps none, and so does an entry's row when no status carries the
+ * flag.
  */
-export function keptAction(actions: TickerAction[] | undefined): string | undefined {
+export function keptAction(
+    actions: TickerAction[] | undefined,
+    ticked: string | undefined
+): string | undefined {
     if (actions === undefined) return undefined;
-    return actions.find((action) => action.id === 'done' || action.id === `${STATUS}done`)?.id;
+    const status = ticked === undefined ? undefined : `${STATUS}${ticked}`;
+    return actions.find((action) => action.id === 'done' || action.id === status)?.id;
+}
+
+/** The status a task is ticked off with in the words of a line's hub (`task_done`), or none. */
+function tickedOf(line: TickerItem): string | undefined {
+    return tickedStatus(vocabOf(line.root ?? ''));
 }
 
 /**
@@ -330,7 +344,7 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
             const identity = line.target === undefined ? String(at++) : targetId(line.target);
             const id = `${prefix}${identity}`;
             index[id] = line;
-            keeps[id] = keptAction(actions);
+            keeps[id] = keptAction(actions, tickedOf(line));
             const name = line.venue === undefined ? line.label : `${line.label} ${line.venue}`;
             return {
                 id,

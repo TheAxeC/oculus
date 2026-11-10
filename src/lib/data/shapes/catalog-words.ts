@@ -3,7 +3,7 @@
 // (data/shapes/catalog-files/) can import them: the controls, headings, sources and forms of the
 // options files, and the agents and flags of agents.yml.
 
-import type { AgentId } from '../model/index.ts';
+import { AGENT_IDS, type AgentId } from '../model/index.ts';
 
 /**
  * The controls an option or a family field is set with, which decide what a value may be. A
@@ -68,6 +68,7 @@ export const SOURCES = [
     'domains',
     'clusters',
     'people',
+    'agents',
     'models',
     'languages',
     'arrangements',
@@ -114,14 +115,21 @@ export const FORMS = [
     'bundle_id',
     'https_address',
     'https_origin',
-    'row_key'
+    'row_key',
+    'file_name',
+    'task_name',
+    'inner_path',
+    'folder_glob',
+    'absolute_folder',
+    'partition',
+    'cluster_folder'
 ] as const;
 
 /** One of the words of FORMS. */
 export type Form = (typeof FORMS)[number];
 
 /** The agents the file may name, in the order the composer offers them. */
-export const AGENTS: AgentId[] = ['claude', 'codex'];
+export const AGENTS: AgentId[] = [...AGENT_IDS];
 
 /**
  * The flags each agent's pickers may pass, from `claude --help` and `codex --help`. A picker that

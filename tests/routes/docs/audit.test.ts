@@ -2,7 +2,8 @@
 // its `.oculus/config.yml`, and to none it does not name: the files a project must hold, the
 // headings a file must hold while a manifest key has a value and the folders a project at a stage
 // is kept under. Each row is a hub in a scratch folder holding the setting and the projects' files,
-// scanned with the setting read from that file. A project of the tier `personal`, which
+// scanned with the setting read from that file (audit-fixture.ts); the open markers are
+// audit-markers.test.ts's. A project of the tier `personal`, which
 // `research_audit.skip_tiers` names, is held to none of them, and a part of the setting that is not
 // of its shape is a finding of the hub while the rest of the setting runs.
 //
@@ -16,8 +17,6 @@
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse, stringify } from 'yaml';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import type {
     AuditFinding,
     Collection,
@@ -29,37 +28,14 @@ import type {
     CvWords,
     WebsiteKind
 } from '../../../src/lib/data/sources/config/settings/files.ts';
-import { auditFindings, hubAuditSetting } from '../../../src/lib/server/content/audit/scan.ts';
 import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
 import type { WebsiteCheck } from '../../../src/lib/server/content/audit/publications.ts';
 import { websiteFiles } from '../../../src/lib/server/content/audit/website/files.ts';
 import { readSite } from '../../../src/lib/server/content/audit/website/site.ts';
-import { holdersOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { paperSettings } from '../../fixtures/hubs/website-hub.ts';
-
-const { config } = loadConfig(engineDir());
-const catalog = textCatalog(config);
-
-/** A hub in a scratch folder: its `.oculus/config.yml` holding `audit`, and the files given. */
-function hubOf(audit: string, files: Record<string, string> = {}, folders: string[] = []): string {
-    const setting: Record<string, string> = audit === '' ? {} : { '.oculus/config.yml': audit };
-    return plantScratch('oculus-audit-', { ...setting, ...files }, folders);
-}
-
-/** A project of the hub at a folder, of the tier research unless `over` says otherwise. */
-function projectAt(folder: string, over: Partial<Project> = {}): Project {
-    return fixtureProject({
-        id: `hub:${folder}`,
-        root: 'hub',
-        tier: 'research',
-        title: `Title of ${folder}`,
-        folder,
-        file: `${folder}/project.yml`,
-        ...over
-    });
-}
+import { catalog, config, findingsOf, hubOf, projectAt, said } from './audit-fixture.ts';
 
 /** A project read from a workspace repository in its own scratch folder holding the files given. */
 function repositoryProject(files: Record<string, string>, folders: string[] = []): Project {
@@ -74,38 +50,6 @@ function repositoryProject(files: Record<string, string>, folders: string[] = []
         file: '.oculus/project.yml',
         workspaceFolder: { root: folder, dir: folder }
     });
-}
-
-/**
- * The audit of a hub over its projects, with the setting its own settings file holds, the website
- * check given (none by default) and the user's keys.
- */
-function findingsOf(
-    hub: string,
-    projects: Project[],
-    primary = true,
-    website: WebsiteCheck | null = null,
-    self: ReadonlySet<string> = new Set<string>(),
-    collections: Collection[] = []
-): AuditFinding[] {
-    return auditFindings({
-        hub,
-        root: 'hub',
-        primary,
-        held: holdersOf(projects),
-        self,
-        projects,
-        collections,
-        rules: auditRules(config),
-        setting: hubAuditSetting(hub),
-        website,
-        catalog
-    });
-}
-
-/** The sentence of a finding, worded from the catalog as the audit words it. */
-function said(key: string, ...args: string[]): string {
-    return findingText(catalog, key, ...args);
 }
 
 /** The scopes of the findings saying one sentence, sorted. */

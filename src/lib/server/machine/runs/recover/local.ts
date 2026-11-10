@@ -132,17 +132,19 @@ export type LocalPlace = { hub: string; key: string; folder: string };
 
 /**
  * The dataset's place on this Mac, or null when the hub's name or the key is unusable or `path:`
- * is not under `~/data`: nothing is written or started for such a set.
+ * is not under `~/<dataDir>`, the folder of `recover.data_dir`: nothing is written or started for
+ * such a set.
  */
 export function localPlace(
     home: string,
     hub: string,
     key: string,
-    path: string | undefined
+    path: string | undefined,
+    dataDir: string
 ): LocalPlace | null {
-    const part = dataPart(path);
+    const part = dataPart(path, dataDir);
     if (!validName(hub) || !validName(key) || part === null) return null;
-    return { hub, key, folder: join(home, 'data', part) };
+    return { hub, key, folder: join(home, dataDir, part) };
 }
 
 /** The files Recover keeps for a dataset under `~/.oculus/recover/<hub>/`. */

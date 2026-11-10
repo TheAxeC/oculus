@@ -69,8 +69,11 @@ import {
 export type ViewerHooks = {
     /** A reverse search: the page (from 1) and the point in PDF points from the page's top left. */
     jump: (page: number, x: number, y: number) => void;
-    /** Which click makes a reverse search: Cmd or Ctrl and a click, or a double click. */
-    reverse: () => 'ctrl_click' | 'double_click';
+    /**
+     * Which click makes a reverse search: Cmd or Ctrl and a click, or a double click; null while
+     * the LaTeX settings are not loaded, when no click makes one.
+     */
+    reverse: () => 'ctrl_click' | 'double_click' | null;
     /** The words the viewer draws itself. */
     words: {
         loading: string;

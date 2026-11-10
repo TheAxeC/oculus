@@ -6,8 +6,9 @@
     // first main.
     //
     // A main file is content rather than configuration, so the rows are whatever the folder holds:
-    // server/content/latex.ts answers with every `.tex` directly under `manuscript/` that declares
-    // a document class, and a project whose folder holds none draws no panel at all.
+    // server/content/latex.ts answers with every `.tex` directly under the folder of the `.tex` row
+    // of the hub's `project_docs` that declares a document class, and a project whose folder holds
+    // none draws no panel at all.
     //
     // Over a wallpaper the panel is read off a `Surface`.
 

@@ -7,23 +7,23 @@
 import { basename, dirname, join, sep } from 'node:path';
 import { MANIFEST, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import type { PortfolioConfig, RepositoryRoot } from '../../../../data/model/index.ts';
-import { DECK_FILE, PROJECT_DECK } from '../../../../data/sources/deck/read.ts';
-import { audited } from './audited.ts';
+import { DECK_FILE } from '../../../../data/sources/deck/read.ts';
+import { audited, folderAt, type WatchScope } from './audited.ts';
 
 /**
  * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
  * file, every `project.yml` and `present.yml` under a scan tier, the Markdown files inside a
- * project's `present/` folder, the `.yml` and `.md` files of the portfolio deck's folder, and under
- * a scan tier the paths the audit reads (`paths`, audited.ts). A `.yml` kept beside one of them (a
- * note next to a registry, a draft, a second file in a project folder) changes nothing the snapshot
- * holds, so an event for it is not a rebuild. The set is derived from the same config the build was
- * made from, which is why the predicate is built again at every rebuild rather than held as a
- * constant.
+ * project's deck folder (the hub's `deck_dir`, in the layout of `config`), the `.yml` and `.md`
+ * files of the portfolio deck's folder, and under a scan tier the paths the audit reads (`scope`,
+ * audited.ts). A `.yml` kept beside one of them (a note next to a registry, a draft, a second file
+ * in a project folder) changes nothing the snapshot holds, so an event for it is not a rebuild. The
+ * set is derived from the same config the build was made from, which is why the predicate is built
+ * again at every rebuild rather than held as a constant.
  */
 export function namedByConfig(
     hub: string,
     config: PortfolioConfig,
-    paths: readonly string[][],
+    scope: WatchScope,
     roots: RepositoryRoot[] = []
 ): (path: string) => boolean {
     const files = new Set<string>();
@@ -40,6 +40,7 @@ export function namedByConfig(
     const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
     const deck = config.portfolioDeck === null ? null : join(hub, config.portfolioDeck) + sep;
     const perProject = [MANIFEST, DECK_FILE];
+    const projectDeck = config.layout.deckDir.split('/').filter((part) => part !== '');
     return (path: string): boolean => {
         if (files.has(path)) return true;
         if (deck !== null && path.startsWith(deck)) return /\.(yml|md)$/.test(path);
@@ -47,7 +48,13 @@ export function namedByConfig(
         if (tier === undefined) return false;
         if (perProject.includes(basename(path))) return true;
         const below = path.slice(tier.length).split(sep);
-        if (path.endsWith('.md') && below.slice(0, -1).includes(PROJECT_DECK)) return true;
+        if (
+            path.endsWith('.md') &&
+            projectDeck.length > 0 &&
+            folderAt(below.slice(0, -1), [projectDeck]) >= 0
+        ) {
+            return true;
+        }
         // The audit reads a project's documents and folders off the disk, so an event on one of
         // them under a tier is a rebuild like a changed manifest; the path is read tier-relative,
         // so a folder of the hub above the tier never counts as one of a project's.
@@ -56,7 +63,7 @@ export function namedByConfig(
                 .slice(tier.length)
                 .split(sep)
                 .filter((part) => part !== ''),
-            paths
+            scope
         );
     };
 }

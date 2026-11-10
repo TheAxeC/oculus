@@ -70,14 +70,28 @@ import { splitSlides, type RawSlide } from './split.ts';
 /** The file that makes a folder a deck. */
 export const DECK_FILE = 'present.yml';
 
-/** The folder a project keeps its deck in; its name is then the project's. */
-export const PROJECT_DECK = 'present';
+/**
+ * The name of a deck folder: for a folder that ends with the deck folder `deck` (the hub's
+ * `deck_dir`), the name of the folder that holds it, which is the project's; else its own name.
+ */
+function deckName(path: string, deck: string): string {
+    const parts = path.split(/[\\/]/).filter((one) => one !== '');
+    const tail = deck.split('/').filter((one) => one !== '');
+    const at = parts.length - tail.length;
+    const ends = tail.length > 0 && at > 0 && tail.every((one, index) => parts[at + index] === one);
+    return ends ? parts[at - 1] : basename(path);
+}
 
 /** What the reader is given besides a folder. */
 export type DeckContext = {
     /** The hub's folder, and the key its files are served under. */
     hub: DeckRoot;
     projects: DeckProject[];
+    /**
+     * The folder a project keeps its deck in, against the project folder, the hub's `deck_dir`;
+     * a deck there is named by its project's folder.
+     */
+    deck: string;
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
     catalog: TextCatalog;
@@ -247,7 +261,7 @@ export function createReader(context: DeckContext): DeckReader {
                 ? context.hub
                 : { key: project.workspaceFolder.root, dir: project.workspaceFolder.dir };
         const folder = project.workspaceFolder === undefined ? project.folder : '';
-        const dir = realOf(join(root.dir, folder, PROJECT_DECK));
+        const dir = realOf(join(root.dir, folder, context.deck));
         if (dir !== null) projectDirs.set(dir, { project, root });
     }
 
@@ -261,7 +275,7 @@ export function createReader(context: DeckContext): DeckReader {
         const held = docs.get(dir);
         if (held !== undefined) return held;
         const base = realOf(root.dir) ?? root.dir;
-        const name = basename(dir) === PROJECT_DECK ? basename(dirname(dir)) : basename(dir);
+        const name = deckName(dir, context.deck);
         const file = join(dir, DECK_FILE);
         const raise = raiseFor(file);
         const doc: Doc = {
@@ -715,7 +729,7 @@ export function createReader(context: DeckContext): DeckReader {
             root: root.key,
             hub: context.hub.key,
             path,
-            name: basename(path) === PROJECT_DECK ? basename(dirname(path)) : basename(path),
+            name: deckName(path, context.deck),
             title: basename(path),
             state,
             slides: [],

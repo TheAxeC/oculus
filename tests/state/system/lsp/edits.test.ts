@@ -138,7 +138,7 @@ describe('the edit a language server asks for', () => {
 
     it("refuses a file under the hub's secrets folder and one under the home folder's .oculus before any post (case 30a)", async () => {
         const roots = [
-            { key: 'hub', dir: '/work/hub', hub: true },
+            { key: 'hub', dir: '/work/hub', hub: true, secrets: 'secrets' },
             { key: 'home', dir: '/home/me' }
         ];
         const open = page({

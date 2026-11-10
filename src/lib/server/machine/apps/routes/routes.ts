@@ -34,6 +34,7 @@ import { appById, type AppsHeld } from '../read/held.ts';
 import type { WalkLimits } from '../read/record.ts';
 import { checkOpen, diskFs, type OpenFs } from '../reach/open.ts';
 import { closedToApps } from '../reach/private.ts';
+import { withSecrets } from '../../../../data/helpers/files/private-folders.ts';
 import type { FsContext } from '../reach/fs.ts';
 import type { AppSecrets } from '../secrets/secrets.ts';
 import { readStore } from '../store/store.ts';
@@ -94,6 +95,8 @@ export type AppsRouteServer = {
     local: LocalConfig;
     /** The open workspace, whose folders are the roots an app reaches. */
     workspace: { open(): OpenWorkspace };
+    /** The folder of secrets of the hub at a folder, its `secrets_dir`, which no app reaches. */
+    secretsDir: (dir: string) => string;
     /** The home folder; the machine's own when absent. */
     home?: string;
 };
@@ -119,7 +122,7 @@ export function routeOptions(
                 home: server.home ?? homedir(),
                 local: server.local,
                 perOculus: perOculus(server.workspace.open().primaryDir, config()),
-                roots: server.workspace.open().roots
+                roots: withSecrets(server.workspace.open().roots, server.secretsDir)
             }),
         text: () => textCatalog(config()),
         fs: diskFs,

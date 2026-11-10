@@ -99,6 +99,8 @@ export function empty(error: string | null = null): GitState {
         log: [],
         branches: [],
         worktrees: [],
+        // The folder is set by a read that reaches the repository's worktrees.
+        worktreesDir: '',
         ignoresWorktrees: false,
         top: '',
         // The watcher marks the roots of the workspace when it publishes; a read alone says nothing
@@ -126,11 +128,14 @@ export function empty(error: string | null = null): GitState {
  * refused for a reason other than holding no repository, and a repository where a later read fails
  * all keep `repository` true and say why in `error`, so neither a slow mount nor an unreadable
  * config makes a repository disappear. A caller renders every workspace without a special case.
+ * `worktreesDir` is the folder `git.worktrees_dir` names, which the state carries and whose ignore
+ * rule it reads.
  */
 export async function readState(
     credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
+    worktreesDir: string,
     timeout: number = TIMEOUT_MS
 ): Promise<StateRead> {
     const ms = milliseconds(timeout);
@@ -145,7 +150,7 @@ export async function readState(
             seenBy(await runRecords(credentials, root, args, ms, visit))
     });
     try {
-        const found = await state(root, text, git);
+        const found = await state(root, text, worktreesDir, git);
         return { state: found, finished };
     } catch (error) {
         return { state: empty(short(error)), finished };
@@ -221,7 +226,12 @@ export function fetchFailures(): FetchFailures {
 
 // ---------------------------------------------------------------- one root
 
-async function state(root: string, text: Record<string, string>, git: Git): Promise<GitState> {
+async function state(
+    root: string,
+    text: Record<string, string>,
+    worktreesDir: string,
+    git: Git
+): Promise<GitState> {
     // A path with nothing at it is the one root git is never asked about. A path that is there and
     // is no directory, and one nothing may enter, are handed to git like any other, so the reader
     // gets git's own reason for them instead of being told the folder is gone.
@@ -274,7 +284,8 @@ async function state(root: string, text: Record<string, string>, git: Git): Prom
     found.stashes = listed.stash ? await stashes(git) : [];
     found.remotes = found.upstream || found.detached ? [] : await remotes(git);
     found.worktrees = await worktreesOf(root, git);
-    found.ignoresWorktrees = ignored(root);
+    found.worktreesDir = worktreesDir;
+    found.ignoresWorktrees = ignored(root, worktreesDir);
     sequenceOf(root, gitDir.text.trim(), found);
     // Every untracked file is listed on its own line, as VS Code's status read lists them, so a new
     // folder's files are rows of their own; a nested repository is listed as its folder alone. The
@@ -452,12 +463,12 @@ function realpath(root: string): string {
 }
 
 /**
- * Whether the repository keeps its worktrees folder out of its own history. A repository with no
- * .gitignore, or one that cannot be read, does not, which is what the view warns about.
+ * Whether the repository keeps its worktrees folder `dir` out of its own history. A repository
+ * with no .gitignore, or one that cannot be read, does not, which is what the view warns about.
  */
-function ignored(root: string): boolean {
+function ignored(root: string, dir: string): boolean {
     try {
-        return ignoresWorktrees(readFileSync(join(root, '.gitignore'), 'utf8'));
+        return ignoresWorktrees(readFileSync(join(root, '.gitignore'), 'utf8'), dir);
     } catch {
         return false;
     }

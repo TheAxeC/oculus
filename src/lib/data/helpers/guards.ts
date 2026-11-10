@@ -91,11 +91,6 @@ export function focusBlock(config: Record<string, unknown>): Record<string, unkn
     return isMap(block) ? block : {};
 }
 
-/** A finite number under `focus:` of the merged config, or null when absent or invalid. */
-export function focusSetting(config: Record<string, unknown>, key: string): number | null {
-    return numericSetting(focusBlock(config), key);
-}
-
 /**
  * Whether two values are equal with the keys of every map in the same order. A deep equality
  * alone calls `{ a, b }` and `{ b, a }` equal, and a write that only reorders a map is a change to

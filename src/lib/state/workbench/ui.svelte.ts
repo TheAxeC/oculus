@@ -149,19 +149,22 @@ export type UiStore = CloseHooks & {
     crt: () => boolean;
     wallpaper: () => boolean;
     icons: () => boolean;
-    brackets: () => boolean;
-    monospace: () => boolean;
+    /** The two rice toggles, each null while no look is installed. */
+    brackets: () => boolean | null;
+    monospace: () => boolean | null;
     /** The text size, or null at one, the size of the theme's own tokens. */
     textScale: () => number | null;
     /** The terminal grid's size in CSS pixels, or null where it follows the page's text size. */
     terminalFont: () => number | null;
     /** The transcript's size in CSS pixels, or null where it follows `--fs-sm`. */
     transcriptFont: () => number | null;
-    codeTheme: () => string;
+    /** The code theme the editors paint, or null while no config is installed. */
+    codeTheme: () => string | null;
     /** A value that changes with the editors' look: the theme, the text size and the code theme. */
     editorLook: () => string;
-    statusHidden: () => string[];
-    statusQuiet: () => boolean;
+    /** The status bar's hidden items and Do Not Disturb, each null while no look is installed. */
+    statusHidden: () => string[] | null;
+    statusQuiet: () => boolean | null;
     /** The repository last chosen in the status bar's repository item, by its root, or null. */
     statusRepository: () => string | null;
     /** The suggest list's description panel as just toggled, or null to read the option. */
@@ -313,7 +316,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
 
     /** The name of the theme the `theme` option names, as the page draws it. */
     function chosenTheme(): string {
-        return known(held('theme', configuredLook().theme));
+        return known(held('theme', configuredLook()?.theme));
     }
 
     function theme(): string {
@@ -331,8 +334,9 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         };
     }
 
+    /** Whether the CRT overlay is drawn: only while an installed look, or a write, turns it on. */
     function crt(): boolean {
-        return held('crt.on', configuredLook().crt);
+        return held('crt.on', configuredLook()?.crt) === true;
     }
 
     /**
@@ -342,26 +346,29 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
      * wallpaper does not show under hides it without changing the option.
      */
     function wallpaper(): boolean {
-        const show = held('wallpaper.show', configuredLook().wallpaper);
+        const show = held('wallpaper.show', configuredLook()?.wallpaper);
         if (show === 'shown') return true;
         if (show === 'hidden') return false;
         return wallpaperOnTheme(chosenTheme(), deps.offers(), deps.inApp);
     }
 
+    /** Whether the terminal themes keep their icons: only while the option turns them on. */
     function icons(): boolean {
-        return held('rice.icons', configuredLook().icons);
+        return held('rice.icons', configuredLook()?.icons) === true;
     }
 
-    function brackets(): boolean {
-        return held('rice.brackets', configuredLook().brackets);
+    function brackets(): boolean | null {
+        return held('rice.brackets', configuredLook()?.brackets) ?? null;
     }
 
-    function monospace(): boolean {
-        return held('rice.monospace', configuredLook().monospace);
+    function monospace(): boolean | null {
+        return held('rice.monospace', configuredLook()?.monospace) ?? null;
     }
 
     function textScale(): number | null {
-        const size = boundedTextSize(held('text_size', configuredLook().textSize));
+        const configured = held('text_size', configuredLook()?.textSize);
+        if (configured === undefined) return null;
+        const size = boundedTextSize(configured);
         return size === 1 ? null : size;
     }
 
@@ -373,25 +380,25 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         return held('terminal.transcript_font_px', transcriptFontPx());
     }
 
-    function codeTheme(): string {
+    function codeTheme(): string | null {
         return held('code_theme', codeThemeDefault());
     }
 
     function editorLook(): string {
-        return `${theme()} ${String(textScale() ?? 1)} ${codeTheme()}`;
+        return `${theme()} ${String(textScale() ?? 1)} ${codeTheme() ?? ''}`;
     }
 
-    function statusHidden(): string[] {
-        return held('status_bar.hidden', configuredLook().statusHidden);
+    function statusHidden(): string[] | null {
+        return held('status_bar.hidden', configuredLook()?.statusHidden) ?? null;
     }
 
-    function statusQuiet(): boolean {
-        return held('status_bar.quiet', configuredLook().statusQuiet);
+    function statusQuiet(): boolean | null {
+        return held('status_bar.quiet', configuredLook()?.statusQuiet) ?? null;
     }
 
     function statusRepository(): string | null {
-        const root = held('status_bar.repository', configuredLook().statusRepository);
-        return root === '' ? null : root;
+        const root = held('status_bar.repository', configuredLook()?.statusRepository);
+        return root === undefined || root === '' ? null : root;
     }
 
     /**
@@ -467,6 +474,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
     function setStatusHidden(item: string, hidden: boolean): void {
         if (item === '') return;
         const shown = statusHidden();
+        if (shown === null) return;
         const others = shown.filter((one) => one !== item);
         void writeOption(BEHAVIOR, 'status_bar.hidden', hidden ? [...others, item] : others, shown);
     }

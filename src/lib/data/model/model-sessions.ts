@@ -536,6 +536,12 @@ export type GitState = {
     inWorkspace: boolean;
     /** Every worktree of the repository, the checkout itself first. */
     worktrees: GitWorktree[];
+    /**
+     * The folder, relative to the repository, that holds the worktrees oculus makes: the
+     * `git.worktrees_dir` the read was made under, and empty for a read that did not reach the
+     * repository's worktrees.
+     */
+    worktreesDir: string;
     /** Whether the repository's .gitignore keeps the worktrees folder out of its history. */
     ignoresWorktrees: boolean;
     /**
@@ -611,14 +617,16 @@ export type NoteEntry = {
 
 /**
  * One hub's notes, as GET /api/fs?notes=1 answers them: the hub's workspace name, whether it is the
- * primary, and its notes folder, which is read (`ok`), not there yet (`none`), a link out of the
- * hub (`refused`) or unreadable (`unreadable`, with the reason). The entries are in the order the
- * Notes section lists them, each folder's together: its folders by name, then its notes the order
- * file does not name, newest first, then the ones it names in its order, then its other files.
+ * primary, and its notes folder, its path under the hub (`folder`, the hub's `notes_dir`), which is
+ * read (`ok`), not there yet (`none`), a link out of the hub (`refused`) or unreadable
+ * (`unreadable`, with the reason). The entries are in the order the Notes section lists them, each
+ * folder's together: its folders by name, then its notes the order file does not name, newest
+ * first, then the ones it names in its order, then its other files.
  */
 export type HubNotes = {
     root: string;
     primary: boolean;
+    folder: string;
     state: 'ok' | 'none' | 'refused' | 'unreadable';
     error: string;
     entries: NoteEntry[];

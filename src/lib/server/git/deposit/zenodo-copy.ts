@@ -1,5 +1,5 @@
-// Layer 2, server. The files a Zenodo deposit uploads, as one zip: the project's `code/` staged by
-// git as the GitHub mirror is (deposit-tree.ts), in a folder of its own under the OS temp folder
+// Layer 2, server. The files a Zenodo deposit uploads, as one zip: the project's code folder staged
+// by git as the GitHub mirror is (deposit-tree.ts), in a folder of its own under the OS temp folder
 // with its own `git init`, removed when the files are read, so a project with no mirror needs no
 // Adopt. The deposit scan's findings refuse it as they refuse a commit (deposit-scan.ts).
 //
@@ -14,8 +14,8 @@
 // the forms above that does not inflate), and two paths that become one refuse the whole upload,
 // each naming its file, before any request is sent.
 //
-// The zip is written in memory with fflate; its entries are the paths relative to `code/` with no
-// top folder, as the GitHub repository holds them.
+// The zip is written in memory with fflate; its entries are the paths relative to the code folder
+// with no top folder, as the GitHub repository holds them.
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -43,7 +43,7 @@ const UNREAD = ['.bz2', '.xz', '.7z', '.rar', '.zst'];
 /** A row of `code_availability.anonymize` as the copy applies it. */
 export type Term = { term: string; as: string };
 
-/** The files of the copy, each its path relative to `code/` and its bytes, in path order. */
+/** The files of the copy, each its path against the code folder and its bytes, in path order. */
 export type Files = [string, Uint8Array][];
 
 /** A refusal of the copy, worded. */
@@ -84,12 +84,15 @@ function escaped(term: string): string {
 }
 
 /**
- * The files git stages out of `code` (deposit-tree.ts), read from a folder under the OS temp folder
- * that is removed before the answer; `where` points a command at that folder. A scan finding
- * refuses them, naming each file.
+ * The files git stages out of `code` with the hub's default patterns `ignored` (deposit-tree.ts),
+ * read from a folder under the OS temp folder that is removed before the answer; `where` points a
+ * command at that folder. A scan finding refuses them, naming each file, the README `readme`
+ * among them when the files lack it.
  */
 export async function stagedFiles(
     code: string,
+    ignored: readonly string[],
+    readme: string | null,
     where: (dir: string, mirrors: string) => Where,
     text: Record<string, string>
 ): Promise<Files | Refused> {
@@ -101,11 +104,11 @@ export async function stagedFiles(
         const at = where(dir, root);
         const started = await initMirror(at);
         if (!started.ok) return { refused: started };
-        const { staged, listed } = await stageTree(code, at);
+        const { staged, listed } = await stageTree(code, ignored, at);
         if (!staged.ok) return { refused: staged };
         if (!listed.ok) return { refused: listed };
         const paths = pathsOf(listed.output).sort();
-        const found = [...new Set(scan(dir, paths).map((one) => one.path))];
+        const found = [...new Set(scan(dir, paths, readme).map((one) => one.path))];
         if (found.length > 0) {
             return { refused: failed(words(text, 'server.zenodo.scan_found', found.join(', '))) };
         }

@@ -414,9 +414,12 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         deps.notify(message, 'error', actions);
     }
 
-    /** Clean a main file after a build when `latex.auto_clean` says the outcome calls for it. */
+    /**
+     * Clean a main file after a build when `latex.auto_clean` says the outcome calls for it, and
+     * not while the page has no settings.
+     */
     function autoClean(entry: Entry, status: 'succeeded' | 'failed'): void {
-        const rule = deps.settings()?.autoClean ?? 'never';
+        const rule = deps.settings()?.autoClean;
         const wanted =
             rule === 'on_built' ||
             (rule === 'on_failed' && status === 'failed') ||
@@ -750,10 +753,14 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         return true;
     }
 
-    /** Build after a change on disk, at most once per `latex.auto_build_interval_ms`. */
+    /**
+     * Build after a change on disk, at most once per `latex.auto_build_interval_ms`, and not while
+     * the page has no settings.
+     */
     function schedule(entry: Entry): void {
         if (entry.timer !== null) return;
-        const interval = deps.settings()?.autoBuildIntervalMs ?? 0;
+        const interval = deps.settings()?.autoBuildIntervalMs;
+        if (interval === undefined) return;
         const wait = Math.max(0, entry.started + interval - now());
         entry.timer = setTimeout(() => {
             entry.timer = null;

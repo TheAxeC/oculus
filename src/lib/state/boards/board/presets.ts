@@ -21,7 +21,7 @@ import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/
 import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
 import { boardsGroup } from '../../../data/sources/config/rail.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
+import { text as str } from '../../../data/helpers/guards.ts';
 import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 import { vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
@@ -37,6 +37,7 @@ import {
     type BoardRule,
     type TakeWords
 } from '../../../data/shapes/boards/takes.ts';
+import { noJif } from '../../sources/registries/venues.ts';
 import type { TierMark } from '../structure/lines.ts';
 import type { WaitedOn } from '../waiting.ts';
 
@@ -255,8 +256,11 @@ export type BoardStats = {
     dated: number;
     /** How many wait on someone or something: their `waiting` is not empty. */
     waiting: number;
-    /** `venue_conc_warn` under `focus:` of config/defaults/behavior.yml. */
-    warnAt: number;
+    /**
+     * `venue_conc_warn` under `focus:` of config/defaults/behavior.yml, null before the page holds
+     * the settings, when no venue warns.
+     */
+    warnAt: number | null;
     /** The venues that many projects at a stage flagged `live` aim at, most aimed at first. */
     venues: VenueCount[];
 };
@@ -282,9 +286,9 @@ export type QuickFilters = {
     mine?: boolean;
     /**
      * `stale_lag_days` under `focus:` of config/defaults/behavior.yml: how far behind counts as
-     * behind.
+     * behind; null before the page holds the settings, when no item is behind.
      */
-    staleLag?: number;
+    staleLag?: number | null;
 };
 
 /**
@@ -358,17 +362,6 @@ export const SESSIONS_VALUES = [SESSIONS_LIVE, SESSIONS_RECENT, SESSIONS_NONE];
 /** The fixed values of the facets that have them, in the order their menu lists them. */
 export const CODE_VALUES = ['deposited', 'review-anon', 'none', NONE];
 export const REPRODUCED_VALUES = ['1', '0'];
-
-/**
- * A number under `focus:` of the merged config (config/defaults/behavior.yml), and the fallback
- * behavior.yml's own comment names for one that is absent or no finite number.
- */
-export function setting(config: Record<string, unknown>, key: string, fallback: number): number {
-    return focusSetting(config, key) ?? fallback;
-}
-
-/** A JIF the registry wrote as nothing at all; the venue line leaves it out. */
-const NO_JIF = ['', '-', 'none'];
 
 /**
  * How near a deadline has to be for the badge to count days rather than show the date. It remains
@@ -668,14 +661,15 @@ export function mapPreset(
 }
 
 /**
- * The venue as the card writes it: name, quartile and JIF, in that order, joined by a bar. The cost
- * is drawn on the Venues view's card, and the board's search reads it beside this text.
+ * The venue as the card writes it: name, quartile and JIF, in that order, joined by a bar, the JIF
+ * left out when it names none in `words`, the words of the venue's hub (`noJif`). The cost is
+ * drawn on the Venues view's card, and the board's search reads it beside this text.
  */
-export function venueText(venue: Venue): string {
+export function venueText(venue: Venue, words: Record<string, unknown>): string {
     const parts = [venue.name];
     if (venue.quartile !== undefined && venue.quartile !== '') parts.push(venue.quartile);
     const jif = (venue.jif ?? '').trim();
-    if (!NO_JIF.includes(jif.toLowerCase())) parts.push(`JIF ${jif}`);
+    if (!noJif(jif, words)) parts.push(`JIF ${jif}`);
     return parts.filter((part) => part !== '').join(' | ');
 }
 

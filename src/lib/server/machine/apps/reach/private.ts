@@ -1,13 +1,14 @@
 // Layer 2, server. The folders and files that hold this machine's own state or secrets, which no
-// app reaches whatever folder of the workspace covers them: `~/.oculus`, the `secrets` folder of
-// each hub (`privateFolders`), the machine's `local.yml` files, and each state file or folder the
-// machine's values or the config's `bookmarks`, `schedules` and `apps_dir` place elsewhere, so a
-// folder over one of them never lets an app read a token or a key. The set is one function of those
-// values and the workspace's folders, taken as real paths as the disk spells them (a path that does
-// not exist yet stays as written). The reader of a manifest's `files` refuses an entry in it, and
-// `locate` and the file listing answer `closed` for a real path in it.
+// app reaches whatever folder of the workspace covers them: `~/.oculus`, the folder of secrets of
+// each hub (`privateFolders`, each hub's `secrets_dir`, which the roots carry), the machine's
+// `local.yml` files, and each state file or folder the machine's values or the config's
+// `bookmarks`, `schedules` and `apps_dir` place elsewhere, so a folder over one of them never lets
+// an app read a token or a key. The set is one function of those values and the workspace's
+// folders, taken as real paths as the disk spells them (a path that does not exist yet stays as
+// written). The reader of a manifest's `files` refuses an entry in it, and `locate` and the file
+// listing answer `closed` for a real path in it.
 
-import { hubDirs, privateFolders } from '../../../../data/helpers/files/private-folders.ts';
+import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
 import type { LocalConfig } from '../../../../data/sources/config.ts';
 import { realPath } from '../../../core/paths.ts';
 import { expandHome, type Root } from '../../../files/workspace/folders.ts';
@@ -52,10 +53,13 @@ function placed(source: PrivateSource): string[] {
 
 /** The real paths closed to every app, each once. */
 export function closedToApps(source: PrivateSource): string[] {
-    const folders = source.roots.map((root) => ({ dir: expandHome(root.dir), hub: root.hub }));
-    const hubs = hubDirs(folders);
+    const folders = source.roots.map((root) => ({
+        dir: expandHome(root.dir),
+        hub: root.hub,
+        secrets: root.secrets
+    }));
     const paths = [
-        ...privateFolders(hubs, source.home),
+        ...privateFolders(folders, source.home),
         ...machineFilesOf(folders),
         ...placed(source)
     ];

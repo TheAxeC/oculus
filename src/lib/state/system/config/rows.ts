@@ -14,7 +14,7 @@
 // (editors/fields.ts).
 //
 // The user's value of an option lives in one file, the row's place: a hub's settings file,
-// `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), which is the hub of
+// `.oculus/config.yml`, for a key of the hub list (data/shapes/hub-keys.ts), which is the hub of
 // the Settings scope on screen for a key each hub's own file is read for and the primary otherwise
 // (view/hub-settings.svelte.ts), and the open workspace file's `settings:` map for any other. The
 // row says whether that file holds the key (`own`, which is what Reset takes out) and the line of
@@ -40,7 +40,8 @@ import {
 import { z } from 'zod';
 import { REPO_SETTINGS } from '../../../data/helpers/editor/editor.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { HUB_FILE, JOINED_LOCAL_KEYS, hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, JOINED_LOCAL_KEYS } from '../../../data/helpers/hub-names.ts';
+import { hubKeysOf } from '../../../data/shapes/hub-keys.ts';
 import type { LocalFile } from '../../../data/shapes/config-save.ts';
 import type {
     CatalogEntry,

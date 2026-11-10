@@ -24,7 +24,12 @@ import { permitted } from '../core/paths.ts';
 import { json } from '@sveltejs/kit';
 import trashLibrary from 'trash';
 import { z } from 'zod';
-import { failureRows, textCatalog, type FailureRow } from '../../data/sources/config.ts';
+import {
+    failureRows,
+    textCatalog,
+    worktreesDir,
+    type FailureRow
+} from '../../data/sources/config.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { failureLine } from '../core/git/failure.ts';
@@ -406,9 +411,10 @@ export const OPERATIONS: Record<string, GitOperation> = {
         createBranch(at, fields.name, text, roots, fields.start, signal),
     switchBranch: (at, fields, text, roots, _options, signal) =>
         switchBranch(at, fields.name, text, roots, signal),
-    createWorktree: (at, fields, text, roots, _options, signal) =>
-        createWorktree(at, fields.name, text, roots, signal),
-    removeWorktree: (at, fields, text, roots) => removeWorktree(at, fields.path, text, roots),
+    createWorktree: (at, fields, text, roots, options, signal) =>
+        createWorktree(at, fields.name, worktreesDir(options.config), text, roots, signal),
+    removeWorktree: (at, fields, text, roots, options) =>
+        removeWorktree(at, fields.path, worktreesDir(options.config), text, roots),
     merge: (at, fields, text, roots, _options, signal) =>
         merge(at, fields.branch, text, roots, signal),
     abortMerge: (at, _fields, text, roots) => abortMerge(at, text, roots),

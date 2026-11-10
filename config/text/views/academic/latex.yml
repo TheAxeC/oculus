@@ -124,7 +124,7 @@ text:
         refused_badness_missing: badness was not found. Install it, or name it in latex.badness_path.
         refused_building: '{0} is building, so it was not cleaned. Kill Build first.'
         refused_count_failed: texcount could not count the file.
-        refused_count_missing: texcount is not installed. It comes with TeX Live and MacTeX.
+        refused_count_missing: texcount is not installed. It comes with TeX Live and MacTeX, or name it in latex.texcount_path.
         refused_count_timeout: texcount did not finish in time.
         refused_folder: '{0} leaves the folder this root serves, so the build was not started.'
         refused_format_failed: The formatter could not format the file.
@@ -137,6 +137,7 @@ text:
         refused_latexindent_missing: latexindent was not found. It comes with TeX Live and MacTeX, or name it in latex.latexindent_path.
         refused_latexmkrc_unread: '{0} cannot be read, so it cannot be approved.'
         refused_no_project: No project of the portfolio has that id.
+        refused_no_manuscript: No row of the hub's project_docs names a .tex file, so a project has no LaTeX folder.
         refused_no_recipe: latex.recipes holds no recipe, so the build was not started.
         refused_not_a_file: That is not a file.
         refused_not_a_main: That is not a main file of this folder.
@@ -152,7 +153,7 @@ text:
         refused_synctex_timeout: synctex did not finish in time.
         refused_tex_fmt_missing: tex-fmt was not found. Install it with brew install tex-fmt, or name it in latex.tex_fmt_path.
         refused_texdoc_failed: texdoc found no documentation for that name.
-        refused_texdoc_missing: texdoc is not installed. It comes with TeX Live and MacTeX.
+        refused_texdoc_missing: texdoc is not installed. It comes with TeX Live and MacTeX, or name it in latex.texdoc_path.
         refused_texdoc_name: That is not a package name.
         refused_texdoc_timeout: texdoc did not finish in time.
         unserved: '{0} is no longer a folder of this workspace; its LaTeX state is read again when it is added back.'

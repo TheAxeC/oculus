@@ -179,6 +179,9 @@ export type SubmitPlan = {
     digest: string; // sha256 of the sorted paths joined by NUL, hex
     rsync: string[]; // the rsync arguments as run, without the program name
     remote: string; // the one remote command, `cd <folder> && sbatch --parsable <script>`
-    /** Whether the script or a file it sources names the scratch folder, and what was unread. */
-    scratch: { named: boolean; unread: string[] };
+    /**
+     * The cluster's scratch folder looked for ('' when it names none and there is no rule), whether
+     * the script or a file it sources names it, and what was unread.
+     */
+    scratch: { root: string; named: boolean; unread: string[] };
 };

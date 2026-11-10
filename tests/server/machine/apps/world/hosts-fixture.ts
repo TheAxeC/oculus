@@ -6,7 +6,11 @@
 
 import { terminalsDouble } from './terminals-double.ts';
 import { engineDir, loadConfig } from '../../../../../src/lib/data/sources/config.ts';
-import { appsSettings, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import {
+    appsSettings,
+    hiddenFolders,
+    textCatalog
+} from '../../../../../src/lib/data/sources/config.ts';
 import type { Hub } from '../../../../../src/lib/server/core/channels.ts';
 import {
     AppHosts,
@@ -74,6 +78,7 @@ export function hostsFixture(
             }),
             maxBytes: () => 1024 * 1024,
             scanEntries: () => 1000,
+            hiddenFolders: () => hiddenFolders(config),
             languages: () => new Map(),
             ops: () => Promise.resolve({ ok: false, error: 'outside' }),
             terminals: terminalsDouble()

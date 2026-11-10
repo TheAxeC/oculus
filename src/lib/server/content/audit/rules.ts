@@ -7,13 +7,22 @@ import { readFileSync, statSync } from 'node:fs';
 import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText, pluralFindingText } from '../../../data/helpers/finding-text.ts';
-import { byKey, focusSetting, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { byKey, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { projectDocList } from '../../../data/sources/config/settings/hub-rows.ts';
+import { settingReader } from '../../../data/sources/config/settings/reader.ts';
 import { filledText } from '../../../data/shapes/shapes.ts';
 import { skippedTiers, wordsWith } from '../../../data/shapes/vocab-keys.ts';
 import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
 import { boardsTaking, takeContext } from '../../../data/shapes/boards/takes.ts';
 import type { Holders } from '../../../data/helpers/hub-names.ts';
-import type { AuditFinding, Collection, Domain, Id, Project } from '../../../data/model/index.ts';
+import type {
+    AuditFinding,
+    Collection,
+    Domain,
+    HubLayout,
+    Id,
+    Project
+} from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
 import type { WebsiteCheck } from './publications.ts';
 import type { AuditSetting } from './setting.ts';
@@ -22,8 +31,16 @@ import type { AuditSetting } from './setting.ts';
 export type AuditRules = {
     /** The soft character limits per manifest field, `read_limits` of the merged config. */
     readLimits: Record<string, number>;
-    /** Whole days a document may be ahead of its own manifest before the manifest is behind. */
+    /**
+     * Whole days a document may be ahead of its own manifest before the manifest is behind,
+     * `focus.stale_lag_days`.
+     */
     staleLagDays: number;
+    /**
+     * The documents of a project the marker scan reads, project-relative: the Markdown files of the
+     * hub's `project_docs`, in its order.
+     */
+    documents: string[];
     /**
      * The domains a project is expected to name a dataset in, by the ids of the merged portfolio:
      * the entries of the hubs' domains registries marked `expects_datasets: true`.
@@ -157,7 +174,11 @@ export function auditRules(
         new Set(wordsWith(config, key, flag));
     return {
         readLimits,
-        staleLagDays: focusSetting(config, 'stale_lag_days') ?? 1,
+        // A value the options refuse is the entry's default here; the config check names it.
+        staleLagDays: settingReader(config).number('focus.stale_lag_days'),
+        documents: projectDocList(config)
+            .map((one) => one.name)
+            .filter((name) => name.endsWith('.md')),
         dataDomains: new Set(
             domains.filter((one) => one.expectsDatasets === true).map((one) => one.id)
         ),
@@ -227,6 +248,11 @@ export type AuditInput = {
     self: ReadonlySet<Id>;
     rules: AuditRules;
     setting: AuditSetting;
+    /**
+     * The hub's layout: the folder of a project's deck, whose slide files the marker scan reads,
+     * the open markers and the provisional mark.
+     */
+    layout: HubLayout;
     website: WebsiteCheck | null;
     catalog: Record<string, string>;
 };

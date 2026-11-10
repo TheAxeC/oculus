@@ -13,13 +13,16 @@
 //
 // Verify and Unpack are compute, so each press is one `sbatch` job whose script is written here,
 // passes the scratch rule's text check, is sent to `~/.oculus/recover/jobs/` and is submitted
-// through the runner; its work is under `/local/$SLURM_JOB_ID`. The job checks with `sha256sum`,
+// through the runner; its work is under the cluster's scratch folder of `slurm.scratch_roots`
+// (`<root>/$SLURM_JOB_ID`), and with none such a job is refused. It runs in the cluster's
+// partition of `recover.partitions`, or the default one. The job checks with `sha256sum`,
 // `md5sum` or `sha1sum`, appending a line per file to `~/.oculus/recover/<hub>/<key>.checks.txt`,
 // and unpacks with 7z-wasm under the official Node build of the server's own version, which the
 // login node fetches once, from the address the hub's `recover.node_download` names, into
 // `~/.oculus/recover/node/<version>/` with its `SHASUMS256.txt` and the job checks before
 // unpacking it; with no such address an Unpack is refused. The job's id is kept here in
-// `clusters/<resource>/<key>.job.json` of the hub's Recover folder, one record per cluster.
+// `clusters/<resource>/<key>.job.json` of the hub's Recover folder, one record per cluster. A
+// dataset's folder is the same under the home folder here and there, below `recover.data_dir`.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -52,9 +55,6 @@ export const SOCKET = 'oculus-recover';
 /** How long one remote command is given. */
 const COMMAND_MS = 60000;
 
-/** The partition of the check and unpack jobs, open to every user (docs/HPC-UTwente-howto.md). */
-const PARTITION = 'main-cpu';
-
 /** What the runs on one cluster are handed. */
 export type ClusterDeps = {
     /** The cluster's key in `slurm.resource`, which names its job records here. */
@@ -71,21 +71,32 @@ export type ClusterDeps = {
      * folder per version, or '' when the hub names none.
      */
     nodeDownload: string;
+    /**
+     * The cluster's per-job scratch folder, its member of `slurm.scratch_roots`, which the check
+     * and unpack jobs work under; '' when it has none, and such a job is refused.
+     */
+    scratchRoot: string;
+    /** The partition of those jobs, its member of `recover.partitions`; '' for the default one. */
+    partition: string;
     sevenZip: () => string;
 };
 
 /** One dataset on the cluster: its hub, key and folder as a path under the home folder. */
 export type ClusterPlace = { hub: string; key: string; folder: string };
 
-/** The dataset's place on the cluster, or null when its names or its `path:` are unusable. */
+/**
+ * The dataset's place on the cluster, the same folder under the home folder as on this Mac, or
+ * null when its names or its `path:` are unusable or not under `~/<dataDir>` (`recover.data_dir`).
+ */
 export function clusterPlace(
     hub: string,
     key: string,
-    path: string | undefined
+    path: string | undefined,
+    dataDir: string
 ): ClusterPlace | null {
-    const part = dataPart(path);
+    const part = dataPart(path, dataDir);
     if (!validName(hub) || !validName(key) || part === null) return null;
-    return { hub, key, folder: `~/data/${part}` };
+    return { hub, key, folder: `~/${dataDir}/${part}` };
 }
 
 /** The session of a dataset: the hub and the key, so two hubs with one key never share one. */
@@ -238,7 +249,7 @@ export async function clusterState(
 
 /** Why a cluster run did not start. */
 export type ClusterRefusal =
-    'running' | 'credential' | 'nothing' | 'send' | 'scratch' | 'submit' | 'download';
+    'running' | 'credential' | 'nothing' | 'send' | 'noscratch' | 'scratch' | 'submit' | 'download';
 
 /** Send files of a local folder to a folder under the cluster's home, made first. */
 async function send(
@@ -347,28 +358,30 @@ function nodeBuild(version: string, download = '') {
 }
 
 /**
- * The job script of a Verify or an Unpack. Its work is under `/local/$SLURM_JOB_ID`, removed when
- * it ends. Verify appends a check line per file; Unpack checks the Node tarball against its
- * `SHASUMS256.txt` before unpacking it into the work folder, copies each archive there and runs
- * the unpack program on the copy into the archive's folder, with its source's strip and folder.
+ * The job script of a Verify or an Unpack. Its work is under `<scratchRoot>/$SLURM_JOB_ID`, removed
+ * when it ends, and it runs in the cluster's partition of `recover.partitions` (none named, the
+ * cluster's default). Verify appends a check line per file; Unpack checks the Node tarball against
+ * its `SHASUMS256.txt` before unpacking it into the work folder, copies each archive there and
+ * runs the unpack program on the copy into the archive's folder, with its source's strip and
+ * folder.
  */
 function jobScript(
     action: 'verify' | 'unpack',
     rows: PlanRow[],
     place: ClusterPlace,
-    nodeVersion: string
+    deps: Pick<ClusterDeps, 'nodeVersion' | 'scratchRoot' | 'partition'>
 ): string {
-    const node = nodeBuild(nodeVersion);
+    const node = nodeBuild(deps.nodeVersion);
     const head = [
         '#!/bin/sh',
         '#SBATCH --job-name=oculus-recover',
-        `#SBATCH --partition=${PARTITION}`,
+        ...(deps.partition === '' ? [] : [`#SBATCH --partition=${deps.partition}`]),
         '#SBATCH --cpus-per-task=2',
         '#SBATCH --mem=4G',
         '#SBATCH --time=24:00:00',
         `#SBATCH --output=${place.hub}-${place.key}-%j.log`,
         `# oculus Recover: the ${action} of ${place.hub}/${place.key}`,
-        'WORK=/local/$SLURM_JOB_ID',
+        `WORK=${deps.scratchRoot}/$SLURM_JOB_ID`,
         'mkdir -p "$WORK" || exit 1',
         'trap \'rm -rf "$WORK"\' EXIT',
         'say() { printf \'%s %s\\n\' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }',
@@ -451,8 +464,9 @@ export async function startClusterJob(
     if ((await clusterState(place, deps)) !== null) return 'running';
     if (rows.length === 0) return 'nothing';
     if (action === 'unpack' && deps.nodeDownload === '') return 'download';
-    const script = jobScript(action, rows, place, deps.nodeVersion);
-    if (!(await scratchText(script))) return 'scratch';
+    if (deps.scratchRoot === '') return 'noscratch';
+    const script = jobScript(action, rows, place, deps);
+    if (!(await scratchText(script, deps.scratchRoot))) return 'scratch';
     if (action === 'unpack' && !(await prepareUnpack(deps))) return 'send';
     const stage = stageOf(deps, place);
     rmSync(stage, { recursive: true, force: true });

@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { readPeriod } from '../../../data/helpers/dates.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { ROOT_FOLDER, inScan, tierOf } from '../../../data/helpers/hub-names.ts';
+import { projectDocList } from '../../../data/sources/config/settings/hub-rows.ts';
 import { projectFileIn } from '../../../data/sources/manifests.ts';
 import { hubManifests } from '../../files/roots.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
@@ -640,12 +641,24 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
 }
 
 /**
- * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
- * the project's `id`, its `tier`, as its `stage` the one word of `stages` carrying `new_idea` (no
- * `stage` line when no word carries it, or several do) and no chip, so a project of any tier starts
- * on the Focus board's Idea lane when that lane holds the stage, as the shipped lanes do. Its
- * status line, its `next` and its README are the words of config/text/server.yml for that tier
- * (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no `next` word gets no `next`).
+ * The README a new project gets: the name of the first `.md` row of the hub's `project_docs` that
+ * sits in the project folder itself, or null when no row does and no README is written.
+ */
+function readmeOf(merged: Record<string, unknown>): string | null {
+    const row = projectDocList(merged).find(
+        (one) => !one.name.includes('/') && one.name.toLowerCase().endsWith('.md')
+    );
+    return row?.name ?? null;
+}
+
+/**
+ * Scaffold one new project: `<folder>/<id>/project.yml` and the README `readmeOf` names beside it.
+ * The manifest holds the project's `id`, its `tier`, as its `stage` the one word of `stages`
+ * carrying `new_idea` (no `stage` line when no word carries it, or several do) and no chip, so a
+ * project of any tier starts on the Focus board's Idea lane when that lane holds the stage, as the
+ * shipped lanes do. Its status line, its `next` and its README are the words of
+ * config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a tier with no
+ * `next` word gets no `next`), the README's `next` under the heading `idea_next_heading`.
  * `fields.tier` is the tier of the board that sent the form and `fields.folder` the folder it was
  * made in; a write that names neither is made in the default tier, the one word of `tiers` carrying
  * `default`, under that tier's `new_project_dir`, and is refused as naming no tier when no word
@@ -766,18 +779,22 @@ export function createIdea(
     if (!isMap(parsed)) {
         return ideaRefusal('', words(catalog, 'server.manifest_write.idea_unparsed'));
     }
+    const heading = words(catalog, 'server.manifest_write.idea_next_heading');
     const readme =
         nextText === undefined
             ? `# ${title}\n\n${eli5}\n`
-            : `# ${title}\n\n${eli5}\n\n## Next\n\n${nextText}\n`;
+            : `# ${title}\n\n${eli5}\n\n## ${heading}\n\n${nextText}\n`;
+    const readmeName = readmeOf(config.merged);
 
     mkdirSync(dirname(folder), { recursive: true });
     mkdirSync(folder);
     writeTextAtomic(join(folder, MANIFEST), manifest);
-    writeTextAtomic(join(folder, 'README.md'), readme);
+    if (readmeName !== null) writeTextAtomic(join(folder, readmeName), readme);
+    const changed = [`${parent}/${id}/${MANIFEST}`];
+    if (readmeName !== null) changed.push(`${parent}/${id}/${readmeName}`);
     return {
         found: true,
-        changed: [`${parent}/${id}/${MANIFEST}`, `${parent}/${id}/README.md`],
+        changed,
         refused: [],
         id,
         // A scaffolded folder has no inverse writer, so the record says what was made and offers no

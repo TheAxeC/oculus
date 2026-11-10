@@ -8,6 +8,7 @@ import { relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import { deckOrderOf } from '../../../src/lib/data/shapes/boards/order.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { hubLayout } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import { outlineOf } from '../../../src/lib/data/sources/deck/outline.ts';
@@ -21,6 +22,9 @@ const VOCAB = loadConfig(engineDir()).config;
 
 /** The catalog the findings are worded from: the one oculus ships. */
 const CATALOG = textCatalog(VOCAB);
+
+/** The folder a project keeps its deck in, oculus's `deck_dir`. */
+const DECK = hubLayout(VOCAB, []).deckDir;
 
 /** One project of a hub, its deck at `<folder>/present`. */
 function project(id: string, tier: string, extra: Partial<DeckProject> = {}): DeckProject {
@@ -179,6 +183,7 @@ describe('the deck reader', () => {
                 project('alpha', 'research', { domain: 'heart', short: 'Alpha' }),
                 project('beta', 'research', { domain: 'heart', short: 'Beta' })
             ],
+            deck: DECK,
             tagTones: { measured: 'green' },
             catalog: CATALOG,
             order: deckOrderOf(VOCAB),
@@ -293,6 +298,7 @@ describe('the deck reader', () => {
                     project('beta', 'research', { domain: 'brain', short: 'Beta' }),
                     project('gamma', 'research', { domain: 'brain', short: 'Gamma' })
                 ],
+                deck: DECK,
                 tagTones: {},
                 catalog: CATALOG,
                 order: deckOrderOf(VOCAB),
@@ -517,6 +523,7 @@ describe('the deck reader', () => {
                 project('beta', 'research'),
                 project('gamma', 'research')
             ],
+            deck: DECK,
             tagTones: {},
             catalog: CATALOG,
             order: deckOrderOf(VOCAB),
@@ -794,6 +801,7 @@ describe('the order of the decks a group discovers', () => {
         const deck = createReader({
             hub: { key: 'hub', dir },
             projects,
+            deck: DECK,
             tagTones: {},
             catalog: CATALOG,
             order: deckOrderOf(vocab),

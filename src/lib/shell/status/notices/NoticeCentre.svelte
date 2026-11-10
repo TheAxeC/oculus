@@ -78,8 +78,11 @@
                 glyph="bell_quiet"
                 compact
                 bare
-                pressed={quiet}
-                onclick={() => setStatusQuiet(!quiet)}
+                pressed={quiet === true}
+                disabled={quiet === null}
+                onclick={() => {
+                    if (quiet !== null) setStatusQuiet(!quiet);
+                }}
             />
             <ToolButton
                 label={t('statusbar.centre_hide')}

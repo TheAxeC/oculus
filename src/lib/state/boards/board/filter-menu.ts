@@ -225,7 +225,7 @@ export function boardFilter(
     named: boolean,
     hubs: readonly string[],
     saved: unknown,
-    staleLag: number
+    staleLag: number | null
 ): BoardFilter {
     const mine = offersMine(items, named);
     const offered = facets(items, preset, named);
@@ -338,10 +338,10 @@ export function blockedBadge(stats: BoardStats): string {
  * live projects, the warning is 4"), joined by "; ", and the empty string while none does.
  */
 export function venueWarning(stats: BoardStats): string {
+    const warnAt = stats.warnAt;
+    if (warnAt === null) return '';
     return stats.venues
-        .map((venue) =>
-            plural('board.venue_warn', venue.count, venue.short, venue.count, stats.warnAt)
-        )
+        .map((venue) => plural('board.venue_warn', venue.count, venue.short, venue.count, warnAt))
         .join(t('board.venue_warn_join'));
 }
 

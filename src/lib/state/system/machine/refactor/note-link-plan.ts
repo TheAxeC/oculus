@@ -61,10 +61,10 @@ function folderOf(path: string): string {
 function movesByHub(moves: Move[], hubs: readonly HubNotes[]): Map<string, NoteMove[]> {
     const out = new Map<string, NoteMove[]>();
     for (const move of moves) {
-        const from = inNotes(move.from.path);
-        const to = inNotes(move.to.path);
         const hub = hubs.find((one) => one.root === move.from.root && one.state === 'ok');
         if (hub === undefined || move.to.root !== move.from.root) continue;
+        const from = inNotes(move.from.path, hub.folder);
+        const to = inNotes(move.to.path, hub.folder);
         if (from === null || to === null || from === '' || to === '') continue;
         out.set(hub.root, [...(out.get(hub.root) ?? []), { from, to }]);
     }
@@ -94,6 +94,8 @@ function takenBy(hub: HubNotes, moves: readonly NoteMove[]): string | null {
  */
 type HubPlan = {
     root: string;
+    /** The hub's notes folder, its `folder` as its notes answer names it. */
+    folder: string;
     paths: string[];
     texts: Map<string, string>;
     edits: Map<string, LinkEdit[]>;
@@ -106,7 +108,7 @@ function editOf(plans: readonly HubPlan[], moves: Map<string, NoteMove[]>, after
     for (const plan of plans) {
         for (const [path, list] of plan.edits) {
             const at = after ? movedPath(path, moves.get(plan.root) ?? []) : path;
-            const uri = pageUri({ root: plan.root, path: notePath(at) });
+            const uri = pageUri({ root: plan.root, path: notePath(plan, at) });
             changes.push({ textDocument: { uri, version: null }, edits: list });
             held.set(uri, plan.texts.get(path) ?? '');
         }
@@ -147,17 +149,18 @@ export function createNoteMoves(deps: NoteMovesDeps): NotesMoving {
         const texts = new Map<string, string>();
         for (const note of hub.entries) {
             if (note.kind !== 'file' || !isNote(note.path)) continue;
-            const draft = deps.draft(hub.root, notePath(note.path));
+            const draft = deps.draft(hub.root, notePath(hub, note.path));
             if (draft !== undefined) {
                 texts.set(note.path, draft);
                 continue;
             }
             if (!(note.links ?? []).some((link) => touched(link.to))) continue;
-            const text = await deps.read(hub.root, notePath(note.path));
+            const text = await deps.read(hub.root, notePath(hub, note.path));
             if (text === null) return null;
             texts.set(note.path, text);
         }
-        return { root: hub.root, paths, texts, edits: noteMoveEdits(paths, moves, texts) };
+        const edits = noteMoveEdits(paths, moves, texts);
+        return { root: hub.root, folder: hub.folder, paths, texts, edits };
     }
 
     /** The plans of every hub the moves touch, or the sentence that refuses the moves. */

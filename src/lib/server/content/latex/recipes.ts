@@ -11,10 +11,11 @@
 // refused, so no build writes outside it.
 //
 // A recipe is chosen in this order: the one the page asked for, the one a `% !LW recipe = <name>`
-// comment names, under `latex.recipe_default` `last_used` the one the page used last, the recipe of
-// the file's kind when it is a literate source, a `% !TEX program = xelatex | lualatex` comment's
-// `latexmk (xelatex)` or `latexmk (lualatex)` recipe, and the first recipe. A name no recipe has is
-// a refusal and never another recipe in its place.
+// comment names, under `latex.recipe_default` `last_used` the one the page used last, the recipe
+// `latex.literate_recipes` gives the file's extension, under `first` the recipe
+// `latex.program_recipes` gives the program a `% !TEX program = <program>` comment names, and the
+// first recipe. A name no recipe has, asked for or written in the file, is a refusal and never
+// another recipe in its place.
 //
 // A recipe is run as one terminal line, so every program and every argument of it is one
 // `shellWord`, since tools come from the configuration (pty/routes.ts builds the line). The
@@ -31,19 +32,6 @@ import type {
 import { inside, realPath } from '../../core/paths.ts';
 import type { Folders } from '../latex.ts';
 import { magicComments } from './reader.ts';
-
-/** The recipe a literate source builds with, by the source's extension in lower case. */
-const LITERATE_RECIPES: Record<string, string> = {
-    '.rnw': 'Compile Rnw files',
-    '.jnw': 'Compile Jnw files',
-    '.pnw': 'Compile Pnw files'
-};
-
-/** The recipe a `% !TEX program` comment picks, by the program it names. */
-const PROGRAM_RECIPES: Record<string, string> = {
-    xelatex: 'latexmk (xelatex)',
-    lualatex: 'latexmk (lualatex)'
-};
 
 /** The program a latexmk switch builds with. */
 const ENGINE_SWITCHES: Record<string, string | undefined> = {
@@ -167,8 +155,8 @@ function chooseRecipe(
         return recipeNamed(building, named) ?? { refused: 'latex-recipe', names: [named] };
     }
     const dot = main.lastIndexOf('.');
-    const kind = LITERATE_RECIPES[dot < 0 ? '' : main.slice(dot).toLowerCase()];
-    const program = PROGRAM_RECIPES[comments.get('program')?.toLowerCase() ?? ''];
+    const kind = building.literateRecipes.get(dot < 0 ? '' : main.slice(dot).toLowerCase());
+    const program = building.programRecipes.get(comments.get('program')?.toLowerCase() ?? '');
     const last = building.recipeDefault === 'last_used' ? ask.last : undefined;
     const programRecipe = building.recipeDefault === 'first' ? program : undefined;
     return (
@@ -209,11 +197,22 @@ function stepsOf(
     });
 }
 
-/** The command that removes what a build left, keeping the PDF and the SyncTeX file. */
-export function cleanStep(main: string, folders: Folders): Step {
+/**
+ * The program a LaTeX setting's path names: the configured path, else the program called `name`
+ * found on PATH.
+ */
+export function programFor(path: string, name: string): string {
+    return path === '' ? name : path;
+}
+
+/**
+ * The command that removes what a build left, keeping the PDF and the SyncTeX file: latexmk at
+ * `latex.clean_path`, or on PATH.
+ */
+export function cleanStep(main: string, folders: Folders, cleanPath: string): Step {
     const values = mainValues(main);
     return {
-        program: 'latexmk',
+        program: programFor(cleanPath, 'latexmk'),
         args: ['-c', `-outdir=${folders.out}`, `-auxdir=${folders.aux}`, values.DOC]
     };
 }

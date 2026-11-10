@@ -53,7 +53,8 @@ import { Readable } from 'node:stream';
 import { imageSize } from 'image-size';
 import mime from 'mime';
 import { PICTURE_EXTENSIONS } from '../../data/file-ops.ts';
-import { MEMORIES_DIR, WALLPAPER_DIR, hubFolderIn } from '../../data/helpers/files/paths.ts';
+import { hubFolderIn } from '../../data/helpers/files/paths.ts';
+import { pictureDefault } from '../../data/sources/config/settings/scan.ts';
 import { inside } from '../core/paths.ts';
 import type { HubTarget } from '../files/roots.ts';
 
@@ -389,14 +390,19 @@ export type HubPictures = { hub: string; wallpaper: string; memories: string };
 
 /**
  * The picture folders of each hub: its `wallpaper_dir` and `memories_dir` resolved under the hub,
- * the standard folder where a key is absent, wrong or outside the hub (the Findings view says
- * which, from data/index.ts `sourcesFindings`). The hubs come with their settings, so a hub is read
- * through its own layer and no other hub's values reach it.
+ * the key's shipped default where a key is absent, wrong or outside the hub (the Findings view
+ * says which, from data/index.ts `sourcesFindings`). The hubs come with their settings, so a hub is
+ * read through its own layer and no other hub's values reach it.
  */
 export function picturesOf(hubs: readonly HubTarget[]): HubPictures[] {
-    return hubs.map((one) => ({
-        hub: one.key,
-        wallpaper: hubFolderIn(one.hub, one.config.merged.wallpaper_dir, WALLPAPER_DIR).dir,
-        memories: hubFolderIn(one.hub, one.config.merged.memories_dir, MEMORIES_DIR).dir
-    }));
+    return hubs.map((one) => {
+        const merged = one.config.merged;
+        const folder = (key: string): string =>
+            hubFolderIn(one.hub, merged[key], pictureDefault(merged, key)).dir;
+        return {
+            hub: one.key,
+            wallpaper: folder('wallpaper_dir'),
+            memories: folder('memories_dir')
+        };
+    });
 }

@@ -1,12 +1,13 @@
 // Layer 2, server. One account's Outlook plate, and the two writes the Inbox view can make on it.
 //
-// The three plate signals are read over the inbox folder: unread, the `todo` category, and the
-// messages carrying no category at all. Graph has no thread object, so a thread is a conversation:
-// each candidate's conversation is read once, which answers in one call how many messages it holds,
-// which of them is newest, whether that one is the reader's own and whether it sits in the trash.
-// `$select` names the fields read, so the body of a message is never fetched; what the payload
-// carries is the `bodyPreview` Graph puts in its own list, its HTML entities decoded as Gmail's
-// snippet is, so the payload holds the words themselves.
+// The three plate signals are read over the inbox folder: unread, the category `mail.todo_label`
+// names (no such signal when it is empty), and the messages carrying no category at all. Graph has
+// no thread object, so a thread is a conversation: each candidate's conversation is read once,
+// which answers in one call how many messages it holds, which of them is newest, whether that one
+// is the reader's own and whether it sits in the trash. `$select` names the fields read, so the
+// body of a message is never fetched; what the payload carries is the `bodyPreview` Graph puts in
+// its own list, its HTML entities decoded as Gmail's snippet is, so the payload holds the words
+// themselves.
 //
 // Every call is inside the mail scopes the consent asks for. Which messages are the reader's own is
 // decided by the sent-items folder rather than by asking who the reader is, since the user resource
@@ -26,13 +27,7 @@
 import { decodeHTML } from 'entities';
 import { z } from 'zod';
 import { getJson, httpsLink, postJson, rowsShape } from '../connect/api.ts';
-import {
-    SIGNALS,
-    TODO_LABEL,
-    type Candidate,
-    type MailReadArgs,
-    type PlateThread
-} from './plate.ts';
+import { signalsOf, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
 import type { Signal } from './plate.ts';
 
 /** A field of Graph's answer that is text where it is there, and read as absent otherwise. */
@@ -142,10 +137,16 @@ export async function mailboxFacts(args: MailReadArgs): Promise<MailboxFacts> {
 const ORDER_FIELD = 'receivedDateTime';
 const ORDER_FLOOR = `${ORDER_FIELD} ge 1970-01-01T00:00:00Z`;
 
-/** The filter each signal is read with, and nothing when the signal is filtered here instead. */
-function filterFor(signal: Signal): string | null {
+/**
+ * The filter each signal is read with, and nothing when the signal is filtered here instead. The
+ * category is written as an OData text, each `'` of it doubled.
+ */
+function filterFor(signal: Signal, category: string): string | null {
     if (signal === 'unread') return `${ORDER_FLOOR} and isRead eq false`;
-    if (signal === 'todo') return `${ORDER_FLOOR} and categories/any(c: c eq '${TODO_LABEL}')`;
+    if (signal === 'todo') {
+        const written = category.replaceAll("'", "''");
+        return `${ORDER_FLOOR} and categories/any(c: c eq '${written}')`;
+    }
     return null;
 }
 
@@ -195,7 +196,7 @@ function listingUrl(args: MailReadArgs, signal: Signal): string {
     const url = new URL(`${args.base}/me/mailFolders/inbox/messages`);
     url.searchParams.set('$select', SELECT);
     url.searchParams.set('$top', String(args.perSignal));
-    const filter = filterFor(signal);
+    const filter = filterFor(signal, args.todoLabel);
     if (filter !== null) url.searchParams.set('$filter', filter);
     url.searchParams.set('$orderby', `${ORDER_FIELD} desc`);
     return url.toString();
@@ -266,7 +267,7 @@ export async function readMicrosoftMail(args: MailReadArgs): Promise<Candidate[]
     const facts = await mailboxFacts(args);
     const candidates: Candidate[] = [];
     const read = new Map<string, PlateThread | null>();
-    for (const signal of SIGNALS) {
+    for (const signal of signalsOf(args)) {
         for (const row of await messagesFor(args, signal)) {
             const id = row.conversationId;
             if (id === undefined) continue;

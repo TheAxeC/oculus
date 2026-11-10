@@ -38,11 +38,16 @@ type PlannedFile = {
 };
 
 /** The world, with the lint route over its roots and the plan of a folder the page asks for. */
-function planning(files: Record<string, string>, writingSkip: string[] = []) {
+function planning(
+    files: Record<string, string>,
+    writingSkip: string[] = [],
+    hiddenFolders?: string[]
+) {
     const w = replaceWorld(files);
     const lint = route(
         () => w.ops.roots,
-        () => ({ ...settingsOf(), writingSkip })
+        () => ({ ...settingsOf(), writingSkip }),
+        hiddenFolders === undefined ? {} : { hiddenFolders }
     );
     const plan = async (root = 'hub', path = '', token?: string | null) => {
         const answered = await lint.post({ action: 'folder', root, path }, token);
@@ -87,6 +92,17 @@ describe('the plan of a folder (case 50)', () => {
         const root = await plan('hub', '');
         expect(root.body.files?.map((one) => one.path)).toEqual(['docs/a.md', 'docs/b.yml']);
         expect(existsSync(join(w.hub, 'secrets/x.md'))).toBe(true);
+    });
+
+    it('enters no folder the hidden folders setting names, and enters the others (G13)', async () => {
+        const wait = `Wait${ELLIPSIS}\n`;
+        const { plan } = planning(
+            { 'a.md': wait, 'vendor/v.md': wait, 'node_modules/x.md': wait },
+            [],
+            ['vendor']
+        );
+        const answer = await plan('hub', '');
+        expect(answer.body.files?.map((one) => one.path)).toEqual(['a.md', 'node_modules/x.md']);
     });
 
     it("refuses a start folder that is, or lies under, the hub's secrets folder (G3)", async () => {

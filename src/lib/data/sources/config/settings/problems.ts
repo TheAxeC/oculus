@@ -9,6 +9,7 @@ import {
     literatureSettings,
     mailSettings,
     nodeDownload,
+    recoverSettings,
     refreshSettings,
     signInRows,
     slurmSettings,
@@ -19,13 +20,18 @@ import {
     chatContext,
     confirmDelete,
     fileIconAtArrow,
+    fileIndexSettings,
+    hiddenFolders,
     openSettings,
     paintLimit,
     repositoryScanDepth,
     searchSettings,
+    websiteSection,
     websiteSettings,
+    worktreesDir,
     zenodoSettings
 } from './files.ts';
+import { feedRegistries, hubLayout, projectDocList, updateTasks } from './hub-rows.ts';
 import { appsSettings, changesKeep, processesSettings } from './machine.ts';
 import type { SettingProblem } from './reader.ts';
 import { readRows } from './rows/read.ts';
@@ -42,6 +48,7 @@ const PROBLEM_READERS: ((
     failureRows,
     signInRows,
     nodeDownload,
+    recoverSettings,
     calendarSettings,
     searchSettings,
     literatureSettings,
@@ -49,20 +56,28 @@ const PROBLEM_READERS: ((
     openSettings,
     confirmDelete,
     fileIconAtArrow,
+    fileIndexSettings,
+    hiddenFolders,
     mailSettings,
     appsSettings,
     changesKeep,
     usageTiers,
     refreshSettings,
     autofetchMin,
+    worktreesDir,
     repositoryScanDepth,
     chatContext,
+    feedRegistries,
+    updateTasks,
+    projectDocList,
+    hubLayout,
     paintLimit,
     processesSettings,
     latexFormatting,
     latexBuild,
     lintSettings,
     websiteSettings,
+    websiteSection,
     zenodoSettings
 ];
 

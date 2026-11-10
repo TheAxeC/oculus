@@ -8,6 +8,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { defaultAgent } from '$lib/state/shared/words/appearance';
     import Composer from './Composer.svelte';
 
     type Props = {
@@ -24,6 +25,8 @@
     } = useState();
 
     const kind = $derived(startingIn(owner));
+    /** The agent the composer shows while the tab has chosen none, or null before the settings. */
+    const startAgent = $derived(defaultAgent());
 
     /** The word for the kind that is starting. */
     function kindWord(one: string): string {
@@ -36,8 +39,8 @@
 <div class="start">
     {#if kind !== null}
         <Empty message={t('sessions.terminal_starting', kindWord(kind))} />
-    {:else}
-        <Composer {owner} {onstarted} />
+    {:else if startAgent !== null}
+        <Composer {owner} {onstarted} {startAgent} />
     {/if}
 </div>
 

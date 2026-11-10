@@ -501,29 +501,39 @@ export async function switchDetached(
 // ---------------------------------------------------------------- worktrees and the merge back
 
 /**
- * Whether the path is a worktree this tool made under the root. Both sides go through realpath
- * first, so a `..` inside either is worked out and a symbolic link under the worktrees folder that
- * points at another repository resolves to where it points and is refused; a path that does not
- * exist is refused too, since there is nothing to remove or diff. The rule itself is
+ * The refusal of a worktree read or write at `path`: a repository outside the roots served, or a
+ * path that is no worktree this tool made under the root's worktrees folder `dir`, the folder
+ * `git.worktrees_dir` names; null when neither holds. Both sides go through realpath first, so a
+ * `..` inside either is worked out and a symbolic link under the worktrees folder that points at
+ * another repository resolves to where it points and is refused; a path that does not exist is
+ * refused too, since there is nothing to remove or diff. The rule itself is
  * data/helpers/worktrees.ts's, which the page reads too.
  */
-export function worktreeUnder(root: string, path: string): boolean {
-    if (typeof path !== 'string' || path === '' || !isAbsolute(path)) return false;
-    if (!validName(basename(resolve(path)))) return false;
-    const full = realPath(path);
-    const top = realPath(root);
-    if (full === null || top === null) return false;
-    return isWorktreePath(top, full);
+export function worktreeRefusal(
+    at: GitAt,
+    { path, dir }: { path: string; dir: string },
+    text: Record<string, string>,
+    roots: string[]
+): Outcome | null {
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const named = typeof path === 'string' && path !== '' && isAbsolute(path);
+    const full = named && validName(basename(resolve(path))) ? realPath(path) : null;
+    const top = realPath(at.root);
+    if (full === null || top === null || !isWorktreePath(top, full, dir)) {
+        return failed(words(text, 'server.git.outside_worktrees'));
+    }
+    return null;
 }
 
 /**
  * Make a worktree of the root on a new branch of the same name, under the root's own worktrees
- * folder. The name is one path segment and a name git accepts as a branch, and the folder must not
- * already be there: a worktree over an existing folder is a merge of two unrelated things.
+ * folder `dir`. The name is one path segment and a name git accepts as a branch, and the folder
+ * must not already be there: a worktree over an existing folder is a merge of two unrelated things.
  */
 export async function createWorktree(
     at: GitAt,
     name: string,
+    dir: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
@@ -531,7 +541,7 @@ export async function createWorktree(
     const wrong = await checkName(at, name, text, roots);
     if (wrong !== '') return failed(wrong);
     if (!validName(name)) return failed(words(text, 'server.git.worktree_name', name));
-    const path = worktreePath(at.root, name);
+    const path = worktreePath(at.root, name, dir);
     if (existsSync(path)) return failed(words(text, 'server.git.already_something', path));
     return worktree(at, ['add', '-b', name, path, 'HEAD'], signal);
 }
@@ -540,16 +550,18 @@ export async function createWorktree(
  * Take a worktree away, and the branch it was on with it. A worktree holding uncommitted work is
  * refused before anything runs: `git worktree remove` would refuse it too, and the reason is worth
  * more than git's. The branch goes by `-d`, which git refuses for a branch not merged into its
- * upstream, or into HEAD when it has none, so such a branch stays and the answer says so.
+ * upstream, or into HEAD when it has none, so such a branch stays and the answer says so. `dir` is
+ * the worktrees folder the path must lie in.
  */
 export async function removeWorktree(
     at: GitAt,
     path: string,
+    dir: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (!worktreeUnder(at.root, path)) return failed(words(text, 'server.git.outside_worktrees'));
+    const refused = worktreeRefusal(at, { path, dir }, text, roots);
+    if (refused !== null) return refused;
     if (!existsSync(path)) return failed(words(text, 'server.git.no_worktree_at', path));
     // Untracked files count here, unlike the merge: `git worktree remove` would take the folder and
     // them with it, and a file git never saw is a file nobody can get back.

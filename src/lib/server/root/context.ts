@@ -20,6 +20,7 @@ import {
     iconSet,
     type IconMemory,
     failureRows,
+    hiddenFolders,
     localFile,
     localSentence,
     mailSettings,
@@ -28,6 +29,7 @@ import {
     latexBuild,
     latexFormatting,
     lintSettings,
+    recoverSettings,
     refreshSettings,
     signInRows,
     slurmSettings,
@@ -45,7 +47,8 @@ import { gitSignIns, sleep } from '../accounts/connect/git/signins.ts';
 import { machineOpener, pathOpener } from '../files/open.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { target, type Carried } from '../edit/writes.ts';
-import { hubDirs } from '../../data/helpers/files/private-folders.ts';
+import { withNotes, withSecrets } from '../../data/helpers/files/private-folders.ts';
+import { notesOf, secretsOf } from '../../data/sources/config/settings/hub-rows.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { registerStateChannel } from '../files/workspace/page-state/routes.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
@@ -66,6 +69,7 @@ import {
     latestResources
 } from '../machine/hpc/clusters/connections.ts';
 import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
+import { heldIndent } from '../machine/lsp/adapters/web/formatting.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { debugControl } from '../machine/debug/session/start.ts';
 import { repositoryRoots } from '../files/roots.ts';
@@ -82,6 +86,7 @@ import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
 import { HeldComments } from '../machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../machine/runs/lint/runs.ts';
 import { runEntry } from '../machine/runs/schedules/run.ts';
+import { taskHubs } from '../machine/runs/schedules/task.ts';
 import type { SchedulesWatcher } from '../machine/runs/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
 import { HookStore, recoverPlaces } from '../sessions/stores/hooks.ts';
@@ -202,21 +207,25 @@ export function createServerContext(
         defaults: configCache.defaults
     });
     const appServers = appFeed();
+    const secretsDir = secretsOf(configCache.hub);
+    const notesDir = notesOf(configCache.hub);
     const relay = make.createRelay({
         schemas,
         appServers: appServers.feed,
         oculus: ownFolder(),
         node: process.execPath,
-        roots: () => open().roots,
+        roots: () => withNotes(withSecrets(open().roots, secretsDir), notesDir),
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
         latex: () => latexBuild(configCache.quiet().config),
         markdown: () => markdownExtensions(configCache.quiet().config),
+        hiddenFolders: () => hiddenFolders(configCache.quiet().config),
+        indent: heldIndent(configCache, () => apps.held().apps),
         catalog: () => textCatalog(configCache.quiet().config),
         changes: () => target(engine, configCache.quiet().config, held(), context).changes,
         library: () => ({
             closed: closedPaths(configCache.quiet().config).folders,
-            withheld: withheldFolders(configDir(engine), hubDirs(open().roots))
+            withheld: withheldFolders(configDir(engine), withSecrets(open().roots, secretsDir))
         })
     });
     const debug = make.createDebug({
@@ -332,6 +341,7 @@ export function createServerContext(
             ...sessionFolders(local.accounts),
             cache: local.sessionsCache,
             overrides: local.sessionsOverrides,
+            roots: local.sessionsRoots,
             projectFolders: folders,
             terminals,
             hooks: store
@@ -345,7 +355,8 @@ export function createServerContext(
             workspace,
             nestedFound(nested, () => owned().portfolio.rescan(), credentials),
             gitFetchFailures,
-            credentials
+            credentials,
+            () => relay.settingsChanged()
         );
     const startAutofetchWatcher = (): AutofetchWatcher =>
         startAutofetch(make, hub, () => owned().git, gitFetchFailures, credentials);
@@ -369,13 +380,14 @@ export function createServerContext(
             record: local.scheduleRecord ?? defaultRecordPath()
         };
         const rootsFor = (): string[] => open().roots.map((root) => expandHome(root.dir));
+        const hubs = () => taskHubs(open(), () => configCache.quiet().config, configCache.hub);
         return make.watchSchedules(hub, {
             files,
             rootsFor,
-            hubs: () => open(),
+            hubs,
             run: (entry, size) =>
                 runEntry(entry, size, {
-                    hubs: open(),
+                    hubs: hubs(),
                     claudeBin: local.claudeBin,
                     text: textCatalog(configCache.quiet().config),
                     rootsFor,
@@ -398,6 +410,7 @@ export function createServerContext(
         config: () => configCache.quiet().config,
         from: () => configCache.quiet().from,
         open,
+        secretsDir,
         follow: (listener) => workspace.subscribe(() => listener()),
         languageChanged: () => {
             for (const listener of [...heardHeld]) listener();
@@ -430,8 +443,11 @@ export function createServerContext(
         streamTerminals,
         credentials,
         open,
+        secretsDir,
+        notesDir,
         follow: (listener) => workspace.subscribe(() => listener()),
         target: () => target(engine, configCache.quiet().config, held(), context),
+        appsRead: () => relay.settingsChanged(),
         ready
     });
     appServers.attach(hosts.hosts.tools, schemas);
@@ -463,6 +479,7 @@ export function createServerContext(
     const recover = make.watchRecover(hub, {
         home: homedir(),
         places: () => recoverPlaces(hub),
+        dataDir: () => recoverSettings(configCache.quiet().config).dataDir,
         hubs: () => open().hubs.map((one) => one.name),
         pollCluster: (resource) => void polled.hpc.watcher(resource)?.refresh(),
         readCluster: (resource) => void polled.hpc.watcher(resource)?.recover()
@@ -574,6 +591,8 @@ export function createServerContext(
         machineLists: () => machine.held().lists,
         engine,
         configCache,
+        secretsDir,
+        notesDir,
         fsWrites: writes,
         opsWrites,
         gitRunning: createRunningGit(),

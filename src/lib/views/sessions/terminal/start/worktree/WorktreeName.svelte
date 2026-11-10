@@ -17,12 +17,14 @@
         planned: string;
         /** Whether the repository's .gitignore keeps its worktrees out of its history. */
         ignored: boolean;
+        /** The .gitignore line that would keep them out, which the warning names. */
+        rule: string;
         oninput: (name: string) => void;
         oncancel: () => void;
         onstart: () => void;
     };
 
-    let { name, planned, ignored, oninput, oncancel, onstart }: Props = $props();
+    let { name, planned, ignored, rule, oninput, oncancel, onstart }: Props = $props();
 
     let field = $state<HTMLInputElement | null>(null);
 
@@ -54,7 +56,7 @@
         <span class="planned" title={planned}>{t('composer.worktree_path', planned)}</span>
     {/if}
     {#if !ignored}
-        <p class="warning" data-composer-unignored>{t('repositories.worktrees_unignored')}</p>
+        <p class="warning" data-composer-unignored>{t('repositories.worktrees_unignored', rule)}</p>
     {/if}
 </div>
 

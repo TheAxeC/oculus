@@ -21,14 +21,15 @@ import { runCommand } from '../commands/run.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 import { startTerminal, type StartOptions } from '../../pty/sessions.ts';
 import { promptFolder, resolveFolder } from './file.ts';
-import { namedHub, startUpdateTask, type TaskHubs } from './task.ts';
+import { namedHub, startUpdateTask, taskNames, type TaskHubs } from './task.ts';
 
 /** What a run needs besides the tmux options of every terminal start. */
 export type RunEntryOptions = StartOptions & {
     /**
-     * The open workspace's hubs, read at the call: the hub an update task's `hub` names, and the
-     * primary, whose folder is the one of a task that names none and what `hub` of a folder names;
-     * with no primary a run that needs it is refused.
+     * The open workspace's hubs, read at the call: the hub an update task's `hub` names, with the
+     * settings whose `update_tasks` the task must be listed in, and the primary, whose folder is
+     * the one of a task that names none and what `hub` of a folder names; with no primary a run
+     * that needs it is refused.
      */
     hubs: TaskHubs;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
@@ -62,6 +63,7 @@ export async function runEntry(
             return await startUpdateTask(runs.task, entry.unattended, {
                 ...tmux,
                 hub: named.hub,
+                listed: taskNames(hubs, named.hub),
                 claudeBin,
                 text,
                 size

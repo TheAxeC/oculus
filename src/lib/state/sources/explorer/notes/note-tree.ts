@@ -14,9 +14,9 @@
 // `.md`, in the order the section lists them, with the reader's move made: the whole list is
 // written, so the notes the order file did not name keep the place they were listed at.
 
+import { notesMark } from '../../../../data/helpers/files/private-folders.ts';
 import type { HubNotes } from '../../../../data/model/index.ts';
 import {
-    NOTES_FOLDER,
     NOTE_SUFFIX,
     inNotes,
     isNote,
@@ -28,35 +28,48 @@ import type { Naming } from '../naming.ts';
 import { treeRows } from '../rows/tree-rows.ts';
 import type { FsEntry, FsRoot, TreeRow } from '../view/place.ts';
 
-// The views read the folder's name and a note's suffix through this module, since a view imports
-// `state/` and not `data/`.
-export { NOTES_FOLDER, NOTE_SUFFIX };
+// The views read a note's suffix through this module, since a view imports `state/` and not
+// `data/`.
+export { NOTE_SUFFIX };
 
 type Words = (key: string, ...args: (string | number)[]) => string;
 
 /** One hub of the section: its notes and the root the workspace serves it under. */
 export type NoteGroup = { hub: HubNotes; root: FsRoot };
 
-/** The path under the hub's root of a path inside its notes folder. */
-export function notePath(pathInNotes: string): string {
-    return pathInNotes === '' ? NOTES_FOLDER : `${NOTES_FOLDER}/${pathInNotes}`;
+/**
+ * The path under the hub's root of a path inside its notes folder, the hub's `folder` as its notes
+ * answer names it.
+ */
+export function notePath(hub: Pick<HubNotes, 'folder'>, pathInNotes: string): string {
+    return [hub.folder, pathInNotes].filter((one) => one !== '').join('/');
 }
 
-/** The folder of a hub its notes folder sits in, as a path under the hub's root. */
-const STATE_FOLDER = NOTES_FOLDER.slice(0, NOTES_FOLDER.lastIndexOf('/'));
+/**
+ * The notes folder of the root of `roots` with the key, its `notes_dir` as the workspaces answer
+ * marks a hub with: the empty text for a root that is no hub or not served.
+ */
+export function rootNotes(roots: readonly FsRoot[], key: string): string {
+    return notesMark(roots.find((one) => one.key === key));
+}
+
+/**
+ * The path under its root of a path inside the notes folder of the hub of `hubs` served under
+ * `root`; a root no hub of them is served under has no notes folder, and the path is its own.
+ */
+export function notePathOf(hubs: readonly HubNotes[], root: string, pathInNotes: string): string {
+    return notePath({ folder: hubs.find((one) => one.root === root)?.folder ?? '' }, pathInNotes);
+}
 
 /**
  * The create that makes a file or folder at a path inside a hub's notes folder: into the notes
- * folder under the path, or, for a hub with no notes folder yet, into the folder it sits in under
- * the notes folder's name and the path, so the one create makes the notes folder too and History
- * undoes both.
+ * folder under the path, or, for a hub with no notes folder yet, into the top of the hub under the
+ * notes folder's path and the path, so the one create makes the notes folder and every folder above
+ * it that is not there, and History undoes them all.
  */
 export function noteMaking(hub: HubNotes, pathInNotes: string): { into: string; name: string } {
-    if (hub.state !== 'none') return { into: NOTES_FOLDER, name: pathInNotes };
-    return {
-        into: STATE_FOLDER,
-        name: `${NOTES_FOLDER.slice(STATE_FOLDER.length + 1)}/${pathInNotes}`
-    };
+    if (hub.state !== 'none') return { into: hub.folder, name: pathInNotes };
+    return { into: '', name: notePath(hub, pathInNotes) };
 }
 
 /** The folder a path sits in, the empty path for the top. */
@@ -85,21 +98,21 @@ export function noteGroups(hubs: readonly HubNotes[], roots: readonly FsRoot[]):
  * The entries of one folder of a hub's notes (a path under the hub's root), in the section's order.
  */
 export function noteEntries(hub: HubNotes, path: string): FsEntry[] {
-    const inside = inNotes(path);
+    const inside = inNotes(path, hub.folder);
     if (inside === null) return [];
     return hub.entries
         .filter((one) => folderOf(one.path) === inside)
         .map((one) => ({ name: baseOf(one.path), kind: one.kind, size: 0, mtime: one.modified }));
 }
 
-/** The path a sentence row is drawn at: one no file can have, under the folder it speaks of. */
-const SAID_PATH = `${NOTES_FOLDER}/\0`;
-
-/** A row that is a sentence. */
-function saidRow(root: string, depth: number, text: string, retry: boolean): TreeRow {
+/**
+ * A row that is a sentence, drawn under a group at a path no file can have under the notes folder
+ * it speaks of (`folder`), and on its own at the top for a workspace with no hub.
+ */
+function saidRow(root: string, depth: number, text: string, retry: boolean, folder = ''): TreeRow {
     return {
         root,
-        path: depth === 0 ? '\0' : SAID_PATH,
+        path: depth === 0 ? '\0' : `${folder}/\0`,
         name: text,
         kind: 'file',
         size: 0,
@@ -132,13 +145,14 @@ export function noteRows(
             [root],
             (_key, path) => noteEntries(hub, path),
             expanded,
-            { path: NOTES_FOLDER, name: root.key },
+            { path: hub.folder, name: root.key },
             naming
         );
         const head = rows.at(0);
         if (!head?.open) return rows;
         const says = groupSays(hub, rows.length > 1, t);
-        return says.text === '' ? rows : [...rows, saidRow(root.key, 1, says.text, says.retry)];
+        if (says.text === '') return rows;
+        return [...rows, saidRow(root.key, 1, says.text, says.retry, hub.folder)];
     });
 }
 
@@ -164,7 +178,7 @@ export function orderStepped(
     path: string,
     direction: 'up' | 'down'
 ): string[] | null {
-    const inside = inNotes(path);
+    const inside = inNotes(path, hub.folder);
     const listed = notesListed(hub);
     if (inside === null || !listed.includes(inside)) return null;
     const folder = listed.filter((one) => folderOf(one) === folderOf(inside));
@@ -186,8 +200,8 @@ export function orderPlaced(
     onto: string,
     place: 'before' | 'after'
 ): string[] | null {
-    const target = inNotes(onto);
-    const moving = paths.map(inNotes);
+    const target = inNotes(onto, hub.folder);
+    const moving = paths.map((one) => inNotes(one, hub.folder));
     const listed = notesListed(hub);
     if (target === null || !listed.includes(target) || moving.includes(target)) return null;
     if (moving.some((one) => one === null || !listed.includes(one))) return null;
@@ -217,15 +231,15 @@ export function typedRefusal(text: string, t: Words): string {
 }
 
 /**
- * The sentence refusing a path of a hub's root whose names land in its notes folder and break the
- * rule of the notes (a note's name read without `.md`, a folder's or another file's whole name),
- * and the empty text for a path the rule takes or that lands nowhere in a notes folder.
+ * The sentence refusing a path of a hub's root whose names land in its notes folder (`notes`, the
+ * empty text for a root with none) and break the rule of the notes (a note's name read without
+ * `.md`, a folder's or another file's whole name), and the empty text for a path the rule takes or
+ * that lands nowhere in a notes folder.
  */
-export function landingRefusal(hub: boolean, path: string, t: Words): string {
-    if (!hub) return '';
+export function landingRefusal(notes: string, path: string, t: Words): string {
     const parts = path.split('/').filter((one) => one !== '');
     for (const [at, name] of parts.entries()) {
-        if (inNotes(parts.slice(0, at).join('/')) === null) continue;
+        if (inNotes(parts.slice(0, at).join('/'), notes) === null) continue;
         const made = noteName(isNote(name) ? name.slice(0, -NOTE_SUFFIX.length) : name);
         if (!made.ok) return nameRefusalSentence(made.refusal, t);
     }

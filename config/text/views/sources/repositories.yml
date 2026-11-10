@@ -287,7 +287,7 @@ text:
         worktree_path: It will be made at {0}.
         worktrees: Worktrees
         worktrees_empty: This repository has no worktree beside itself.
-        worktrees_unignored: The .gitignore of this repository does not carry /.agents/worktrees/, so a worktree made here becomes content of the repository.
+        worktrees_unignored: The .gitignore of this repository does not carry {0}, so a worktree made here becomes content of the repository.
         all_closed: Every repository is closed in this tab.
         branch_delete_button: Delete Branch
         branch_delete_confirm: "Are you sure you want to delete the branch '{0}'?"

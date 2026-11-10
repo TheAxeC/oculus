@@ -15,7 +15,11 @@ import {
     markLinkedinPosted,
     writeFeedField
 } from '../../../src/lib/server/edit/feeds/feeds.ts';
-import { addRadarEntry } from '../../../src/lib/server/edit/feeds/radar.ts';
+import {
+    addRadarEntry,
+    radarWords,
+    type RadarWords
+} from '../../../src/lib/server/edit/feeds/radar.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -68,7 +72,8 @@ function fixture(): { hub: string; config: PortfolioConfig } {
         const list = (loaded.collections as Record<string, unknown>[]).map((one) =>
             one.registry === 'radar' ? { ...one, primary_key: 'title' } : one
         );
-        base = portfolioConfigFrom({ ...loaded, collections: list });
+        // The hub names its LinkedIn ideas by the prefix `xx-`, as a hub's settings file sets it.
+        base = portfolioConfigFrom({ ...loaded, collections: list, linkedin_idea_prefix: 'xx-' });
     }
     const config = { ...base, feeds: { ...FILES, linkedin: 'fixture/linkedin' } };
     for (const [kind, id] of [
@@ -405,6 +410,27 @@ describe('feed writes', () => {
         }
     );
 
+    it('refuses a new idea, and marks no file an idea, in a hub that names no idea prefix (G8)', () => {
+        const into = fixture();
+        const config = {
+            ...into.config,
+            layout: { ...into.config.layout, linkedinIdeaPrefix: '' }
+        };
+        const folder = join(into.hub, FILES.linkedin);
+        const before = readdirSync(folder).sort();
+        expect(addLinkedinIdea(into.hub, config, 'Easy problems', 'research')).toEqual({
+            found: true,
+            changed: [],
+            refused: [
+                { field: 'file', reason: words(config.text, 'server.feeds.idea_needs_prefix') }
+            ]
+        });
+        expect(readdirSync(folder).sort()).toEqual(before);
+        expect(markLinkedinPosted(into.hub, config, 'xx-easy-problems.md').refused).toEqual([
+            { field: 'file', reason: words(config.text, 'server.feeds.post_needs_idea') }
+        ]);
+    });
+
     it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
         const into = fixture();
         const folder = join(into.hub, FILES.linkedin);
@@ -656,7 +682,10 @@ describe('feed writes', () => {
 });
 
 describe('Lit Watch writes', () => {
-    const BUCKETS = ['preemption', 'idea', 'cite_baseline', 'adjacent'];
+    const VOCAB: RadarWords = {
+        buckets: ['preemption', 'idea', 'cite_baseline', 'adjacent'],
+        relevances: ['high', 'med', 'low']
+    };
     const HEAD = 'meta:\n  last_run: 2026-09-27\n';
     const OLD = `  - title: "Old paper"\n    authors: "A. Author"\n    url: "https://arxiv.org/abs/2601.00001"\n    bucket: adjacent\n    found: 2026-09-27\n`;
     const ADD = {
@@ -679,7 +708,27 @@ describe('Lit Watch writes', () => {
     }
 
     const add = (into: { hub: string; config: PortfolioConfig }, fields: Record<string, unknown>) =>
-        addRadarEntry(into.hub, into.config, fields, BUCKETS);
+        addRadarEntry(into.hub, into.config, fields, VOCAB);
+
+    it("checks the bucket and the relevance against the hub's radar_buckets and radar_relevance (G13)", () => {
+        // oculus's words, read from the merged configuration the write route passes.
+        const into = radarWith(`${HEAD}entries:\n${OLD}`);
+        expect(radarWords(into.config.merged)).toStrictEqual(VOCAB);
+
+        // A hub's own words: its relevance is taken, oculus's refused with the hub's words named.
+        const own: RadarWords = { buckets: ['near'], relevances: ['close', 'far'] };
+        const fresh = { ...ADD, bucket: 'near', relevance: 'med' };
+        expect(addRadarEntry(into.hub, into.config, fresh, own).refused).toStrictEqual([
+            {
+                field: 'relevance',
+                reason: words(into.config.text, 'server.feeds.relevance_unknown', 'close, far')
+            }
+        ]);
+        const taken = addRadarEntry(into.hub, into.config, { ...fresh, relevance: 'far' }, own);
+        expect(taken.refused).toStrictEqual([]);
+        expect(readFileSync(into.file, 'utf8')).toContain('    bucket: near\n');
+        expect(readFileSync(into.file, 'utf8')).toContain('    relevance: far\n');
+    });
 
     it(
         'adds a Lit Watch entry in the order given and refuses one whose title or address is in the file',
@@ -726,7 +775,7 @@ describe('Lit Watch writes', () => {
             ]);
             expect(readFileSync(into.file, 'utf8')).toBe(source);
 
-            // A bucket outside the vocabulary, a relevance outside the three words and a missing
+            // A bucket outside the vocabulary, a relevance outside its words and a missing
             // title: refused by that field, the file as it was.
             const fresh = { ...ADD, title: 'A fresh title', url: 'https://example.org/fresh' };
             expect(add(into, { ...fresh, bucket: 'nonsense' }).refused[0].field).toBe('bucket');

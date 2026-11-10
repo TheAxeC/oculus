@@ -1,14 +1,14 @@
 <script lang="ts">
     // Layer 3, partial of views/boards/deposit/Deposit.svelte. The Zenodo deposit of one project:
-    // For review, which sends an anonymised copy of `code/` with the author Anonymous and its files
-    // open only through a share link, and Publish, which sends the real files and authors, public;
-    // each behind the yes of views/shared/writes/AskConfirm.svelte, and each a press of the parent
-    // (the deposit actions zenodoReview and zenodoPublish of POST /api/deposit). The DOI and the
-    // share link are read from the snapshot's `code_availability` of the project, each with a Copy
-    // button, and the sentence the last press answered is shown under them. With the `downloads`
-    // row of the Zenodo token missing (the deposit GET's `zenodo.ready`), both buttons are off with
-    // a tip naming the setting. Neither needs a mirror: the review copy is made in a folder of its
-    // own on the server.
+    // For review, which sends an anonymised copy of the code folder with the author Anonymous and
+    // its files open only through a share link, and Publish, which sends the real files and
+    // authors, public; each behind the yes of views/shared/writes/AskConfirm.svelte, and each a
+    // press of the parent (the deposit actions zenodoReview and zenodoPublish of POST
+    // /api/deposit). The DOI and the share link are read from the snapshot's `code_availability`
+    // of the project, each with a Copy button, and the sentence the last press answered is shown
+    // under them. With the `downloads` row of the Zenodo token missing (the deposit GET's
+    // `zenodo.ready`), both buttons are off with a tip naming the setting. Neither needs a mirror:
+    // the review copy is made in a folder of its own on the server.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';

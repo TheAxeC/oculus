@@ -1,15 +1,27 @@
 // What server/files/fs/notes.ts does to the order file of the notes on a write: a file that is
 // missing is written, and a file that is there and does not read, reads as another shape or is a
-// link out of the folder is refused and left byte for byte as it was.
+// link out of the folder is refused and left byte for byte as it was. And where it reads a hub's
+// notes and lands a name by the rule of the notes: the folder the hub's `notes_dir` names.
 //
 // Every folder here is under the system temporary directory, asserted to be inside it first.
 // Nothing reads or writes ~/.oculus.
 
-import { lstatSync, readFileSync, readlinkSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+    lstatSync,
+    mkdirSync,
+    readFileSync,
+    readlinkSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { writeNoteOrder } from '../../../src/lib/server/files/fs/notes.ts';
+import {
+    noteLanding,
+    readAllNotes,
+    writeNoteOrder
+} from '../../../src/lib/server/files/fs/notes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A notes folder holding the notes `one` and `two`, inside the temporary directory. */
@@ -74,5 +86,39 @@ describe('a write of the order of the notes', () => {
                 expect(readFileSync(file, 'utf8'), row).toBe(held);
             }
         }
+    });
+});
+
+/** A scratch hub with a note in the shipped notes folder and one in `journal`. */
+function hubWithTwoFolders(): string {
+    const hub = scratchDir('oculus-notes-hub-');
+    expect(resolve(hub).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    for (const path of ['.oculus/notes/Old.md', 'journal/Kickoff.md']) {
+        mkdirSync(join(hub, path, '..'), { recursive: true });
+        writeFileSync(join(hub, path), '# n\n');
+    }
+    return hub;
+}
+
+describe('the notes of a hub, read from the folder its notes_dir names', () => {
+    it('reads the notes of the folder notes_dir names and answers that folder (G13)', () => {
+        const hub = hubWithTwoFolders();
+        const [read] = readAllNotes([{ name: 'hub', dir: hub }], 'hub', () => 'journal/');
+        expect(read).toMatchObject({ root: 'hub', folder: 'journal', state: 'ok' });
+        expect(read.entries.map((one) => one.path)).toEqual(['Kickoff.md']);
+    });
+
+    it('lands a name by the rule of the notes in the folder notes_dir names and in no other (G13)', () => {
+        const hub = hubWithTwoFolders();
+        const hubs = [{ dir: hub, notes: 'journal' }];
+        expect(noteLanding(hubs, join(hub, 'journal'), 'a:b.md')).toEqual({
+            refused: 'invalid_name'
+        });
+        expect(noteLanding(hubs, join(hub, 'journal'), 'kickoff.md')).toEqual({
+            refused: 'exists'
+        });
+        expect(noteLanding(hubs, join(hub, '.oculus', 'notes'), 'a:b.md')).toEqual({
+            name: 'a:b.md'
+        });
     });
 });

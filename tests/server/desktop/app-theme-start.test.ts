@@ -18,6 +18,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, vi } from 'vitest';
 import { NO_OFFERS, type AppThemeFiles } from '../../../src/lib/data/helpers/files/apps/choices.ts';
+import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { vscodeRuleIds } from '../../../src/lib/data/places/code-rules.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
@@ -322,6 +323,7 @@ describe('the theme a page is sent with', () => {
             return page.document.body.className;
         }
         const look = loaded.words.configuredLook();
+        if (look === null) throw new Error('the config sets no look');
         await loaded.drawTheme(page.document, {
             choice: look.theme,
             app: false,
@@ -413,11 +415,9 @@ describe('the theme a page is sent with', () => {
         },
         {
             row: 'rice.monospace written as a word, which reads as its default (C11)',
-            options: {
-                theme: 'kanagawalotus',
-                crt: { on: true },
-                rice: { brackets: false, monospace: 'x' }
-            },
+            options: {},
+            settings:
+                '  theme: kanagawalotus\n  crt: { on: true }\n  rice: { brackets: false, monospace: x }\n',
             marked: false,
             classes: 'rice kanagawalotus crt rice-plain',
             drawnBy: 'workbench'
@@ -438,17 +438,36 @@ describe('the theme a page is sent with', () => {
     ] as {
         row: string;
         options: Record<string, unknown>;
+        /** A workspace file's `settings:` lines, which the config is merged from instead. */
+        settings?: string;
         held?: HeldAs;
         marked: boolean;
         crt?: boolean;
         classes: string;
         file?: boolean;
         drawnBy?: 'workbench' | 'find';
-    }[])('starts on $row', async ({ options, held: as, marked, crt, classes, file, drawnBy }) => {
+    }[])('starts on $row', async (row) => {
+        const { options, settings, held: as, marked, crt, classes, file, drawnBy } = row;
+        // An option that is a map is laid over oculus's map, as the merge lays a file's keys.
         const named = Object.fromEntries(
-            Object.entries(options).map(([key, value]) => [key, value === 'dusk' ? dusk : value])
+            Object.entries(options).map(([key, value]) => [
+                key,
+                value === 'dusk'
+                    ? dusk
+                    : isMap(value) && isMap(shipped[key])
+                      ? { ...shipped[key], ...value }
+                      : value
+            ])
         );
-        const config = { ...shipped, ...named };
+        const config =
+            settings === undefined
+                ? { ...shipped, ...named }
+                : loadConfig(engine, {
+                      workspace: {
+                          file: '/w/main.yml',
+                          text: `folders: []\nsettings:\n${settings}`
+                      }
+                  }).config;
         const start = loaded.requestStart(held[as ?? 'approved'], config, marked, crt ?? true);
         expect(start.classes).toBe(classes);
         if (file === true) {

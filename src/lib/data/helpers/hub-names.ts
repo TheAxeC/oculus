@@ -22,7 +22,6 @@ import { byKey, isMap } from './guards.ts';
 import { findingText, type TextCatalog } from './finding-text.ts';
 import {
     COLLECTION_FLAGS,
-    CV_FIELD_ROLES,
     REGISTRY_WORDS,
     type Collection,
     type CollectionEntry,
@@ -140,19 +139,6 @@ export const REGISTRY_VIEWS: Partial<Record<RegistryWord, string>> = {
     radar: 'radar'
 };
 
-/**
- * The registry words that name a YAML feed's file, which is read as a feed and is no collection.
- */
-export const FEED_REGISTRIES = ['leads', 'radar'] as const;
-
-/** One feed a `collections:` entry names. */
-export type FeedRegistry = (typeof FEED_REGISTRIES)[number];
-
-/** Whether a `collections:` entry names a YAML feed's file. */
-export function isFeedEntry(entry: Pick<CollectionEntry, 'registry'>): boolean {
-    return (FEED_REGISTRIES as readonly string[]).includes(entry.registry ?? '');
-}
-
 /** Whether a `collections:` entry's key is the id of the view of one of oculus's registries. */
 function takesRegistryView(key: string): boolean {
     return Object.values(REGISTRY_VIEWS).includes(key);
@@ -172,9 +158,7 @@ export function hasCardList(entry: Pick<CollectionEntry, 'key' | 'registry'>): b
  * a pane leaves out the tab of such a key while no hub of the workspace lists it.
  */
 export function placedKeys(list: readonly CollectionEntry[]): string[] {
-    return list
-        .filter((one) => one.group !== undefined && !isFeedEntry(one) && hasCardList(one))
-        .map((one) => one.key);
+    return list.filter((one) => one.group !== undefined && hasCardList(one)).map((one) => one.key);
 }
 
 /**
@@ -571,8 +555,8 @@ export const ROOT_FOLDER = '.oculus';
 export const WORKSPACES_FOLDER = 'workspaces';
 
 /**
- * The hub's own settings file, `<hub>/.oculus/config.yml`: one map of the keys of HUB_LIST, read
- * after the engine's config. A folder that holds it is a hub.
+ * The hub's own settings file, `<hub>/.oculus/config.yml`: one map of the keys of the hub list
+ * (data/shapes/hub-keys.ts), read after the engine's config. A folder that holds it is a hub.
  */
 export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
 
@@ -681,149 +665,12 @@ export function offerAlong(
 }
 
 /**
- * The keys the hub's settings file may set, each with the name of oculus's config file it belongs
- * to (`sources.yml` for config/defaults/sources.yml, `catalogs/vocab.yml` for a catalog), which is
- * the group the Settings view draws it in and the options file under config/options/ that describes
- * it. Each key is a dotted path into the hub file, and a key outside the list is a finding and is
- * not applied. A key of config/catalogs/vocab.yml is laid over oculus's value by its shape
- * (data/sources/config/merge/in-place.ts): a map by its words in oculus's place, `categories` by
- * its rows' `key`, `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`,
- * `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers`, `radar_buckets`
- * and `deck_order` whole, and `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the
- * fields the hub adds to the project form, is read row by row; the service rows oculus ships
- * (`literature.sources`, `recover.sources`, `links` and `sign_in` by their `key`,
- * `connections.failures` by its `kind`) are laid over oculus's row by row, so a hub adds, changes
- * or removes one row; every other key replaces oculus's value whole, oculus's value standing where
- * the hub sets none. They are the keys that describe this hub rather than the engine: its folders
- * and the files of its records, which of its records a chat's index holds, where the reader's
- * bookmarks, the schedules and the machine's apps are kept, the clusters its jobs run on and the
- * key Account setup makes for each, the rows that tell a failed connection apart, the providers its
- * readers sign in with, where Recover downloads Node.js from, the files its writing rules skip or
- * let draw arrows, the conventions its audit holds its projects to (`audit:`: the files and
- * sections it requires, the folders a stage keeps a project in and its website's feed), the
- * website its files are written into (`website:`, each of the four paths of `website.files` a key
- * of its own, so a hub that sets one keeps oculus's other three, and each of the three words of
- * `website.cv_words` a key of its own the same way), the values its apps' settings hold, the
- * counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the
- * project form, the reader rows of its literature sources, its Recover sources and its journal
- * browser, the links every page link is built from, and the Zenodo deposit of its projects
- * (`deposit.zenodo`, each of its three fields a key of its own, so a hub that sets one keeps
- * oculus's other two). Its domains and theme words are its own registry files'. Which of them each
- * hub's own file is read for, and which the primary's alone, is data/shapes/hub-keys.ts's.
- */
-const HUB_LIST: readonly { key: string; file: string }[] = [
-    { key: 'scan', file: 'sources.yml' },
-    { key: 'portfolio_deck', file: 'sources.yml' },
-    { key: 'collections', file: 'sources.yml' },
-    { key: 'chat_context', file: 'sources.yml' },
-    { key: 'new_project_dir', file: 'sources.yml' },
-    { key: 'linkedin_dir', file: 'sources.yml' },
-    { key: 'career_file', file: 'sources.yml' },
-    { key: 'memories_dir', file: 'sources.yml' },
-    { key: 'wallpaper_dir', file: 'sources.yml' },
-    { key: 'bookmarks', file: 'sources.yml' },
-    { key: 'schedules', file: 'sources.yml' },
-    { key: 'apps_dir', file: 'sources.yml' },
-    { key: 'wallpaper.image', file: 'appearance.yml' },
-    { key: 'docs', file: 'layout.yml' },
-    { key: 'counts', file: 'layout.yml' },
-    { key: 'palette', file: 'catalogs/vocab.yml' },
-    { key: 'stages', file: 'catalogs/vocab.yml' },
-    { key: 'forms', file: 'catalogs/vocab.yml' },
-    { key: 'chips', file: 'catalogs/vocab.yml' },
-    { key: 'statuses', file: 'catalogs/vocab.yml' },
-    { key: 'lead_statuses', file: 'catalogs/vocab.yml' },
-    { key: 'focus_clusters', file: 'catalogs/vocab.yml' },
-    { key: 'focus_lanes', file: 'catalogs/vocab.yml' },
-    { key: 'fund_stages', file: 'catalogs/vocab.yml' },
-    { key: 'position_stages', file: 'catalogs/vocab.yml' },
-    { key: 'teaching_stages', file: 'catalogs/vocab.yml' },
-    { key: 'focus_lane_tones', file: 'catalogs/vocab.yml' },
-    { key: 'facet_tones', file: 'catalogs/vocab.yml' },
-    { key: 'tiers', file: 'catalogs/vocab.yml' },
-    { key: 'research_audit', file: 'catalogs/vocab.yml' },
-    { key: 'roles', file: 'catalogs/vocab.yml' },
-    { key: 'categories', file: 'catalogs/vocab.yml' },
-    { key: 'deck_order', file: 'catalogs/vocab.yml' },
-    { key: 'rail_color', file: 'catalogs/vocab.yml' },
-    { key: 'leads_fit', file: 'catalogs/vocab.yml' },
-    { key: 'data_access', file: 'catalogs/vocab.yml' },
-    { key: 'venue_categories', file: 'catalogs/vocab.yml' },
-    { key: 'pillar_kinds', file: 'catalogs/vocab.yml' },
-    { key: 'venue_tiers', file: 'catalogs/vocab.yml' },
-    { key: 'radar_buckets', file: 'catalogs/vocab.yml' },
-    { key: 'ticker_categories', file: 'catalogs/vocab.yml' },
-    { key: 'manifest_fields', file: 'schemas/manifest-schema.yml' },
-    { key: 'slurm.resource', file: 'behavior.yml' },
-    { key: 'clusters.key_type', file: 'behavior.yml' },
-    { key: 'clusters.key_file', file: 'behavior.yml' },
-    { key: 'connections.failures', file: 'behavior.yml' },
-    { key: 'sign_in', file: 'behavior.yml' },
-    { key: 'recover.node_download', file: 'behavior.yml' },
-    { key: 'lint.writing_skip', file: 'behavior.yml' },
-    { key: 'lint.writing_glyphs', file: 'behavior.yml' },
-    { key: 'audit.required_files', file: 'behavior.yml' },
-    { key: 'audit.required_sections', file: 'behavior.yml' },
-    { key: 'audit.stage_folders', file: 'behavior.yml' },
-    { key: 'website.folder', file: 'behavior.yml' },
-    { key: 'website.cv', file: 'behavior.yml' },
-    { key: 'website.kinds', file: 'behavior.yml' },
-    { key: 'website.paper_fields', file: 'behavior.yml' },
-    { key: 'website.paper_list', file: 'behavior.yml' },
-    { key: 'website.code_link_name', file: 'behavior.yml' },
-    { key: 'website.author_places.lead', file: 'behavior.yml' },
-    { key: 'website.author_places.supervisor', file: 'behavior.yml' },
-    { key: 'website.author_places.collaborator', file: 'behavior.yml' },
-    { key: 'website.code_statuses.deposited', file: 'behavior.yml' },
-    { key: 'website.code_statuses.review_copy', file: 'behavior.yml' },
-    { key: 'website.doi_origin', file: 'behavior.yml' },
-    { key: 'website.file_header', file: 'behavior.yml' },
-    { key: 'website.site_programs', file: 'behavior.yml' },
-    { key: 'website.cv_sections', file: 'behavior.yml' },
-    { key: 'website.cv_lists', file: 'behavior.yml' },
-    { key: 'website.cv_entry_fields', file: 'behavior.yml' },
-    ...CV_FIELD_ROLES.map((role) => ({ key: `website.cv_fields.${role}`, file: 'behavior.yml' })),
-    { key: 'website.cv_words.months', file: 'behavior.yml' },
-    { key: 'website.cv_words.open_end', file: 'behavior.yml' },
-    { key: 'website.cv_words.award_time', file: 'behavior.yml' },
-    { key: 'website.files.site', file: 'behavior.yml' },
-    { key: 'website.files.cv', file: 'behavior.yml' },
-    { key: 'website.files.papers', file: 'behavior.yml' },
-    { key: 'website.files.industry', file: 'behavior.yml' },
-    { key: 'app_settings', file: 'behavior.yml' },
-    { key: 'literature.sources', file: 'behavior.yml' },
-    { key: 'literature.prefer', file: 'behavior.yml' },
-    { key: 'recover.sources', file: 'behavior.yml' },
-    { key: 'venues.browser', file: 'behavior.yml' },
-    { key: 'links', file: 'behavior.yml' },
-    { key: 'deposit.zenodo.address', file: 'behavior.yml' },
-    { key: 'deposit.zenodo.timeout_s', file: 'behavior.yml' },
-    { key: 'deposit.zenodo.auth', file: 'behavior.yml' }
-];
-
-/**
  * The `wallpaper.image` value of a merged config as text, empty when it holds none: the image the
  * wallpaper route serves, and the key the page's wallpaper layer asks for it by.
  */
 export function wallpaperValue(config: Record<string, unknown> | undefined): string {
     const block = config !== undefined && isMap(config.wallpaper) ? config.wallpaper : {};
     return typeof block.image === 'string' ? block.image.trim() : '';
-}
-
-/** Every dotted key the hub list names, in the list's order. */
-export function hubKeys(): string[] {
-    return HUB_LIST.map((one) => one.key);
-}
-
-/** The dotted keys the hub list binds to one config file, or undefined for a file with none. */
-export function hubKeysOf(name: string): readonly string[] | undefined {
-    const keys = HUB_LIST.filter((one) => one.file === name).map((one) => one.key);
-    return keys.length === 0 ? undefined : keys;
-}
-
-/** The config file of the engine a key of the hub list belongs to, or undefined for another key. */
-export function hubFileOf(key: string): string | undefined {
-    return HUB_LIST.find((one) => one.key === key)?.file;
 }
 
 /** Whether a `from` value (see loadConfig) names the hub's settings file. */

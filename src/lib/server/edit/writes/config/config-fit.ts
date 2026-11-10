@@ -92,6 +92,20 @@ function formSentence(form: Form, text: Record<string, string>): string {
             return words(text, 'server.config_key.not_https_origin');
         case 'row_key':
             return words(text, 'server.config_key.not_row_key');
+        case 'file_name':
+            return words(text, 'server.config_key.not_file_name');
+        case 'task_name':
+            return words(text, 'server.config_key.not_task_name');
+        case 'inner_path':
+            return words(text, 'server.config_key.not_inner_path');
+        case 'folder_glob':
+            return words(text, 'server.config_key.not_folder_glob');
+        case 'absolute_folder':
+            return words(text, 'server.config_key.not_absolute_folder');
+        case 'partition':
+            return words(text, 'server.config_key.not_partition');
+        case 'cluster_folder':
+            return words(text, 'server.config_key.not_cluster_folder');
     }
 }
 

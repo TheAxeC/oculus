@@ -1,9 +1,10 @@
 // Layer 1, data tests. The keys that set this machine's connections (`slurm.resource`,
 // `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`,
-// `recover.node_download`): their readers, each answering its default with the key named for a
-// wrong value and leaving out a row it does not read with the row and the field named; and the
-// rule that they are read from the primary hub's settings file alone, a hub other than the primary
-// that sets one being a finding naming the key and that hub, its value not read.
+// `recover.node_download`, `slurm.scratch_roots`, `recover.data_dir`, `recover.partitions`): their
+// readers, each answering its default with the key named for a wrong value and leaving out a row
+// or a member it does not read with the row and the field, or the member, named; and the rule that
+// they are read from the primary hub's settings file alone, a hub other than the primary that sets
+// one being a finding naming the key and that hub, its value not read.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -14,7 +15,10 @@ import {
     engineDir,
     failureRows,
     loadConfig,
-    signInRows
+    recoverSettings,
+    signInRows,
+    slurmSettings,
+    type SlurmSettings
 } from '../../../src/lib/data/sources/config.ts';
 import type { SettingProblem } from '../../../src/lib/data/sources/config/settings/reader.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -102,8 +106,8 @@ describe('failureRows', () => {
             [BOTH],
             ['connections.failures[0].match: empty']
         ],
-        ['a row that is no map', ['x', KEY], [BOTH], ['connections.failures[0]: records']],
-        ['a value that is no list', 'x', [], ['connections.failures: family']]
+        ['a row that is no map', ['x', KEY], [BOTH], ['connections.failures[0]: record']],
+        ['a value that is no list', 'x', [], ['connections.failures: list']]
     ])(
         'reads %s in order, naming the key of each row it leaves out (G13)',
         (_row, failures, value, problems) => {
@@ -154,6 +158,47 @@ describe('signInRows', () => {
             expect(readOver(signInRows, { sign_in: rows })).toStrictEqual({ value, problems });
         }
     );
+});
+
+describe('the scratch folders and the places of Recover', () => {
+    it('reads each cluster scratch folder, leaving out one that is no absolute folder (G13)', () => {
+        const { value, problems } = readOver(slurmSettings, {
+            slurm: { scratch_roots: { a: '/local', b: 'local', c: '/x/../y', d: '/tmp/' } }
+        });
+        expect((value as SlurmSettings).scratchRoots).toStrictEqual(new Map([['a', '/local']]));
+        expect(problems).toEqual([
+            'slurm.scratch_roots.b: form',
+            'slurm.scratch_roots.c: form',
+            'slurm.scratch_roots.d: form'
+        ]);
+    });
+
+    it('reads the data folder and the partition of each cluster, the default for a wrong one (G13)', () => {
+        expect(
+            readOver(recoverSettings, {
+                recover: { data_dir: 'sets/eeg', partitions: { a: 'main-cpu', b: 'short,long' } }
+            })
+        ).toStrictEqual({
+            value: {
+                dataDir: 'sets/eeg',
+                partitions: new Map([
+                    ['a', 'main-cpu'],
+                    ['b', 'short,long']
+                ])
+            },
+            problems: []
+        });
+        expect(
+            readOver(recoverSettings, { recover: { data_dir: '/abs', partitions: { a: 'x y' } } })
+        ).toStrictEqual({
+            value: { dataDir: '', partitions: new Map() },
+            problems: ['recover.data_dir: form', 'recover.partitions.a: form']
+        });
+        expect(readOver(recoverSettings, {})).toStrictEqual({
+            value: { dataDir: '', partitions: new Map() },
+            problems: []
+        });
+    });
 });
 
 describe('the connection keys of a hub that is not the primary', () => {

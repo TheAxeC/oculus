@@ -8,12 +8,12 @@ import { join, sep } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import { describe, expect, vi } from 'vitest';
 import {
-    DEFAULT_PORT,
     basicServices,
     checkLocal,
     engineDir,
     loadConfig,
     loadMachine,
+    localDefaults,
     localFile,
     localFindings
 } from '../../../../../src/lib/data/sources/config.ts';
@@ -114,7 +114,7 @@ describe('readLocalText', () => {
 
     it('keeps the good keys when one is wrong', () => {
         const read = readLocalText('port: x\nrite_dap_bin: a', hub);
-        expect(read.config.port).toBe(DEFAULT_PORT);
+        expect(read.config.port).toBe(localDefaults().port);
         expect(read.config.riteDapBin).toBe('a');
         expect(named(hub, 'port: x\nrite_dap_bin: a')).toStrictEqual(['port: value']);
         expect(read.unread).toBe(false);
@@ -127,6 +127,38 @@ describe('readLocalText', () => {
         expect(wrongKey.config.port).toBe(9001);
         expect(wrongKey.config.literature).toBeUndefined();
         expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.mailto']);
+    });
+
+    it("takes each default from its entry of oculus's config/options/local.yml, a path under the home folder (G13)", () => {
+        const entries = loadConfig(engineDir()).config.options as Record<
+            string,
+            Record<string, { default?: unknown }>
+        >;
+        const shipped = entries['local.yml'];
+        const defaults = localDefaults();
+        expect(defaults.port).toBe(shipped.port.default);
+        expect(defaults.claudeBin).toBe(shipped.claude_bin.default);
+        expect(defaults.riteDapBin).toBe(shipped.rite_dap_bin.default);
+        expect(defaults.sessionsRoots).toEqual([
+            join(homedir(), 'workspace'),
+            join(homedir(), 'data'),
+            homedir()
+        ]);
+        expect(defaults.accounts.map((one) => one.dir)).toEqual([
+            join(homedir(), '.claude'),
+            join(homedir(), '.codex')
+        ]);
+        expect(shipped.sessions_cache.default).toBeUndefined();
+    });
+
+    it('reads sessions_roots as paths of the file, and a list holding an empty path as a problem (G13)', () => {
+        const read = readLocalText('sessions_roots: [~/work, data, /srv]', hub);
+        expect(read.config.sessionsRoots).toEqual([join(homedir(), 'work'), '/hub/data', '/srv']);
+        expect(read.set).toContain('sessions_roots');
+        const wrong = readLocalText("sessions_roots: [~/work, '']", hub);
+        expect(wrong.config.sessionsRoots).toEqual(localDefaults().sessionsRoots);
+        expect(named(hub, 'sessions_roots: ~/work')).toStrictEqual(['sessions_roots: value']);
+        expect(wrong.problems.map((one) => one.key)).toStrictEqual(['sessions_roots']);
     });
 });
 

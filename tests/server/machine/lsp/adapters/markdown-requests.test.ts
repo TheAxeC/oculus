@@ -1,14 +1,17 @@
 // Layer 2, server test. What the Markdown entry gives its server and shows the page, G2 and G3: the
 // handlers of the requests the Markdown server makes of its client (adapters/markdown/requests.ts)
-// refuse every file under the hub's `secrets` folder or `~/.oculus`, and every path outside the
-// server's root or through a link out of it; the lists they answer hold none of them; the entry's
-// `refuses` is true for a Markdown file under `secrets`; a change on disk of a file under `secrets`
-// or `node_modules` is not told to the server; and the entry's diagnostics hook drops a mark whose
-// path lies outside the root or in `secrets`. A hub's notes folder `.oculus/notes/` is the one
-// folder under a dot folder whose files are listed and told, and the hub's other `.oculus`
-// folders and its `secrets` stay out. No server process runs: each handler is called as
-// the relay calls it, over a scratch hub and a scratch home folder that `os.homedir` answers
-// through `HOME`.
+// refuse every file under the hub's folder of secrets (its `secrets_dir`, `secrets` in every root
+// here, as the server marks it) or `~/.oculus`, and every path outside the server's root or
+// through a link out of it; the lists they answer hold none of them, nor a file under a folder the
+// hidden folders name; the entry's `refuses` is true for a Markdown file under `secrets`; a change
+// on disk of a file under `secrets` or `node_modules` is not told to the server; and the entry's
+// diagnostics hook drops a mark whose path lies outside the root or in `secrets`. A hub's notes
+// folder (its `notes_dir`, which the served root is marked with: the shipped `.oculus/notes`, or
+// another the hub names) is the one folder under a dot folder whose files are listed and told, a
+// notes folder outside every dot folder is listed once, and the hub's other `.oculus` folders and
+// its `secrets` stay out. No server process runs: each
+// handler is called as the relay calls it, over a scratch hub and a scratch home folder that
+// `os.homedir` answers through `HOME`.
 //
 // The entry refuses a file under `SECRETS` where the disk folds letter case, since that is then the
 // `secrets` folder, and gives it on a disk that does not, where it names another folder. What this
@@ -31,7 +34,7 @@ import {
 import { servedRoots } from '../../../../../src/lib/server/machine/lsp/uris.ts';
 import { entryFiles } from '../../../../../src/lib/server/machine/lsp/held/watch.ts';
 import { TEXT } from '../../../text.ts';
-import { shippedLatex } from '../lsp-fixture.ts';
+import { shippedIndent, shippedLatex } from '../lsp-fixture.ts';
 
 /** Whether the scratch folders' file system reads a path in another letter case as the same. */
 const FOLDS = foldsCase(tmpdir());
@@ -74,7 +77,7 @@ beforeAll(() => {
     symlinkSync(join(base, 'outside.md'), join(hub, 'leak.md'));
     planted = {
         roots: servedRoots([
-            { key: 'hub', dir: hub, hub: true },
+            { key: 'hub', dir: hub, hub: true, secrets: 'secrets' },
             { key: 'home', dir: home }
         ]),
         hub: realpathSync(hub),
@@ -98,7 +101,10 @@ function askOf(key: 'hub' | 'home'): ServerAsk {
     };
 }
 
-const HANDLERS = markdownRequests(() => ['md', 'yml']);
+const HANDLERS = markdownRequests(
+    () => ['md', 'yml'],
+    () => ['vendor']
+);
 
 /** Call a handler as the relay does: what it resolves to, or the text it was refused with. */
 async function call(
@@ -210,7 +216,9 @@ describe('the Markdown server may not be given the machine or the outside', () =
                 mkdirSync(join(dir, path, '..'), { recursive: true });
                 writeFileSync(join(dir, path), '# n\n');
             }
-            const roots = servedRoots([{ key: 'notes', dir, hub: true }]);
+            const roots = servedRoots([
+                { key: 'notes', dir, hub: true, secrets: 'secrets', notes: '.oculus/notes' }
+            ]);
             const found = (await HANDLERS['markdown/findMarkdownFilesInWorkspace'](
                 {},
                 {
@@ -221,6 +229,45 @@ describe('the Markdown server may not be given the machine or the outside', () =
             )) as string[];
             expect(found.sort()).toEqual(
                 ['.oculus/notes/Kickoff.md', '.oculus/notes/sub/Plan.md', 'README.md']
+                    .map((path) => pathToFileURL(join(dir, path)).href)
+                    .sort()
+            );
+        });
+
+        it.each([
+            ['a dot folder', '.lab/notes', ['.lab/notes/Kickoff.md', 'README.md']],
+            ['no dot folder, once', 'journal', ['README.md', 'journal/Kickoff.md']]
+        ])(
+            "lists a hub's notes in the folder its notes_dir names, in %s (G13)",
+            async (_name, notes, listed) => {
+                const dir = realpathSync(scratchDir('oculus-md-notes-dir-'));
+                const files = ['README.md', `${notes}/Kickoff.md`, '.oculus/notes/Old.md'];
+                for (const path of files) {
+                    mkdirSync(join(dir, path, '..'), { recursive: true });
+                    writeFileSync(join(dir, path), '# n\n');
+                }
+                const roots = servedRoots([{ key: 'notes', dir, hub: true, notes }]);
+                const found = (await HANDLERS['markdown/findMarkdownFilesInWorkspace'](
+                    {},
+                    { ...askOf('hub'), root: roots[0], roots }
+                )) as string[];
+                expect(found).toEqual(listed.map((path) => pathToFileURL(join(dir, path)).href));
+            }
+        );
+
+        it('lists no file under a folder the hidden folders name (G13)', async () => {
+            const dir = realpathSync(scratchDir('oculus-md-hidden-'));
+            for (const path of ['README.md', 'vendor/a/x.md', 'node_modules/p/y.md']) {
+                mkdirSync(join(dir, path, '..'), { recursive: true });
+                writeFileSync(join(dir, path), '# n\n');
+            }
+            const roots = servedRoots([{ key: 'free', dir }]);
+            const found = (await HANDLERS['markdown/findMarkdownFilesInWorkspace'](
+                {},
+                { ...askOf('hub'), root: roots[0], roots }
+            )) as string[];
+            expect(found.sort()).toEqual(
+                ['README.md', 'node_modules/p/y.md']
                     .map((path) => pathToFileURL(join(dir, path)).href)
                     .sort()
             );
@@ -265,7 +312,10 @@ describe('the Markdown server may not be given the machine or the outside', () =
             oculus: '/oculus',
             node: '/node',
             exists: () => true,
-            latex: () => shippedLatex()
+            latex: () => shippedLatex(),
+            markdown: () => ['md'],
+            hiddenFolders: () => ['node_modules'],
+            indent: shippedIndent
         }).forLanguage('markdown');
 
         it.each([
@@ -318,8 +368,22 @@ describe('the Markdown server may not be given the machine or the outside', () =
                 entry?.fileEvents?.() ?? [],
                 (path) => entry?.refuses?.(join(planted.hub, path), planted.roots) ?? false
             );
-            expect(match(relative, true)).toBe(told);
+            expect(match(relative, '.oculus/notes')).toBe(told);
         });
+
+        it.each([
+            ['a note of the folder notes_dir names', join('.lab', 'notes', 'Kickoff.md'), true],
+            ['a note of the shipped notes folder', join('.oculus', 'notes', 'Kickoff.md'), false]
+        ])(
+            'tells the server a change on disk in a hub whose notes_dir is .lab/notes of %s: %s (G13)',
+            (_name, relative, told) => {
+                const match = entryFiles(
+                    entry?.fileEvents?.() ?? [],
+                    (path) => entry?.refuses?.(join(planted.hub, path), planted.roots) ?? false
+                );
+                expect(match(relative, '.lab/notes')).toBe(told);
+            }
+        );
     });
 
     describe('the diagnostics hook', () => {

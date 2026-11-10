@@ -89,7 +89,7 @@ describe("the catalogs a workspace lays over oculus's", () => {
     it("words a list where a catalog's map is merged, and keeps oculus's glyphs", () => {
         const read = withSettings('  glyphs: [a]\n');
         expect(said(read)).toEqual([
-            `${FILE} | settings.glyphs | settings.glyphs must be a map; oculus's value stands`
+            `${FILE} | settings.glyphs | settings.glyphs must be a map, not ["a"]; oculus's value stands`
         ]);
         expect(read.config.glyphs).toEqual(OCULUS.glyphs);
     });

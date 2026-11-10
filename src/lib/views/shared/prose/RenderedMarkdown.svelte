@@ -16,7 +16,7 @@
     // out by the pattern the document route splits the same block off with
     // (data/prose/markdown/front-matter.ts), which the note scan and the Outline read too.
     //
-    // A note of a hub (a file of its `.oculus/notes/`, named by `root` and `path`) is drawn with
+    // A note of a hub (a file of its notes folder, named by `root` and `path`) is drawn with
     // its links, embeds and tags (state/sources/explorer/notes/note-press.ts's noteDrawing): an
     // embedded note's text is read through the file store's text query, so a save of it redraws
     // this one, and a press on a link or a tag is answered by
@@ -39,7 +39,7 @@
     import { STATE_KEY } from '$lib/state/client/use';
     import type { ClientState } from '$lib/state/client/context';
     import { noteDrawing } from '$lib/state/sources/explorer/notes/note-press';
-    import { notePath } from '$lib/state/sources/explorer/notes/note-tree';
+    import { notePathOf } from '$lib/state/sources/explorer/notes/note-tree';
     import { pressNote } from '$lib/views/shared/explorer/control/note-actions';
     import { MATH_OPTIONS, holdsMath, loadMarkdownMath } from '$lib/views/shared/latex/math';
     import { t } from '$lib/state/shared/words/text';
@@ -93,7 +93,8 @@
                   client.fs.notes().hubs,
                   { root, path },
                   (inside: string) => {
-                      const read = client.fs.fileText(root, notePath(inside));
+                      const at = notePathOf(client.fs.notes().hubs, root, inside);
+                      const read = client.fs.fileText(root, at);
                       return read.loading || read.error !== '' ? null : read.text;
                   },
                   t

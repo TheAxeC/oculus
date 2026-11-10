@@ -5,8 +5,11 @@
 
 import type { GroupedSession, SessionAgent } from './model-sessions.ts';
 
-/** The two agents the composer starts with flags; a shell takes none. */
-export type AgentId = 'claude' | 'codex';
+/** The agents the composer starts with flags, in the order it offers them; a shell takes none. */
+export const AGENT_IDS = ['claude', 'codex'] as const;
+
+/** One of AGENT_IDS. */
+export type AgentId = (typeof AGENT_IDS)[number];
 
 /**
  * One value of one picker: the words it shows and what it passes after the list's flag. `pass` is

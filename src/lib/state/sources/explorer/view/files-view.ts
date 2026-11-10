@@ -59,7 +59,10 @@ export type RevealOutcome = {
  * are drawn in (`sections`, every section's id once, the ones not drawn included).
  */
 export type FilesView = FilesForms & {
-    /** Whether the tab lists dotfiles and the build folders; on unless the reader turned it off. */
+    /**
+     * Whether the tab lists dotfiles and the folders `files.hidden_folders` names; on unless the
+     * reader turned it off.
+     */
     showHidden: boolean;
     /** Whether the tab lists what git ignores; on unless the reader turned it off. */
     showIgnored: boolean;

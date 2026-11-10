@@ -1,17 +1,19 @@
-// Layer 2, server. Start one of the four update tasks. The tray's press reaches it through the
-// terminal endpoint (pty/routes.ts) and a schedule's run (schedules/run.ts) calls it at a due time,
-// so both start the same ordinary interactive Claude session in the root of the hub they name.
+// Layer 2, server. Start one update task of a hub. The tray's press reaches it through the terminal
+// endpoint (pty/routes.ts) and a schedule's run (schedules/run.ts) calls it at a due time, so both
+// start the same ordinary interactive Claude session in the root of the hub they name.
 //
-// A task is a file of a hub, `.oculus/tasks/<kind>.md`, that a Claude Code session follows on its
-// own, and any hub of the open workspace may hold one: the tray offers the task of every hub that
-// holds its file (`offeredTasks`), and a press or a schedule names the hub whose task it runs, the
-// primary when it names none. The task is `<claude> '<sentence>'`: the catalog's sentence naming
-// that file is the session's first message, passed as the positional argument, so every permission
-// prompt the CLI raises is answered in the terminal pane by the reader. A hub that holds no file
-// for the task is refused with `task-file-missing`, naming the file and the hub, and nothing
-// starts. A schedule's Run unattended puts `--dangerously-skip-permissions` in front of it, which
-// runs the task with nobody asked; a press never does. The start keeps no record: a press belongs
-// to no schedule, and a schedule's run is recorded by the watcher (schedules/watch.ts).
+// A hub's update tasks are the rows of its `update_tasks` (settings/hub-rows.ts), each naming a
+// file of the hub, `.oculus/tasks/<task>.md`, that a Claude Code session follows on its own. The
+// tray offers each row of every hub of the open workspace whose file the hub holds
+// (`offeredTasks`), and a press or a schedule names the hub whose task it runs, the primary when it
+// names none. The task is `<claude> '<sentence>'`: the catalog's sentence naming that file is the
+// session's first message, passed as the positional argument, so every permission prompt the CLI
+// raises is answered in the terminal pane by the reader. A task the hub's `update_tasks` does not
+// list is refused with `update-task-unlisted`, and one whose file the hub does not hold with
+// `task-file-missing`, each naming the hub, and nothing starts. A schedule's Run unattended puts
+// `--dangerously-skip-permissions` in front of it, which runs the task with nobody asked; a press
+// never does. The start keeps no record: a press belongs to no schedule, and a schedule's run is
+// recorded by the watcher (schedules/watch.ts).
 //
 // No print-mode flag is passed (`-p`, `--output-format stream-json`, `--verbose`, `--include-
 // partial-messages`), so a task is the interactive session the chat terminal already is, and a
@@ -19,24 +21,59 @@
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { HubTask, Terminal, TerminalRefusal } from '../../../../data/model/index.ts';
-import { UPDATE_TASKS, type UpdateTask } from '../../../../data/helpers/run/tasks.ts';
+import type { HubSettings } from '../../../../data/index.ts';
+import type {
+    HubTask,
+    Terminal,
+    TerminalRefusal,
+    UpdateTask
+} from '../../../../data/model/index.ts';
+import { HUB_FILE } from '../../../../data/helpers/hub-names.ts';
+import {
+    updateTasks,
+    type UpdateTaskRow
+} from '../../../../data/sources/config/settings/hub-rows.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 import { words } from '../../../core/words.ts';
 import { shellWord } from '../../pty/shell-word.ts';
 import { startTerminal, type StartOptions } from '../../pty/sessions.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 
-/** The hubs of the open workspace a task runs in, read from it at the call. */
-export type TaskHubs = Pick<OpenWorkspace, 'primary' | 'primaryDir' | 'hubs'>;
+/**
+ * The hubs of the open workspace a task runs in, read from it at the call, and the merged settings
+ * of each, which its `update_tasks` is read from.
+ */
+export type TaskHubs = Pick<OpenWorkspace, 'primary' | 'primaryDir' | 'hubs'> & {
+    /** The merged settings of the hub whose folder is `dir`. */
+    settingsOf: (dir: string) => Record<string, unknown>;
+};
 
 /** One hub of the open workspace: its name and its folder. */
 type HubFolder = TaskHubs['hubs'][number];
+
+/**
+ * The hubs of `open` with their settings: the primary's the merged config `primary` gives, every
+ * other hub's its own parse that `settings` gives.
+ */
+export function taskHubs(
+    open: Pick<OpenWorkspace, 'primary' | 'primaryDir' | 'hubs'>,
+    primary: () => Record<string, unknown>,
+    settings: HubSettings
+): TaskHubs {
+    return {
+        primary: open.primary,
+        primaryDir: open.primaryDir,
+        hubs: open.hubs,
+        settingsOf: (dir) => (dir === open.primaryDir ? primary() : settings(dir).config)
+    };
+}
 
 /** What starts an update task, beyond the tmux options of every terminal start. */
 export type TaskStartOptions = StartOptions & {
     /** The hub whose task it is: its name, which a refusal names, and the folder it starts in. */
     hub: HubFolder;
+    /** The tasks the rows of the hub's `update_tasks` name, which the task must be one of. */
+    listed: readonly UpdateTask[];
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
     /** The terminal's grid: the page's size for a press, a fixed one for a scheduled run. */
@@ -68,10 +105,20 @@ function hasTaskFile(hub: string, kind: UpdateTask): boolean {
     }
 }
 
+/** The rows of the `update_tasks` of a hub that its rule takes, in the file's order. */
+function rowsOf(open: TaskHubs, hub: HubFolder): UpdateTaskRow[] {
+    return updateTasks(open.settingsOf(hub.dir));
+}
+
+/** The tasks the rows of a hub's `update_tasks` name, in the file's order. */
+export function taskNames(open: TaskHubs, hub: HubFolder): UpdateTask[] {
+    return rowsOf(open, hub).map((row) => row.task);
+}
+
 /**
- * The update tasks the hubs hold: one pair per hub that holds the task's file, by task in the order
- * of UPDATE_TASKS and within one task by hub, the primary first and the other hubs in the folders'
- * order. Empty when no hub holds a task file, and null while the workspace holds no hub.
+ * The update tasks the hubs offer: one per row of a hub's `update_tasks` whose file the hub holds,
+ * by hub, the primary first and the other hubs in the folders' order, and within one hub in the
+ * order of its rows. Empty when no hub offers a task, and null while the workspace holds no hub.
  */
 export function offeredTasks(open: TaskHubs): HubTask[] | null {
     if (open.hubs.length === 0) return null;
@@ -79,9 +126,33 @@ export function offeredTasks(open: TaskHubs): HubTask[] | null {
         ...open.hubs.filter((one) => one.name === open.primary),
         ...open.hubs.filter((one) => one.name !== open.primary)
     ];
-    return UPDATE_TASKS.flatMap((task) =>
-        hubs.filter((one) => hasTaskFile(one.dir, task)).map((one) => ({ task, hub: one.name }))
+    return hubs.flatMap((one) =>
+        rowsOf(open, one)
+            .filter((row) => hasTaskFile(one.dir, row.task))
+            .map((row) => ({
+                task: row.task,
+                hub: one.name,
+                label: row.label,
+                note: row.note,
+                view: row.view,
+                lastRun: row.lastRun,
+                file: join(one.dir, HUB_FILE),
+                at: row.at
+            }))
     );
+}
+
+/**
+ * The name of the hub a schedule's task names (the primary for no name) and the tasks its
+ * `update_tasks` lists, or null when it names no hub of the workspace or there is no primary.
+ */
+export function listedTasks(
+    open: TaskHubs,
+    name: string | undefined
+): { hub: string; tasks: UpdateTask[] } | null {
+    const named = namedHub(open, name);
+    if ('refused' in named) return null;
+    return { hub: named.hub.name, tasks: taskNames(open, named.hub) };
 }
 
 /**
@@ -129,6 +200,9 @@ export async function startUpdateTask(
     options: TaskStartOptions
 ): Promise<TaskStart> {
     const hub = options.hub;
+    if (!options.listed.includes(kind)) {
+        return { refused: 'update-task-unlisted', names: [kind, hub.name] };
+    }
     if (!hasTaskFile(hub.dir, kind)) {
         return { refused: 'task-file-missing', names: [taskFile(kind), hub.name] };
     }

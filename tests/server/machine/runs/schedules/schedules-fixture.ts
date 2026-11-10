@@ -8,6 +8,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect } from 'vitest';
+import { engineDir, loadConfig } from '../../../../../src/lib/data/sources/config.ts';
 import type { Hub } from '../../../../../src/lib/server/core/channels.ts';
 import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import {
@@ -31,6 +32,21 @@ import { commandsYml, plantRepo } from '../commands/commands-fixture.ts';
 
 /** The stand-in `claude` every run is started with: a path, never run. */
 export const CLAUDE = '/stub/claude';
+
+/** oculus's shipped settings, whose `update_tasks` lists no task: the second hub's. */
+export const SHIPPED = loadConfig(engineDir()).config;
+
+/** The Lit Watch row of the primary hub's `update_tasks`. */
+export const LIT_WATCH = {
+    task: 'litwatch',
+    label: 'Lit Watch',
+    note: 'new-paper radar',
+    view: 'radar',
+    last_run: 'radar'
+};
+
+/** The primary hub's settings: oculus's, with `update_tasks` listing Lit Watch. */
+export const LISTED: Record<string, unknown> = { ...SHIPPED, update_tasks: [LIT_WATCH] };
 
 /** The three things a schedule runs. */
 export type Kind = 'task' | 'command' | 'prompt';
@@ -80,8 +96,8 @@ export function plantCommands(w: World, entries: string): void {
 
 /**
  * A scratch folder with its repository, the repository's command `sync` with its chain approved, a
- * primary hub holding the Lit Watch task file, a second hub holding no task file, and no schedules
- * file.
+ * primary hub whose `update_tasks` lists Lit Watch and which holds its task file, a second hub
+ * listing no task and holding no task file, and no schedules file.
  */
 export function world(): World {
     const dir = scratchDir('oculus-schedules-');
@@ -95,13 +111,14 @@ export function world(): World {
     writeFileSync(join(hub, '.oculus', 'tasks', 'litwatch.md'), '# Lit Watch\n');
     const other = join(dir, 'other');
     mkdirSync(join(other, '.oculus'), { recursive: true });
-    const hubs = {
+    const hubs: TaskHubs = {
         primary: 'A',
         primaryDir: hub,
         hubs: [
             { name: 'A', dir: hub },
             { name: 'B', dir: other }
-        ]
+        ],
+        settingsOf: (folder) => (folder === hub ? LISTED : SHIPPED)
     };
     const w = { files, approvals: join(dir, 'approvals.json'), repo, hub, other, hubs };
     plantCommands(w, SYNC);

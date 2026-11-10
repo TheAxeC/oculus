@@ -36,7 +36,7 @@
     import { openSourceFile } from '$lib/views/shared/links/source-file';
     import { layoutSeed, type PointNode } from '$lib/state/boards/structure/graph';
     import { graphHubs, nodePlace, noteGraph } from '$lib/state/boards/structure/note-graph';
-    import { notePath } from '$lib/state/sources/explorer/notes/note-tree';
+    import { notePathOf } from '$lib/state/sources/explorer/notes/note-tree';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
@@ -69,7 +69,10 @@
     /** Open the note a node stands for. */
     function open(node: PointNode): void {
         const place = nodePlace(node);
-        openSourceFile(client, { root: place.root, path: notePath(place.path) });
+        openSourceFile(client, {
+            root: place.root,
+            path: notePathOf(hubs, place.root, place.path)
+        });
     }
 </script>
 

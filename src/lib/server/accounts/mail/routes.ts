@@ -42,6 +42,8 @@ export type MailTarget = AccountTarget & {
     token: string;
     accounts: MailAccountConfig[];
     perSignal: number;
+    /** The label or category of the todo signal, `mail.todo_label`. */
+    todoLabel: string;
     fetcher: Fetcher;
     refresh: () => Promise<void>;
     /** Publish again over the notes as they are now, without calling a provider. */
@@ -111,6 +113,7 @@ async function writeArgs(target: MailTarget, account: MailAccountConfig): Promis
         link: row.mailLink ?? '',
         key: mailKey(account),
         perSignal: target.perSignal,
+        todoLabel: target.todoLabel,
         fetcher: target.fetcher
     };
 }

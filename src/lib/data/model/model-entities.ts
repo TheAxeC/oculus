@@ -109,7 +109,7 @@ export type RawManifest = {
      * are read from. A project of a scan folder has none.
      */
     workspaceFolder?: { root: string; dir: string };
-    /** Set when the project's folder holds a `code/` folder, which is what the deposit mirrors. */
+    /** Set when the project's folder holds its code folder (`code_dir`), the deposit's source. */
     codeFolder?: true;
 };
 
@@ -171,9 +171,9 @@ export type RawCollection = {
     entries: RawEntry[];
 };
 
-/** Whether one of the fixed project documents is on disk, by existence only; nothing is read. */
+/** Whether one of the hub's project documents is on disk, by existence only; nothing is read. */
 export type DocPresence = {
-    /** Folder-relative path, one of the fixed list in sources/documents/docs.ts. */
+    /** Folder-relative path, the `name` of a row of the hub's `project_docs`. */
     name: string;
     /** The label the document control draws, distinct from its file name. */
     label: string;
@@ -305,7 +305,7 @@ export const CV_FIELD_ROLES = [
 export type CvFieldRole = (typeof CV_FIELD_ROLES)[number];
 
 /**
- * The deposit mirror of a project's `code/` folder as GET and POST /api/deposit answer it, one
+ * The deposit mirror of a project's code folder as GET and POST /api/deposit answer it, one
  * declaration for the server that sends it (server/git/deposit/) and the page that reads it
  * (state/system/deposit.svelte.ts). A finding is what the scan objected to: a credential, a file
  * too big for a public repository, a missing README.
@@ -379,8 +379,9 @@ export type Reproduced = {
 };
 
 /**
- * One of the fixed project documents, by presence only. The absolute path of DocPresence is not
- * carried: a view shows which documents a project has and asks the server for one by name.
+ * One of the hub's project documents (`project_docs`), by presence only. The absolute path of
+ * DocPresence is not carried: a view shows which documents a project has and asks the server for
+ * one by name.
  */
 export type DocFlag = {
     name: string;
@@ -538,21 +539,18 @@ export type Project = Rooted & {
      * work; the `projectPerson` table holds the same pairs from the other side.
      */
     supervisors: Id[];
-    /**
-     * The four fixed project documents, in the order sources/documents/docs.ts lists them, presence
-     * only.
-     */
+    /** The hub's project documents, in the order its `project_docs` lists them, presence only. */
     docs: DocFlag[];
     /**
-     * The project's own deck: the path of its `present/` folder relative to the Files root that
-     * holds the project (the hub, or the repository's root), present when `present/present.yml`
-     * exists. Absent for a project with no deck, which is most of the hub, so the wire carries the
-     * key only where there is something to open.
+     * The project's own deck: the path of its deck folder (the hub's `deck_dir`) relative to the
+     * Files root that holds the project (the hub, or the repository's root), present when that
+     * folder holds a `present.yml`. Absent for a project with no deck, which is most of the hub,
+     * so the wire carries the key only where there is something to open.
      */
     deck?: string;
     /**
-     * Set when the project's folder holds a `code/` folder. With a `code_availability` that names a
-     * `repo` or a `url`, it is what gives the project a deposit.
+     * Set when the project's folder holds its code folder (the hub's `code_dir`). With a
+     * `code_availability` that names a `repo` or a `url`, it is what gives the project a deposit.
      */
     codeFolder?: true;
     /**
@@ -661,7 +659,10 @@ export type Dataset = Rooted & {
     source?: string;
     /** How the dataset comes back: its sources, each parsed by its kind, in the file's order. */
     retrieval: RecoverSource[];
-    /** The dataset's folder, the same on this Mac and on the cluster (`~/data/<folder>`). */
+    /**
+     * The dataset's folder, the same on this Mac and on the cluster (`~/<data_dir>/<folder>`, the
+     * folder of `recover.data_dir`).
+     */
     path?: string;
     /** Free text about where the set lives and how it is used, the entry's `notes:`. */
     notes?: string;

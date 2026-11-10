@@ -21,14 +21,16 @@ import { z } from 'zod';
 import { draftOf, type DraftCommand } from '../../../../data/helpers/run/chain.ts';
 import { cronRuns } from '../../../../data/helpers/run/cron.ts';
 import { nameKey, readEntry } from '../../../../data/helpers/run/schedules.ts';
-import { UPDATE_TASKS, type UpdateTask } from '../../../../data/helpers/run/tasks.ts';
+import { isTaskName } from '../../../../data/helpers/run/tasks.ts';
 import type {
     ChainLine,
     CommandsAnswer,
+    Finding,
     HubTask,
     ScheduleRow,
     Terminal,
-    UnchosenKey
+    UnchosenKey,
+    UpdateTask
 } from '../../../../data/model/index.ts';
 import { readAs } from '../../../../data/shapes/shapes.ts';
 import {
@@ -40,7 +42,7 @@ import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.t
 import { ahead, stamp } from '../../../shared/words/format.ts';
 import { t } from '../../../shared/words/text.ts';
 import { whenOf, patternOf, WEEK_DAYS, WHEN_CHOICES, type WhenChoice } from './schedule-when.ts';
-import { hubTaskLabel, pairLabel, wordSentence } from './schedule-words.ts';
+import { hubTaskLabel, pairLabel, wordSentence, type TaskOfHub } from './schedule-words.ts';
 
 /** How many of an entry's latest runs a row lists. */
 const RUNS_SHOWN = 5;
@@ -65,7 +67,7 @@ type ScheduleDraft = {
      * The chosen update task; '' while none is chosen: no task is offered, or the entry's own task
      * or hub does not read.
      */
-    task: UpdateTask | '';
+    task: UpdateTask;
     /** The name of the hub whose task it is; '' while no task is chosen. */
     hub: string;
     /**
@@ -158,15 +160,25 @@ export type ScheduleStore = {
      * The earliest next run of the entries that run a task of one hub (an entry with no `hub` runs
      * the primary's), as a line of that task's row.
      */
-    nextOfTask: (pair: HubTask) => string;
+    nextOfTask: (pair: TaskOfHub) => string;
     /** The label of a task of one hub, as the tray names its row. */
-    taskLabel: (pair: HubTask) => string;
+    taskLabel: (pair: TaskOfHub) => string;
     /**
-     * The update tasks the hubs hold a file for, each with its hub, in the order the payload gives
-     * them (by task in the order of UPDATE_TASKS, then the primary's first and the other hubs in
-     * the folders' order), which the tray and the Focus board offer; none before the first payload.
+     * The update tasks the hubs offer, the rows of each hub's `update_tasks` whose file the hub
+     * holds, each with its hub, in the order the payload gives them (by hub, the primary's first
+     * and the other hubs in the folders' order, and within one hub by its rows), which the tray,
+     * the Focus board and the notices offer. A row whose view is no view the page registered is
+     * left out, and so is every row before the page has said which views it holds (`viewsAre`)
+     * and before the first payload.
      */
     offered: () => HubTask[];
+    /** Say which views the page holds, so a row whose view is none of them is left out. */
+    viewsAre: (known: (view: string) => boolean) => void;
+    /**
+     * The findings of the rows `offered` leaves out for their view, each naming the row's place in
+     * its hub's settings file and the view, which the page hands the view registry.
+     */
+    unviewed: () => Finding[];
     /**
      * The line the tray and the dialog's Task box show when no task is offered, for a workspace
      * with no hub or hubs with no task file; '' when one is offered and before the first payload.
@@ -282,12 +294,11 @@ function pairKeyOf(task: UpdateTask, hub: string): string {
 }
 
 /** The task and the hub an id of the Task box stands for, or null for an id that is none. */
-function readPair(key: string): HubTask | null {
+function readPair(key: string): TaskOfHub | null {
     try {
         const read: unknown = JSON.parse(key);
-        if (Array.isArray(read) && typeof read[1] === 'string') {
-            const task = UPDATE_TASKS.find((one) => one === read[0]);
-            if (task !== undefined) return { task, hub: read[1] };
+        if (Array.isArray(read) && isTaskName(read[0]) && typeof read[1] === 'string') {
+            return { task: read[0], hub: read[1] };
         }
     } catch {
         return null;
@@ -366,7 +377,7 @@ export function createSchedule(
     function taskWhat(runs: { task: UpdateTask; hub?: string }): string {
         const pair = { task: runs.task, hub: runs.hub ?? primary() ?? '' };
         const other = runs.hub !== undefined && runs.hub !== primary();
-        return other ? hubTaskLabel(pair) : pairLabel(pair, offered());
+        return other ? hubTaskLabel(pair, offered()) : pairLabel(pair, offered());
     }
 
     function whatOf(row: ScheduleRow): string {
@@ -498,11 +509,29 @@ export function createSchedule(
         return waiting === null ? lines : [...lines, t('app.schedules.no_terminals', waiting)];
     }
 
+    /** Which views the page holds; null until the page says. */
+    let viewKnown: ((view: string) => boolean) | null = $state.raw(null);
+
     function offered(): HubTask[] {
-        return (entities.schedule()?.tasks ?? []).map((pair) => ({ ...pair }));
+        const known = viewKnown;
+        if (known === null) return [];
+        const rows = entities.schedule()?.tasks ?? [];
+        return rows.filter((pair) => known(pair.view)).map((pair) => ({ ...pair }));
     }
 
-    function nextOfTask(pair: HubTask): string {
+    function unviewed(): Finding[] {
+        const known = viewKnown;
+        if (known === null) return [];
+        return (entities.schedule()?.tasks ?? [])
+            .filter((pair) => !known(pair.view))
+            .map((pair) => {
+                const key = `${pair.at}.view`;
+                const message = t('findings.config.update_task_view', key, pair.view);
+                return { file: pair.file, key, message };
+            });
+    }
+
+    function nextOfTask(pair: TaskOfHub): string {
         let best: { next: string; name: string } | null = null;
         for (const row of entities.schedule()?.schedules ?? []) {
             const runs = row.entry?.runs;
@@ -542,7 +571,8 @@ export function createSchedule(
         if (draft === null || draft.task === '') return listed;
         const id = pairKeyOf(draft.task, draft.hub);
         if (listed.some((one) => one.id === id)) return listed;
-        return [...listed, { id, label: hubTaskLabel({ task: draft.task, hub: draft.hub }) }];
+        const label = hubTaskLabel({ task: draft.task, hub: draft.hub }, list);
+        return [...listed, { id, label }];
     }
 
     function folders(): string[] {
@@ -556,7 +586,7 @@ export function createSchedule(
     function blank(fill: DialogFill): ScheduleDraft {
         const command = fill.command !== undefined && fill.folder !== undefined;
         const list = offered();
-        const pair: HubTask | null =
+        const pair: TaskOfHub | null =
             fill.task !== undefined
                 ? { task: fill.task, hub: fill.hub ?? primary() ?? '' }
                 : list.length > 0
@@ -778,6 +808,10 @@ export function createSchedule(
         nextOfTask,
         taskLabel: (pair) => pairLabel(pair, offered()),
         offered,
+        viewsAre: (known) => {
+            viewKnown = known;
+        },
+        unviewed,
         noTasks: () => {
             const payload = entities.schedule();
             if (payload === null || offered().length > 0) return '';

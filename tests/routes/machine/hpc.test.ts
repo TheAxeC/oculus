@@ -8,6 +8,8 @@ import {
     logPathsOf,
     type ClusterLogPaths
 } from '../../../src/lib/server/machine/hpc/actions.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { ClusterConnection } from '../../../src/lib/server/machine/hpc/clusters/connections.ts';
 import { handleHpc, type HpcTarget } from '../../../src/lib/server/machine/hpc/routes.ts';
 import type { Runner } from '../../../src/lib/server/machine/hpc/ssh.ts';
@@ -21,6 +23,7 @@ const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
                 ? { connection: { resource, name: 'Fixture', host: 'fixture' } }
                 : { missing: `${resource} is not listed`, unlisted: true },
         clusters: () => [{ resource: 'fixture', name: 'Fixture', id: null }],
+        scratchRoot: () => '',
         token: server.token,
         refresh: vi.fn(() => server.hpc.refresh()),
         refreshAll: vi.fn(() => server.hpc.refresh()),
@@ -29,6 +32,7 @@ const target = (over: Partial<HpcTarget> = {}): HpcTarget => {
         roots: () => [],
         projects: () => [],
         catalog: () => ({}),
+        layout: () => portfolioConfigFrom(loadConfig(engineDir()).config).layout,
         kept: vi.fn(() => Promise.resolve({ ok: false as const, error: 'unused' })),
         copy: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
         ssh: vi.fn(() => Promise.resolve({ stdout: '', stderr: '', code: 0 })),
@@ -101,7 +105,7 @@ describe('HPC route', () => {
                     : { missing: `${resource} is not listed`, unlisted: true },
             cancel: (connection, id) => cancel(connection, id, runner),
             log: (connection, id) =>
-                log(connection, id, logPathsOf(paths, connection.resource), runner)
+                log(connection, id, logPathsOf(paths, connection.resource), ['.'], runner)
         });
         await handleHpc(request({ action: 'cancel', resource: 'b', id: '123' }), answered);
         expect(asked).toEqual([{ host: 'b-host', remote: 'scancel 123' }]);

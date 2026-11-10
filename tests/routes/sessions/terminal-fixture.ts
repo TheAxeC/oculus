@@ -8,6 +8,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
+import { stringify } from 'yaml';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { plantFile, scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
 import {
@@ -48,7 +50,10 @@ export type TaskConfig = {
     taskEngine: string;
     /** A hub whose `.oculus/local.yml` names a Claude command with a space in its path. */
     taskHub: string;
-    /** A second hub, `other` beside the task hub in `worldOf`, holding the Lit Watch task alone. */
+    /**
+     * A second hub, `other` beside the task hub in `worldOf`, whose `update_tasks` lists Lit Watch
+     * and Scout and which holds the Lit Watch task's file alone.
+     */
     otherHub: string;
     chatHub: string;
     chatState: string;
@@ -99,6 +104,8 @@ export function makeTaskConfig(): TaskConfig {
     const otherHub = hubWith(root, 'other-hub', '');
     mkdirSync(join(otherHub, '.oculus', 'tasks'), { recursive: true });
     writeFileSync(join(otherHub, '.oculus', 'tasks', 'litwatch.md'), '# litwatch\n');
+    const listed = TASK_ROWS.filter((row) => row.task === 'litwatch' || row.task === 'scout');
+    writeFileSync(join(otherHub, HUB_FILE), stringify({ update_tasks: listed }));
     return {
         root,
         engine: engineWith(root, 'engine'),
@@ -115,6 +122,17 @@ export function makeTaskConfig(): TaskConfig {
 export const BASE_CHAT_CONFIG = loadConfig(engineDir()).config;
 
 export const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-1' } };
+
+/** The rows of `update_tasks` of the task cases, one for each of four tasks. */
+export const TASK_ROWS = ['litwatch', 'scout', 'linkedin', 'inbox'].map((task) => ({
+    task,
+    label: task,
+    note: `the ${task} task`,
+    view: 'radar'
+}));
+
+/** The settings of the task cases' primary hub: CHAT_CONFIG, its `update_tasks` TASK_ROWS. */
+export const TASK_CONFIG = { ...CHAT_CONFIG, update_tasks: TASK_ROWS };
 
 export const CHAT_CATALOG = textCatalog(CHAT_CONFIG);
 

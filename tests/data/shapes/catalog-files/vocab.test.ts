@@ -19,7 +19,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sou
 import { vocabFindings } from '../../../../src/lib/data/sources/config/sections/vocab.ts';
 import { oneWordWith } from '../../../../src/lib/data/shapes/vocab-keys.ts';
 import { categoriesOf } from '../../../../src/lib/data/shapes/boards/categories.ts';
-import { clusters } from '../../../../src/lib/state/boards/focus.ts';
+import { clusters, tickedStatus } from '../../../../src/lib/state/boards/focus.ts';
 import {
     HUB,
     HUB_SETTINGS as FILE,
@@ -240,6 +240,42 @@ describe("the vocabulary's words past its shape", () => {
         ]);
         expect(oneWordWith(read.config, 'statuses', 'default_task')).toBe(undefined);
     });
+
+    it('words archival on two pillar kinds and default on two relevances, at the place of the second (G13)', () => {
+        const read = withHub(
+            [
+                'pillar_kinds:',
+                '  - { key: pillar, label: Pillar, archival: true }',
+                '  - { key: offpillar, label: Off-pillar, archival: true }',
+                'radar_relevance: { far: { color: "#9ca3af", default: true } }',
+                ''
+            ].join('\n')
+        );
+        expect(findingLines(readerFindings(read, HUB))).toEqual([
+            `${FILE} | pillar_kinds[1] | pillar, offpillar each carry archival, which one word carries at most; none of them is read for it`,
+            `${FILE} | radar_relevance.far | med, far each carry default, which one word carries at most; none of them is read for it`
+        ]);
+        expect(oneWordWith(read.config, 'pillar_kinds', 'archival')).toBe(undefined);
+        expect(oneWordWith(read.config, 'radar_relevance', 'default')).toBe(undefined);
+    });
+
+    it(
+        "reads done as the status a task is ticked off with, and none for two words of a hub's (G13)",
+        { tags: ['slow'] },
+        () => {
+            expect(tickedStatus(withHub('').config)).toBe('done');
+            const read = withHub('statuses: { closed: { color: "#0ea5e9", task_done: true } }\n');
+            expect(findingLines(readerFindings(read, HUB))).toEqual([
+                `${FILE} | statuses.closed | done, closed each carry task_done, which one word carries at most; none of them is read for it`
+            ]);
+            expect(tickedStatus(read.config)).toBe(undefined);
+            const renamed = withHub(
+                'statuses: { done: null, closed: { color: "#0ea5e9", task_done: true } }\n'
+            );
+            expect(findingLines(readerFindings(renamed, HUB))).toEqual([]);
+            expect(tickedStatus(renamed.config)).toBe('closed');
+        }
+    );
 
     it('case 12: words lead_applied on two lead statuses, and the apply word is none', () => {
         const read = withHub(

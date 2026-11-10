@@ -27,7 +27,7 @@ if (lacks.length > 0) {
         app.exit(1);
     });
 } else {
-    const { DEFAULT_PORT } = await import('../lib/data/sources/config.ts');
+    const { localDefaults } = await import('../lib/data/sources/config.ts');
     const { startApp } = await import('./app.ts');
-    startApp({ defaultPort: DEFAULT_PORT });
+    startApp({ defaultPort: localDefaults().port });
 }

@@ -341,9 +341,12 @@ function typescript(options: ServersOptions): ServerEntry {
                       ]
                     : []
         }),
-        // The server asks for the formatting options of the file an edit is made in.
-        configuration: (section) =>
-            section === 'formattingOptions' ? { tabSize: 4, insertSpaces: true } : null,
+        // The server asks for the formatting options of a file the first time it opens it or makes
+        // an edit in it, and keeps that answer for the file while it runs, closed or not; a
+        // formatting request carries the page's own options instead.
+        configuration: (section, setup, language) =>
+            section === 'formattingOptions' ? options.indent(language ?? null, setup.root) : null,
+        kept: ['formattingOptions'],
         capabilities: (language) => ({
             ...common(language, {
                 declaration: false,
@@ -438,11 +441,11 @@ function svelte(options: ServersOptions): ServerEntry {
  * The YAML entry: `yaml-language-server`, under node's permission model with read access to
  * oculus's own `node_modules` and nothing else, so no file a document names reaches it. No schema
  * comes from the network or the schema store: the server asks its client, which answers from the
- * schemas of the latest snapshot build (adapters/yaml/requests.ts). A file under a hub's `secrets`
- * folder or under `~/.oculus` is never put on it. A hub key in a hub file is a link: the entry
- * answers its definition, references and rename itself from the reference index of the latest build
- * (adapters/yaml/hub-keys.ts), which the server has no notion of, and sends every other request to
- * the server.
+ * schemas of the latest snapshot build (adapters/yaml/requests.ts). A file under a hub's folder of
+ * secrets (its `secrets_dir`) or under `~/.oculus` is never put on it. A hub key in a hub file is a
+ * link: the entry answers its definition, references and rename itself from the reference index of
+ * the latest build (adapters/yaml/hub-keys.ts), which the server has no notion of, and sends every
+ * other request to the server.
  */
 function yaml(options: ServersOptions): ServerEntry {
     return {
@@ -557,7 +560,8 @@ function texlab(options: ServersOptions): ServerEntry {
  * (adapters/markdown/own/wiki.ts), and keeps every file `yaml` keeps from its server.
  */
 function markdown(options: ServersOptions): ServerEntry {
-    const extensions = options.markdown ?? ((): string[] => ['md']);
+    const extensions = options.markdown;
+    const hidden = options.hiddenFolders;
     return {
         ...factsOf('markdown'),
         adapter: markdownAdapter,
@@ -572,14 +576,15 @@ function markdown(options: ServersOptions): ServerEntry {
         initializationOptions: () => ({ markdownFileExtensions: extensions() }),
         configuration: () => null,
         clientWorkspace: { workspaceFolders: true, diagnostics: { refreshSupport: true } },
-        requests: markdownRequests(extensions),
+        requests: markdownRequests(extensions, hidden),
         registrations: [
             { method: 'workspace/didChangeConfiguration', params: { settings: MARKDOWN_SETTINGS } }
         ],
         pulls: true,
         fileEvents: () => extensions().map((extension) => `**/*.${extension}`),
         introduce: (changes) => introduceMarkdown(changes, extensions()),
-        filesUnder: (folder, root, roots) => markdownFiles({ root, roots }, extensions(), folder),
+        filesUnder: (folder, root, roots) =>
+            markdownFiles({ root, roots }, extensions(), hidden(), folder),
         refuses: (real, roots) => isPrivateFile(real, roots),
         diagnostics: markdownDiagnostics,
         answers: (request, view) => answerWiki(request, view) ?? answerMarkdown(request, view),

@@ -131,7 +131,8 @@ export function targetOver(
     files: { overrides: string; bookmarks: string; changes: string },
     keep = 500
 ): PrimaryTarget {
-    const merged = loadConfig(engineDir()).config;
+    // The hub reads its leads and radar registries as feeds, as its settings file names them.
+    const merged = { ...loadConfig(engineDir()).config, feed_registries: ['leads', 'radar'] };
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
@@ -139,7 +140,9 @@ export function targetOver(
         config: {
             ...real,
             scan: [{ dir: 'projects/manuscripts' }, { dir: 'projects/ideas', optional: true }],
-            newProjectDir: { research: 'projects/ideas' }
+            newProjectDir: { research: 'projects/ideas' },
+            // The hub names its LinkedIn ideas by the prefix `xx-`, as its settings file sets it.
+            layout: { ...real.layout, linkedinIdeaPrefix: 'xx-' }
         },
         engine: engineDir(),
         engineConfig: () => loadConfig(engineDir()).config,

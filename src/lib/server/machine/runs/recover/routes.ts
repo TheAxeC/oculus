@@ -91,6 +91,8 @@ export type RecoverTarget = {
     downloads: () => DownloadAccount[];
     /** The rows of `recover.sources` of a hub's `.oculus/config.yml`, which read its datasets. */
     rows: (hub: string) => ReaderRow[];
+    /** The folder under the home folder holding the datasets, `recover.data_dir`, '' for none. */
+    dataDir: () => string;
     /** The User-Agent every request to a source carries. */
     agent: string;
     fetch: Fetcher;
@@ -238,7 +240,7 @@ async function onTarget(
     | Response
 > {
     if (where === MAC) {
-        const place = localPlace(target.local.home, hub, key, entry.path);
+        const place = localPlace(target.local.home, hub, key, entry.path, target.dataDir());
         if (place === null) return refused('place', 400);
         const plan =
             files === null
@@ -261,7 +263,7 @@ async function onTarget(
     }
     const deps = target.cluster(where);
     if ('missing' in deps) return noCluster(deps);
-    const place = clusterPlace(hub, key, entry.path);
+    const place = clusterPlace(hub, key, entry.path, target.dataDir());
     if (place === null) return refused('place', 400);
     const disk = await clusterDisk(place, deps);
     if (disk === null) return refused('unreachable', 200);
@@ -362,7 +364,7 @@ async function startOn(
     file: string | undefined
 ): Promise<string | null> {
     if (deps === null) {
-        const place = localPlace(target.local.home, hub, key, entry.path);
+        const place = localPlace(target.local.home, hub, key, entry.path, target.dataDir());
         if (place === null) return 'place';
         if (action === 'fetch') {
             return startLocalFetch(place, fetchItems(rows, file), target.downloads(), target.local);
@@ -371,7 +373,7 @@ async function startOn(
             ? startLocalVerify(place, verifyList(rows), target.local)
             : startLocalUnpack(place, unpackList(rows), target.local);
     }
-    const place = clusterPlace(hub, key, entry.path);
+    const place = clusterPlace(hub, key, entry.path, target.dataDir());
     if (place === null) return 'place';
     if (action === 'fetch') {
         return startClusterFetch(place, fetchItems(rows, file), target.downloads(), deps);
@@ -396,9 +398,9 @@ async function stopOn(
     entry: Dataset
 ): Promise<boolean> {
     if (deps === null) {
-        const place = localPlace(target.local.home, hub, key, entry.path);
+        const place = localPlace(target.local.home, hub, key, entry.path, target.dataDir());
         return place !== null && stopLocal(place, target.local);
     }
-    const place = clusterPlace(hub, key, entry.path);
+    const place = clusterPlace(hub, key, entry.path, target.dataDir());
     return place !== null && stopCluster(place, deps);
 }

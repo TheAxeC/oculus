@@ -95,15 +95,17 @@ function textOf(walk: Walk, path: string): string | null {
 }
 
 /**
- * The names of the main files directly in a folder, in the order `sourcesIn` gives, each file's
- * first bytes read when the name is reached and `wanted` accepts it.
+ * The names of the main files directly in a folder, in the order `sourcesIn` gives with `first`
+ * (the `latex.main_file` setting) first, each file's first bytes read when the name is reached and
+ * `wanted` accepts it.
  */
 function* mainsOf(
     walk: Walk,
     dir: string,
+    first: string,
     wanted: (name: string) => boolean = () => true
 ): Generator<string> {
-    for (const name of sourcesIn(dir)) {
+    for (const name of sourcesIn(dir, first)) {
         if (wanted(name) && declaresClass(headOf(walk, join(dir, name)))) yield name;
     }
 }
@@ -282,12 +284,12 @@ export function dependenciesOf(bound: string, main: string, folders: string[] = 
 }
 
 /** The only main file in a file's folder, or null when it holds none or several. */
-function onlyMain(walk: Walk, file: string): string | null {
+function onlyMain(walk: Walk, file: string, first: string): string | null {
     const dir = dirname(file);
-    const found = mainsOf(walk, dir);
-    const first = found.next();
-    if (first.done === true || found.next().done !== true) return null;
-    return join(dir, first.value);
+    const found = mainsOf(walk, dir, first);
+    const one = found.next();
+    if (one.done === true || found.next().done !== true) return null;
+    return join(dir, one.value);
 }
 
 /**
@@ -321,10 +323,19 @@ function foldersUp(bound: string, file: string): string[] {
     return found;
 }
 
-/** The nearest main whose closure holds the file, searched folder by folder up to the bound. */
-function includedBy(walk: Walk, bound: string, file: string, folders: RootFolders): string | null {
+/**
+ * The nearest main whose closure holds the file, searched folder by folder up to the bound, the
+ * main file named `first` before the others of its folder.
+ */
+function includedBy(
+    walk: Walk,
+    bound: string,
+    file: string,
+    first: string,
+    folders: RootFolders
+): string | null {
     for (const dir of foldersUp(bound, file)) {
-        for (const name of mainsOf(walk, dir)) {
+        for (const name of mainsOf(walk, dir, first)) {
             const real = realPath(join(dir, name));
             if (real === null) continue;
             if (closureIn(walk, bound, real, folders(real), file).has(file)) return real;
@@ -336,11 +347,13 @@ function includedBy(walk: Walk, bound: string, file: string, folders: RootFolder
 /**
  * The main whose build wrote the PDF `pdf`, a real path inside the bound: the nearest main, from
  * the PDF's folder up to the bound, whose output folder holds a PDF of its name that is this one.
- * `outputOf` names the folder a main's PDF is written to.
+ * `outputOf` names the folder a main's PDF is written to, and `first` is the `latex.main_file`
+ * setting, the main tried first among those of one folder.
  */
 export function mainOfPdf(
     bound: string,
     pdf: string,
+    first: string,
     outputOf: (main: string) => string
 ): string | null {
     const name = `${stemOf(basename(pdf))}.pdf`;
@@ -349,6 +362,7 @@ export function mainOfPdf(
         for (const candidate of mainsOf(
             walk,
             dir,
+            first,
             (one) => stemOf(one) === stemOf(basename(pdf))
         )) {
             const main = join(dir, candidate);
@@ -363,11 +377,13 @@ export function mainOfPdf(
 /**
  * The main file `file` builds through and the rule that found it, or null when none can be told.
  * `bound` is the real path of the served root's folder and `file` the real path of a file inside
- * it. `folders` names the folders a main's build writes to, where its `.fls` may be read.
+ * it. `first` is the `latex.main_file` setting, the main tried first among those of one folder, and
+ * `folders` names the folders a main's build writes to, where its `.fls` may be read.
  */
 export function rootOf(
     bound: string,
     file: string,
+    first: string,
     folders: RootFolders = () => []
 ): RootFound | null {
     const walk = createWalk();
@@ -378,8 +394,8 @@ export function rootOf(
         if (magic !== null) return { main: magic, how: 'magic' };
         if (declaresClass(headOf(walk, file))) return { main: file, how: 'self' };
     }
-    const included = includedBy(walk, bound, file, folders);
+    const included = includedBy(walk, bound, file, first, folders);
     if (included !== null) return { main: included, how: 'included' };
-    const only = onlyMain(walk, file);
+    const only = onlyMain(walk, file, first);
     return only === null ? null : { main: only, how: 'folder' };
 }

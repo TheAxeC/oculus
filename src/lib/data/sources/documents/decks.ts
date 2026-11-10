@@ -89,6 +89,7 @@ export function deckReader(input: DeckInput): DeckReader {
     return createReader({
         hub: { key: hub.key, dir: hub.dir },
         projects: ofHub(input.projects, hub.key).map((project) => deckProject(project, words)),
+        deck: hub.config.layout.deckDir,
         tagTones: hub.config.tagTones,
         catalog: hub.config.text,
         order: deckOrderOf(hub.config.merged),

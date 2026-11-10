@@ -118,7 +118,7 @@ manifest_schema:
     "cv.about": { label: "CV text", type: textarea, section: Website, help: "The text the CV prints under the project." }
     "cv.role": { label: "CV role", type: text, section: Website, help: "Your role in the project as the CV prints it." }
     "cv.hide": { label: "Hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays in the file." }
-    "cv.cv_hide": { label: "Project hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays on the website; the website writes the value as it is held." }
+    "cv.cv_hide": { label: "Off the CV, on the website", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays on the website; the website writes the value as it is held." }
     "cv.rank": { label: "CV place", type: text, section: Website, help: "The place of the row in the CV's projects, lowest first, as a whole number." }
 
 # The fields a hub adds to the project form of its own projects, set in the hub's .oculus/config.yml; oculus adds none. A row is a field of `manifest_schema` with `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `foreign_key`, `options` and `required`. The field is drawn after oculus's fields of its section, in the hub's order, and is a known key of that hub's manifests only. A row with no field, a row naming a field the form already has or an earlier row names, a section the form lacks or a widget the form does not draw, a row its shape refuses otherwise, and a row whose `foreign_key` names no collection of the hub, `projects` or vocab list are each a finding, and the row is left out. For example:

@@ -404,8 +404,9 @@ export function stripMenu(
         panes: number;
         float?: FloatPlace;
         locked?: boolean;
-        tabBar?: TabBar;
-        actions?: EditorActions;
+        /** The two settings, each null before the page has its settings, with no item checked. */
+        tabBar: TabBar | null;
+        actions: EditorActions | null;
         paneItems?: readonly Item[];
         /** Whether the page is in the desktop app, which offers the moves into a new window. */
         windows?: boolean;
@@ -415,8 +416,8 @@ export function stripMenu(
     t: (key: string, ...args: (string | number)[]) => string
 ): Item[] {
     const floated = facts.float !== undefined;
-    const bar = facts.tabBar ?? 'multiple';
-    const place = facts.actions ?? 'strip';
+    const bar = facts.tabBar;
+    const place = facts.actions;
     const hidden = place === 'hidden';
     const paneOnly = hidden
         ? (facts.paneItems ?? []).filter((one) => PANE_ONLY.includes(one.id))

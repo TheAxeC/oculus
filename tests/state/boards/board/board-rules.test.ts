@@ -632,6 +632,7 @@ describe("the audit's placement findings", () => {
             rules: auditRules(CONFIG),
             // `/hub` holds no settings file, so its setting names none of the checks.
             setting: hubAuditSetting('/hub'),
+            layout: portfolioConfigFrom(CONFIG).layout,
             website: null,
             catalog: CATALOG
         };

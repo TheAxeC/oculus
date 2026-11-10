@@ -1,8 +1,8 @@
 // Layer 2, server. The two Zenodo actions of the Deposit view, For review and Publish, each a press
 // behind the write token and the confirm dialog (deposit-routes.ts).
 //
-// For review sends the anonymised review copy of `code/` (zenodo-copy.ts) as one record whose
-// metadata is public and whose files are open only through a share link: one organizational
+// For review sends the anonymised review copy of the code folder (zenodo-copy.ts) as one record
+// whose metadata is public and whose files are open only through a share link: one organizational
 // creator "Anonymous", the title and description with the terms replaced. With no
 // `code_availability.doi` it makes a new record; with a `doi` under `zenodo_status: review-anon`
 // it makes a new version of that record, keeping the DOI, and a share link when `review_link` is
@@ -125,7 +125,13 @@ async function sendingOf(
         if ('error' in credits) return failed(credits.error);
         ({ creators, funding } = credits);
     }
-    const staged = await stagedFiles(deposit.code, deposit.where, text);
+    const staged = await stagedFiles(
+        deposit.code,
+        deposit.ignored,
+        deposit.readme,
+        deposit.where,
+        text
+    );
     if ('refused' in staged) return staged.refused;
     const files = kind === 'review' ? anonymised(staged, terms, text) : staged;
     if ('refused' in files) return files.refused;

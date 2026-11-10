@@ -49,8 +49,10 @@
     import {
         crossLinksOf,
         ideaSeed,
+        isCandidate,
         isNew,
         relevanceTone,
+        sparks,
         type Project,
         type RadarEntry
     } from '$lib/state/feeds/radar';
@@ -125,6 +127,8 @@
     const identity = $derived(word('title'));
     const title = $derived(identity || t('radar.untitled'));
     const relevance = $derived(word('relevance'));
+    /** The hue of the relevance, by its word of `radar_relevance` in the paper's hub's words. */
+    const relevanceHue = $derived(relevanceTone(relevance, vocabOf(feedRoot(entry))));
     const motif = $derived(word('motif'));
     const note = $derived(word('why') || word('idea_spark'));
     const threat = $derived(word('threatens'));
@@ -138,8 +142,9 @@
     const grouped = $derived(
         new Set(linkGroups.flatMap((group) => group.members.map((member) => member.id)))
     );
-    const candidate = $derived(word('maps_to') === 'new-idea-candidate');
-    const canSpin = $derived(word('bucket') === 'idea' || candidate);
+    const candidate = $derived(isCandidate(entry));
+    /** Whether the paper offers the Idea form, by its bucket's `spark` flag or its `maps_to`. */
+    const canSpin = $derived(sparks(entry, vocabOf(feedRoot(entry))));
     const sub = $derived(
         [word('authors'), word('venue'), word('year')].filter(Boolean).join(t('venues.sep'))
     );
@@ -272,7 +277,7 @@
         <Tag label={t('radar.new')} tone="violet" />
     {/if}
     {#if relevance !== ''}
-        <Tag label={relevance} tone={relevanceTone(relevance)} />
+        <Tag label={relevance} tone={relevanceHue} />
     {/if}
     {#if found !== ''}
         <span class="date">{found}</span>
@@ -340,7 +345,7 @@
     {title}
     titleHtml={inlineMarkdown(title, cardMath(title), htmlMemo)}
     ontitle={onpage}
-    tone={relevanceTone(relevance)}
+    tone={relevanceHue}
     record={{ root: feedRoot(entry) }}
     {actions}
     strip={[dismissed ? 'restore' : 'dismiss', onPage ? 'editor' : 'page']}

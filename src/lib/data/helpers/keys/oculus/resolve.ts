@@ -374,8 +374,9 @@ export function resolveKey(
         return { action: { kind: 'activate' }, state: cleared };
     }
     if (event.key === '/') return { action: { kind: 'search' }, state: cleared };
-    // `n` starts a new agent session: the composer, in the page's Terminal tab. No chord prefix of
-    // the catalogue's groups is `n`, and `direct_chord` is `v`.
+    // `n` starts a new agent session: the composer, in the page's Terminal tab. A chord letter the
+    // configuration names `n` (a group's `chord` or `direct_chord`) starts its chord instead,
+    // above.
     if (event.key === 'n') return { action: { kind: 'new-session' }, state: cleared };
     if (event.key === 'G') {
         return { action: { kind: 'scroll', edge: 'bottom' }, state: { ...cleared, lastG: 0 } };

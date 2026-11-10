@@ -6,8 +6,8 @@
 // (`zenodo: { ready }`, never the token), or with `against` and `path` the two texts of one file
 // for the diff editor, reaching this module only past the origin guard in src/hooks.server.ts's
 // `handle`, as the POST does too. A POST writes, and carries two things: the write token and, for
-// the seven actions that write outside this machine or over `code/` (commit, push, snapshot,
-// createBranch, switchBranch, and the Zenodo actions zenodoReview and zenodoPublish of
+// the seven actions that write outside this machine or over the code folder (commit, push,
+// snapshot, createBranch, switchBranch, and the Zenodo actions zenodoReview and zenodoPublish of
 // zenodo.ts), a `confirm: true` the page sets only from the confirm dialog. The decision on git
 // writes and the deposit is that shape: every write behind the token and a confirm.
 //
@@ -71,7 +71,7 @@ export const ACTIONS = [
     'cancel'
 ] as const;
 
-/** The actions that write outside this machine or over `code/`, and therefore need the confirm. */
+/** The actions that write outside this machine or over the code folder, so need the confirm. */
 export const CONFIRMED = [
     'commit',
     'push',

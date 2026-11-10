@@ -114,8 +114,17 @@ function drawnEquations(deck: Deck): string[] {
     });
 }
 
-/** Folders a project.yml never sits under: a project's own code deposit and its attic. */
-const NEVER_DESCEND = ['code', 'attic'];
+/**
+ * Folders a project.yml never sits under, by the hub's merged settings: a project's code folder
+ * (`code_dir`) and the folders of `audit.skip_folders`, read straight out of the map.
+ */
+function neverDescend(merged: Record<string, unknown>): string[] {
+    const audit = isMap(merged.audit) ? merged.audit : {};
+    const skipped: unknown[] = Array.isArray(audit.skip_folders) ? audit.skip_folders : [];
+    return [merged.code_dir, ...skipped].filter(
+        (one): one is string => typeof one === 'string' && one !== ''
+    );
+}
 
 /** The registries, and the key each file's entry list is under. */
 const REGISTRY_LISTS: Record<string, string> = {
@@ -133,10 +142,10 @@ const REGISTRY_LISTS: Record<string, string> = {
  * Every folder under `dir` that holds a `project.yml` or a `.oculus/project.yml`, at any depth,
  * found by walking the tree and nothing else, relative to `dir`.
  */
-function manifestFolders(dir: string): string[] {
+function manifestFolders(dir: string, never: readonly string[]): string[] {
     const files = globSync(['**/project.yml', '**/.oculus/project.yml'], {
         cwd: dir,
-        exclude: NEVER_DESCEND.map((name) => `**/${name}`)
+        exclude: never.map((name) => `**/${name}`)
     });
     const folders = files.map((file) => dirname(file).replace(/(?:^|\/)\.oculus$/, ''));
     return [...new Set(folders)];
@@ -153,8 +162,8 @@ function countEntries(hub: string, relative: string, listKey: string): number {
 const PERSONAL_DIR = 'side-projects';
 
 /** The name of every project folder under the personal folder, at any depth, sorted. */
-function countedPersonal(hub: string): string[] {
-    return manifestFolders(join(hub, PERSONAL_DIR))
+function countedPersonal(read: HubRead): string[] {
+    return manifestFolders(join(read.hub, PERSONAL_DIR), neverDescend(read.merged))
         .map((folder) => basename(folder))
         .sort();
 }
@@ -162,7 +171,10 @@ function countedPersonal(hub: string): string[] {
 function derivedCounts(read: HubRead): Record<string, number> {
     const { hub, config } = read;
     const counts: Record<string, number> = { projects: 0 };
-    for (const rule of config.scan) counts.projects += manifestFolders(join(hub, rule.dir)).length;
+    const never = neverDescend(read.merged);
+    for (const rule of config.scan) {
+        counts.projects += manifestFolders(join(hub, rule.dir), never).length;
+    }
     for (const [name, listKey] of Object.entries(REGISTRY_LISTS)) {
         counts[name] = countEntries(
             hub,
@@ -278,7 +290,7 @@ describe.skipIf(!REAL.asked)(realHubName('the real hub', REAL), () => {
     it('reads every project of the personal folder with no finding, each with the tier personal', () => {
         const read = readOf();
         const snapshot = buildOneHub(read.hub, read.config).snapshot;
-        const folders = countedPersonal(read.hub);
+        const folders = countedPersonal(read);
         expect(folders.length).toBeGreaterThanOrEqual(3);
         const projects = Object.values(snapshot.entities.projects);
         const personal = projects.filter((project) => project.tier === 'personal');

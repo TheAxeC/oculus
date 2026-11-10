@@ -41,9 +41,7 @@ describe('what a replace writes', () => {
             const found = await runSearch(
                 w.ops.roots,
                 { ...emptyQuery(500), q: 'foo', root: 'hub' },
-                {
-                    timeout: TIMEOUT
-                }
+                { timeout: TIMEOUT, skipFolders: [] }
             );
             expect(found.ok && found.answer.files[0].hits.map((one) => one.at)).toEqual([0, 4]);
             const answer = await replacePost(w, {

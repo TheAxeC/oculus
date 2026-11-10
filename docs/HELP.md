@@ -543,7 +543,7 @@ The queue and quota of each cluster `slurm.resource` names, one section each.
 
 - Each cluster is an entry of the resources file ([collection files](data-map.md#collection-files)), reached over ssh with your row of `clusters:` ([this machine's values](data-map.md#this-machines-values)).
 - It runs `squeue`, `sacct` and `sinfo` on each cluster over ssh every `slurm.poll_min` minutes.
-- Submit Job, on a `.slurm` file, shows the plan (the folders, the rsync arguments, the `sbatch` command) before it runs, warns when the script does not use `/local/$SLURM_JOB_ID`, and copies with rsync, which adds and updates files on the cluster.
+- Submit Job, on a `.slurm` file, shows the plan (the folders, the rsync arguments, the `sbatch` command) before it runs, warns when the script does not use the cluster's per-job scratch folder (`<root>/$SLURM_JOB_ID`, the root its `slurm.scratch_roots` member names; a cluster with none gets no warning), and copies with rsync, which adds and updates files on the cluster.
 
 ### Usage
 

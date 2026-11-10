@@ -81,13 +81,28 @@ export type LatexBuilding = {
     autoBuildIntervalMs: number;
     cleanAndRetry: boolean;
     autoClean: AutoClean;
+    /** The recipe a literate source builds with, by its extension in lower case. */
+    literateRecipes: ReadonlyMap<string, string>;
+    /** The recipe a `% !TEX program` comment picks, by the program in lower case. */
+    programRecipes: ReadonlyMap<string, string>;
+    /** Where synctex is; empty, as for each path below, runs the program found on PATH. */
     synctexPath: string;
+    /** Where texdoc is. */
+    texdocPath: string;
+    /** Where texcount is. */
+    texcountPath: string;
+    /** Where checkcites is. */
+    checkcitesPath: string;
+    /** Where the latexmk Clean runs is. */
+    cleanPath: string;
     reverseSynctex: ReverseSynctex;
     texcountAutorun: TexcountAutorun;
     contextMenu: boolean;
     texlabPath: string;
     unimathSymbols: boolean;
     includegraphicsPreview: boolean;
+    /** The main file a folder's sources list first, `latex.main_file`. */
+    mainFile: string;
 };
 
 /** The word of a choice key, which the catalog's `values` already holds to the list's words. */
@@ -185,7 +200,8 @@ function latexRecipes(
                       key: `${at}.command`,
                       where: 'field',
                       problem: { kind: 'empty' },
-                      spec: commandSpec
+                      spec: commandSpec,
+                      value: tool.command
                   }
                 : null
     );
@@ -207,10 +223,36 @@ function latexRecipes(
                       key: `${at}.tools`,
                       where: 'field',
                       problem: { kind: 'choice', values: known },
-                      spec: toolsSpec
+                      spec: toolsSpec,
+                      value: recipe.tools
                   }
     );
     return { recipes, tools };
+}
+
+/**
+ * The members of a family of `latex:` that pick a recipe by a word, each word in lower case: a
+ * member whose recipe `recipes` does not hold is not read and is named as a problem.
+ */
+function recipePicks(
+    config: Record<string, unknown>,
+    key: string,
+    problems: SettingProblem[],
+    recipes: LatexRecipe[]
+): Map<string, string> {
+    const names = recipes.map((one) => one.name);
+    const spec = fieldOf(settingEntry(config, key).fields, 'value', key);
+    const picks = new Map<string, string>();
+    for (const [word, recipe] of settingReader(config, problems).family(key)) {
+        if (typeof recipe !== 'string') continue;
+        if (!names.includes(recipe)) {
+            const problem = { kind: 'choice' as const, values: names };
+            problems.push({ key: `${key}.${word}`, where: 'entry', problem, spec, value: recipe });
+            continue;
+        }
+        picks.set(word.toLowerCase(), recipe);
+    }
+    return picks;
 }
 
 /** Read every key of `latex:` a build, its follow-ups and its SyncTeX are set by. */
@@ -219,8 +261,11 @@ export function latexBuild(
     problems: SettingProblem[] = []
 ): LatexBuilding {
     const read = settingReader(config, problems);
+    const chains = latexRecipes(config, problems);
     return {
-        ...latexRecipes(config, problems),
+        ...chains,
+        literateRecipes: recipePicks(config, 'latex.literate_recipes', problems, chains.recipes),
+        programRecipes: recipePicks(config, 'latex.program_recipes', problems, chains.recipes),
         recipeDefault: wordOf(
             RECIPE_DEFAULTS,
             read.text('latex.recipe_default'),
@@ -233,6 +278,10 @@ export function latexBuild(
         cleanAndRetry: read.flag('latex.clean_and_retry'),
         autoClean: wordOf(AUTO_CLEANS, read.text('latex.auto_clean'), 'latex.auto_clean'),
         synctexPath: read.text('latex.synctex_path'),
+        texdocPath: read.text('latex.texdoc_path'),
+        texcountPath: read.text('latex.texcount_path'),
+        checkcitesPath: read.text('latex.checkcites_path'),
+        cleanPath: read.text('latex.clean_path'),
         reverseSynctex: wordOf(
             REVERSE_SYNCTEX,
             read.text('latex.reverse_synctex'),
@@ -246,6 +295,7 @@ export function latexBuild(
         contextMenu: read.flag('latex.context_menu'),
         texlabPath: read.text('latex.texlab_path'),
         unimathSymbols: read.flag('latex.unimath_symbols'),
-        includegraphicsPreview: read.flag('latex.includegraphics_preview')
+        includegraphicsPreview: read.flag('latex.includegraphics_preview'),
+        mainFile: read.text('latex.main_file')
     };
 }

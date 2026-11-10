@@ -4,9 +4,9 @@
 // through this module so `context.ts` holds one call.
 //
 // Three things the watchers raise reach the hosts here: every full read of the apps is a
-// `reconcile` and a look at the settings the hosts hold, a change of a store file is a
-// `storeChanged` for the apps it belongs to, and a source tab opening a file is an `onLanguage`
-// event for the language of that file.
+// `reconcile`, a look at the settings the hosts hold and a call of `appsRead`, a change of a store
+// file is a `storeChanged` for the apps it belongs to, and a source tab opening a file is an
+// `onLanguage` event for the language of that file.
 
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
@@ -20,6 +20,7 @@ import {
     appsSettings,
     closedPaths,
     configDir,
+    hiddenFolders,
     textCatalog,
     type LocalConfig
 } from '../../../data/sources/config.ts';
@@ -35,6 +36,7 @@ import { expandHome, type Root } from '../../files/files.ts';
 import { createOpenFiles, type OpenFiles } from '../../files/fs/open-files.ts';
 import { defaultHistoryDir } from '../../files/fs/history.ts';
 import { runOps } from '../../files/fs/ops.ts';
+import { withNotes, withSecrets } from '../../../data/helpers/files/private-folders.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { AppHosts } from '../../machine/apps/host/manager.ts';
 import type { StreamTerminalSet } from '../../machine/apps/tools/run/stream-terminals.ts';
@@ -60,10 +62,22 @@ export type StartHostsOptions = {
     engine: string;
     /** The open workspace as it is now. */
     open: () => OpenWorkspace;
+    /**
+     * The folder of secrets of the hub at a folder, its `secrets_dir`, which no app reaches and no
+     * file operation of an app's edits.
+     */
+    secretsDir: (dir: string) => string;
+    /** The notes folder of the hub at a folder, its `notes_dir`, where an app's new file lands. */
+    notesDir: (dir: string) => string;
     /** Call the listener when the open workspace moves; the answer takes it away. */
     follow?: (listener: () => void) => () => void;
     /** The write target of the process, which a host's store update is written through. */
     target: () => WriteTarget;
+    /**
+     * Called after each full read of the apps, once the hosts have looked at it: the language
+     * servers read the editor defaults the apps give again.
+     */
+    appsRead?: () => void;
     /** The chain the file edits of the hosts wait on, apart from the one the stores wait on. */
     opsWrites: FsWrites;
     /** The terminals the pages list, which the hosts' terminals and tasks start in. */
@@ -115,12 +129,13 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
                     home: homedir(),
                     local: options.local(),
                     perOculus: perOculus(options.open().primaryDir, options.config()),
-                    roots: roots()
+                    roots: withSecrets(roots(), options.secretsDir)
                 }),
                 fs: diskFs
             }),
             maxBytes: () => appsSettings(options.config()).maxMb * 1024 * 1024,
             scanEntries: () => appsSettings(options.config()).scanEntries,
+            hiddenFolders: () => hiddenFolders(options.config()),
             languages: () =>
                 joinedFor(
                     languageMap(options.config()),
@@ -135,7 +150,10 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
             ops: (operation, app) =>
                 runOps(
                     {
-                        roots: roots().map((root) => ({ ...root, dir: expandHome(root.dir) })),
+                        roots: withNotes(
+                            withSecrets(roots(), options.secretsDir),
+                            options.notesDir
+                        ).map((root) => ({ ...root, dir: expandHome(root.dir) })),
                         writes: options.opsWrites,
                         changes: options.target().changes,
                         history: options.local().history ?? defaultHistoryDir()
@@ -178,6 +196,7 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
     const offRead = options.apps.onRead(() => {
         hosts.reconcile();
         hosts.settingsChanged();
+        options.appsRead?.();
     });
     const offStores = options.apps.onStores((ids) => hosts.storeChanged(ids));
     hosts.reconcile();

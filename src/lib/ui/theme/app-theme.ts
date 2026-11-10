@@ -201,7 +201,8 @@ export async function drawTheme(
  * that the page's first load carries (`files`): an app's theme whose file resolved is drawn from
  * that file, and one whose app is not approved and enabled or whose file does not resolve gives
  * the start theme. The terminal themes' `rice.brackets` and `rice.monospace` are the config's too;
- * such a page draws no CRT overlay, which belongs to the workbench.
+ * such a page draws no CRT overlay, which belongs to the workbench. With no look installed nothing
+ * is drawn, and the answer is false.
  */
 export function drawConfiguredTheme(
     document: Themeable & AppThemeDocument,
@@ -210,7 +211,9 @@ export function drawConfiguredTheme(
 ): Promise<boolean> {
     const offers = fileOffers(files);
     const choice = configuredTheme(inApp, offers);
-    const { brackets, monospace } = configuredLook();
+    const look = configuredLook();
+    if (look === null) return Promise.resolve(false);
+    const { brackets, monospace } = look;
     const state = appThemeState(choice, offers);
     return drawTheme(document, {
         choice,

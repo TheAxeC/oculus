@@ -17,7 +17,8 @@
 // engine's own docs/HELP.md and takes no path. Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
-// holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
+// holds in its portfolio, the name is one of the Markdown files of the owning hub's `project_docs`
+// (`markdownDocs`), each a path inside the project folder by its rule, and the join of the two
 // is checked against the hub again before the file is opened. An `engine` path is checked against
 // the engine folder in the same way, and also for its real place, so a link inside the folder that
 // leads out of it is refused; the engine folder may lie outside the hub, which is why this read
@@ -67,7 +68,8 @@ import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
 import { renderDocumentParts } from '../../data/prose/markdown/markdown.ts';
 import { keyFile, type ConfigWhere } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
-import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/documents/docs.ts';
+import { isFinding, readDoc } from '../../data/sources/documents/docs.ts';
+import { projectDocList } from '../../data/sources/config/settings/hub-rows.ts';
 import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
 import { catalogueGroupIds } from '../../data/helpers/keys/oculus/rail-letters.ts';
 import type { HubTarget } from '../files/roots.ts';
@@ -138,14 +140,18 @@ function hubsOf(into: DocTarget): { key: string; dir: string }[] {
 }
 
 /**
- * The names this route serves: the Markdown of PROJECT_DOCS. The other entries of that list are a
- * PDF and a LaTeX source, and neither is something `marked` can render, so both are refused here
- * rather than answered with rubbish. readDoc splits the front matter off, so what this answers
- * with is the body alone.
+ * The names this route serves in a hub whose merged settings are `merged`: the Markdown files of
+ * its `project_docs` rows, read when a document is asked for, so an edit of the rows is followed.
+ * The other rows (a PDF and a LaTeX source in oculus's own list) are nothing `marked` can render,
+ * so they are refused here rather than answered with rubbish, and a row the rule refuses (a name
+ * outside the project folder among them) is no row, so its name is refused too. readDoc splits the
+ * front matter off, so what this answers with is the body alone.
  */
-export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =>
-    name.endsWith('.md')
-);
+function markdownDocs(merged: Record<string, unknown>): string[] {
+    return projectDocList(merged)
+        .map((doc) => doc.name)
+        .filter((name) => name.endsWith('.md'));
+}
 
 /**
  * What the endpoint answers with: the rendered document, the headings of that render in order
@@ -553,17 +559,17 @@ function renderRepositoryDoc(
  * that is not there or whose frontmatter does not parse.
  */
 export function renderDoc(into: DocTarget, id: string, name: string, held = ''): Response {
-    if (!MARKDOWN_DOCS.includes(name)) {
-        return json(
-            { error: `not a document this route serves: ${name}` },
-            { status: 404, headers: NO_STORE }
-        );
-    }
     const named = splitHubId(
         id,
         hubsOf(into).map((one) => one.key)
     );
     const owner = within(into, named.root);
+    if (!markdownDocs(owner?.config.merged ?? into.config.merged).includes(name)) {
+        return json(
+            { error: `not a document this route serves: ${name}` },
+            { status: 404, headers: NO_STORE }
+        );
+    }
     const repository = owner?.project?.(named.id)?.workspaceFolder;
     if (owner !== null && repository !== undefined) {
         return renderRepositoryDoc(owner, repository, name, held);

@@ -44,7 +44,8 @@ import type {
     Terminal,
     TerminalJob
 } from '../../../../data/model/index.ts';
-import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
+import { manuscriptFolder, stemOf } from '../../../../data/prose/latex.ts';
+import { projectDocList } from '../../../../data/sources/config/settings/hub-rows.ts';
 import { addressOfId, hubId, rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { onPath } from '../../../core/program.ts';
@@ -55,6 +56,7 @@ import {
     foldersOf,
     missingProgram,
     planOf,
+    programFor,
     type Refused,
     type Step
 } from '../../../content/latex/recipes.ts';
@@ -197,8 +199,10 @@ function latexFolder(
     if (hub === undefined) return refusal('no-project');
     // A project of a repository is built from the repository, which also bounds what it reads.
     const bound = project.workspaceFolder?.dir ?? hub;
+    const manuscript = manuscriptFolder(projectDocList(options.hubSettings(hub).config));
+    if (manuscript === null) return refusal('no-manuscript');
     return {
-        dir: join(projectDirectory(hub, project), MANUSCRIPT),
+        dir: join(projectDirectory(hub, project), manuscript),
         label: addressOfId(named.data.id).key,
         bound: realPath(bound) ?? bound,
         target: addressOfId(named.data.id)
@@ -252,12 +256,13 @@ function stepsOf(
         if (extname(path).toLowerCase() !== '.tex' && !existsSync(woven)) {
             return { steps: [], recipe: '' };
         }
-        const steps = [cleanStep(path, folders)];
+        const steps = [cleanStep(path, folders, building.cleanPath)];
         const lost = missingProgram(steps, found);
         return lost === null ? { steps, recipe: '' } : refused(lost);
     }
     if (step === 'checkcites') {
-        const steps = [{ program: 'checkcites', args: [join(folders.aux, `${stem}.aux`)] }];
+        const program = programFor(building.checkcitesPath, 'checkcites');
+        const steps = [{ program, args: [join(folders.aux, `${stem}.aux`)] }];
         const lost = missingProgram(steps, found);
         return lost === null ? { steps, recipe: '' } : refused(lost);
     }
@@ -417,7 +422,8 @@ async function stopBuild(
 
 /**
  * Run one step on one main file, as a task terminal in the folder of the main file: a project's
- * `manuscript/` folder or a folder of a served root.
+ * folder of mains (the folder of the `.tex` row of its hub's `project_docs`) or a folder of a
+ * served root.
  */
 export async function startLatex(
     message: Record<string, unknown>,

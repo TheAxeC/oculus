@@ -17,8 +17,11 @@
 // a rank that is no whole number), and a foreign key naming `projects` is checked against and
 // resolved to the manifests beside a collection keyed `projects`. A manifest's follow-up note is
 // read against the hub schema: `done` and the people fields are declared, and a `done` that is no
-// flag is the type finding. Every sentence is looked up in the shipped catalog.
+// flag is the type finding. The reader's bookmarks file is governed at the path the `bookmarks`
+// setting names in the hub, and not at all for one outside it. Every sentence is looked up in the
+// shipped catalog.
 
+import { basename } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
@@ -31,7 +34,11 @@ import {
 } from '../../../src/lib/data/snapshot/references/lookup.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
-const LOADED = loadConfig(engineDir()).config;
+/** The engine's configuration under a hub that reads its leads and radar registries as feeds. */
+const LOADED: Record<string, unknown> = {
+    ...loadConfig(engineDir()).config,
+    feed_registries: ['leads', 'radar']
+};
 const CATALOG = textCatalog(LOADED);
 const CONFIG = portfolioConfigFrom(LOADED);
 
@@ -506,6 +513,25 @@ describe('the rules of a hub schema', () => {
         const own = found.filter((one) => one.file.endsWith('/venues.yml'));
         expect(own.length).toBeGreaterThan(0);
         for (const finding of own) expect(finding.message).toContain('does not parse');
+    });
+
+    it("governs the bookmarks file where the hub's bookmarks setting names it (G13)", () => {
+        const marks = 'schema:\n  - { field: path, type: text, key: true }\nentries: []\n';
+        const hub = plantScratch(
+            'oculus-schema-bookmarks-',
+            { 'notes/marks.yml': marks, '.oculus/bookmarks.yml': marks },
+            ['projects/active']
+        );
+        const moved = portfolioConfigFrom({ ...LOADED, bookmarks: 'notes/marks.yml' });
+        const home = portfolioConfigFrom({ ...LOADED, bookmarks: '~/marks.yml' });
+        const globsOf = (config: typeof CONFIG) =>
+            buildOneHub(hub, config).schemas.rules.find((one) => one.name === 'bookmarks')?.roots;
+        const root = basename(hub);
+        expect([globsOf(CONFIG), globsOf(moved), globsOf(home)]).toEqual([
+            { [root]: ['.oculus/bookmarks.yml'] },
+            { [root]: ['notes/marks.yml'] },
+            undefined
+        ]);
     });
 });
 

@@ -6,10 +6,10 @@
 // for at once, and so is the one cluster of a list that holds one; with none picked the box says
 // so and its Submit stays off until the reader picks one. The plan names the code folder and where
 // it is copied to on the picked cluster, how many files and their total size, the exact command run
-// there and that the job then shows in Live HPC; a script that never names the cluster's scratch
-// folder gets the warning first and its yes reads "Submit Anyway". A refusal and the outcome are
-// said under the editor, through `said`; a refusal of the picked cluster's plan is said in the box,
-// so another cluster can be picked.
+// there and that the job then shows in Live HPC; a script that never names the scratch folder the
+// cluster has (`slurm.scratch_roots`) gets the warning first and its yes reads "Submit Anyway". A
+// refusal and the outcome are said under the editor, through `said`; a refusal of the picked
+// cluster's plan is said in the box, so another cluster can be picked.
 //
 // One flow runs at a time: the press does nothing while one is planning or running, and the control
 // waits meanwhile (drawn disabled and kept focusable, ToolButton's `waiting`), so the keyboard is
@@ -88,12 +88,15 @@ function isJobScript(path: string): boolean {
     return path.toLowerCase().endsWith('.slurm');
 }
 
-/** The question and the detail of a plan: the warning first when the scratch folder is unnamed. */
+/**
+ * The question and the detail of a plan: the warning first when the cluster names a scratch folder
+ * and the script does not.
+ */
 function planWords(plan: SubmitPlan, cluster: string): Omit<SubmitBox, 'clusters' | 'picked'> {
-    const warned = !plan.scratch.named;
+    const warned = plan.scratch.root !== '' && !plan.scratch.named;
     const unread = plan.scratch.unread.join(', ');
     const message = [
-        warned ? t('source.submit_warning') : '',
+        warned ? t('source.submit_warning', `${plan.scratch.root}/$SLURM_JOB_ID`) : '',
         warned && unread !== '' ? t('source.submit_unread', unread) : '',
         t('source.submit_ask', plan.project, cluster, plan.path)
     ]

@@ -19,7 +19,11 @@ export type SessionsOptions = ScanOptions & {
     snapshot?: Snapshot;
     /** Project folders given directly, when there is no snapshot to read them from. */
     projectFolders?: ProjectFolder[];
-    roots?: string[];
+    /**
+     * The folders a workspace is looked for under, the machine's `sessions_roots`; none when it is
+     * absent.
+     */
+    roots?: readonly string[];
     /** The sessions oculus drives itself, rather than only reading their transcripts. */
     attachedIds?: string[];
     /** hooks.ts's HookStore to merge each record's `hook` field from. */
@@ -65,7 +69,7 @@ export function sessions(options: SessionsOptions = {}): SessionsPayload {
     const workspaces = group(
         records,
         folders,
-        options.roots ?? null,
+        options.roots ?? [],
         options.attachedIds ?? [],
         options.overridesPath ?? defaultOverridesPath()
     );

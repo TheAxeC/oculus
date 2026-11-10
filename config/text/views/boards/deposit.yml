@@ -7,10 +7,10 @@ text:
         branch_new: New branch
         branch_new_confirm: Create {0} in the mirror and check it out?
         branch_new_create: Create
-        branch_new_detail: The mirror moves to the new branch. code/ is left as it is.
+        branch_new_detail: The mirror moves to the new branch. The project's code folder is left as it is.
         branch_new_label: Name for the new branch
         branch_switch_confirm: Check out {0} in the mirror?
-        branch_switch_detail: code/ is overwritten with the files of that branch, and results/, figures/ and attic/ are left alone. The mirror must be clean.
+        branch_switch_detail: The project's code folder is overwritten with the files of that branch, and what the deposit's ignore patterns leave out of it is left alone. The mirror must be clean.
         busy: Working
         cancel: Cancel
         cancel_title: Stop the git command running for this deposit
@@ -35,7 +35,7 @@ text:
         fetch_title: Fetch origin into the mirror; the branch and the files stay as they are
         files: Files ({0})
         finding_large: 'large file ({0} MB): {1}'
-        finding_readme: no README.md in the deposit; code/README.md is required and self-contained
+        finding_readme: 'no {0} in the deposit; it is required and self-contained'
         finding_secret: 'possible secret: {0}'
         findings: Findings
         loading: Reading the mirror of {0}...
@@ -45,7 +45,7 @@ text:
         none_glyph: published
         plan: Plan
         plan_none: No plan yet. Press Plan to see what would ship.
-        plan_title: Put code/ into the mirror and list what would ship
+        plan_title: Put the project's code folder into the mirror and list what would ship
         push: Push
         push_confirm: Push {0} to {1}?
         push_create: Create Repository
@@ -83,11 +83,11 @@ text:
         zenodo_publish: Publish
         zenodo_publish_confirm: Publish {0} on Zenodo with its real files and authors?
         zenodo_publish_detail: "The record and its files are public, its creators the project's lead, collaborators and supervisors, and its funding the project's funding. The manifest gets the DOI, the Zenodo status and today's date."
-        zenodo_publish_title: Sends the real files of code/ and the real authors to Zenodo, public.
+        zenodo_publish_title: Sends the real files of the project's code folder and the real authors to Zenodo, public.
         zenodo_review: For review
         zenodo_review_confirm: Send an anonymised copy of {0} to Zenodo for review?
         zenodo_review_detail: "Every term of code_availability.anonymize is replaced in the paths, the text files, the title and the description, and the author is Anonymous. The record is public and its files open only through the share link. The manifest gets the DOI, the share link, the Zenodo status and today's date."
-        zenodo_review_title: Sends an anonymised copy of code/ to Zenodo, author Anonymous, its files open only through a share link.
+        zenodo_review_title: Sends an anonymised copy of the project's code folder to Zenodo, author Anonymous, its files open only through a share link.
         zenodo_status: Status
         zenodo_status_none: not deposited
     views:

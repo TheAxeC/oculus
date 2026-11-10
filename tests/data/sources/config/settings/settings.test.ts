@@ -1,8 +1,9 @@
 // Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
 // view's program names, the usage refresh, the automatic fetch, the editor's paint limit, the
-// Files view's delete prompt, the apps' limits and closed folders, the Repositories view's scan
-// depth and the chat's collection keys of sources.yml). The writing tools' readers are tested in
+// Files view's delete prompt, the project cards' file finder, the apps' limits and closed folders,
+// the Repositories view's scan depth, the website's schema section, the hidden folders and the
+// chat's collection keys of sources.yml). The writing tools' readers are tested in
 // writing.test.ts. Each reader is run over the map of synthetic.ts, whose every default differs
 // from the shipped one, so a default written in code instead of read from the entry fails a row. A
 // wrong value answers the entry's default and a problem naming the key; a missing key answers the
@@ -17,6 +18,8 @@ import {
     chatContext,
     confirmDelete,
     engineDir,
+    fileIndexSettings,
+    hiddenFolders,
     literatureSettings,
     loadConfig,
     mailSettings,
@@ -32,7 +35,8 @@ import {
 import { behaviorFindings } from '../../../../../src/lib/data/sources/config/catalogs.ts';
 import {
     paintLimit,
-    programApps
+    programApps,
+    websiteSection
 } from '../../../../../src/lib/data/sources/config/settings/files.ts';
 import { settingProblems } from '../../../../../src/lib/data/sources/config/settings/problems.ts';
 import { SOURCES, mapWith, outcome } from './synthetic.ts';
@@ -43,8 +47,22 @@ const SHIPPED_AT = { engine: engineDir(), hub: null, from: loadConfig(engineDir(
 const NOT_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '5', null];
 
 describe('slurmSettings', () => {
-    const BLOCK = { resource: ['h'], days: 3, poll_min: 5, quota_min: 30, prewarm: true };
-    const DEFAULT = { resources: ['alpha'], days: 7, pollMin: 25, quotaMin: 70, prewarm: false };
+    const BLOCK = {
+        resource: ['h'],
+        days: 3,
+        poll_min: 5,
+        quota_min: 30,
+        prewarm: true,
+        log_dirs: ['logs']
+    };
+    const DEFAULT = {
+        resources: ['alpha'],
+        days: 7,
+        pollMin: 25,
+        quotaMin: 70,
+        prewarm: false,
+        logDirs: ['runs']
+    };
     const read = (slurm: unknown) => outcome((p) => slurmSettings(mapWith({ slurm }), p));
 
     it.each([
@@ -64,9 +82,28 @@ describe('slurmSettings', () => {
                     pollMin: 5,
                     quotaMin: 30,
                     prewarm: true,
+                    logDirs: ['logs'],
+                    scratchRoots: new Map(),
                     [field]: DEFAULT[field as keyof typeof DEFAULT]
                 },
                 problems: [`slurm.${key}: ${kind}`]
+            });
+        }
+    });
+
+    it('reads the log folders in their order, and the default for one that leaves the working folder (G13)', () => {
+        expect(read({ ...BLOCK, log_dirs: ['hpc/logs', '.', '*/logs'] })).toMatchObject({
+            value: { logDirs: ['hpc/logs', '.', '*/logs'] },
+            problems: []
+        });
+        expect(read({ ...BLOCK, log_dirs: [] })).toMatchObject({
+            value: { logDirs: [] },
+            problems: []
+        });
+        for (const wrong of ['/abs', '../up', 'a/../b', 'logs/', "lo'gs", 'a b']) {
+            expect(read({ ...BLOCK, log_dirs: [wrong] })).toMatchObject({
+                value: { logDirs: ['runs'] },
+                problems: ['slurm.log_dirs: form']
             });
         }
     });
@@ -130,12 +167,27 @@ describe('searchSettings', () => {
             });
         }
         expect(read({ max_hits: 10.5, timeout_s: 4, max_names: 8 })).toStrictEqual({
-            value: { maxHits: 300, timeoutS: 4, maxNames: 8 },
+            value: { maxHits: 300, timeoutS: 4, maxNames: 8, skipFolders: ['vendor'] },
             problems: ['search.max_hits: whole']
         });
         expect(read({ max_hits: 9, timeout_s: 4, max_names: 10.5 })).toStrictEqual({
-            value: { maxHits: 9, timeoutS: 4, maxNames: 7000 },
+            value: { maxHits: 9, timeoutS: 4, maxNames: 7000, skipFolders: ['vendor'] },
             problems: ['search.max_names: whole']
+        });
+    });
+
+    it('reads the skipped folder names, and the default for a name holding a slash (G13)', () => {
+        expect(read({ skip_folders: ['dist', '.cache'] })).toMatchObject({
+            value: { skipFolders: ['dist', '.cache'] },
+            problems: []
+        });
+        expect(read({ skip_folders: [] })).toMatchObject({
+            value: { skipFolders: [] },
+            problems: []
+        });
+        expect(read({ skip_folders: ['a/b'] })).toMatchObject({
+            value: { skipFolders: ['vendor'] },
+            problems: [expect.stringMatching(/^search\.skip_folders/)]
         });
     });
 });
@@ -189,16 +241,28 @@ describe('mailSettings', () => {
 
     it('answers the default for a wrong value and names the key', () => {
         expect(read({ poll_min: 0, per_signal: 10 })).toStrictEqual({
-            value: { pollMin: 12, perSignal: 10 },
+            value: { pollMin: 12, perSignal: 10, todoLabel: 'later' },
             problems: ['mail.poll_min: range']
         });
         expect(read({ poll_min: 5, per_signal: 501 })).toStrictEqual({
-            value: { pollMin: 5, perSignal: 30 },
+            value: { pollMin: 5, perSignal: 30, todoLabel: 'later' },
             problems: ['mail.per_signal: range']
         });
         expect(read({ poll_min: 5, per_signal: 25.5 })).toStrictEqual({
-            value: { pollMin: 5, perSignal: 30 },
+            value: { pollMin: 5, perSignal: 30, todoLabel: 'later' },
             problems: ['mail.per_signal: whole']
+        });
+    });
+
+    it('reads the todo label as written, empty included, and its default for no text (G13)', () => {
+        expect(read({ todo_label: 'waiting' })).toMatchObject({
+            value: { todoLabel: 'waiting' },
+            problems: []
+        });
+        expect(read({ todo_label: '' })).toMatchObject({ value: { todoLabel: '' }, problems: [] });
+        expect(read({ todo_label: 5 })).toStrictEqual({
+            value: { pollMin: 12, perSignal: 30, todoLabel: 'later' },
+            problems: ['mail.todo_label: text']
         });
     });
 });
@@ -326,6 +390,116 @@ describe('confirmDelete', () => {
         const wrong = mapWith({ files: { confirm_delete: 'no' } });
         expect(confirmDelete(wrong)).toBe(false);
         expect(confirmDelete({})).toBe(true);
+    });
+});
+
+describe('hiddenFolders', () => {
+    const read = (hidden_folders: unknown) =>
+        outcome((p) => hiddenFolders(mapWith({ files: { hidden_folders } }), p));
+
+    it('reads the folder names as written, an empty list included (G13)', () => {
+        expect(read(['dist', '.cache'])).toStrictEqual({ value: ['dist', '.cache'], problems: [] });
+        expect(read([])).toStrictEqual({ value: [], problems: [] });
+    });
+
+    it('answers the default for a name holding a slash and for a value that is no list (G13)', () => {
+        expect(read(['a/b'])).toMatchObject({
+            value: ['build'],
+            problems: [expect.stringMatching(/^files\.hidden_folders/)]
+        });
+        expect(read('build')).toMatchObject({
+            value: ['build'],
+            problems: [expect.stringMatching(/^files\.hidden_folders/)]
+        });
+    });
+});
+
+describe('websiteSection', () => {
+    const read = (schema_section: unknown) =>
+        outcome((p) => websiteSection(mapWith({ website: { schema_section } }), p));
+
+    it('reads the word trimmed, the empty text too, and null with no catalog (G13)', () => {
+        expect(read(' Website ')).toStrictEqual({ value: 'Website', problems: [] });
+        expect(read('')).toStrictEqual({ value: '', problems: [] });
+        expect(websiteSection({})).toBeNull();
+    });
+
+    it('answers the default and a problem for a value that is no text (G13)', () => {
+        expect(read(['Website'])).toMatchObject({
+            value: 'Site',
+            problems: [expect.stringMatching(/^website\.schema_section/)]
+        });
+    });
+});
+
+describe('fileIndexSettings', () => {
+    const read = (file_index: unknown) =>
+        outcome((p) => fileIndexSettings(mapWith({ file_index }), p));
+    const DEFAULT = { enabled: false, ext: ['.a'], cap: 50, skipFolders: ['cache'] };
+
+    it.each([
+        { input: 'nothing set', block: {}, value: DEFAULT, problems: [] },
+        {
+            input: 'every key set',
+            block: {
+                enabled: true,
+                ext: ['.PDF', '.md'],
+                max_per_project: 9,
+                skip_folders: ['out', '.venv']
+            },
+            value: { enabled: true, ext: ['.pdf', '.md'], cap: 9, skipFolders: ['out', '.venv'] },
+            problems: []
+        },
+        {
+            input: 'an empty list of skipped folders (G13)',
+            block: { skip_folders: [] },
+            value: { ...DEFAULT, skipFolders: [] },
+            problems: []
+        },
+        {
+            input: 'a skipped folder holding a slash (G13)',
+            block: { skip_folders: ['a/b'] },
+            value: DEFAULT,
+            problems: ['file_index.skip_folders: form']
+        },
+        {
+            input: 'an empty list',
+            block: { ext: [] },
+            value: { ...DEFAULT, ext: [] },
+            problems: []
+        },
+        {
+            input: 'a switch that is no flag',
+            block: { enabled: 'yes' },
+            value: DEFAULT,
+            problems: ['file_index.enabled: boolean']
+        },
+        {
+            input: 'a list that holds a number',
+            block: { ext: ['.md', 5] },
+            value: DEFAULT,
+            problems: ['file_index.ext: strings']
+        },
+        {
+            input: 'a cap of 0',
+            block: { max_per_project: 0 },
+            value: DEFAULT,
+            problems: ['file_index.max_per_project: range']
+        },
+        {
+            input: 'a cap that is a fraction',
+            block: { max_per_project: 2.5 },
+            value: DEFAULT,
+            problems: ['file_index.max_per_project: whole']
+        },
+        {
+            input: 'a cap that is text',
+            block: { max_per_project: '9' },
+            value: DEFAULT,
+            problems: ['file_index.max_per_project: number']
+        }
+    ])('reads $input', ({ block, value, problems }) => {
+        expect(read(block)).toStrictEqual({ value, problems });
     });
 });
 

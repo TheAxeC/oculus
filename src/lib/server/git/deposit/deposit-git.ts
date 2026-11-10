@@ -1,12 +1,12 @@
 // Layer 2, server. The git and `gh` calls of the deposit, kept apart from server/git/git-write.ts.
 //
-// The decision on git writes and the deposit: a project's `code/` is ordinary
-// tracked content of the hub and never carries a `.git` of its own, and the deposit lives outside
-// the hub tree as one mirror clone per deposit repo under the machine-local state folder. Every
-// command here therefore runs in the folder its `Where` names and nowhere else, which is the first
-// refusal of `run` and is checked again by every operation's caller: a directory under the mirrors
-// folder, or, for the Zenodo copy, under the temporary folder `stagedFiles` (zenodo-copy.ts) makes
-// and passes as that `Where`'s mirrors folder.
+// The decision on git writes and the deposit: a project's code folder (the hub's `code_dir`) is
+// ordinary tracked content of the hub and never carries a `.git` of its own, and the deposit lives
+// outside the hub tree as one mirror clone per deposit repo under the machine-local state folder.
+// Every command here therefore runs in the folder its `Where` names and nowhere else, which is the
+// first refusal of `run` and is checked again by every operation's caller: a directory under the
+// mirrors folder, or, for the Zenodo copy, under the temporary folder `stagedFiles`
+// (zenodo-copy.ts) makes and passes as that `Where`'s mirrors folder.
 //
 //     git -C <mirror> clone|init|symbolic-ref|remote|add|ls-files|status|commit|push|branch|switch
 //     git -C <mirror> rev-parse|log|check-ref-format|diff|show|fetch|rm
@@ -95,7 +95,10 @@ export type Branch = { name: string; upstream: string; current: boolean };
 export type Where = {
     dir: string;
     mirrors: string;
-    /** The text catalog the refusal of a directory outside the mirrors folder is worded from. */
+    /**
+     * The text catalog the refusal of a directory outside the mirrors folder and the first line of
+     * a staged `.gitignore` are worded from.
+     */
     text: Record<string, string>;
     git?: GitRunner;
     /** The server context's git credentials, whose `-c` arguments every real git here is given. */

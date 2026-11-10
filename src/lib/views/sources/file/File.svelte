@@ -315,7 +315,7 @@
         const made = new PdfViewer(node, {
             jump: (page, x, y) =>
                 void latexActions.inverse(drawn.root, drawn.path, page, x, y, instance.id),
-            reverse: () => latex.settings()?.reverseSynctex ?? 'ctrl_click',
+            reverse: () => latex.settings()?.reverseSynctex ?? null,
             build: () => void latexActions.build(drawn.root, drawn.path),
             key: texKey,
             placed: (place) => keepPlace(tab, view, file, place),

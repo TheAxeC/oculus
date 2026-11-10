@@ -72,8 +72,11 @@ export type NoticesStore = {
     clearAll: () => void;
 };
 
-/** What the store reads of the ui store: whether Do Not Disturb is on. */
-export type Quiet = { statusQuiet: () => boolean };
+/**
+ * What the store reads of the ui store: whether Do Not Disturb is on, null while no settings are
+ * installed, when no notice shows as a toast.
+ */
+export type Quiet = { statusQuiet: () => boolean | null };
 
 export function createNotices(ui: Quiet, now: () => number = Date.now): NoticesStore {
     const held: { notices: Notice[]; next: number } = $state({ notices: [], next: 1 });
@@ -90,7 +93,7 @@ export function createNotices(ui: Quiet, now: () => number = Date.now): NoticesS
             at: now(),
             actions: options.actions ?? [],
             read: false,
-            toast: !ui.statusQuiet(),
+            toast: ui.statusQuiet() === false,
             progress: options.progress ?? null
         };
         if (options.cleared !== undefined) hearing.set(id, options.cleared);

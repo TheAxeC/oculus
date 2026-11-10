@@ -569,6 +569,21 @@ describe('starts a host at the first of its events', () => {
         expect(miss.spawned.length).toBe(0);
     });
 
+    it('enters no folder the hidden folders setting names, and enters the others (G13)', async () => {
+        const files = { 'vendor/main.tex': 'x' };
+        const miss = world(
+            { notes: { keys: TEX } },
+            {},
+            { roots: root(files), hiddenFolders: ['vendor'] }
+        );
+        miss.hosts.reconcile();
+        await miss.hosts.settled();
+        const hit = world({ notes: { keys: TEX } }, {}, { roots: root(files), hiddenFolders: [] });
+        hit.hosts.reconcile();
+        await hit.hosts.settled();
+        expect([miss.spawned.length, hit.spawned.length]).toEqual([0, 1]);
+    });
+
     it('reads at most apps.scan_entries entries of a root, so a match past them starts nothing', async () => {
         const names = [...Array.from({ length: 19 }, (_, at) => `f${at}.txt`), 'main.tex'];
         const list = (_folder: string, limit: number) =>

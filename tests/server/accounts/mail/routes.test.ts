@@ -72,6 +72,7 @@ function target(
         redirect: callbackUrl(8791, 'mail'),
         states: over.states ?? new ConnectStates(),
         perSignal: 25,
+        todoLabel: 'todo',
         fetcher: over.fetcher ?? (() => Promise.reject(new Error('no fetch'))),
         refresh: over.refresh ?? (() => Promise.resolve()),
         republish: over.republish ?? noop,

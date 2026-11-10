@@ -12,7 +12,8 @@
 // They are read through the `roots` option at start, again on a `config` push, which is what says
 // the folders of the workspace moved, and again whenever the open workspace moves (the `follow`
 // option), which is the way a folder is added while the server runs. The text catalog a failed read
-// is worded from and the depth the repositories are looked for at are read with them.
+// is worded from, the depth the repositories are looked for at and the worktrees folder a state
+// carries are read with them.
 //
 // The open workspace's own poll (workspace/follow.ts) tells this watcher of a move, so a folder the
 // page adds just as the server starts is seen at the next tick. A root that could not be watched
@@ -61,10 +62,11 @@
 // above that folder too, whose listing carries what the folder holds for the make controls
 // (files/project/make.ts, `markedBy`). For the root's own, and for the root's own
 // `.oculus/settings.yml`, the timer says the workspaces may have changed, since their answer
-// carries the root's marks and that file's text (files/fs.ts). The message is published by the
-// timer and not by the read, so a file listing is never held behind git. It is this watcher's
-// because it already watches every root recursively and already throttles the burst a save makes,
-// so no second watcher and no second throttle are needed.
+// carries the root's marks and that file's text (files/fs.ts); for that file it also calls
+// `settingsWritten`, so the language servers read the folder's editor record again. The message
+// is published by the timer and not by the read, so a file listing is never held behind git. It
+// is this watcher's because it already watches every root recursively and already throttles the
+// burst a save makes, so no second watcher and no second throttle are needed.
 //
 // The reads run git as child processes (server/core/git/run.ts), so the event loop serves requests
 // while they work. Each root has at most one read running and at most one waiting: a read asked for
@@ -145,9 +147,14 @@ export type GitWatchOptions = {
     text?: () => Record<string, string>;
     /**
      * How many levels below a root its repositories are looked for, asked again with the roots;
-     * `repository_scan_depth` of the merged config in the running server, 1 when absent.
+     * `repository_scan_depth` of the merged config in the running server.
      */
-    depth?: () => number;
+    depth: () => number;
+    /**
+     * The folder, relative to a repository, that holds its worktrees, asked again with the roots;
+     * `git.worktrees_dir` of the merged config in the running server.
+     */
+    worktreesDir: () => string;
     /**
      * The depth of the roots that carry their own, by directory: a whole number of levels, or -1
      * for no limit. A root not in the map is looked into down to the `depth` option. Asked again
@@ -172,6 +179,11 @@ export type GitWatchOptions = {
      * lists are as they were.
      */
     found?: (found: NestedFound) => void;
+    /**
+     * Called at the end of a root's window when a write landed in the root's own
+     * `.oculus/settings.yml`, so a reader of the folder's editor record reads it again.
+     */
+    settingsWritten?: () => void;
     /**
      * Call the listener when the open workspace moves, so a folder added in the page is watched
      * from the next tick; the answer takes the listener away.
@@ -231,7 +243,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
     const always = options.always ?? '';
     const configured = options.roots ?? ((): string[] => []);
     const catalogOf = options.text ?? ((): Record<string, string> => ({}));
-    const depthOf = options.depth ?? ((): number => 1);
+    const depthOf = options.depth;
+    const worktreesOf = options.worktreesDir;
     const depthsOf = options.rootDepths ?? ((): ReadonlyMap<string, number> => new Map());
     const clonedOf = options.cloned ?? ((): string[] => []);
     const hubsOf = options.hubs ?? ((): string[] => []);
@@ -243,9 +256,13 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
      * composes its list from this copy.
      */
     let browser: string[] = [];
-    /** The text catalog and the repository depths, read with the roots. */
+    /**
+     * The text catalog, the repository depths and the worktrees folder, read with the roots; no
+     * level is looked into until the first read.
+     */
     let text: Record<string, string> = {};
-    let depth = 1;
+    let depth = 0;
+    let worktrees = '';
     let depths: ReadonlyMap<string, number> = new Map();
     /** The folders of the repositories cloned for projects, as the portfolio last named them. */
     let cloned: string[] = [];
@@ -283,6 +300,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
     const wants = new Set<string>();
     /** The roots a write may have changed the make marks of, which the workspaces answer holds. */
     const marked = new Set<string>();
+    /** The roots whose own `.oculus/settings.yml` a write landed in, which the timer tells of. */
+    const settingsHeard = new Set<string>();
     /** The roots a failed watch is said of once. */
     const said = new Set<string>();
     const slots = new Map<string, Slot>();
@@ -355,7 +374,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
             void renewNested();
         }
         const began = first ? born.at : Date.now();
-        const read = await readState(options.credentials, root, text, timeout);
+        const read = await readState(options.credentials, root, text, worktrees, timeout);
         if (!stillOpen(root, born)) return;
         const failure = options.fetchFailures?.get(root);
         const next = failure === undefined ? read.state : { ...read.state, fetchFailure: failure };
@@ -446,6 +465,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
                     announceFiles(root, named ? null : [...heard.folders].sort());
                 }
                 if (marked.delete(root)) announceWorkspaces();
+                if (settingsHeard.delete(root)) options.settingsWritten?.();
                 if (wants.delete(root)) void ask(root, true);
                 if (deepWants.delete(root)) void renewNested();
             }, wait)
@@ -486,6 +506,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
         windows.set(root, span);
         span.folders.add(parentOf(path));
         const owner = markedBy(path);
+        if (path === REPO_SETTINGS) settingsHeard.add(root);
         if (owner === '' || path === REPO_SETTINGS) marked.add(root);
         else if (owner !== null) span.folders.add(parentOf(owner));
         if (span.folders.size > MOST_FOLDERS) span.whole = true;
@@ -584,19 +605,24 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
      * workspaces, each named once.
      */
     const readRoots = (): void => {
-        // The file browser's roots, the catalog and the depth are read off config and a file the
-        // reader edits, so a broken one leaves the channel with what it can name rather than
-        // stopping the watcher.
+        // The file browser's roots, the catalog, the depth and the worktrees folder are read off
+        // config and a file the reader edits, so a broken one leaves the channel with what it can
+        // name rather than stopping the watcher.
+        const held = worktrees;
         try {
             browser = configured();
             text = catalogOf();
             depth = depthOf();
+            worktrees = worktreesOf();
             depths = depthsOf();
             cloned = clonedOf();
             hubDirs = hubsOf();
         } catch (error) {
             console.error(`git watch: reading the roots failed: ${reason(error)}`);
         }
+        // Every state carries the worktrees folder and reads its ignore rule, so a moved folder is
+        // read again at every root.
+        if (worktrees !== held) for (const root of opened.keys()) touch(root);
         for (const root of [...inside.keys()]) {
             if (!browser.includes(root)) inside.delete(root);
         }
@@ -780,6 +806,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
     try {
         text = catalogOf();
         depth = depthOf();
+        worktrees = worktreesOf();
         depths = depthsOf();
         cloned = clonedOf();
         hubDirs = hubsOf();

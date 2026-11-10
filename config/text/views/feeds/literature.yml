@@ -52,9 +52,6 @@ text:
         refused_type: That is not a document type.
         refused_venue_long: The venue is over 200 characters.
         refused_year: Years must be whole years from 1000 to next year, and the first not after the last.
-        relevance_high: high
-        relevance_low: low
-        relevance_med: med
         scholar: Google Scholar
         scholar_tip: Opens this query on Google Scholar. Only the query, the author and the years are carried over.
         search: Search

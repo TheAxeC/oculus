@@ -22,6 +22,8 @@ import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/librar
 import { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import type { Spawn } from '../../../../src/lib/server/machine/lsp/held/process.ts';
 import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts';
+import type { Formatting } from '../../../../src/lib/server/machine/lsp/adapters/entry.ts';
+import { heldIndent } from '../../../../src/lib/server/machine/lsp/adapters/web/formatting.ts';
 import {
     latexBuild,
     type LatexBuilding
@@ -32,6 +34,11 @@ import { scratchDir } from '../../../fixtures/scratch.ts';
 /** The LaTeX settings the shipped configuration gives. */
 export function shippedLatex(): LatexBuilding {
     return latexBuild(loadConfig(engineDir()).config);
+}
+
+/** The indentation the shipped configuration gives a language's files in a root, with no app. */
+export function shippedIndent(language: string | null, root: string): Formatting | null {
+    return heldIndent({ quiet: () => loadConfig(engineDir()) }, () => [])(language, root);
 }
 
 /**
@@ -263,12 +270,18 @@ export function makeRelay(options: {
         approvals: () => join(home, 'approvals.json'),
         spawn: options.spawn,
         latex,
+        markdown: () => ['md'],
+        hiddenFolders: () => ['node_modules'],
+        indent: shippedIndent,
         env: options.env ?? {},
         servers: createServers({
             oculus: options.own?.oculus ?? '/oculus',
             node: options.own?.node ?? '/node',
             exists: () => true,
-            latex
+            latex,
+            markdown: () => ['md'],
+            hiddenFolders: () => ['node_modules'],
+            indent: shippedIndent
         }),
         run: options.run ?? (() => Promise.resolve(null)),
         exists: options.exists ?? (() => false),

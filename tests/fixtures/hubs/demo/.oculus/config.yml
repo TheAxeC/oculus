@@ -23,6 +23,9 @@ collections:
   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, primary_key: title, ticker: { category: lead }, about: files.make_collection_line_leads }
   - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, primary_key: title, about: files.make_collection_line_radar }
 
+# The registry words of the collections list whose files are feeds: the Position Leads feed and the Lit Watch feed, each read by its feed view and not as a collection.
+feed_registries: [leads, radar]
+
 
 # The hub's documents, each a tab of the page its group names.
 docs:

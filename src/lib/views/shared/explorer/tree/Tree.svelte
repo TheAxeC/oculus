@@ -85,7 +85,6 @@
     } from '$lib/state/sources/fs';
     import { acting, type Picked } from '$lib/state/sources/explorer/acts/selection';
     import { filesKeymap, keyWords } from '$lib/state/sources/explorer/acts/keys';
-    import { stemLength } from '$lib/state/sources/explorer/ops.svelte';
     import { rememberAnswer } from '$lib/state/sources/explorer/acts/confirm';
     import { fileIconAtArrow } from '$lib/state/sources/explorer/rows/tree-rows';
     import { t } from '$lib/state/shared/words/text';
@@ -190,8 +189,11 @@
     const mac = onMac();
     const keymap = filesKeymap(mac);
     const view = viewAccess(client, () => owner);
-    /** Whether a file's row drops its empty arrow slot (`files.file_icon_at_arrow`). */
-    const arrowless = $derived(fileIconAtArrow(client.selectors.configMap()));
+    /**
+     * Whether a file's row drops its empty arrow slot (`files.file_icon_at_arrow`): not before the
+     * page holds the setting.
+     */
+    const arrowless = $derived(fileIconAtArrow(client.selectors.configMap()) === true);
 
     /** What this tree's Files view remembers, reactive. */
     const held = $derived(filesViewOf(client.ui.instanceState(owner)));
@@ -409,33 +411,13 @@
                                 />
                             {/if}
                         {:else if row.editing !== undefined}
-                            <TreeItem
-                                label=""
-                                name={t('files.name_label')}
-                                id={rowKey(row)}
+                            <NameInput
+                                {row}
                                 {nav}
-                                level={row.depth + 1}
-                                glyph={row.kind === 'dir' ? t('files.folder_glyph') : undefined}
-                                file={row.kind === 'file' && row.name !== '' ? row.name : undefined}
-                                folder={row.kind === 'dir' && row.name !== ''
-                                    ? row.name
-                                    : undefined}
-                                depth={row.depth}
-                                selected
-                            >
-                                {#snippet field()}
-                                    <NameInput
-                                        value={row.name}
-                                        select={row.editing === 'rename' && row.kind === 'file'
-                                            ? stemLength(row.name)
-                                            : undefined}
-                                        taken={naming.takenIn(row)}
-                                        title={row.editing === 'title'}
-                                        onaccept={(text: string) => void naming.named(text)}
-                                        oncancel={() => view.patch({ naming: null })}
-                                    />
-                                {/snippet}
-                            </TreeItem>
+                                taken={naming.takenIn(row)}
+                                onaccept={(text: string) => void naming.named(text)}
+                                oncancel={() => view.patch({ naming: null })}
+                            />
                         {:else}
                             <ContextMenu
                                 label={row.name}

@@ -40,7 +40,7 @@ import {
     markLinkedinPosted,
     writeFeedField
 } from './feeds.ts';
-import { addRadarEntry, radarBucketKeys } from './radar.ts';
+import { addRadarEntry, radarWords } from './radar.ts';
 import { engineLiteraturePath, saveLiterature } from './literature.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import type { WriteOutcome, WriteTarget } from '../writes.ts';
@@ -128,8 +128,8 @@ export function feedRoute(
     if (radar !== null) {
         const home = rootedHome(into, radar.root, app, () => homeOf(into, app));
         if (home instanceof Response) return home;
-        const buckets = radarBucketKeys(home.config.merged);
-        const outcome = addRadarEntry(home.hub, home.config, radar.fields, buckets);
+        const vocab = radarWords(home.config.merged);
+        const outcome = addRadarEntry(home.hub, home.config, radar.fields, vocab);
         if (!outcome.found) return refused(words(text, 'server.write_route.no_radar_file'), 404);
         return { outcome: withHubId(outcome, home), kind: 'radar-add' };
     }

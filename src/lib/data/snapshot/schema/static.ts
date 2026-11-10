@@ -73,13 +73,16 @@ export function schemaFileProblems(
     });
 }
 
-/** The schemas of the decks and the C++ file. */
+/**
+ * The schemas of the decks, the `present.yml` of a project's deck folder (the hub's `deck_dir`)
+ * under a scan folder and the portfolio deck's, and the C++ file.
+ */
 export function projectFileSchemas(config: PortfolioConfig, lists: Lists): NamedSchema[] {
     const found: NamedSchema[] = [];
     const scans = config.scan.map((rule) => rule.dir.replace(/\/+$/, ''));
     const deck = sections(config.merged.deck_schema, lists);
     if (deck !== null) {
-        const decks = scans.map((dir) => `${dir}/**/present/present.yml`);
+        const decks = scans.map((dir) => `${dir}/**/${config.layout.deckDir}/present.yml`);
         if (config.portfolioDeck !== null) decks.push(`${config.portfolioDeck}/present.yml`);
         found.push({ name: 'deck', schema: deck, rule: { hub: decks } });
     }

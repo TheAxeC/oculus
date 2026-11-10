@@ -51,7 +51,13 @@ describe('the settings text of each folder in the workspaces answer', () => {
             },
             { name: 'gone', dir: join(dir, 'gone') }
         ];
-        const answer = workspacesAnswer(openWorkspace(plantState(folders)), engineDir(), MACHINE);
+        const answer = workspacesAnswer(
+            openWorkspace(plantState(folders)),
+            engineDir(),
+            MACHINE,
+            () => 'secrets',
+            () => '.oculus/notes'
+        );
         const settings = Object.fromEntries(answer.folders.map((one) => [one.name, one.settings]));
         expect(settings).toEqual({
             held: TEXT,

@@ -43,7 +43,7 @@ const planShape: z.ZodType<SubmitPlan> = z.object({
     digest: z.string(),
     rsync: z.array(z.string()),
     remote: z.string(),
-    scratch: z.object({ named: z.boolean(), unread: z.array(z.string()) })
+    scratch: z.object({ root: z.string(), named: z.boolean(), unread: z.array(z.string()) })
 });
 
 const refusedShape = z.object({
@@ -63,6 +63,7 @@ const SENTENCES: Record<string, (detail: string) => string> = {
     'no-project': () => t('source.submit_no_project'),
     'outside-code': () => t('source.submit_outside_code'),
     'bad-cluster': (detail) => t('source.submit_bad_cluster', detail),
+    'no-cluster-folder': () => t('source.submit_no_cluster_folder'),
     'unknown-cluster': (detail) => t('source.submit_unknown_cluster', detail),
     'no-host': (detail) => t('source.submit_no_host', detail),
     'no-files': (detail) => t('source.submit_no_files', detail),

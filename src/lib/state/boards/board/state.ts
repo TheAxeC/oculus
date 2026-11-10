@@ -26,9 +26,6 @@ import {
 import { waitingValue } from '../waiting.ts';
 import { toggled } from '../../shared/lists/lists.ts';
 
-/** The `stale_lag_days` of `focus:` when the config names none. */
-export const STALE_LAG = 1;
-
 /**
  * The values one item carries for one facet. A project with no stage is in no slice, so it is under
  * no value of the slice facet; the Situation facet (`status`) reads the project's own chips and the
@@ -80,10 +77,13 @@ export function facetValues(item: BoardItem, facet: string): string[] {
     }
 }
 
-/** Whether a project's manifest trails its documents by at least the configured lag. */
-export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
+/**
+ * Whether a project's manifest trails its documents by at least the configured lag, `focus`'s
+ * `stale_lag_days`; with no lag, before the page holds the settings, no manifest is behind.
+ */
+export function isStale(item: BoardItem, lag: number | null): boolean {
     const days = item.project.staleDays;
-    return days !== undefined && days >= lag;
+    return lag !== null && days !== undefined && days >= lag;
 }
 
 /**
@@ -97,7 +97,7 @@ export function applyFilters(
     quick: QuickFilters = {}
 ): BoardItem[] {
     const needle = search.trim().toLowerCase();
-    const lag = quick.staleLag ?? STALE_LAG;
+    const lag = quick.staleLag ?? null;
     return items.filter((item) => {
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;

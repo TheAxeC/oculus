@@ -9,7 +9,7 @@
 // one store of failed fetches the server keeps, so a watcher built again reads what was kept, and
 // the server context's git credentials, which every git they start runs with.
 
-import { repositoryScanDepth, textCatalog } from '../../../../data/sources/config.ts';
+import { repositoryScanDepth, textCatalog, worktreesDir } from '../../../../data/sources/config.ts';
 import type { Hub } from '../../../core/channels.ts';
 import type { FetchFailures } from '../../../core/git/state.ts';
 import { project, projectIds } from '../../../sessions/stores/hooks.ts';
@@ -68,7 +68,8 @@ export function nestedFound(
 
 /**
  * Every folder of the open workspace is on the `git` channel, so the Repositories view is over the
- * repositories the reader listed and not only the ones a session is working in.
+ * repositories the reader listed and not only the ones a session is working in. A write in a
+ * root's own `.oculus/settings.yml` calls `settingsWritten`.
  */
 export function startGit(
     make: GitStart,
@@ -77,14 +78,17 @@ export function startGit(
     workspace: Pick<Workspace, 'open' | 'subscribe'>,
     found: (found: NestedFound) => void,
     fetchFailures: FetchFailures,
-    credentials: GitCredentials
+    credentials: GitCredentials,
+    settingsWritten: () => void
 ): GitWatcher {
     return make.watchGit(hub, {
         fetchFailures,
         credentials,
+        settingsWritten,
         roots: () => repositoryRoots(workspace.open()),
         text: () => textCatalog(config()),
         depth: () => repositoryScanDepth(config()),
+        worktreesDir: () => worktreesDir(config()),
         rootDepths: () => repositoryDepths(workspace.open()),
         cloned: () => clonedFolders(hub),
         hubs: () => hubFolders(workspace.open()),

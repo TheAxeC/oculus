@@ -2,10 +2,11 @@
 // page that closes leaves its servers to end 60 s later unless a page opens the same root and takes
 // them over (relay-pages.ts). A root that is no longer served ends its servers and each page is
 // told `root_gone`, and told again when the root is served again so that it sends its open
-// documents once more (`reconcile`); a changed `lsp` folder is `reload`'s. When the shipped
-// settings or the schemas change, a running server that follows them asks its settings again. A
-// server whose process ended answers what waited on it with an error, and one that is gone is
-// forgotten by the relay and its page.
+// documents once more (`reconcile`); a changed `lsp` folder is `reload`'s. When the settings a
+// server is answered from or the schemas change, a running server that follows them asks its
+// settings again, and one that keeps an answer they change starts again. A server whose process
+// ended answers what waited on it with an error, and one that is gone is forgotten by the relay
+// and its page.
 
 import { heldKey, type Held, type Page } from '../held/held.ts';
 import { reconfigure } from '../choices.ts';
@@ -18,15 +19,18 @@ import { channelsOf, fail, rootsOf, send } from './relay-pages.ts';
 import { REQUEST_CANCELLED, type RelayState } from './relay-state.ts';
 
 /**
- * The shipped settings changed: a running server that follows a section of them, and would now
- * be answered differently, is told its settings changed and asks again. A server whose answer is
- * the same is told nothing.
+ * The settings a server is answered from may have changed (a build of the merged configuration, a
+ * write in a root's own `.oculus/settings.yml`, a read of the apps): a running server that follows
+ * a section of them, and would now be answered differently, is told its settings changed and asks
+ * again; one that keeps such an answer for as long as it runs starts again with its documents, and
+ * asks on their opening. A server whose answers are the same is told nothing.
  */
 export function settingsChanged(state: RelayState): void {
     for (const held of state.helds) {
-        if (held.takeSettingsChange()) {
+        const change = held.takeSettingsChange();
+        if (change === 'restart') void held.restart();
+        else if (change === 'ask')
             void reconfigure(held.entry.adapter, envOf(state, held.root), held);
-        }
     }
 }
 

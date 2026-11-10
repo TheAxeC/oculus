@@ -56,13 +56,7 @@ import { domainColorOf, entryIdOf, entryTitleOf, primaryKeyOf } from '../model/i
 import { keyFaultOf } from '../model/model-collections.ts';
 import { periodYear } from '../helpers/dates.ts';
 import { isMap, scalar, str, strings } from '../helpers/guards.ts';
-import {
-    collectionFiles,
-    hasCardList,
-    isFeedEntry,
-    placedKeys,
-    tierOf
-} from '../helpers/hub-names.ts';
+import { collectionFiles, hasCardList, placedKeys, tierOf } from '../helpers/hub-names.ts';
 import type { FactRecords } from '../shapes/project-facts.ts';
 import { vocabKeys } from '../shapes/vocab-keys.ts';
 import { followups, mapShape, readOr, stringItemsShape, subtasks } from '../shapes/shapes.ts';
@@ -74,7 +68,7 @@ import { followups, mapShape, readOr, stringItemsShape, subtasks } from '../shap
 function cardLists(list: readonly ListedCollection[]): ListedCollection[] {
     const kept: ListedCollection[] = [];
     for (const entry of list) {
-        if (isFeedEntry(entry) || !hasCardList(entry)) continue;
+        if (!hasCardList(entry)) continue;
         if (!kept.some((one) => one.key === entry.key)) kept.push(entry);
     }
     return kept;

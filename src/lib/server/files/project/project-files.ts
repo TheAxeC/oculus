@@ -1,10 +1,10 @@
 // Layer 2, server. The files of one project folder, for the finder of the project page's card.
 //
 // routes/api/(files)/project-files/+server.ts is the endpoint and holds nothing but its GET, since
-// a route module may export only its verbs. The walk is here, and it is bounded the way
-// the merged config bounds it: only the extensions of `file_index.ext`, at most
-// `file_index.max_per_project` rows newest first, and the noise folders below skipped whole.
-// The wire model keeps this out of the snapshot for the same reason documents are out of
+// a route module may export only its verbs. The walk is here, and it is bounded the way the merged
+// config bounds it: only the extensions of `file_index.ext`, at most `file_index.max_per_project`
+// rows newest first, and the folders `file_index.skip_folders` names skipped whole with every dot
+// folder. The wire model keeps this out of the snapshot for the same reason documents are out of
 // it: a card asks for its own folder when it is opened, and a board of fifty projects reads
 // nothing.
 //
@@ -18,7 +18,6 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { json } from '@sveltejs/kit';
-import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { splitHubId } from '../../../data/helpers/hub-names.ts';
@@ -28,7 +27,7 @@ import type { HubSettings } from '../../../data/index.ts';
 import { inside } from '../../core/paths.ts';
 import type { OpenWorkspace } from '../workspace/open.ts';
 import { primaryConfig, hubManifests, hubTargets, type HubTarget } from '../roots.ts';
-import { anyNumberShape } from '../../../data/shapes/shapes.ts';
+import { fileIndexSettings } from '../../../data/sources/config.ts';
 
 /**
  * What a file listing needs: the primary hub and its scan rules, the other hubs, and the merged
@@ -58,83 +57,8 @@ export type FilesAnswer = ProjectFiles & {
     folder: string;
 };
 
-/**
- * The folders the walk never descends into: a checkout, a cache and a virtual environment hold
- * nothing anybody looks for on a project card, and one of them alone can hold more files than the
- * hub does.
- */
-export const SKIP_DIRS = [
-    '.git',
-    '__pycache__',
-    'node_modules',
-    '.venv',
-    'venv',
-    '.ipynb_checkpoints',
-    '.mypy_cache',
-    '.pytest_cache',
-    '.DS_Store',
-    'wandb',
-    '__MACOSX'
-];
-
-/** The extensions listed when the config names none. */
-const DEFAULT_EXT = [
-    '.pdf',
-    '.tex',
-    '.bib',
-    '.md',
-    '.yml',
-    '.yaml',
-    '.py',
-    '.sh',
-    '.slurm',
-    '.ipynb',
-    '.csv',
-    '.json',
-    '.png',
-    '.jpg',
-    '.svg',
-    '.txt'
-];
-
-/** The cap when the config names none. */
-const DEFAULT_CAP = 400;
-
 /** A listing is walked again whenever a card is opened, so nothing here is ever cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
-
-/**
- * The `file_index` block as the walk reads it. A switch that is not a boolean reads as on, a list
- * of extensions keeps its text items and reads as empty when it is no list, and a cap that is not
- * a number reads as the default; `typeof` is the whole test of a number, so one that is not finite
- * is a number here.
- */
-const fileIndexShape = z.object({
-    enabled: z.boolean().catch(true),
-    ext: z
-        .array(z.unknown())
-        .transform((all) => all.filter((one): one is string => typeof one === 'string'))
-        .catch(() => []),
-    max_per_project: anyNumberShape.catch(DEFAULT_CAP)
-});
-
-/**
- * The `file_index` block of the merged config: what is listed, how much of it, and whether at all.
- */
-export function fileIndex(settings: Record<string, unknown>): {
-    enabled: boolean;
-    ext: string[];
-    cap: number;
-} {
-    const parsed = fileIndexShape.safeParse(settings.file_index);
-    const block = parsed.success ? parsed.data : fileIndexShape.parse({});
-    const cap = block.max_per_project;
-    return {
-        enabled: block.enabled,
-        ext: (block.ext.length > 0 ? block.ext : DEFAULT_EXT).map((one) => one.toLowerCase()),
-        cap: cap > 0 ? Math.trunc(cap) : DEFAULT_CAP
-    };
-}
 
 /** Hub-relative path with forward slashes, whatever the platform's separator is. */
 function relPath(root: string, full: string): string {
@@ -148,15 +72,24 @@ function relPath(root: string, full: string): string {
  * cannot be read costs that folder and no more.
  */
 export function projectFiles(folder: string, settings: Record<string, unknown>): ProjectFiles {
-    const index = fileIndex(settings);
+    const index = fileIndexSettings(settings);
     if (!index.enabled) return { rows: [], truncated: false };
     const rows: FileRow[] = [];
-    walk(folder, folder, index.ext, rows);
+    walk(folder, folder, index, rows);
     rows.sort((left, right) => right.mtime - left.mtime || left.path.localeCompare(right.path));
     return { rows: rows.slice(0, index.cap), truncated: rows.length > index.cap };
 }
 
-function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
+/**
+ * The files below `dir` whose names end in one of `index.ext`, entering no dot folder and none
+ * `index.skipFolders` names, each pushed to `rows` with its path from `root`.
+ */
+function walk(
+    root: string,
+    dir: string,
+    index: { ext: string[]; skipFolders: string[] },
+    rows: FileRow[]
+): void {
     let entries;
     try {
         entries = readdirSync(dir, { withFileTypes: true });
@@ -167,12 +100,12 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
         if (entry.name.startsWith('.')) continue;
         const full = join(dir, entry.name);
         if (entry.isDirectory()) {
-            if (SKIP_DIRS.includes(entry.name)) continue;
-            walk(root, full, ext, rows);
+            if (index.skipFolders.includes(entry.name)) continue;
+            walk(root, full, index, rows);
             continue;
         }
         if (!entry.isFile()) continue;
-        if (!ext.some((one) => entry.name.toLowerCase().endsWith(one))) continue;
+        if (!index.ext.some((one) => entry.name.toLowerCase().endsWith(one))) continue;
         try {
             const stat = statSync(full);
             rows.push({ path: relPath(root, full), size: stat.size, mtime: stat.mtimeMs });

@@ -652,9 +652,9 @@ export function createWrites(
      * Zenodo actions For review and Publish. The endpoint is /api/deposit, and what the action did
      * to the mirror is read back by state/system/deposit.svelte.ts, whose query is asked again by
      * the panel, rather than carried here. An action that writes outside this machine or over
-     * `code/` carries `confirm: true`, which the panel sets only from its dialog. The answer is
-     * waited for with no limit of the page's, as `writeGit` does, and `cancel` keeps the
-     * configured wait.
+     * the code folder carries `confirm: true`, which the panel sets only from its dialog. The
+     * answer is waited for with no limit of the page's, as `writeGit` does, and `cancel` keeps
+     * the configured wait.
      */
     async function writeDeposit(
         action: string,

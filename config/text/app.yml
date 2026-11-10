@@ -255,7 +255,9 @@ text:
             problem_schedules_unwritten: The schedules file could not be written, so nothing was saved.
             problem_server_stopped: The server stopped before the run started.
             problem_unattended_command: Run unattended applies to an update task or a prompt.
-            problem_update_task_unknown: '{0} is not an update task; the tasks are {1}.'
+            problem_update_task_none: '{0} is no update task of {1}: the update_tasks of {1} lists none.'
+            problem_update_task_unknown: '{0} is not the name of an update task: a task is lowercase letters, digits and dashes starting with a letter.'
+            problem_update_task_unlisted: '{0} is no update task of {1}: the update_tasks of {1} lists {2}.'
             problem_when_never: The pattern {0} never comes due.
             problem_when_unreadable: 'The pattern {0} does not read: a cron pattern has five fields, such as 0 7 * * 1, or is a nickname such as @daily.'
             prompt: Prompt
@@ -301,23 +303,15 @@ text:
         socket_open: open
         tasks:
             close: Close
-            inbox_label: Inbox
-            inbox_note: Gmail triage over the private mailbox
-            linkedin_label: LinkedIn
-            linkedin_note: draft a post from _linkedin/
-            lit_label: Lit Watch
-            lit_note: new-paper radar (web | minutes)
             last: 'Last run: {0}'
             last_none: 'Last run: none yet'
             last_post: 'Last post: {0}'
             next: 'Next: {0} ({1})'
             in_hub: '{0} ({1})'
-            no_files: 'No hub of the open workspace holds a task file, so no update task is offered; a task is the file .oculus/tasks/<task>.md of a hub, for litwatch, scout, inbox or linkedin, and the Templates tab of the Help page has a template of each.'
+            no_files: 'No hub of the open workspace offers an update task: a hub offers each row of the update_tasks of its .oculus/config.yml whose file .oculus/tasks/<task>.md it holds, and the Templates tab of the Help page has a template of each file and of the rows.'
             no_hub: The open workspace holds no hub, so no update task is offered.
             no_schedule: 'Next: no schedule'
             schedule: Schedule...
-            scout_label: Scout
-            scout_note: academic openings (web | minutes)
             tasks: Tasks
             update_tasks: Update tasks
         title: oculus

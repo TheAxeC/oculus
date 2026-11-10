@@ -14,7 +14,7 @@ import {
     type BuildOutcome,
     type LatexApproval
 } from '../../../data/model/index.ts';
-import { MANUSCRIPT, PROGRAMS, type Program } from '../../../data/prose/latex.ts';
+import { PROGRAMS, type Program } from '../../../data/prose/latex.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
 import { normalisePath } from '../../sources/fs.ts';
@@ -264,13 +264,15 @@ const mainShape = z.object({
 });
 
 /**
- * The body of a state answer: its mains, and the project folder a project's answer is against,
- * under the root of the project's hub.
+ * The body of a state answer: its mains, the project folder a project's answer is against, under
+ * the root of the project's hub, and the project's folder of mains under that folder
+ * (`manuscript`, the folder of the `.tex` row of its hub's `project_docs`).
  */
 export const bodyShape = z.object({
     mains: rowsShape(mainShape).catch([]),
     root: z.string().catch(''),
-    folder: z.string().catch('')
+    folder: z.string().catch(''),
+    manuscript: z.string().catch('')
 });
 
 /** What a body that is not a map says: no mains and no folder, in the primary hub. */
@@ -397,10 +399,10 @@ export function stateOf(target: LatexTarget, body: z.output<typeof bodyShape>): 
         const mains = body.mains.map((main) => ({ ...main, words: null, building: false }));
         return { root: target.root, dir: target.path, mains, error: '', loading: false };
     }
-    // The files of a log are against the folder the main file is in, which is the manuscript folder
-    // of the project and not the folder the PDF is written to, and the state's `dir` is that
-    // folder.
-    const dir = joinPath(body.folder, MANUSCRIPT);
+    // The files of a log are against the folder the main file is in, which is the folder of mains
+    // the answer names for the project and not the folder the PDF is written to, and the state's
+    // `dir` is that folder.
+    const dir = joinPath(body.folder, body.manuscript);
     const mains = body.mains.map((main) => {
         const placed = (issue: LatexIssue): LatexIssue => ({
             ...issue,

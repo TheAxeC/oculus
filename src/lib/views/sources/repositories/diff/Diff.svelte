@@ -91,7 +91,6 @@
     } from '$lib/state/sources/repositories/diff/diff-view';
     import { diffActs, heldDiff } from '$lib/state/sources/repositories/diff/subject';
     import type { DiffState } from '$lib/state/sources/repositories/diff/subject';
-    import { DEFAULT_INDENT } from '$lib/state/workbench/navigation/editor-text';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { shownGate, useShown, useState } from '$lib/state/client/use';
@@ -333,7 +332,7 @@
         publish(id, {
             caret: null,
             lines: 0,
-            indent: DEFAULT_INDENT,
+            indent: null,
             ending: 'LF',
             language: '',
             writable: false,

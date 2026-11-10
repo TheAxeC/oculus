@@ -37,8 +37,17 @@ export function isLatexLanguage(language: string): boolean {
     return LATEX_LANGUAGES.includes(language);
 }
 
-/** The folder a project's main files sit directly under. */
-export const MANUSCRIPT = 'manuscript';
+/**
+ * The folder of a project its main files sit directly under: the folder of the first row of the
+ * hub's `project_docs` that names a `.tex` file, against the project folder and empty for its top,
+ * or null when no row names one, and the project then has no LaTeX of its own.
+ */
+export function manuscriptFolder(docs: readonly { name: string }[]): string | null {
+    const tex = docs.find((doc) => doc.name.toLowerCase().endsWith('.tex'));
+    if (tex === undefined) return null;
+    const at = tex.name.lastIndexOf('/');
+    return at < 0 ? '' : tex.name.slice(0, at);
+}
 
 /** The programs latexmk can build a main file with, the first being the default. */
 export const PROGRAMS = ['pdflatex', 'xelatex', 'lualatex'] as const;
@@ -51,6 +60,7 @@ export type Formatter = (typeof FORMATTERS)[number];
 /** The words a LaTeX request is refused with beyond the file operations' own. */
 export const LATEX_REFUSALS = [
     'no-project',
+    'no-manuscript',
     'not-a-file',
     'not-a-main',
     'count-missing',

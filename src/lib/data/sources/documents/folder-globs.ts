@@ -3,10 +3,10 @@
 // read. Server side only: it reads the filesystem and no client module may import it.
 //
 // A deck group finds its members by globs walked under the root the deck is in (deck/read.ts
-// `under`), and a walk of the real hub enters every project's `code/` and `attic/` folders, which
-// costs about a second. The store holds, by the key `<folder>\n<pattern>`, the strings the walk
-// answered and nothing a reader makes of them: each reader resolves every match inside its root,
-// raises its own finding for a match that leaves it, and tests each matched folder for its
+// `under`), and a walk of the real hub enters every project's code folder and folder of dead ends,
+// which costs about a second. The store holds, by the key `<folder>\n<pattern>`, the strings the
+// walk answered and nothing a reader makes of them: each reader resolves every match inside its
+// root, raises its own finding for a match that leaves it, and tests each matched folder for its
 // `present.yml` at every read, so a deck file added to or removed from a matched folder is seen
 // with no drop. What does change the matches, a folder made, moved or removed under the pattern,
 // drops the key: the portfolio watcher does so at the event that says it, by the drop rule of

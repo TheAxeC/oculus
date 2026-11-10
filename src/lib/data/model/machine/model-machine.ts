@@ -1,22 +1,14 @@
 // Layer 1, data. What the machine views read: the Processes view's rows and the payload of one read
-// of the machine's process table, the update tray's schedules (the entries of `schedules.yml` in
-// the hub's `.oculus` folder with their problems, next runs and latest runs), the terminals tmux
+// of the machine's process table, the update tray's schedules (the entries of the schedules file
+// the hub's `schedules` names, with their problems, next runs and latest runs), the terminals tmux
 // holds and the words a terminal request and a press of Write the website are refused with, the
 // messages the page and the language server relay exchange besides JSON-RPC, and what a linter run
 // answers.
 
 import type { AppJob } from '../apps/model-apps-tools.ts';
 import type { CommandSource } from '../model-sessions.ts';
+import type { HubTask, UpdateTask } from './model-tasks.ts';
 import type { TerminalAgent, TerminalByHand } from './terminal-ids.ts';
-
-/** The four update tasks, in the order the tray lists them. */
-export const UPDATE_TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
-
-/** One of the four update tasks. */
-export type UpdateTask = (typeof UPDATE_TASKS)[number];
-
-/** An update task of one hub: the task and the name of the hub that holds its file. */
-export type HubTask = { task: UpdateTask; hub: string };
 
 /** The state of a read: `failed` carries the rows of the last good read under the error. */
 type ProcessesStatus = 'ok' | 'failed';
@@ -220,10 +212,10 @@ export type SchedulePayload = {
      */
     folders: string[];
     /**
-     * The update tasks the tray offers: one per hub of the workspace that holds the task's file
-     * `.oculus/tasks/<kind>.md`, ordered by task in the order of UPDATE_TASKS and within one task
-     * by hub, the primary first and the others in the folders' order. Empty while no hub holds a
-     * task file, and null while the workspace holds no hub.
+     * The update tasks the tray offers: one per row of a hub's `update_tasks` whose file
+     * `.oculus/tasks/<task>.md` the hub holds, ordered by hub, the primary first and the others in
+     * the folders' order, and within one hub by its rows. Empty while no hub offers a task, and
+     * null while the workspace holds no hub.
      */
     tasks: HubTask[] | null;
     /** The primary hub's name, whose task a task entry with no `hub` runs; null with no primary. */
@@ -340,6 +332,7 @@ export const TERMINAL_REFUSALS = [
     'task-too-long',
     'task-needs-agent',
     'task-file-missing',
+    'update-task-unlisted',
     'hub-unknown',
     'needs-confirm',
     'approvals-unwritable',

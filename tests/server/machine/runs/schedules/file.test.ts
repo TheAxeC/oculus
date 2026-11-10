@@ -39,7 +39,7 @@ const TOKEN = 'the write token of this test';
 describe('the schedules file', () => {
     it('refuses a write over a schedules file it cannot read, leaving it', async () => {
         const dir = scratchDir('oculus-schedules-file-');
-        const disk = { hub: dir, roots: [dir], hubs: [] };
+        const disk = { hub: dir, roots: [dir], hubs: [], tasks: () => null };
         const w = world();
         const reload = vi.fn();
         const schedules: SchedulesWatcher = {

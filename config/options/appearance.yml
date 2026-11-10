@@ -104,6 +104,12 @@ options:
         section: Display and keys
         help: Whether the terminal grid's cursor blinks. false keeps it steady. A value that is not true or false counts as false.
         control: toggle
+    terminal.default_agent:
+        heading: terminal
+        section: Agents
+        help: "The agent a start that names none opens with, a key of the agents catalog (config/catalogs/agents.yml): New in the Sessions view and its n key, a start from a folder, a worktree or a task, and the composer of a Terminal tab that has started nothing. A value naming no agent of the catalog is a finding naming it, and oculus's value stands."
+        control: choice
+        from: agents
     terminal.opacity:
         heading: terminal
         section: Display and keys
@@ -172,7 +178,7 @@ options:
     code_theme:
         heading: appearance
         section: Code theme
-        help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class of a VS Code theme, a row of code_themes.vscode (for example vscode-dark-2026 or vscode-light-modern), takes that theme's TextMate rules under any UI theme, and the id of a Shiki theme, a row of code_themes.shiki (for example github-light or nord), takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. The choice draws each code theme under the group of its row. A value that is none of these is reported as a finding and read as tokens.
+        help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class of a VS Code theme, a row of code_themes.vscode (for example vscode-dark-2026 or vscode-light-modern), takes that theme's TextMate rules under any UI theme, and the id of a Shiki theme, a row of code_themes.shiki (for example github-light or nord), takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. The choice draws each code theme under the group of its row. A value that is none of these is reported as a finding and read as the default, tokens.
         control: choice
         from: code_themes
     code_themes.vscode:
@@ -202,13 +208,13 @@ options:
     show_tabs:
         heading: appearance
         section: Pane tabs
-        help: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and no row, but a title row with the lock mark while the pane is locked, and the pane's actions go to the window's title bar strip. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
+        help: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and no row, but a title row with the lock mark while the pane is locked, and the pane's actions go to the window's title bar strip. Any other value is a finding naming it, and oculus's value stands. The Tab Bar submenu of a pane strip's right-click menu writes this key.
         control: choice
         options: [multiple, single, none]
     editor_actions:
         heading: appearance
         section: Pane tabs
-        help: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, or while show_tabs is none in the window's title bar strip for the active pane, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
+        help: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, or while show_tabs is none in the window's title bar strip for the active pane, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value is a finding naming it, and oculus's value stands. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
         control: choice
         options: [strip, hidden]
     wrap_tabs:
@@ -218,7 +224,7 @@ options:
         control: toggle
 groups:
     rice: How the terminal themes (the themes whose class holds rice) draw the interface, with icons or their ASCII stand-ins, with or without brackets around buttons, chips and tags, and in the monospace or the sans font.
-    terminal: How the terminal grid draws its text and its cursor, what the Option key sends on macOS, and whether a selection is copied as soon as it is made.
+    terminal: How the terminal grid draws its text and its cursor, what the Option key sends on macOS, whether a selection is copied as soon as it is made, and which agent a start that names none opens with.
     wallpaper: The picture behind the panels, whether it is drawn and under which themes, how far it is darkened and blurred, and how solid and how blurred the panels and popovers over it stay.
     crt: The cosmetic CRT overlay of scanlines and vignette drawn over the whole page.
     code_themes: The two lists the choice of code_theme offers, the VS Code code themes and the Shiki code themes, each row with its words and its group.

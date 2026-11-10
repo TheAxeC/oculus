@@ -55,6 +55,7 @@ function options(answer: Partial<RunOutcome> & { stdout?: string } = {}): Search
         cap: 500,
         maxNames: 100,
         timeout: 10000,
+        skipFolders: [],
         now: () => 0,
         run: (dir, _args, _timeout, onLine) => {
             ran.push(dir);

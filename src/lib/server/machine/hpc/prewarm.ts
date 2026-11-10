@@ -1,21 +1,24 @@
 // Layer 2, server. The log path of many finished jobs at once, resolved from listings so the first
 // press on a log is as fast as the second.
-import { safePath, validId } from './actions.ts';
+import { logRungs, safePath, validId, type LogRung } from './actions.ts';
 import { dateFrom } from './parse.ts';
 import { run, type Connection, type RunResult, type Runner } from './ssh.ts';
 
 /**
- * The five rungs of the on-demand search in actions.ts, in the same order but without a job id in
- * them: one listing per working directory and rung, which every job of that directory is then
- * matched against here. Keep them in step with the ladder there, or a prewarmed path and the path
- * a press resolves can disagree.
+ * The glob of one rung of the on-demand search in actions.ts (`logRungs`), without a job id in it:
+ * one listing per working directory and rung, which every job of that directory is then matched
+ * against here (`rungMatch`), so a prewarmed path and the path a press resolves agree.
  *
  * The listing is `printf`, not `ls -t`. A sort by modification time has to stat every entry, and a
  * log directory with a running job writing into it is where that costs seconds; `printf` over the
  * glob is a directory read and nothing more. An unmatched glob prints itself, which is why the
  * parse drops any line that still carries a `*`.
  */
-export const PREWARM_RUNGS = ['hpc/logs/*', 'logs/*', 'slurm-*.out', '*.out', '*/logs/*'];
+function listingGlob(rung: LogRung): string {
+    if (rung.kind === 'slurm') return 'slurm-*.out';
+    if (rung.kind === 'out') return '*.out';
+    return `${rung.dir}/*`;
+}
 
 /** Seconds one rung's listing is given on the cluster, inside the shell that expands its glob. */
 const RUNG_SECS = 15;
@@ -76,28 +79,29 @@ export function isFinished(state: string): boolean {
 }
 
 /**
- * Milliseconds the listing of this many directories is given, all of their rungs' budgets and the
- * round trip.
+ * Milliseconds the listing of this many directories and rungs is given, all of their rungs'
+ * budgets and the round trip.
  */
-export function listingTimeout(dirs: number): number {
-    return dirs * PREWARM_RUNGS.length * RUNG_SECS * 1000 + LISTING_SLACK_MS;
+export function listingTimeout(dirs: number, rungs: number): number {
+    return dirs * rungs * RUNG_SECS * 1000 + LISTING_SLACK_MS;
 }
 
 /**
  * The working directories to list, as one remote script with a marked section per directory and
  * rung.
  */
-export function listingCommand(dirs: string[]): string {
+export function listingCommand(dirs: string[], rungs: readonly LogRung[]): string {
     const parts: string[] = [];
     for (const dir of dirs) {
         // The marker is quoted like the rung below it: the directory is the cluster's text, and a
         // double-quoted word would let the remote shell expand what is in it.
         parts.push(`echo '${SEC_WD}${dir}@@'`);
-        for (const rung of PREWARM_RUNGS) {
+        for (const rung of rungs) {
             parts.push(`echo "${SEC_RUNG}"`);
             // The glob lives inside the timed child: the outer shell would expand it before it
             // execs `timeout`, leaving the directory walk that costs the seconds unbounded.
-            parts.push(`timeout ${RUNG_SECS} sh -c 'printf "%s\\n" "$1"/${rung}' _ '${dir}'`);
+            const glob = listingGlob(rung);
+            parts.push(`timeout ${RUNG_SECS} sh -c 'printf "%s\\n" "$1"/${glob}' _ '${dir}'`);
         }
     }
     return parts.join('\n');
@@ -129,22 +133,23 @@ export function parseListing(out: string): Map<string, string[][]> {
 }
 
 /** Whether a file name satisfies one rung for one job id, as the on-demand ladder's glob would. */
-function rungMatch(rung: number, id: string, name: string): boolean {
-    if (rung === 2) return name === `slurm-${id}.out`;
-    if (rung === 3) return name.includes(id) && name.endsWith('.out');
+function rungMatch(rung: LogRung, id: string, name: string): boolean {
+    if (rung.kind === 'slurm') return name === `slurm-${id}.out`;
+    if (rung.kind === 'out') return name.includes(id) && name.endsWith('.out');
     return name.includes(id);
 }
 
 /**
- * The path of one job, rung by rung as the ladder goes. Within a rung the match must be the only
- * one: a listing carries no modification time, so it cannot reproduce the ladder's newest-wins
- * tiebreak, and an id that matches several files (an array parent, whose tasks all carry it) is
- * left to the press, which does have the times. A guess would be tailed silently.
+ * The path of one job, rung by rung as the ladder goes: `listed` holds the files of each of
+ * `rungs`, in their order. Within a rung the match must be the only one: a listing carries no
+ * modification time, so it cannot reproduce the ladder's newest-wins tiebreak, and an id that
+ * matches several files (an array parent, whose tasks all carry it) is left to the press, which
+ * does have the times. A guess would be tailed silently.
  */
-export function pickFromListing(id: string, rungs: string[][]): string {
-    for (let rung = 0; rung < rungs.length; rung += 1) {
-        const hits = rungs[rung].filter((path) =>
-            rungMatch(rung, id, path.split('/').at(-1) ?? '')
+export function pickFromListing(id: string, listed: string[][], rungs: readonly LogRung[]): string {
+    for (let at = 0; at < listed.length && at < rungs.length; at += 1) {
+        const hits = listed[at].filter((path) =>
+            rungMatch(rungs[at], id, path.split('/').at(-1) ?? '')
         );
         if (hits.length > 0) return hits.length === 1 ? hits[0] : '';
     }
@@ -161,17 +166,20 @@ export function pickFromListing(id: string, rungs: string[][]): string {
  * StdOut is exact and costs a moment, so prewarming one would put a guess where an exact answer is.
  *
  * A job it cannot resolve is left out: this runs behind the page, and a miss only means the next
- * press pays the search it would have paid anyway.
+ * press pays the search it would have paid anyway. `logDirs` is `slurm.log_dirs`, whose rungs the
+ * listing reads; with none there is nothing to list.
  */
 export async function prewarmLogs(
     connection: Connection,
     ids: string[],
     days: number,
+    logDirs: readonly string[],
     runner: Runner = run
 ): Promise<Map<string, string>> {
     const found = new Map<string, string>();
     const want = ids.filter(validId);
-    if (want.length === 0) return found;
+    const rungs = logRungs(logDirs);
+    if (want.length === 0 || rungs.length === 0) return found;
     let listed: RunResult;
     try {
         listed = await runner(
@@ -208,7 +216,11 @@ export async function prewarmLogs(
     if (dirs.length === 0) return found;
     let listing: RunResult;
     try {
-        listing = await runner(connection, listingCommand(dirs), listingTimeout(dirs.length));
+        listing = await runner(
+            connection,
+            listingCommand(dirs, rungs),
+            listingTimeout(dirs.length, rungs.length)
+        );
     } catch {
         return found;
     }
@@ -217,9 +229,9 @@ export async function prewarmLogs(
     const perDir = parseListing(listing.stdout);
     for (const id of want) {
         const dir = dirOf.get(id);
-        const rungs = dir === undefined ? undefined : perDir.get(dir);
-        if (rungs === undefined) continue;
-        const path = pickFromListing(id, rungs);
+        const listed = dir === undefined ? undefined : perDir.get(dir);
+        if (listed === undefined) continue;
+        const path = pickFromListing(id, listed, rungs);
         if (path) found.set(id, path);
     }
     return found;

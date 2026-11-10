@@ -72,6 +72,8 @@ export type MailOptions = {
     providers: readonly SignInRow[];
     pollMin: number;
     perSignal: number;
+    /** The label or category of the todo signal, `mail.todo_label`. */
+    todoLabel: string;
     /**
      * How the providers are called; injected so a test reaches every branch without the network.
      */
@@ -100,7 +102,7 @@ export type MailWatcher = {
     refresh(): Promise<void>;
     /**
      * Take new settings: a new period moves each account's next read as the loop does, and a new
-     * count reads every account at once.
+     * count or a new todo label reads every account at once.
      */
     setSettings(settings: MailSettings): void;
     /** Take new sentences, used from the next row that carries one. */
@@ -155,7 +157,11 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     );
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
-    let settings: MailSettings = { pollMin: options.pollMin, perSignal: options.perSignal };
+    let settings: MailSettings = {
+        pollMin: options.pollMin,
+        perSignal: options.perSignal,
+        todoLabel: options.todoLabel
+    };
     let words = options.words;
     /** Whether the watcher is closed, and the hub's `sign_in` rows it reads its accounts with. */
     const watched: WatcherHeld = { closed: false, rows: options.providers };
@@ -264,6 +270,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
                 link: signed.row.mailLink ?? '',
                 key,
                 perSignal: settings.perSignal,
+                todoLabel: settings.todoLabel,
                 fetcher
             };
             const candidates: Candidate[] =
@@ -339,7 +346,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             takeLoopSettings(
                 loop,
                 { before: before.pollMin, after: next.pollMin },
-                next.perSignal !== before.perSignal,
+                next.perSignal !== before.perSignal || next.todoLabel !== before.todoLabel,
                 publish
             );
         },

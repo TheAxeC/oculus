@@ -14,7 +14,7 @@ import {
     diff,
     failed,
     revParse,
-    worktreeUnder,
+    worktreeRefusal,
     type GitAt,
     type Outcome
 } from './git-write.ts';
@@ -60,16 +60,17 @@ export async function fileDiff(
  *
  * The repository is named by the caller and never worked out from the path: a worktree of the hub
  * is itself a workspace on the `git` channel and therefore a root of its own, so a path would
- * answer with itself and every worktree this hub makes would be refused.
+ * answer with itself and every worktree this hub makes would be refused. `worktree.dir` is the
+ * worktrees folder its path must lie in.
  */
 export async function worktreeFrom(
     at: GitAt,
-    path: string,
+    worktree: { path: string; dir: string },
     text: Record<string, string>,
-    roots: string[] = allowedRoots()
+    roots: string[]
 ): Promise<Outcome> {
-    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (!worktreeUnder(at.root, path)) return failed(words(text, 'server.git.outside_worktrees'));
+    const refused = worktreeRefusal(at, worktree, text, roots);
+    if (refused !== null) return refused;
     const head = await revParse(at, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const name = head.output.trim();
@@ -81,10 +82,11 @@ export async function worktreeFrom(
 export async function worktreeDiff(
     at: GitAt,
     path: string,
+    dir: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const from = await worktreeFrom(at, path, text, roots);
+    const from = await worktreeFrom(at, { path, dir }, text, roots);
     return from.ok ? worktreeRange({ ...at, root: path }, from.output) : from;
 }
 

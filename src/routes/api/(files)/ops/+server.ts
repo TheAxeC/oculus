@@ -6,12 +6,15 @@
 // token ServerContext minted; the GET reads two files as the diff pane reads a change.
 //
 // The roots are the open workspace's folders, so a folder the reader added in the file browser is a
-// folder these operations reach and no other is. The operations wait on the process's own write
-// chain `opsWrites`, apart from the one the workspaces, bookmarks and notes wait on. The change
-// log, the hub and the history folder come from the same target the write route uses, so a file
-// operation is recorded where every other write is.
+// folder these operations reach and no other is; each hub among them is marked with its
+// `secrets_dir`, the folder no language server's edit or writing fix writes in, and its
+// `notes_dir`, the notes folder, where a name landing in it takes the notes' naming rule. The
+// operations wait on the process's own write chain `opsWrites`, apart from the one the workspaces,
+// bookmarks and notes wait on. The change log, the hub and the history folder come from the same
+// target the write route uses, so a file operation is recorded where every other write is.
 
 import { searchSettings } from '$lib/data/sources/config';
+import { withNotes, withSecrets } from '$lib/data/helpers/files/private-folders';
 import { carriedOf, target } from '$lib/server/edit/writes';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleCompare, handleOps } from '$lib/server/files/fs/ops';
@@ -35,7 +38,10 @@ export const POST: RequestHandler = ({ request, locals }) => {
         locals.server
     );
     return handleOps(request, locals.token, {
-        roots: roots(locals),
+        roots: withNotes(
+            withSecrets(roots(locals), locals.server.secretsDir),
+            locals.server.notesDir
+        ),
         writes: locals.server.opsWrites,
         changes: held.changes,
         history: locals.server.local.history ?? defaultHistoryDir(),

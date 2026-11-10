@@ -2,10 +2,10 @@
 // the page. routes/api/(files)/file/[root]/[...path]/+server.ts is the endpoint and holds nothing
 // but the GET, since a route module may export only its verbs.
 //
-// It is what the decision needs, "a local HTML file under a configured root opens as a
-// tab": the manuals of cathedra and game-engine are single HTML files beside their own stylesheets
-// and images, and a browser resolves `css/manual.css` against the document's own URL, so every
-// asset the page asks for comes back through this same route without the file being rewritten.
+// A local HTML file under a configured root opens as a tab: a manual is one HTML file beside its
+// own stylesheets and images, and a browser resolves `css/manual.css` against the document's own
+// URL, so every asset the page asks for comes back through this same route without the file being
+// rewritten.
 //
 // Nothing outside a root is ever served, which is the auth rule applied to a route that reads
 // a path the request names. The root's directory and the resolved file are both put through

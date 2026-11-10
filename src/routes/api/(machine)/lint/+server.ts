@@ -3,18 +3,21 @@
 // verbs.
 //
 // The roots are the file browser's own list, so a file that opens for editing is a file that is
-// linted. The settings are the ones the request's configuration read holds, so a key changed in
-// behavior.yml applies to the next lint. The runs in flight, the held ESLint children and the
-// thread that reads comments come off the ServerContext, which ends them with the server.
+// linted; each hub among them is marked with its `secrets_dir`, the folder a folder's Fix All never
+// enters, as it never enters the folders `files.hidden_folders` names. The settings are the ones
+// the request's configuration read holds, so a key changed in behavior.yml applies to the next
+// lint. The runs in flight, the held ESLint children and the thread that reads comments come off
+// the ServerContext, which ends them with the server.
 
-import { linkRows, lintSettings, textCatalog } from '$lib/data/sources/config';
+import { hiddenFolders, linkRows, lintSettings, textCatalog } from '$lib/data/sources/config';
+import { withSecrets } from '$lib/data/helpers/files/private-folders';
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleLint } from '$lib/server/machine/runs/lint/routes';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) => {
     const server = locals.server;
-    const roots = server.workspace.open().roots;
+    const roots = withSecrets(server.workspace.open().roots, server.secretsDir);
     return handleLint(request, locals.token, roots, {
         settings: () => lintSettings(locals.config().config),
         approvals: () => server.local.approvals ?? defaultApprovalsPath(),
@@ -23,6 +26,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         eslint: server.eslint,
         comments: server.comments,
         catalog: () => textCatalog(locals.config().config),
-        links: () => linkRows(locals.config().config)
+        links: () => linkRows(locals.config().config),
+        hiddenFolders: () => hiddenFolders(locals.config().config)
     });
 };

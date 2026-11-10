@@ -1,8 +1,8 @@
 // Layer 2, server. Where a Settings write of one option lands, and what it reads there.
 //
-// Oculus's own files under config/ are never written. A key of the hub list (data/helpers/
-// hub-names.ts) is written in a hub's settings file, `<hub>/.oculus/config.yml`, at the key itself:
-// the hub the write names for a key each hub's own file is read for (data/shapes/hub-keys.ts), the
+// Oculus's own files under config/ are never written. A key of the hub list (data/shapes/
+// hub-keys.ts) is written in a hub's settings file, `<hub>/.oculus/config.yml`, at the key itself:
+// the hub the write names for a key each hub's own file is read for (`OWN_HUB_KEYS`), the
 // primary when it names none (`layersOf`, `otherHubLayers`); any other option is written in the
 // `settings:` map of the open workspace file, at `settings.<key>`. With no hub to write a key of
 // the hub list has no place, and with no workspace file open (the unsaved workspace) no other
@@ -21,8 +21,8 @@
 import { readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parseDocument, isMap as isYamlMap, isScalar } from 'yaml';
-import { HUB_FILE, USER_KEY, hubFileOf, ofHub } from '../../../../data/helpers/hub-names.ts';
-import { readPerHub } from '../../../../data/shapes/hub-keys.ts';
+import { HUB_FILE, USER_KEY, ofHub } from '../../../../data/helpers/hub-names.ts';
+import { hubFileOf, readPerHub } from '../../../../data/shapes/hub-keys.ts';
 import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { localFile } from '../../../../data/sources/config/local.ts';
 import { isHubFolder } from '../../../../data/sources/manifests.ts';

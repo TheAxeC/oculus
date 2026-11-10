@@ -6,10 +6,13 @@
 // A dataset's sources are read by the rows of `recover.sources` of its own hub: the primary's
 // merged settings, or the settings of another hub read under that hub's `.oculus/config.yml`. The
 // reader rows are handed the machine's `downloads` rows without the ones the `deposit.zenodo.auth`
-// of any hub of the workspace names, so the Zenodo token goes to the deposit's address alone.
+// of any hub of the workspace names, so the Zenodo token goes to the deposit's address alone. The
+// datasets are kept in the folder under the home folder that `recover.data_dir` names, and a job on
+// a cluster works in that cluster's row of `slurm.scratch_roots` and runs on its row of
+// `recover.partitions`.
 
 import { homedir } from 'node:os';
-import { nodeDownload } from '$lib/data/sources/config';
+import { nodeDownload, recoverSettings, slurmSettings } from '$lib/data/sources/config';
 import { connectionFor } from '$lib/server/machine/hpc/clusters/connections';
 import { run } from '$lib/server/machine/hpc/ssh';
 import { copy } from '$lib/server/machine/hpc/transfer';
@@ -53,6 +56,7 @@ const target = (locals: App.Locals): RecoverTarget => {
                     : server.configCache.hub(other.dir).config;
             return recoverRows(config);
         },
+        dataDir: () => recoverSettings(locals.config().config).dataDir,
         agent: READER_AGENT,
         fetch,
         local: server.recover.local,
@@ -67,6 +71,7 @@ const target = (locals: App.Locals): RecoverTarget => {
                 resource
             );
             if ('missing' in found) return found;
+            const config = locals.config().config;
             return {
                 resource,
                 connection: found.connection,
@@ -74,7 +79,9 @@ const target = (locals: App.Locals): RecoverTarget => {
                 copy,
                 home: homedir(),
                 nodeVersion: process.version,
-                nodeDownload: nodeDownload(locals.config().config),
+                nodeDownload: nodeDownload(config),
+                scratchRoot: slurmSettings(config).scratchRoots.get(resource) ?? '',
+                partition: recoverSettings(config).partitions.get(resource) ?? '',
                 sevenZip: sevenZipFolder
             };
         },

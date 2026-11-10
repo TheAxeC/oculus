@@ -60,6 +60,8 @@ export type RecoverWatchOptions = {
     home: string;
     /** The datasets Recover runs, from the latest portfolio. */
     places: () => RecoverPlace[];
+    /** The folder under the home folder that holds them, `recover.data_dir`, '' for none. */
+    dataDir: () => string;
     /** The names of the workspace's hubs. */
     hubs: () => string[];
     /** Ask the Live HPC watcher of the cluster `resource` for a poll now. */
@@ -180,7 +182,8 @@ export function watchRecover(channels: Hub, options: RecoverWatchOptions): Recov
     /** Read one dataset followed on this Mac; answers whether its run still goes. */
     function readMac(id: string, now: number): boolean {
         const { hub, key } = parts(id);
-        const folder = localPlace(options.home, hub, key, placeOf(id)?.path)?.folder ?? null;
+        const path = placeOf(id)?.path;
+        const folder = localPlace(options.home, hub, key, path, options.dataDir())?.folder ?? null;
         const run = localState({ hub, key, folder: folder ?? '' }, local);
         const listed = keptFiles(options.home, hub, key);
         const names = (listed ?? []).map((one) => one.name);
@@ -313,7 +316,7 @@ export function watchRecover(channels: Hub, options: RecoverWatchOptions): Recov
         const followed = clusters.get(resource)?.followed ?? new Set<string>();
         const places = options
             .places()
-            .flatMap((one) => clusterPlace(one.hub, one.key, one.path) ?? []);
+            .flatMap((one) => clusterPlace(one.hub, one.key, one.path, options.dataDir()) ?? []);
         const mine = places.filter((one) => followed.has(`${one.hub}/${one.key}`));
         return sectionCommand(places, mine, options.home, resource);
     }

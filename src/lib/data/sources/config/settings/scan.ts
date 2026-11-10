@@ -11,6 +11,10 @@ import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts'
 import { folderOf, inScan } from '../../../helpers/hub-names.ts';
 import { readOr, rowsShape } from '../../../shapes/shapes.ts';
 import type { Finding, ScanRule } from '../../../model/index.ts';
+import { noRule, settingEntry } from './reader.ts';
+
+/** The options file the picture folder keys are described in. */
+const SOURCES = 'sources.yml';
 
 /** The keys a `scan:` entry takes. */
 const SCAN_KEYS = ['dir', 'optional'];
@@ -67,15 +71,27 @@ export function scanFindings(value: unknown, file: string, text: TextCatalog): F
     return found;
 }
 
+/**
+ * The folder a picture folder key (`wallpaper_dir`, `memories_dir`) names where a hub's value is
+ * absent or wrong: the key's default in the options catalog, the value config/defaults/sources.yml
+ * ships. It throws when the catalog holds no text default for the key, as every setting reader
+ * does.
+ */
+export function pictureDefault(merged: Record<string, unknown>, key: string): string {
+    const shipped = settingEntry(merged, key, SOURCES).default;
+    if (typeof shipped !== 'string') throw noRule(key, SOURCES);
+    return shipped;
+}
+
 /** What is wrong with a picture folder key of a hub: no text, or a folder outside the hub. */
 export function pictureFolderFindings(
     merged: Record<string, unknown>,
     hub: string,
     key: string,
-    fallback: string,
     file: string,
     text: TextCatalog
 ): Finding[] {
+    const fallback = pictureDefault(merged, key);
     const { problem } = hubFolderIn(hub, merged[key], fallback);
     if (problem === null) return [];
     const message =

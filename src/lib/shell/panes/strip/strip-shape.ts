@@ -34,16 +34,19 @@ export type StripShape = {
  * a title bar strip (`windowStrip`) or none. `none` sends the actions up to the window strip, or
  * with the actions hidden draws none, and keeps a title row only while the pane is locked, since
  * the mark that unlocks it is drawn in that row; with no window strip the actions stay in a title
- * row of the pane.
+ * row of the pane. Before the page has its settings (either value null) the pane draws no row.
  */
 export function stripShape(
-    bar: TabBar,
-    place: EditorActions,
+    bar: TabBar | null,
+    place: EditorActions | null,
     tabs: Tab[],
     active: string,
     locked: boolean,
     windowStrip: boolean
 ): StripShape {
+    if (bar === null || place === null) {
+        return { tabs: [], row: 'none', actions: false, up: false, lock: false };
+    }
     const actions = place === 'strip';
     if (bar === 'none' && actions && !windowStrip) {
         return { tabs: [], row: 'title', actions: true, up: false, lock: locked };

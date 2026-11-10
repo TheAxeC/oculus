@@ -140,11 +140,78 @@ options:
         help: The keys of the hub's collections list whose files the index of a portfolio chat and of a project chat holds for this hub, in this order, after the hub's project manifests. A word that names no key of the hub's collections list adds nothing.
         control: multi
         from: collections
+    feed_registries:
+        heading: sources
+        section: Collections
+        help: The registry words of the hub's collections list whose files are feeds, each read by its feed view and no collection. leads is the Position Leads view's feed and radar the Lit Watch view's, the only two feeds oculus draws; a registry the list leaves out is read as a collection. A word that is neither is a finding and is not read; a word given twice is a finding and is read once; a value that is no list of words is a finding and the default, no feed, is read in its place. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: multi
+        options: [leads, radar]
+    leads_run_word:
+        heading: sources
+        section: Collections
+        help: The word a line of the leads feed's meta.log holds after its leading date when the line records a run of the position scout, such as scout, matched in any case. The newest such date is the scout's last run, which the update tray and the Focus board show. Empty reads no run, so the scout has no last run and the Focus board's refresh strip leaves it out. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        empty: true
+    update_tasks:
+        heading: sources
+        section: Update tasks
+        help: The update tasks the update tray offers for this hub, in the tray's order. A row's task names its file, .oculus/tasks/<task>.md, and the row is offered while the hub holds that file; its label and note are what the tray's row shows, its view is the view a notice of its run opens, and last_run says where the tray reads its last run from. A row with an empty label, note or view, a view no view of oculus's has, a last_run outside the four, or a task that is empty, repeats an earlier row's or is not lowercase letters, digits and dashes starting with a letter, is a finding and is not offered; a value that is no list is a finding and the default, no task, is read in its place. This is a setting of the hub, kept in its .oculus/config.yml; a change reaches the tray at once.
+        fields:
+            task:
+                help: the name of the task's file under .oculus/tasks/, without .md
+                control: text
+                form: task_name
+            label:
+                help: the words of the task's row in the tray
+                control: text
+            note:
+                help: the line under the task's label in the tray
+                control: text
+            view:
+                help: the view a notice of the task's run opens
+                control: choice
+                from: views
+            last_run:
+                help: "where the tray reads the task's last run from: radar (the hub's radar feed), scout (its leads feed), linkedin (the last post of its LinkedIn folder) or inbox (the machine's inbox notes); a row without it shows no last run"
+                control: choice
+                options: [radar, scout, linkedin, inbox]
+                empty: true
+    project_docs:
+        heading: sources
+        section: Project scan
+        help: The documents a project card marks a project for, in the card's order, each a file inside the project folder and the short label the card shows for it. A row whose file is empty, absolute or holds .., whose label is empty, or whose file or label repeats an earlier row's is a finding and is not read; a value that is no list is a finding and the shipped rows are read in its place. New project writes its README under the name of the first .md row that sits in the project folder itself, and no README when no row does. This is a setting of the hub, kept in its .oculus/config.yml.
+        fields:
+            name:
+                help: the document's path inside the project folder, written relative to it
+                control: text
+                form: inner_path
+            label:
+                help: the short label the project card shows for the document
+                control: text
+    code_dir:
+        heading: sources
+        section: Project scan
+        help: The folder of a project that holds its code, written relative to the project folder. The deposit mirrors it, an HPC submit sends a job's code from it, a project chat is told to read it, and the project card draws its deposit control for a project whose folder holds it. Inside it the portfolio's audit reads only the documents of project_docs and the files the hub's audit setting requires, and a change to any other file in it rebuilds nothing. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        form: inner_path
+    deck_dir:
+        heading: sources
+        section: Project scan
+        help: The folder of a project that holds its deck, written relative to the project folder; the Present view and the portfolio read the project's slides from the present.yml in it. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        form: inner_path
     linkedin_dir:
         heading: sources
         section: Registry and feed files
-        help: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea. Empty names no folder, and the LinkedIn view says so. This is a setting of the hub, kept in the hub's .oculus/config.yml.
+        help: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and a file whose name starts with linkedin_idea_prefix is an idea. Empty names no folder, and the LinkedIn view says so. This is a setting of the hub, kept in the hub's .oculus/config.yml.
         control: folder
+        empty: true
+    linkedin_idea_prefix:
+        heading: sources
+        section: Registry and feed files
+        help: The start of a file name in the LinkedIn folder that marks the file as an idea not yet posted, such as xx-. The LinkedIn view's new idea is written under it, and Mark posted renames such a file to the next number with the rest of its name kept. Empty marks no file as an idea, and a new idea is refused. This is a setting of the hub, kept in the hub's .oculus/config.yml.
+        control: text
+        form: file_name
         empty: true
     career_file:
         heading: sources
@@ -163,6 +230,19 @@ options:
         help: The folder of this hub's wallpaper images, relative to the hub and inside it. The wallpaper.image key names one of them as the hub's name and the file's name joined by a slash, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the standard folder is used. This is a setting of the hub, kept in its .oculus/config.yml.
         control: folder
         allow_missing: true
+    secrets_dir:
+        heading: sources
+        section: Folders
+        help: The folder of this hub that holds its secrets, such as tokens and keys, written relative to the hub. No file in it is given to a language server or changed by one, no app reaches it, no library file is looked for in it and the writing rules never fix a file in it. Empty names no such folder. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        form: inner_path
+        empty: true
+    notes_dir:
+        heading: sources
+        section: Folders
+        help: The folder of this hub that holds its notes, written relative to the hub. Every .md file in it or in a folder under it is a note of the Notes section, read for Backlinks, Tags and the Notes Graph; its order.json keeps the order of the notes and its attachments folder what is pasted into one. A search reads it even inside a folder whose name starts with a dot. Oculus ships .oculus/notes. This is a setting of the hub, kept in its .oculus/config.yml.
+        control: text
+        form: inner_path
     bookmarks:
         heading: sources
         section: Saved files

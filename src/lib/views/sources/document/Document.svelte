@@ -13,11 +13,10 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. A local HTML file under a configured root opens as a tab. The file is the
-    // manuals of cathedra and game-engine today, opened from the reader's bookmarks file, which the
-    // rail's Bookmarks menu lists.
+    // Layer 3, view. A local HTML file under a configured root opens as a tab, from the reader's
+    // bookmarks file, which the rail's Bookmarks menu lists: a project's manual, for one.
     //
-    // The document is an iframe rather than markup pulled into the page: the manuals are whole
+    // The document is an iframe rather than markup pulled into the page: such manuals are whole
     // documents with their own stylesheets, scripts and relative assets, and an iframe is the one
     // thing that gives them their own document to be. `allow-same-origin allow-scripts` is what
     // they need to work at all: same-origin so the browser lets their own stylesheets, images and

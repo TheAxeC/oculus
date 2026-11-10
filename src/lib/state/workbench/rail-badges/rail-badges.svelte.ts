@@ -9,7 +9,7 @@
 // (`countFlags`): the rail sums the views whose row says `rail: true`, Talks & Events among them,
 // and no list of views in code decides it.
 
-import { focusSetting } from '../../../data/helpers/guards.ts';
+import { focusNumber } from '../../../data/sources/config/sections/focus.ts';
 import type { EntitiesStore } from '../../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../../system/audit.svelte.ts';
@@ -266,7 +266,7 @@ export function createRailBadges(
             : (entities.portfolio()?.entities.feeds.linkedin?.lastPost ?? null);
         return linkedinOverdue(
             lastPost,
-            focusSetting(selectors.configMap(), 'linkedin_cadence_days'),
+            focusNumber(selectors.configMap(), 'linkedin_cadence_days'),
             Date.now()
         )
             ? OVERDUE_GLYPH

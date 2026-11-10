@@ -5,16 +5,16 @@
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
 // or resumes a terminal, starts the composer's session, types a message into one or interrupts its
-// turn, forks a session, starts an update task, or builds or cleans one
-// main file of a project's manuscript or of a folder of a served root, runs a project command,
-// runs a task terminal's line again or reads the output of a listed terminal, and additionally
-// carries the write token, since it is a write in the auth sense: it runs a process on
-// the machine.
+// turn, forks a session, starts an update task, or builds or cleans one main file of a project's
+// folder of mains or of a folder of a served root, runs a project command, runs a task terminal's
+// line again or reads the output of a listed terminal, and additionally carries the write token,
+// since it is a write in the auth sense: it runs a process on the machine.
 //
-// The resume action is the one explicit migration: an observed session becomes a terminal
-// oculus holds by running `claude --resume <id>` or `codex resume <id>` in its own cwd. Nothing is
-// signalled: a session whose process is still running is refused until it has ended, since two
-// processes writing one transcript is what the rule against signalling exists to prevent.
+// The resume action is the one explicit migration: an observed session becomes a terminal oculus
+// holds by running `<claude> --resume <id>` or `<codex> resume <id>` in its own cwd, the programs
+// local.yml's `claude_bin` and `codex_bin` name. Nothing is signalled: a session whose process is
+// still running is refused until it has ended, since two processes writing one transcript is what
+// the rule against signalling exists to prevent.
 //
 // A refusal travels as one word of TERMINAL_REFUSALS (pty/refusal.ts), so the endpoint holds no
 // English and the page says the sentence the catalog holds for the word
@@ -23,7 +23,6 @@
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
@@ -68,6 +67,7 @@ import {
     isSessionId,
     NAME_MAX,
     isTerminalId,
+    agentPrograms,
     listTerminals,
     newId,
     resizeTerminal,
@@ -75,11 +75,12 @@ import {
     startTerminal,
     steerTerminal,
     stopTerminal,
+    type AgentPrograms,
     type RunOptions,
     type StartOptions
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, heldRefusal, refusal, refusalFor } from './refusal.ts';
-import { namedHub, startUpdateTask } from '../runs/schedules/task.ts';
+import { namedHub, startUpdateTask, taskHubs, taskNames } from '../runs/schedules/task.ts';
 import { run, tmuxFailureWords } from './tmux.ts';
 import type { Turns } from './latex/turns.ts';
 import type {
@@ -222,7 +223,7 @@ async function resumeSession(
             resume,
             env
         },
-        { ...options, argv: [...prefix, ...resumeArgs(resume)] }
+        { ...options, argv: [...prefix, ...resumeArgs(resume, agentPrograms(options.localFor()))] }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
@@ -239,13 +240,13 @@ function sessionAccount(record: SessionRecord, options: TerminalOptions) {
 
 /**
  * The argv that forks one session: a new session carrying the old one's conversation, which
- * `claude --resume <id> --fork-session` and `codex fork <id>` start. A fork leaves the session it
- * copies running, so a live one is forked as well as an ended one.
+ * `<claude> --resume <id> --fork-session` and `<codex> fork <id>` start. A fork leaves the session
+ * it copies running, so a live one is forked as well as an ended one.
  */
-export function forkArgs(resume: TerminalResume): string[] {
-    const args = resumeArgs(resume);
+export function forkArgs(resume: TerminalResume, programs: AgentPrograms): string[] {
+    const args = resumeArgs(resume, programs);
     if (resume.tool === 'claude') return [...args, '--fork-session'];
-    return ['codex', 'fork', resume.id];
+    return [programs.codex, 'fork', resume.id];
 }
 
 /** Start a fork of one session in a new terminal, in the session's own folder. */
@@ -268,7 +269,7 @@ async function forkSession(
             name: words(catalog, 'server.fork.name', title).slice(0, NAME_MAX),
             env
         },
-        { ...options, argv: [...prefix, ...forkArgs(resume)] }
+        { ...options, argv: [...prefix, ...forkArgs(resume, agentPrograms(options.localFor()))] }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
@@ -298,7 +299,7 @@ async function composeSession(
         { ...request, prompt },
         configAgents(options.configFor()),
         agentAccounts(local),
-        local.claudeBin
+        agentPrograms(local)
     );
     if (request.task !== undefined) {
         const approve = seedApproval(
@@ -368,9 +369,10 @@ function approveSeedTask(message: Record<string, unknown>, options: TerminalOpti
 }
 
 /**
- * Start one of the four update tasks as a Claude terminal in the folder of the hub `root` names,
- * the primary's with no `root`. A `root` that is not text is `bad-terminal`, and text that names no
- * hub of the open workspace is refused with `hub-unknown`.
+ * Start one update task as a Claude terminal in the folder of the hub `root` names, the primary's
+ * with no `root`. A task or a `root` that is not text is `bad-terminal`, text that names no hub of
+ * the open workspace is refused with `hub-unknown`, and a task the hub's `update_tasks` does not
+ * list with `update-task-unlisted`.
  */
 async function startTask(
     kind: unknown,
@@ -379,14 +381,16 @@ async function startTask(
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    if (!isUpdateTask(kind)) return refusal('bad-terminal');
+    if (typeof kind !== 'string') return refusal('bad-terminal');
     if (root !== undefined && typeof root !== 'string') return refusal('bad-terminal');
     const local = options.localFor();
-    const named = namedHub(options.openFor(), root);
+    const open = taskHubs(options.openFor(), options.configFor, options.hubSettings);
+    const named = namedHub(open, root);
     if ('refused' in named) return refusal(named.refused, named.names);
     const started = await startUpdateTask(kind, false, {
         ...options,
         hub: named.hub,
+        listed: taskNames(open, named.hub),
         claudeBin: local.claudeBin,
         size: { cols, rows },
         text: textCatalog(options.configFor())
@@ -444,7 +448,7 @@ export async function handleTerminal(
                     rows: message.rows,
                     name: startNameShape.parse(message.name)
                 },
-                options
+                { ...options, programs: agentPrograms(options.localFor()) }
             );
             options.refresh?.();
             return json({ ok: true, terminal }, { headers: NO_STORE });

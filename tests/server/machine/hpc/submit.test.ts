@@ -1,10 +1,12 @@
 // Layer 4, server test. Submit's two guarantees, each a table with one row per input that gives a
 // different outcome: the run of a confirmed plan (the plan the reader confirmed, equal to the plan
 // the server computes at the press, is what runs, and nothing else does), and the scratch rule
-// (a job script whose code and sourced files never name /local/$SLURM_JOB_ID gets the warning
-// before Submit). The code folder is a real folder under the temporary directory whose files are
-// listed from disk; the copy and the ssh runner record their calls and start no process, and no row
-// starts git (the rows about which files git keeps are in submit-files.test.ts).
+// (a job script whose code and sourced files never name the cluster's <root>/$SLURM_JOB_ID of
+// `slurm.scratch_roots` gets the warning before Submit), with the refusal of a hub whose
+// `slurm.cluster_folder` is no text and the finding of its settings. The code folder is a real
+// folder under the temporary directory whose files are listed from disk; the copy and the ssh
+// runner record their calls and start no process, and no row starts git (the rows about which files
+// git keeps are in submit-files.test.ts).
 
 import { realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,8 +17,11 @@ import {
     type RunAnswer
 } from '../../../../src/lib/server/machine/hpc/submit.ts';
 import type { SubmitPlan } from '../../../../src/lib/data/model/index.ts';
+import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
+import { hubRowFindings } from '../../../../src/lib/data/sources/config/catalogs.ts';
+import { settingProblems } from '../../../../src/lib/data/sources/config/settings/problems.ts';
 import { it, plantScratch } from '../../../fixtures/scratch.ts';
-import { OK, SCRIPT, planned, world } from './submit-world.ts';
+import { OK, SCRIPT, listed, planned, world } from './submit-world.ts';
 import { put } from '../../git/refs/repo.ts';
 
 type RunRow = {
@@ -284,6 +289,34 @@ describe('the cluster a confirmed plan runs on', () => {
     });
 });
 
+describe('the cluster folder a hub names', () => {
+    it('refuses a Submit and words a finding of the key and the value for a cluster_folder of 5 (G13)', async () => {
+        const settings = 'slurm:\n  cluster_folder: 5\n';
+        const { hub, deps, copy, ssh } = world(
+            { 'hpc/a.slurm': SCRIPT },
+            'id: p\n',
+            listed,
+            settings
+        );
+        const answer = await planSubmit(
+            { root: 'hub', path: 'projects/p/code/hpc/a.slurm', resource: 'utwente' },
+            deps
+        );
+        expect(answer).toEqual({ status: 'refused', reason: 'no-cluster-folder' });
+        const merged = loadConfig(engineDir(), { hub }).config;
+        expect(settingProblems(merged)).toContainEqual(
+            expect.objectContaining({ key: 'slurm.cluster_folder', where: 'value', value: 5 })
+        );
+        const file = join(hub, '.oculus', 'config.yml');
+        const found = hubRowFindings(merged, file).filter(
+            (one) => one.key === 'slurm.cluster_folder'
+        );
+        expect(found.map((one) => one.file)).toEqual([file]);
+        expect(copy).not.toHaveBeenCalled();
+        expect(ssh).not.toHaveBeenCalled();
+    });
+});
+
 type ScratchRow = {
     name: string;
     script: string;
@@ -378,7 +411,40 @@ describe('the scratch rule', () => {
     it.each(SCRATCH)('$name', async (row) => {
         const { deps, hub } = world({ 'hpc/a.slurm': row.script, ...row.files }, row.manifest);
         const plan = await planned(deps);
-        expect(plan.scratch).toEqual({ named: row.named, unread: row.unread });
+        expect(plan.scratch).toEqual({ root: '/local', named: row.named, unread: row.unread });
         expect(plan.source).toBe(`${realpathSync(hub)}/projects/p/code/`);
+    });
+
+    it('reads the folder of the cluster in slurm.scratch_roots, and none for a cluster without (G13)', async () => {
+        const settings = [
+            'slurm:',
+            "  cluster_folder: '~/projects/{id}'",
+            '  scratch_roots: { utwente: /scratch.d/jobs }',
+            ''
+        ].join('\n');
+        const own = world(
+            { 'hpc/a.slurm': 'D=/scratch.d/jobs/$SLURM_JOB_ID\n' },
+            'id: p\n',
+            listed,
+            settings
+        );
+        expect((await planned(own.deps)).scratch).toEqual({
+            root: '/scratch.d/jobs',
+            named: true,
+            unread: []
+        });
+        const other = world(
+            { 'hpc/a.slurm': 'D=/scratchXd/jobs/$SLURM_JOB_ID\n' },
+            'id: p\n',
+            listed,
+            settings
+        );
+        expect((await planned(other.deps)).scratch.named).toBe(false);
+        const none = world({ 'hpc/a.slurm': 'echo hello\n' });
+        expect((await planned(none.deps, 'projects/p/code/hpc/a.slurm', 'b')).scratch).toEqual({
+            root: '',
+            named: false,
+            unread: []
+        });
     });
 });

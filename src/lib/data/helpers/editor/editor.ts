@@ -68,6 +68,12 @@ export const REPO_SETTINGS = '.oculus/settings.yml';
 /** The indentation of a tab: spaces or a tab, and the width of a step. */
 export type TabIndent = { tabs: boolean; size: number };
 
+/**
+ * The indentation a file's own lines give: tabs, whose width is not the file's to give, or spaces
+ * with the width of a step.
+ */
+export type DetectedIndent = { tabs: true } | { tabs: false; size: number };
+
 /** What a tab holds of its own: the indentation and the word wrap its reader chose. */
 export type TabChoice = { indent: TabIndent | null; wrap: string | null };
 
@@ -78,7 +84,7 @@ export type EditorAsk = {
     /** The records of the tab's repository file, null for a tab with no such file. */
     root: LanguageRecords | null;
     /** The indentation the file's own lines give, null for a file with nothing to detect. */
-    detected: TabIndent | null;
+    detected: DetectedIndent | null;
     tab: TabChoice;
 };
 

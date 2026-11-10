@@ -1,14 +1,16 @@
-// Layer 1, data. The four update tasks and whether a word names one. The list itself, UPDATE_TASKS,
-// is defined in data/model/machine/model-machine.ts, because the schedule payload there names the
-// kinds and the model layer may not import data/helpers; it is re-exported here so every other
-// module reads the kinds beside the rule. The server starts a task from it and the update tray
-// lists the four by it, and both must give the same answer for a word.
+// Layer 1, data. The form of an update task's name, which is the name of its file
+// `.oculus/tasks/<task>.md` in a hub, and whether a value has it. The tasks a hub offers are the
+// rows of its `update_tasks` (data/sources/config/settings/hub-rows.ts), whose `task` field the
+// options catalog holds to this form through `task_name` (config/catalog/value-rule.ts), and a
+// schedule's task is held to it by the rule both the dialog and the server read an entry by
+// (run/schedules.ts), so no name reaches a path outside the tasks folder.
 
-import { UPDATE_TASKS, type UpdateTask } from '../../model/index.ts';
+import type { UpdateTask } from '../../model/index.ts';
 
-export { UPDATE_TASKS, type UpdateTask };
+/** Lowercase letters, digits and dashes that start with a letter: the form of a task's name. */
+export const TASK_NAME = /^[a-z][a-z0-9-]*$/;
 
-/** Whether a value names one of the four update tasks. */
-export function isUpdateTask(value: unknown): value is UpdateTask {
-    return UPDATE_TASKS.some((task) => task === value);
+/** Whether a value is text of the form of a task's name. */
+export function isTaskName(value: unknown): value is UpdateTask {
+    return typeof value === 'string' && TASK_NAME.test(value);
 }

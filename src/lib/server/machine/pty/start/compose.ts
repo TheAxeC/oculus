@@ -57,6 +57,7 @@ import { isMap } from '../../../../data/helpers/guards.ts';
 import { taskRefOf } from '../../../../data/shapes/shapes.ts';
 import { below } from '../../../core/paths.ts';
 import { TerminalRefused } from '../refusal.ts';
+import type { AgentPrograms } from '../sessions.ts';
 
 /** The catalog's path under the engine's config folder. */
 export const AGENTS_FILE = join('catalogs', 'agents.yml');
@@ -166,15 +167,15 @@ export function accountOfPath(
 export type Composed = { argv: string[] | null; env: Record<string, string>; keys: string };
 
 /**
- * The start the composer asked for, checked word by word. The binary of Claude is local.yml's
- * `claude_bin`; Codex is found on PATH. An image must be an absolute file inside the workspace the
- * session starts in, since the composer attaches from that workspace's tree and nowhere else.
+ * The start the composer asked for, checked word by word. The program of each agent is local.yml's
+ * `claude_bin` or `codex_bin`. An image must be an absolute file inside the workspace the session
+ * starts in, since the composer attaches from that workspace's tree and nowhere else.
  */
 export function compose(
     request: ComposeStart,
     choices: AgentChoices[],
     accounts: AgentAccount[],
-    claudeBin: string
+    programs: AgentPrograms
 ): Composed {
     const prompt = request.prompt;
     if (prompt.length > PROMPT_MAX) throw new Error(`prompt must be at most ${PROMPT_MAX} chars`);
@@ -196,7 +197,7 @@ export function compose(
         ]);
     }
     const { prefix, env } = accountEnv(agent, account);
-    const argv: string[] = [...prefix, agent === 'claude' ? claudeBin : 'codex', ...flags];
+    const argv: string[] = [...prefix, programs[agent], ...flags];
     const images = request.images;
     if (images.length > 0 && agent !== 'codex') throw new Error('images are attached for codex');
     if (images.length > IMAGES_MAX) throw new Error(`at most ${IMAGES_MAX} images`);

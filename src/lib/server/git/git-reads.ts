@@ -18,7 +18,7 @@
 import { permitted } from '../core/paths.ts';
 import { words } from '../core/words.ts';
 import { json } from '@sveltejs/kit';
-import { textCatalog } from '../../data/sources/config.ts';
+import { textCatalog, worktreesDir } from '../../data/sources/config.ts';
 import type { DiffAttributes, DiffSides, GitBlameLine } from '../../data/model/index.ts';
 import {
     attributesOf,
@@ -74,10 +74,14 @@ export type ReadOptions = {
         text: Record<string, string>,
         roots: string[]
     ) => Promise<Read<FileDiff>>;
-    /** A worktree's diff against its repository's branch; the real one when absent. */
+    /**
+     * A worktree's diff against its repository's branch, `dir` the worktrees folder
+     * `git.worktrees_dir` of `config` names; the real one when absent.
+     */
     worktree?: (
         at: GitAt,
         path: string,
+        dir: string,
         text: Record<string, string>,
         roots: string[]
     ) => Promise<Read<DiffSides[]>>;
@@ -179,14 +183,18 @@ export async function fileSides(
     };
 }
 
-/** A worktree's diff as its two versions: where it parted from the branch against its HEAD. */
+/**
+ * A worktree's diff as its two versions: where it parted from the branch against its HEAD. `dir`
+ * is the worktrees folder the path must lie in.
+ */
 export async function worktreeSides(
     at: GitAt,
     path: string,
+    dir: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Read<DiffSides[]>> {
-    const from = await worktreeFrom(at, path, text, roots);
+    const from = await worktreeFrom(at, { path, dir }, text, roots);
     if (!from.ok) return { ok: false, error: from.error };
     const read = await worktreeRange({ ...at, root: path }, from.output);
     if (!read.ok) return { ok: false, error: read.error };
@@ -236,7 +244,8 @@ export async function handleGitGet(request: Request, options: ReadOptions): Prom
         if (root === null) return unknown(text);
         const tree = parameters.get('worktree') ?? '';
         const sides = options.worktree ?? worktreeSides;
-        return answer(await sides(at(root), tree, text, roots), 'files');
+        const dir = worktreesDir(options.config ?? {});
+        return answer(await sides(at(root), tree, dir, text, roots), 'files');
     }
     if (parameters.has('graph')) {
         const root = named('graph');

@@ -7,6 +7,9 @@
 import type { GitState, GitWorktree } from '../../../data/model/index.ts';
 import { worktreePath } from '../../../data/helpers/worktrees.ts';
 
+/** The .gitignore line a repository needs for its worktrees folder, named by the view's warning. */
+export { ignoreRule } from '../../../data/helpers/worktrees.ts';
+
 /** The name a worktree is shown under: the last name of its folder; its tooltip has the path. */
 export function worktreeLabel(path: string): string {
     return (
@@ -17,9 +20,12 @@ export function worktreeLabel(path: string): string {
     );
 }
 
-/** Where the worktree of this name will go, which the view says before the write is made. */
-export function plannedPath(root: string, name: string): string {
-    return worktreePath(root, name.trim());
+/**
+ * Where the worktree of this name will go, which the view says before the write is made: under the
+ * repository's worktrees folder `dir`, the one its git state carries.
+ */
+export function plannedPath(root: string, name: string, dir: string): string {
+    return worktreePath(root, name.trim(), dir);
 }
 
 /** The worktrees of a repository other than its main checkout, in the order git lists them. */

@@ -1,5 +1,6 @@
 // Layer 2, route tests. GET /api/terminal after a write, and POST /api/terminal's resume. The
-// update-task, LaTeX and chat actions are terminal-actions.test.ts beside this.
+// update-task and LaTeX actions are terminal-actions.test.ts beside this, the chat action
+// terminal-chat.test.ts.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
 // a `run` that records the argv and answers the list itself, and a `recordFor` the test owns
@@ -9,7 +10,7 @@
 import { describe, expect } from 'vitest';
 import { it, test } from '../../fixtures/scratch.ts';
 import { handleTerminal, handleTerminalList } from '../../../src/lib/server/machine/pty/routes.ts';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, localDefaults } from '../../../src/lib/data/sources/config.ts';
 import { record } from '../../fixtures/sessions-fixture.ts';
 import {
     HOST,
@@ -62,6 +63,34 @@ describe('GET /api/terminal after a write', () => {
         expect((await answer(listed)).terminals).toEqual([
             expect.objectContaining({ id: terminal.id })
         ]);
+    });
+});
+
+describe("POST /api/terminal, the agents' programs", () => {
+    it("starts a Claude and a Codex terminal and resumes a Codex session with the machine's claude_bin and codex_bin (G13)", async () => {
+        const driver = tmux();
+        const ended = record(SESSION, { tool: 'codex', live: false, cwd: HERE, title: 'A run' });
+        const options = {
+            ...worldOf(),
+            localFor: () => ({
+                ...localDefaults(),
+                claudeBin: '/opt/a b/claude',
+                codexBin: '/opt/codex'
+            }),
+            engine: task.engine,
+            configFor: configOf(task.engine),
+            run: driver.run,
+            recordFor: source(ended)
+        };
+        const starts = (): string[][] => driver.calls.filter((args) => args[0] === 'new-session');
+        for (const kind of ['claude', 'codex']) {
+            const body = { action: 'start', kind, cwd: HERE, cols: 80, rows: 24 };
+            expect((await handleTerminal(request(body), TOKEN, options)).status).toBe(200);
+        }
+        expect(starts().map((args) => args.at(-1))).toEqual(["'/opt/a b/claude'", "'/opt/codex'"]);
+        const resume = { action: 'resume', tool: 'codex', id: SESSION, cols: 80, rows: 24 };
+        expect((await handleTerminal(request(resume), TOKEN, options)).status).toBe(200);
+        expect(lineOf(starts()[2]).slice(-3)).toEqual(['/opt/codex', 'resume', SESSION]);
     });
 });
 

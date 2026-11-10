@@ -22,7 +22,11 @@ import {
     StreamMessageWriter,
     type MessageConnection
 } from 'vscode-jsonrpc/node';
-import { appsSettings, textCatalog } from '../../../../../src/lib/data/sources/config.ts';
+import {
+    appsSettings,
+    hiddenFolders,
+    textCatalog
+} from '../../../../../src/lib/data/sources/config.ts';
 import type {
     AppHostRow,
     AppHostsPayload,
@@ -275,6 +279,8 @@ export function world(
         privateReal?: (base: string) => string[];
         /** The folders `closed_paths` names; `secrets` alone when absent. */
         closedPaths?: string[];
+        /** The folders `files.hidden_folders` names; the shipped ones when absent. */
+        hiddenFolders?: string[];
         /** The platform's folder watch the hosts' file watchers use; the real one when absent. */
         watchFolder?: ToolsEnv['watchFolder'];
     } = {}
@@ -362,6 +368,7 @@ export function world(
             }),
             maxBytes: () => 1024 * 1024,
             scanEntries: () => 1000,
+            hiddenFolders: () => over.hiddenFolders ?? hiddenFolders(config),
             languages: () =>
                 joinedFor(
                     new Map(),

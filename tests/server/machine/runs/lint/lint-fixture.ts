@@ -122,6 +122,8 @@ export function route(
         limitMs?: number;
         approvals?: string;
         comments?: HeldComments;
+        /** The folders `files.hidden_folders` names; `node_modules` alone when absent. */
+        hiddenFolders?: string[];
     } = {}
 ): {
     options: LintRouteOptions;
@@ -146,6 +148,7 @@ export function route(
         comments,
         catalog: () => TEXT,
         links: () => fixtureRows().links,
+        hiddenFolders: () => extra.hiddenFolders ?? ['node_modules'],
         env: extra.env ?? process.env,
         ...(extra.limitMs === undefined ? {} : { limitMs: extra.limitMs })
     };

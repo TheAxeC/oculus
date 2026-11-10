@@ -2,11 +2,11 @@
     // Layer 3, partial of views/sources/files/Files.svelte. The notes of every hub as a section
     // under the trees: a head that opens and closes it and carries New Note (into the primary hub's
     // notes folder, else the first hub's) and the control that opens the Notes Graph, and under it
-    // the Explorer's own tree (views/shared/explorer/tree/Tree.svelte) over each hub's
-    // `.oculus/notes/`, each hub a group row named by the workspace's name for it, with its own New
-    // Note and New Folder. A press, a key, the menu, the name input, Rename, Move to Trash and a
-    // drag act on a note as on any file of the Files tree, through the file operations, so each is
-    // in History and a note trashed is in the Trash.
+    // the Explorer's own tree (views/shared/explorer/tree/Tree.svelte) over each hub's notes folder
+    // (its `notes_dir`), each hub a group row named by the workspace's name for it, with its own
+    // New Note and New Folder. A press, a key, the menu, the name input, Rename, Move to Trash and
+    // a drag act on a note as on any file of the Files tree, through the file operations, so each
+    // is in History and a note trashed is in the Trash.
     //
     // The rows, the record the tree keeps and what only this tree does (a typed name made a note,
     // the order the notes keep) are notes-section.svelte.ts's. A group that lists nothing says why

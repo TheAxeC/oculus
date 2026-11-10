@@ -62,7 +62,7 @@ import {
     type OpsRefusal,
     type OpsRequest
 } from '../../../data/file-ops.ts';
-import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
+import { notesMark, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import {
     FILES_KIND,
     type FileField,
@@ -80,12 +80,19 @@ import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
 import { lspEditFiles } from './lsp-edit.ts';
-import { noteLanding, type Landing } from './notes.ts';
+import { noteLanding, type Landing, type NotesHub } from './notes.ts';
 import { opsShape } from './operations/ops-shape.ts';
 import { previewReplace, replaceFiles } from './operations/replace.ts';
 
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
+    /**
+     * The served roots. The callers that run an operation a page or an app sends (the ops route,
+     * the app hosts) mark each hub with its folder of secrets (`withSecrets`), which no `lsp-edit`
+     * or `writing-fix` writes in; the other callers run no such operation. A hub marked with its
+     * notes folder (`withNotes`, the ops route) has the name rule of its notes; an unmarked one
+     * has no notes folder here.
+     */
     roots: Root[];
     writes: FsWrites;
     /**
@@ -151,8 +158,11 @@ export type Scope = {
     trashReplaced: boolean;
     /** The folders no `lsp-edit` or `writing-fix` writes in (`privateFolders`). */
     withheld: readonly string[];
-    /** The folders of the served hubs, whose notes folders a name lands in by their rule. */
-    hubs: readonly string[];
+    /**
+     * The served hubs with their notes folders (`withNotes` marks them), a name landing in one of
+     * those by its rule.
+     */
+    hubs: readonly NotesHub[];
     history?: string;
     /** The search timeout and the ripgrep runner a replace uses. */
     search: { timeout?: number; run?: SearchRunner };
@@ -682,8 +692,10 @@ export function runOpsFrom(
             roots: into.roots,
             trash,
             trashReplaced: deps.trashReplaced ?? true,
-            withheld: privateFolders(hubDirs(into.roots), into.home ?? homedir()),
-            hubs: hubDirs(into.roots),
+            withheld: privateFolders(into.roots, into.home ?? homedir()),
+            hubs: into.roots.flatMap((one) =>
+                one.hub === true ? [{ dir: one.dir, notes: notesMark(one) }] : []
+            ),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] },

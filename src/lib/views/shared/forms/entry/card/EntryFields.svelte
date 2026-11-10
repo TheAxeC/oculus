@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial of EntryCard.svelte. The fields of an entry card under its title: the
     // fields the file's own schema names, in its order, then the fields it does not name under
-    // their names as words, never the entry's key and never a field of its Website section, which
-    // feeds the website and is changed in the entry's editor.
+    // their names as words, never the entry's key and never a field of the section that feeds the
+    // website (`website.schema_section`), which is changed in the entry's editor.
     //
     // On the entry's page the card hands each of its two columns (`column`,
     // views/shared/card/record/RecordDetails.svelte) its own share, every field under its small
@@ -55,7 +55,8 @@
         type Drawn,
         type Entry,
         type FieldKind,
-        type SchemaField
+        type SchemaField,
+        websiteSection
     } from '$lib/state/boards/collection';
     import { personName } from '$lib/state/boards/person';
     import { venueNamed } from '$lib/state/feeds/literature/saved';
@@ -172,7 +173,8 @@
         return (column === 'left') === prose;
     }
 
-    const fields = $derived(drawnFields(entry, schema, namesPerson).filter(drawnHere));
+    const website = $derived(websiteSection(client.selectors.configMap()));
+    const fields = $derived(drawnFields(entry, schema, website, namesPerson).filter(drawnHere));
 </script>
 
 <!-- The control that opens one person, by their name. -->

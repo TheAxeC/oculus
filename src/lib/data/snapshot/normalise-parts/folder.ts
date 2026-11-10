@@ -1,5 +1,5 @@
-// Layer 1, data. What a project's folder holds, as the snapshot says it: the fixed documents by
-// presence, read for normalise.ts.
+// Layer 1, data. What a project's folder holds, as the snapshot says it: the documents of its
+// hub's `project_docs` by presence, read for normalise.ts.
 
 import type { DocFlag, DocPresence } from '../../model/index.ts';
 import { compact } from '../compact.ts';

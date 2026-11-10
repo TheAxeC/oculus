@@ -99,11 +99,6 @@ export function sourceOf(
     return null;
 }
 
-/** The program a build's SyncTeX is read with: the configured path, else `synctex` on PATH. */
-export function programFor(path: string): string {
-    return path === '' ? 'synctex' : path;
-}
-
 /** The places `line` and `column` of a source file were typeset at in the PDF a build wrote. */
 export function forward(
     program: string,

@@ -49,6 +49,20 @@ function formWords(catalog: TextCatalog, form: Form): string {
             return findingText(catalog, 'findings.words.form_https_origin');
         case 'row_key':
             return findingText(catalog, 'findings.words.form_row_key');
+        case 'file_name':
+            return findingText(catalog, 'findings.words.form_file_name');
+        case 'task_name':
+            return findingText(catalog, 'findings.words.form_task_name');
+        case 'inner_path':
+            return findingText(catalog, 'findings.words.form_inner_path');
+        case 'folder_glob':
+            return findingText(catalog, 'findings.words.form_folder_glob');
+        case 'absolute_folder':
+            return findingText(catalog, 'findings.words.form_absolute_folder');
+        case 'partition':
+            return findingText(catalog, 'findings.words.form_partition');
+        case 'cluster_folder':
+            return findingText(catalog, 'findings.words.form_cluster_folder');
     }
 }
 

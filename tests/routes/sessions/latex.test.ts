@@ -1,17 +1,19 @@
-// Layer 2, route tests. POST /api/latex: the formatting of a text. The hub and the roots
-// are synthetic folders under the system temporary directory and the snapshot is the case's own, so
-// nothing of the real hub is read and nothing at all is written outside it.
+// Layer 2, route tests. POST /api/latex: the formatting of a text, and the program a texdoc
+// request runs. The hub and the roots are synthetic folders under the system temporary directory
+// and the snapshot is the case's own, so nothing of the real hub is read and nothing at all is
+// written outside it.
 //
 // Every refusal is a word (data/prose/latex.ts and data/file-ops.ts), never a sentence.
 
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     handleLatexPost,
     type LatexTarget
 } from '../../../src/lib/server/content/latex/endpoint.ts';
-import type { Formatter } from '../../../src/lib/data/prose/latex.ts';
+import { manuscriptFolder, type Formatter } from '../../../src/lib/data/prose/latex.ts';
+import { projectDocList } from '../../../src/lib/data/sources/config/settings/hub-rows.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     latexBuild,
@@ -51,6 +53,7 @@ const TARGET: LatexTarget = {
         { key: 'hub', dir: HUB, hub: true },
         { key: 'docs', dir: join(HUB, 'docs') }
     ],
+    manuscript: () => manuscriptFolder(projectDocList(loadConfig(engineDir()).config)),
     text: () => TEXT,
     formatting: formatting('tex-fmt'),
     building: () => latexBuild(loadConfig(engineDir()).config)
@@ -90,5 +93,24 @@ describe('POST /api/latex format', () => {
         expect(stale.status).toBe(403);
         expect(wrong.status).toBe(400);
         expect((await answer(wrong)).error).toBe('not-an-action');
+    });
+
+    it('runs texdoc at the path latex.texdoc_path names, and texdoc on PATH when it is empty (G13)', async () => {
+        const bin = newBin();
+        const elsewhere = newBin();
+        const said = join(elsewhere, 'said');
+        const script = (word: string) => `#!/bin/sh\nprintf '${word} %s\\n' "$*" >> '${said}'\n`;
+        writeFileSync(join(bin, 'texdoc'), script('path'), { mode: 0o755 });
+        writeFileSync(join(elsewhere, 'my-texdoc'), script('set'), { mode: 0o755 });
+        const at = (texdocPath: string): LatexTarget => ({
+            ...withTools(bin),
+            building: () => ({ ...latexBuild(loadConfig(engineDir()).config), texdocPath })
+        });
+        const body = { action: 'texdoc', name: 'amsmath' };
+        const set = await handleLatexPost(post(body), TOKEN, at(join(elsewhere, 'my-texdoc')));
+        const empty = await handleLatexPost(post(body), TOKEN, at(''));
+
+        expect([set.status, empty.status]).toEqual([200, 200]);
+        expect(readFileSync(said, 'utf8')).toBe('set -I amsmath\npath -I amsmath\n');
     });
 });

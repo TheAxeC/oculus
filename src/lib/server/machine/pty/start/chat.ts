@@ -6,8 +6,10 @@ import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../../data/accounts/chat.ts';
 import { keyOf } from '../../../../data/helpers/hub-names.ts';
-import type { HubSettings } from '../../../../data/index.ts';
+import { portfolioConfigFrom, type HubSettings } from '../../../../data/index.ts';
+import { manuscriptFolder } from '../../../../data/prose/latex.ts';
 import { textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
+import { projectDocList } from '../../../../data/sources/config/settings/hub-rows.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
@@ -46,6 +48,33 @@ export type ChatOptions = StartOptions & {
      */
     hubSettings: HubSettings;
 };
+
+/**
+ * What a project is read in, as the hub's settings `settings` name it: the Markdown documents of
+ * its `project_docs`, then the folder of its mains (`manuscriptFolder`, when it is not the project
+ * folder itself) and its code folder (`code_dir`), each with a slash; a name given twice is listed
+ * once.
+ */
+function readIn(settings: Record<string, unknown>): string[] {
+    const docs = projectDocList(settings);
+    const mains = manuscriptFolder(docs);
+    const code = portfolioConfigFrom(settings).layout.codeDir;
+    const folders = [...(mains === null || mains === '' ? [] : [mains]), code];
+    const named = [
+        ...docs.map((doc) => doc.name).filter((name) => name.toLowerCase().endsWith('.md')),
+        ...folders.map((folder) => `${folder}/`)
+    ];
+    return [...new Set(named)];
+}
+
+/** The names as the instruction lists them: each after a comma, the last after the word and. */
+function readList(catalog: Record<string, string>, names: readonly string[]): string {
+    return names.reduce((held, name, at) => {
+        if (at === 0) return name;
+        if (at === names.length - 1) return words(catalog, 'server.chat.read_last', held, name);
+        return words(catalog, 'server.chat.read_next', held, name);
+    }, '');
+}
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */
 export function chatIndexPath(sessionsOverrides: string | undefined, id: string): string {
@@ -113,7 +142,8 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
             : '';
     const note = words(catalog, 'server.chat.chat_index_note', index);
     const user = options.userFor?.() ?? words(catalog, 'server.chat.chat_user_fallback');
-    const instruction = words(catalog, 'server.chat.chat_instruction', home, cwd, user);
+    const read = readList(catalog, readIn(options.hubSettings(home).config));
+    const instruction = words(catalog, 'server.chat.chat_instruction', home, cwd, user, read);
     const system = [instruction, focus, note].filter((part) => part !== '').join('\n\n');
     const name = portfolio
         ? words(catalog, 'server.chat.chat_name', await chatNumber(catalog, options))

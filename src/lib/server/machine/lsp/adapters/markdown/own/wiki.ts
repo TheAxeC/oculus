@@ -4,8 +4,8 @@
 // named), Go to Definition and Find All References on a link, Find All References of the note
 // itself from anywhere in it that is no link or heading, and Rename on a link, which renames the
 // note and rewrites every link to it. It answers only in a note: a Markdown file of a hub's notes
-// folder (data/prose/markdown/note-names.ts), and only of the notes of that folder, so a link never
-// leads to another hub's note.
+// folder (data/prose/markdown/note-names.ts; its `notes_dir`, which the served root is marked
+// with), and only of the notes of that folder, so a link never leads to another hub's note.
 //
 // Completion, definitions and references are added to the server's own answer (`addedWiki`, which
 // the relay joins to it, held/requests/merged.ts), since the server answers a heading or a path in
@@ -21,6 +21,7 @@
 // The notes are read as the page holds them open, else from the disk (`PageView.read`).
 
 import { join, relative, sep } from 'node:path';
+import { notesMark } from '../../../../../../data/helpers/files/private-folders.ts';
 import {
     linkAt,
     linkPath,
@@ -66,8 +67,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 function placeOf(real: string, view: PageView): Place | null {
     for (const root of view.roots) {
-        if (root.hub !== true) continue;
-        const folder = realPath(notesFolderOf(root.real), true);
+        const notes = notesMark(root);
+        if (notes === '') continue;
+        const folder = realPath(notesFolderOf(root.real, notes), true);
         if (folder === null || !inside(real, folder) || normal(real) === normal(folder)) continue;
         const path = relative(folder, real).split(sep).join('/');
         if (!isNote(path) || path.split('/').some((one) => one.startsWith('.'))) continue;

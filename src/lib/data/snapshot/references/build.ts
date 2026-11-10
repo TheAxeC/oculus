@@ -3,10 +3,11 @@
 //
 // The files are the ones the build reads. The hub's data files and the manifests come as the texts
 // `runSchemas` read, so no file is read twice; the decks (the portfolio deck's `present.yml` and
-// each project's `present/present.yml`) and oculus's own configuration files that carry a reference
-// (`defaults/behavior.yml`, `defaults/sources.yml` and the other defaults files whose options name
-// a hub list, and `catalogs/vocab.yml`) are read here. A file under the hub's `secrets` folder and
-// the manifest of a workspace folder outside the hub are never read.
+// the `present.yml` of each project's deck folder, the hub's `deck_dir`) and oculus's own
+// configuration files that carry a reference (`defaults/behavior.yml`, `defaults/sources.yml` and
+// the other defaults files whose options name a hub list, and `catalogs/vocab.yml`) are read here.
+// A file under the hub's folder of secrets (its `secrets_dir`) and the manifest of a workspace
+// folder outside the hub are never read.
 //
 // The open workspace file is read too, for its `settings:`: each key there is an option of a
 // defaults file, so its places are the options catalog's own, under `settings`. Its values name

@@ -34,7 +34,6 @@ import { namingStarted, type Naming } from '$lib/state/sources/explorer/naming';
 import { selectOnly } from '$lib/state/sources/explorer/acts/selection';
 import { refusal } from '$lib/state/sources/explorer/acts/refusal';
 import {
-    NOTES_FOLDER,
     NOTE_SUFFIX,
     noteEntries,
     noteGroups,
@@ -73,7 +72,7 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
     const held = $derived(fs.notes());
     const groups = $derived(noteGroups(held.hubs, fs.roots()));
     /** The group rows' keys, open the first time the section is drawn. */
-    const heads = $derived(groups.map(({ root }) => treeKey(root.key, NOTES_FOLDER)));
+    const heads = $derived(groups.map(({ hub, root }) => treeKey(root.key, hub.folder)));
     const record = $derived(ui.instanceState(key));
     const view = $derived.by((): FilesView => {
         const kept = filesViewOf(record);
@@ -142,7 +141,7 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
                 at.mode === 'file' && !typed.toLowerCase().endsWith(NOTE_SUFFIX)
                     ? `${typed}${NOTE_SUFFIX}`
                     : typed;
-            if (group === undefined || at.path !== NOTES_FOLDER) {
+            if (at.path !== group?.hub.folder) {
                 return { into: { root: at.root, path: at.path }, name };
             }
             const making = noteMaking(group.hub, name);
@@ -214,7 +213,9 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
         /** The section head's New Note: into the primary hub, else the first. */
         newNote: () => {
             const group = headHub;
-            if (group !== undefined) start('file', { root: group.root.key, path: NOTES_FOLDER });
+            if (group !== undefined) {
+                start('file', { root: group.root.key, path: group.hub.folder });
+            }
         },
         get key() {
             return key;

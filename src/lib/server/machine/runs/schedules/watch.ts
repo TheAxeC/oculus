@@ -1,12 +1,12 @@
-// Layer 2, server. The schedules. Each entry of `schedules.yml` in the hub's `.oculus` folder that
+// Layer 2, server. The schedules. Each entry of the schedules file the hub's `schedules` names that
 // has a cron pattern, is not paused and has no problem has one croner job, in the local time zone;
 // at each due time the entry starts what it runs (schedules/run.ts), unless its earlier run is
 // still working. The watcher publishes one complete payload on the `schedule` channel after every
 // read of the schedules file and every change of a job, of the run record or of one of the files it
-// reads, the payload naming the update tasks whose file a hub's `.oculus/tasks/` holds, each with
-// that hub, for every hub of the workspace. Every read of the schedules file has a number, which
-// the payload carries as `read`, so a read whose rows equal the last one is published too, and a
-// page told the number a delete will be in knows when it has arrived.
+// reads, the payload naming, for every hub of the workspace, the rows of the hub's `update_tasks`
+// whose file its `.oculus/tasks/` holds, each with that hub. Every read of the schedules file has a
+// number, which the payload carries as `read`, so a read whose rows equal the last one is published
+// too, and a page told the number a delete will be in knows when it has arrived.
 //
 // The file is read at start and again on every change of it, of the `.oculus/commands.yml` of a
 // repository whose commands the payload lists, and through `reload()` after the route's write. The
@@ -55,7 +55,7 @@ import type {
 } from '../../../../data/model/index.ts';
 import type { Hub, Sink } from '../../../core/channels.ts';
 import type { Entry } from '../../processes/table.ts';
-import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
+import { HUB_FILE, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import { repositoryOf } from '../commands/repo.ts';
 import {
     readSchedules,
@@ -76,7 +76,7 @@ import {
 } from './record.ts';
 import { dueAt } from './due.ts';
 import type { RunAnswer } from './run.ts';
-import { SCHEDULED_SIZE, TASKS_FOLDER, offeredTasks, type TaskHubs } from './task.ts';
+import { SCHEDULED_SIZE, TASKS_FOLDER, listedTasks, offeredTasks, type TaskHubs } from './task.ts';
 
 /** The channel the payload is published on. */
 const CHANNEL = 'schedule';
@@ -98,7 +98,7 @@ export type SchedulesOptions = {
     rootsFor: () => string[];
     /**
      * The open workspace's hubs, read at the call: the primary's folder, null while the workspace
-     * has none, and every hub, whose task files the payload offers.
+     * has none, and every hub with its settings, whose `update_tasks` rows the payload offers.
      */
     hubs: () => TaskHubs;
     /** Start what an entry runs, in a terminal of the given grid. */
@@ -198,7 +198,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     const disk = (): Disk => {
         const open = options.hubs();
         const hubs = open.hubs.map((one) => one.name);
-        return { hub: open.primaryDir, roots: options.rootsFor(), hubs };
+        const tasks = (name: string | undefined) => listedTasks(open, name);
+        return { hub: open.primaryDir, roots: options.rootsFor(), hubs, tasks };
     };
 
     /**
@@ -681,10 +682,11 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     };
 
     // Each hub's task files are watched in its tasks folder, and the hub's `.oculus` folder is
-    // watched for that folder coming or going, so a task file written, renamed or removed in any
-    // hub reaches the tray. The set is made again at each reload, which a change of the
-    // workspace's hubs calls; a hub whose `.oculus` folder could not be watched is tried again at
-    // the next one. Neither folder is made: a hub with no task file offers no task.
+    // watched for that folder coming or going and for its settings file, so a task file written,
+    // renamed or removed in any hub, and an edit of a hub's `update_tasks`, reach the tray and the
+    // entries' problems. The set is made again at each reload, which a change of the workspace's
+    // hubs calls; a hub whose `.oculus` folder could not be watched is tried again at the next one.
+    // Neither folder is made: a hub with no task file offers no task.
     type TaskWatch = { parent: FSWatcher | null; tasks: FSWatcher | null };
     const taskWatches = new Map<string, TaskWatch>();
     const listen = (folder: string, heard: (file: string | null) => void): FSWatcher | null => {
@@ -709,6 +711,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             const folder = join(dir, TASKS_FOLDER);
             const held: TaskWatch = { parent: null, tasks: listen(folder, () => publish()) };
             held.parent = listen(join(dir, dirname(TASKS_FOLDER)), (file) => {
+                if (file === null || file === basename(HUB_FILE)) reload();
                 if (file !== null && file !== basename(TASKS_FOLDER)) return;
                 held.tasks?.close();
                 held.tasks = listen(folder, () => publish());

@@ -229,6 +229,9 @@ const statusWord = z.strictObject({
     ),
     default_task: flag(
         'The status of a task added from the palette, carried by one word at most: with two carrying it (a finding) the task is added with no status.'
+    ),
+    task_done: flag(
+        "The status a task is ticked off with, whose button a Focus board row keeps drawn when the pointer is elsewhere, carried by one word at most: with two carrying it (a finding) no row keeps a status button drawn; a row's buttons are compared with it as written."
     )
 });
 
@@ -533,7 +536,10 @@ export const vocabFileShape = z.strictObject({
                 ),
                 color: colour
                     .optional()
-                    .describe("The colour the row's heading is drawn in, a hex the palette maps.")
+                    .describe("The colour the row's heading is drawn in, a hex the palette maps."),
+                archival: flag(
+                    'The kind of the lines off the pillars: their cards are drawn muted and its section holds the Archival card; one row at most carries it.'
+                )
             })
         )
         .optional()
@@ -546,11 +552,60 @@ export const vocabFileShape = z.strictObject({
         .describe(
             "The tiers a venue's `tier` takes, best first, each with its glyph, words and colour; a tier with `assignable: false` is drawn but not offered."
         ),
+    venue_ranks: z
+        .record(z.string(), colour)
+        .optional()
+        .describe(
+            "A fragment of a venue's free-text `quartile` with the colour its tag is drawn in; the first fragment, in the map's order, the text holds with case ignored decides."
+        ),
+    venue_costs: z
+        .record(z.string(), colour)
+        .optional()
+        .describe(
+            "A fragment of a venue's free-text `free` with the colour its tag is drawn in, read as `venue_ranks` is."
+        ),
+    venue_biennial: z
+        .array(text)
+        .optional()
+        .describe(
+            "The texts that, held by a venue's `quartile` or `timing` with case ignored, mark it as running every other year on the Venues month ribbon; a hub's list replaces oculus's whole."
+        ),
+    venue_no_jif: z
+        .array(text)
+        .optional()
+        .describe(
+            "The texts a venue's `jif` is written as when it has no impact factor, compared trimmed and with case ignored, which a project card's venue line and the venue's card leave out; a hub's list replaces oculus's whole."
+        ),
     radar_buckets: z
-        .array(keyed)
+        .array(
+            keyed.extend({
+                default: flag(
+                    "The bucket an entry whose bucket no row names is drawn under, and the one a Literature card's Add form preselects; one row at most carries it."
+                ),
+                spark: flag(
+                    "A bucket whose papers offer the card's Idea form, which seeds a new idea from the paper; any number of rows may carry it."
+                )
+            })
+        )
         .optional()
         .describe(
             "The buckets the Lit Watch radar sorts a project's new papers into, each with its glyph, words and colour."
+        ),
+    radar_relevance: z
+        .record(
+            z.string(),
+            z.strictObject({
+                color: colour
+                    .optional()
+                    .describe("The colour the relevance's tag and its card's bar are drawn in."),
+                default: flag(
+                    "The relevance a Literature card's Add form preselects; one word at most carries it."
+                )
+            })
+        )
+        .optional()
+        .describe(
+            "The words a Lit Watch entry's `relevance` takes, the closest first, which order the papers found on one day; the write refuses a relevance not listed."
         )
 });
 

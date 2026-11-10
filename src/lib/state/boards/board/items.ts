@@ -156,7 +156,7 @@ function itemOf(
                 ? null
                 : {
                       id: venue.id,
-                      text: venueText(venue),
+                      text: venueText(venue, preset.words(rootOf(venue)).config),
                       short: venueWords(venue.short, venue.name),
                       tier: venueTierMark(venue, (root) => preset.words(root).config)
                   },

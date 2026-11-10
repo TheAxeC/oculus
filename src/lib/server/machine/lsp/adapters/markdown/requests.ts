@@ -65,9 +65,13 @@ async function bytesOf(uri: unknown, ask: ServerAsk): Promise<Buffer> {
     return bytes;
 }
 
-/** The handlers of the Markdown server's requests, for files with these extensions. */
+/**
+ * The handlers of the Markdown server's requests, for files with these extensions, the list of
+ * files entering no folder `hidden` names.
+ */
 export function markdownRequests(
-    extensions: () => string[]
+    extensions: () => string[],
+    hidden: () => readonly string[]
 ): Readonly<Record<string, (params: unknown, ask: ServerAsk) => unknown>> {
     return {
         'markdown/parse': async (params, ask) => {
@@ -85,7 +89,9 @@ export function markdownRequests(
         },
         'markdown/fs/readDirectory': (params, ask) => listing(paramsOf(params).uri, ask),
         'markdown/findMarkdownFilesInWorkspace': async (_params, ask) =>
-            (await markdownFiles(ask, extensions())).map((real) => pathToFileURL(real).href),
+            (await markdownFiles(ask, extensions(), hidden())).map(
+                (real) => pathToFileURL(real).href
+            ),
         'markdown/fs/watcher/create': (params, ask) => {
             const { id, uri, watchParentDirs } = paramsOf(params);
             const real = reachable(uri, ask);

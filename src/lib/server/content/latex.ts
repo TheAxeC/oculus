@@ -12,7 +12,8 @@
 // `.jnw`, `.pnw`), directly in a folder whose text carries `\documentclass` outside a comment. No
 // manifest key names one, so a folder that gains a supplement or a highlights file is found the
 // moment it is written, and nothing has to be kept in step with the folder. A project's mains sit
-// in its `manuscript/` folder; any other folder of a served root is read the same way.
+// in the folder of the `.tex` row of its hub's `project_docs` (data/prose/latex.ts,
+// manuscriptFolder); any other folder of a served root is read the same way.
 //
 // The program a main asks for is a magic comment of its head (`% !TEX program = xelatex`), read by
 // data/prose/latex.ts, the one reader of LaTeX text the page shares, bound to the parser by
@@ -23,7 +24,6 @@
 import { closeSync, openSync, readFileSync, readdirSync, readSync, statSync } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import {
-    MANUSCRIPT,
     PROGRAMS,
     isTexSource,
     oneLine,
@@ -33,9 +33,6 @@ import {
 } from '../../data/prose/latex.ts';
 import { inside } from '../core/paths.ts';
 import { magicComments } from './latex/reader.ts';
-
-/** The main file every manuscript has when it has one, drawn first whatever the rest sort as. */
-const FIRST = 'main.tex';
 
 /** How much of a `.tex` file is read to decide whether it declares a document class. */
 export const HEAD_BYTES = 65536;
@@ -130,10 +127,10 @@ export function head(path: string): string {
 }
 
 /**
- * The names of the `.tex` and literate sources directly in one folder, `main.tex` first and the
- * rest by name, none of them read. A folder that is missing or unreadable has none.
+ * The names of the `.tex` and literate sources directly in one folder, in the folder's order, none
+ * of them read. A folder that is missing or unreadable has none.
  */
-export function sourcesIn(dir: string): string[] {
+function texSourcesIn(dir: string): string[] {
     let entries;
     try {
         entries = readdirSync(dir, { withFileTypes: true });
@@ -147,36 +144,38 @@ export function sourcesIn(dir: string): string[] {
         // and not a file however ordinary the file it points at is.
         if (isFile(join(dir, entry.name))) found.push(entry.name);
     }
-    found.sort((left, right) => {
-        if (left === FIRST) return right === FIRST ? 0 : -1;
-        if (right === FIRST) return 1;
-        return left.localeCompare(right);
-    });
     return found;
 }
 
 /**
- * The main files directly in one folder: every source of `sourcesIn` that declares a document
- * class, in its order.
+ * The names of the `.tex` and literate sources directly in one folder, `first` (the
+ * `latex.main_file` setting, the main file a manuscript has when it has one) first and the rest by
+ * name, none of them read. A folder that is missing or unreadable has none.
  */
-export function mainsIn(dir: string): string[] {
-    return sourcesIn(dir).filter((name) => declaresClass(head(join(dir, name))));
+export function sourcesIn(dir: string, first: string): string[] {
+    return texSourcesIn(dir).sort((left, right) => {
+        if (left === first) return right === first ? 0 : -1;
+        if (right === first) return 1;
+        return left.localeCompare(right);
+    });
 }
 
 /**
- * Whether a name is a main file of the folder. A name starting with a dash is refused even when a
- * file of that name is a main, since a program given it would read it as an option.
+ * The main files directly in one folder: every source of `sourcesIn` that declares a document
+ * class, in its order, `first` leading.
+ */
+export function mainsIn(dir: string, first: string): string[] {
+    return sourcesIn(dir, first).filter((name) => declaresClass(head(join(dir, name))));
+}
+
+/**
+ * Whether a name is a main file of the folder: a source directly in it that declares a document
+ * class. A name starting with a dash is refused even when a file of that name is a main, since a
+ * program given it would read it as an option.
  */
 export function isMainOf(dir: string, name: string): boolean {
-    return !name.startsWith('-') && mainsIn(dir).includes(name);
-}
-
-/**
- * The main files of one project folder, which are those of its `manuscript/` folder. A folder with
- * no `manuscript/` has none, which is a project the panel is not drawn for rather than an error.
- */
-export function mains(folder: string): string[] {
-    return mainsIn(join(folder, MANUSCRIPT));
+    if (name.startsWith('-') || !texSourcesIn(dir).includes(name)) return false;
+    return declaresClass(head(join(dir, name)));
 }
 
 /**
@@ -370,7 +369,10 @@ export function buildStateIn(
     };
 }
 
-/** The last build of one main file of a project: paths against the project's folder. */
-export function buildState(folder: string, main: string): MainState {
-    return buildStateIn(join(folder, MANUSCRIPT), main, { pdf: MANUSCRIPT, files: '' });
+/**
+ * The last build of one main file of a project whose mains sit in `manuscript`, against the
+ * project folder: paths against the project's folder.
+ */
+export function buildState(folder: string, manuscript: string, main: string): MainState {
+    return buildStateIn(join(folder, manuscript), main, { pdf: manuscript, files: '' });
 }

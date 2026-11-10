@@ -5,7 +5,10 @@
 // no such line is drawn. The rows (`rows`) leave out an entry a delete took from the server's
 // answer until the first read numbered at the read that answer named or later, or below what was
 // seen at the answer: an entry saved again under its name by another hand after that read is shown,
-// and a delete answered with that read already seen holds nothing.
+// and a delete answered with that read already seen holds nothing. The update tasks the page
+// offers (`offered`) leave out a row whose view the page does not hold, which `unviewed` gives as
+// a finding naming the row's place and the view, and before the page has said which views it
+// holds (`viewsAre`) nothing is offered and nothing is found.
 //
 // It does not cover the line's place in the tray, which the look does.
 
@@ -13,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { createEntities } from '../../../src/lib/state/client/entities.svelte.ts';
 import { createSchedule } from '../../../src/lib/state/system/machine/schedules/schedule.svelte.ts';
 import type { EntitiesStore, WritesStore } from '../../../src/lib/state/shared/stores/shapes.ts';
-import type { SchedulePayload } from '../../../src/lib/data/model/index.ts';
+import type { HubTask, SchedulePayload } from '../../../src/lib/data/model/index.ts';
 import { setCatalog } from '../../../src/lib/state/shared/words/text.ts';
 import { TEXT } from '../../server/text.ts';
 
@@ -247,5 +250,55 @@ describe('a schedule a delete took', () => {
             seen.push(store.rows().map((row) => row.name));
         }
         expect(seen).toEqual([[], ['one'], BOTH]);
+    });
+});
+
+describe('the update tasks the page offers', () => {
+    const FILE = '/h/.oculus/config.yml';
+    const ROW: HubTask = {
+        task: 'scout',
+        hub: 'h',
+        label: 'Scout',
+        note: 'openings',
+        view: 'leads',
+        lastRun: null,
+        file: FILE,
+        at: 'update_tasks[0]'
+    };
+
+    /** The store over a payload offering the one row `row`, with the page's views said or not. */
+    function storeOver(row: HubTask, views: readonly string[] | null) {
+        const payload: SchedulePayload = { ...readOf([], 1), tasks: [row] };
+        const entities = {
+            schedule: () => payload,
+            afterReceive: () => undefined
+        } as unknown as EntitiesStore;
+        const store = createSchedule(entities, {
+            terminalById: () => null,
+            writes: {} as WritesStore
+        });
+        if (views !== null) store.viewsAre((view) => views.includes(view));
+        return { offered: store.offered().map((one) => one.task), unviewed: store.unviewed() };
+    }
+
+    it('offers a row whose view the page holds, with no finding (G13)', () => {
+        expect(storeOver(ROW, ['leads', 'radar'])).toStrictEqual({
+            offered: ['scout'],
+            unviewed: []
+        });
+    });
+
+    it('leaves out a row whose view the page does not hold, with a finding of its place and view (G13)', () => {
+        const { offered, unviewed } = storeOver({ ...ROW, view: 'nowhere' }, ['leads']);
+        expect(offered).toStrictEqual([]);
+        expect(unviewed).toHaveLength(1);
+        expect(unviewed[0]?.file).toBe(FILE);
+        expect(unviewed[0]?.key).toBe('update_tasks[0].view');
+        expect(unviewed[0]?.message).toContain('update_tasks[0].view');
+        expect(unviewed[0]?.message).toContain('nowhere');
+    });
+
+    it('offers nothing and finds nothing before the page says which views it holds (G13)', () => {
+        expect(storeOver(ROW, null)).toStrictEqual({ offered: [], unviewed: [] });
     });
 });

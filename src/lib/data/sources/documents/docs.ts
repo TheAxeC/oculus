@@ -6,8 +6,8 @@
 // for that one file. readDoc is what that request calls, and the hub-level documents, the files of
 // the `docs:` list of config/defaults/layout.yml, go through it like any other.
 // projectDocs is the cheap existence check a project card shows, and it opens no file. The build
-// reads no document of a project's folder but its manifest and the slide files of its `present/`
-// deck, which sources/deck/ reads.
+// reads no document of a project's folder but its manifest and the slide files of its deck folder
+// (the hub's `deck_dir`), which sources/deck/ reads.
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,6 +17,7 @@ import { FRONT_MATTER } from '../../prose/markdown/front-matter.ts';
 import type { DocPresence, Finding } from '../../model/index.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
 import { errorLine } from '../yaml-file.ts';
+import type { ProjectDoc } from '../config/settings/hub-rows.ts';
 
 /** One Markdown document: its body, and the leading YAML block when it had one. */
 export type Doc = {
@@ -32,17 +33,6 @@ export type DocRead = Doc | Finding;
 export function isFinding(result: DocRead): result is Finding {
     return 'message' in result;
 }
-
-/**
- * The four documents a project folder is asked about, in this order. Folder-relative, and every one
- * is a file: nothing under `attic/` is on the list, so an attic copy is never seen.
- */
-export const PROJECT_DOCS = [
-    { name: 'README.md', label: 'README' },
-    { name: 'code/README.md', label: 'CODE' },
-    { name: 'manuscript/main.pdf', label: 'PDF' },
-    { name: 'manuscript/main.tex', label: 'TEX' }
-];
 
 /** The document marks follow labels: a future NOTES or DIARY is a document the reader owns. */
 function marks(label: string): { human: boolean } {
@@ -140,14 +130,16 @@ function readFrontmatter(
 }
 
 /**
- * Which of PROJECT_DOCS the folder has, one record per name in that order, whether present or not,
- * and when each was last written. No file is opened: it is the one stat per name the presence check
- * already made, so this stays cheap enough to run over every project on a rebuild. A directory
- * named like a document counts as absent. The mtime is what normalise reads a project's staleness
- * from: a document written after the project.yml is a manifest that is behind its own folder.
+ * Which of the documents `docs` names the folder has (the hub's `project_docs` rows, each a path
+ * inside the project folder, settings/hub-rows.ts), one record per name in that order, whether
+ * present or not, and when each was last written. No file is opened: it is the one stat per name
+ * the presence check already made, so this stays cheap enough to run over every project on a
+ * rebuild. A directory named like a document counts as absent. The mtime is what normalise reads a
+ * project's staleness from: a document written after the project.yml is a manifest that is behind
+ * its own folder.
  */
-export function projectDocs(folder: string): DocPresence[] {
-    return PROJECT_DOCS.map(({ name, label }) => {
+export function projectDocs(folder: string, docs: readonly ProjectDoc[]): DocPresence[] {
+    return docs.map(({ name, label }) => {
         const path = join(folder, name);
         const stat = fileStat(path);
         return { name, label, path, present: stat.present, mtime: stat.mtime, ...marks(label) };

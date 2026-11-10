@@ -6,16 +6,14 @@
 import { z } from 'zod';
 import { readAs } from '../../data/shapes/shapes.ts';
 
-/**
- * The wait between the last keystroke and the save. It is `notes.autosave_ms` of
- * the merged config; the number here is what a page uses before the first configuration push
- * lands, since there is nothing to read until it does.
- */
-const AUTOSAVE_MS = 800;
-
 /** The `notes:` map of the merged config, read for the wait: a finite number from zero up. */
 const notesShape = z.object({ autosave_ms: z.number().min(0) });
 
-export function autosaveMs(config: Record<string, unknown>): number {
-    return readAs(notesShape, config.notes)?.autosave_ms ?? AUTOSAVE_MS;
+/**
+ * The wait between the last keystroke and the save, `notes.autosave_ms` of the merged config, and
+ * null before the first configuration push lands or when the key holds no such number; a note is
+ * then saved as any other file of its tab is, by `editor.autosave`.
+ */
+export function autosaveMs(config: Record<string, unknown>): number | null {
+    return readAs(notesShape, config.notes)?.autosave_ms ?? null;
 }

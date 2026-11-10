@@ -37,6 +37,6 @@ describe('cherryPick', () => {
         expect(git(root, 'log', '-1', '--format=%s').trim()).toBe('Other file');
         expect(git(root, 'rev-parse', 'HEAD').trim()).not.toBe(pick);
         expect(git(root, 'show', '--name-only', '--format=', 'HEAD').trim()).toBe('o.txt');
-        expect((await readState(noCredentials(), root, TEXT)).state.sequence).toBe('');
+        expect((await readState(noCredentials(), root, TEXT, 'trees')).state.sequence).toBe('');
     });
 });

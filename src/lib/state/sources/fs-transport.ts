@@ -248,6 +248,8 @@ const folderShape = z
         real: z.string().optional().catch(undefined),
         hub: z.boolean().catch(false),
         folds: z.literal(true).optional().catch(undefined),
+        secrets: z.string().optional().catch(undefined),
+        notes: z.string().optional().catch(undefined),
         marks: marksShape,
         above: z.literal(true).optional().catch(undefined),
         settings: z.string().nullable().optional().catch(null)
@@ -258,6 +260,8 @@ const folderShape = z
         ...(one.real === undefined ? {} : { real: one.real }),
         ...(one.hub ? { hub: true as const } : {}),
         ...(one.folds === undefined ? {} : { folds: true as const }),
+        ...(one.hub && one.secrets !== undefined ? { secrets: one.secrets } : {}),
+        ...(one.hub && one.notes !== undefined ? { notes: one.notes } : {}),
         ...(one.marks === undefined ? {} : { marks: one.marks }),
         ...(one.above === undefined ? {} : { above: true as const }),
         settings: one.settings ?? null
@@ -330,6 +334,7 @@ const noteEntryShape = unchanged(
 const hubNotesShape = z.object({
     root: z.string(),
     primary: z.boolean().catch(false),
+    folder: z.string(),
     state: z.enum(['ok', 'none', 'refused', 'unreadable']),
     error: z.string().catch(''),
     entries: survivorsShape(noteEntryShape).catch([])

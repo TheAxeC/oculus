@@ -364,7 +364,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.rail_color).toBe('#2563eb');
         const wrong = withHub('rail_color: 3\n');
         expect(said(wrong)).toEqual([
-            `${FILE} | rail_color | rail_color must be a colour written #rrggbb; oculus's value stands`
+            `${FILE} | rail_color | rail_color must be a colour written #rrggbb, not 3; oculus's value stands`
         ]);
         expect(wrong.config.rail_color).toBe(OCULUS.rail_color);
     });
@@ -426,7 +426,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
     it("words a list where a map is merged, and keeps oculus's stages", () => {
         const read = withHub('stages: [a, b]\n');
         expect(said(read)).toEqual([
-            `${FILE} | stages | stages must be a map; oculus's value stands`
+            `${FILE} | stages | stages must be a map, not ["a","b"]; oculus's value stands`
         ]);
         expect(read.config.stages).toEqual(OCULUS.stages);
     });

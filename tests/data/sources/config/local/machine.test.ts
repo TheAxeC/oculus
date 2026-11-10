@@ -13,7 +13,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
-    DEFAULT_PORT,
     engineDir,
     loadConfig,
     localDefaults,
@@ -61,7 +60,7 @@ describe('the keys that are one per oculus', () => {
     it('are the defaults when the workspace has no primary', () => {
         const first = hubWith('port: 8800\nclaude_bin: x\n');
         const read = readMachine([{ name: 'first', dir: first }], null);
-        expect(read.config.port).toBe(DEFAULT_PORT);
+        expect(read.config.port).toBe(localDefaults().port);
         expect(read.config.claudeBin).toBe(localDefaults().claudeBin);
         expect(read.set).toEqual([]);
     });

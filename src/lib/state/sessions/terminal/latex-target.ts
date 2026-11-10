@@ -1,9 +1,10 @@
 // Layer 2, client state, pure. The folder a LaTeX read or a LaTeX terminal is about: a project, by
-// its id, whose main files sit in its `manuscript/` folder, or any folder of a served root, by the
-// root's key and the path under it. The two forms are the two ways api/latex and the latex action
-// of api/terminal take a folder, and `targetKey` is the key the page holds a folder's state under,
-// so a project and a folder whose names happen to match can never share one. A terminal's task mark
-// keeps a project by its hub and its key, which `markedTarget` reads back as the project's id.
+// its id, whose main files sit in the folder of the `.tex` row of its hub's `project_docs`, or any
+// folder of a served root, by the root's key and the path under it. The two forms are the two ways
+// api/latex and the latex action of api/terminal take a folder, and `targetKey` is the key the page
+// holds a folder's state under, so a project and a folder whose names happen to match can never
+// share one. A terminal's task mark keeps a project by its hub and its key, which `markedTarget`
+// reads back as the project's id.
 // `latexCalls` words the two LaTeX actions of api/terminal over the terminals store's post.
 
 import { hubId } from '../../../data/helpers/hub-names.ts';

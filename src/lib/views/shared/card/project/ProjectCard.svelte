@@ -91,8 +91,8 @@
         tab: string;
         /** The moment deadline chips are measured from. */
         now: number;
-        /** How many stale days make the manifest warning visible. */
-        staleLag: number;
+        /** How many stale days make the manifest warning visible; null draws none. */
+        staleLag: number | null;
         /** Show the outcome of a write or action in the board. */
         onsaid: (said: string) => void;
         /** Whether the project page's blocks list the project's documents. */

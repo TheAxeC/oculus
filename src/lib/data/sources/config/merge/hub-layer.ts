@@ -1,32 +1,31 @@
 // Layer 1, data. The hub's settings file, `<hub>/.oculus/config.yml`, laid over oculus's values:
-// the keys of HUB_LIST (data/helpers/hub-names.ts), which describe the hub rather than the reader.
-// A key of config/catalogs/vocab.yml is laid over oculus's value by its shape (in-place.ts): a map
-// by its words in oculus's place, `categories` by its rows' `key`, and the lists whose order is
-// their meaning whole, oculus's list standing when a row is of the wrong kind or two rows name one
-// key, save `focus_clusters`, which its reader takes row by row. A key of the hub's own
-// `deck_order` that no row of the merged `categories:` holds is a finding and is not read. A word
-// the hub's values no longer give, taken out with `<word>: null` or by a list replaced whole, also
-// leaves every word list that names it, each option and each field of an option's rows the options
-// catalog describes with a `from` naming that list: in oculus's own values, a row left with no
-// word stays, a board's one-word `tier` or `role` becomes an empty list and a Focus lane's
+// the keys of the hub list (data/shapes/hub-keys.ts), which describe the hub rather than the
+// reader. A key of config/catalogs/vocab.yml is laid over oculus's value by its shape
+// (in-place.ts): a map by its words in oculus's place, `categories` by its rows' `key`, and the
+// lists whose order is their meaning whole, oculus's list standing when a row is of the wrong kind
+// or two rows name one key, save `focus_clusters`, which its reader takes row by row. A key of the
+// hub's own `deck_order` that no row of the merged `categories:` holds is a finding and is not
+// read. A word the hub's values no longer give, taken out with `<word>: null` or by a list replaced
+// whole, also leaves every word list that names it, each option and each field of an option's rows
+// the options catalog describes with a `from` naming that list: in oculus's own values, a row left
+// with no word stays, a board's one-word `tier` or `role` becomes an empty list and a Focus lane's
 // `move_writes` loses the word; in a list or row the hub wrote, each such word is one finding
 // naming the hub's file at the word's place there. The options' defaults lose the word the same
 // way. `manifest_fields`, the fields the hub adds to the project form, is read row by row here: a
 // row is a field of `manifest_schema` under the key `field` it adds to project.yml, and a row that
 // would change a field oculus's form has, that the form cannot draw, or whose `foreign_key:` names
-// no collection of the hub, `projects` or vocab list once the hub's own values are laid in, is
-// left out. The lists of service rows oculus ships (`literature.sources`, `recover.sources`,
-// `links`, `sign_in` and `connections.failures`, in-place.ts's `ROW_SHAPES`) are laid over
-// oculus's row by row, with the same findings as `categories`. Every other key replaces oculus's
-// value whole.
+// no collection of the hub, `projects` or vocab list once the hub's own values are laid in, is left
+// out. The lists of service rows oculus ships (`literature.sources`, `recover.sources`, `links`,
+// `sign_in` and `connections.failures`, in-place.ts's `ROW_SHAPES`) are laid over oculus's row by
+// row, with the same findings as `categories`. Every other key replaces oculus's value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
-import { HUB_FILE, hubFileOf, hubKeys } from '../../../helpers/hub-names.ts';
-import { primaryOnly } from '../../../shapes/hub-keys.ts';
+import { HUB_FILE } from '../../../helpers/hub-names.ts';
+import { hubFileOf, hubKeys, primaryOnly } from '../../../shapes/hub-keys.ts';
 import { issueText, shapeIssues } from '../../../shapes/shape-issues.ts';
 import { readAs } from '../../../shapes/shapes.ts';
 import { SOURCES, type Source } from '../../../shapes/catalog-words.ts';
@@ -66,7 +65,7 @@ function vocabValue(
     if (shape === undefined) return undefined;
     const laid = layInPlace(shape, oculus, value);
     if ('wrong' in laid) {
-        pending.push(wrongKindFinding(file, path, path, laid.wrong));
+        pending.push(wrongKindFinding(file, path, path, laid.wrong, value));
         return { value: oculus, wrong: true };
     }
     for (const problem of laid.problems) {
@@ -420,7 +419,7 @@ function readManifestFields(
 ): TakenRow[] {
     const key = MANIFEST_FIELDS_KEY;
     if (!Array.isArray(value)) {
-        pending.push(wrongKindFinding(file, key, key, 'list'));
+        pending.push(wrongKindFinding(file, key, key, 'list', value));
         return [];
     }
     const form = oculusForm(config);
@@ -551,12 +550,12 @@ function orderNamingRows(
 }
 
 /**
- * The hub's settings file, read after oculus's config. A value the file holds at a path of HUB_LIST
- * is laid over oculus's value at that path: a key of the vocabulary by its shape, `manifest_fields`
- * row by row, any other key whole. A map is walked only while its path is a strict prefix of a
- * listed path, so `slurm: { resource: x, poll_min: 3 }` applies `slurm.resource` and names
- * `slurm.poll_min`. A key outside the list is a finding that names the hub's file and the key, and
- * nothing of it is applied; a file that is empty, is no map or does not parse (a key twice
+ * The hub's settings file, read after oculus's config. A value the file holds at a path of the hub
+ * list is laid over oculus's value at that path: a key of the vocabulary by its shape,
+ * `manifest_fields` row by row, any other key whole. A map is walked only while its path is a
+ * strict prefix of a listed path, so `slurm: { resource: x, poll_min: 3 }` applies `slurm.resource`
+ * and names `slurm.poll_min`. A key outside the list is a finding that names the hub's file and the
+ * key, and nothing of it is applied; a file that is empty, is no map or does not parse (a key twice
  * included) is a finding and oculus's values stand. The file is not required, and a hub without it
  * adds nothing. The merged values are checked against the shape of oculus's file their key belongs
  * to, and a list of the vocabulary replaced whole holding a row that shape refuses is not applied,

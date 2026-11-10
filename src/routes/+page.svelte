@@ -131,6 +131,13 @@
         const { rows, findings, folders, version } = data.apps;
         seedApps({ rows, findings, folders }, version);
         registerApps(client.registry, rows);
+        client.schedule.viewsAre((view) => client.registry.viewFor(view) !== undefined);
+    });
+
+    // The update tasks whose `update_tasks` row names a view the registry does not hold are left
+    // out of the tray, and their findings go to the registry beside those of the views left out.
+    $effect(() => {
+        client.registry.refuse('update_tasks', client.schedule.unviewed());
     });
 
     // A load that ran again with a token a restarted server minted replaces the one this client

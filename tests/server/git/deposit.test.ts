@@ -167,6 +167,13 @@ describe('the plan', () => {
             kept: []
         });
     });
+
+    it("writes the mirror's .gitignore under the catalog's header line, then the patterns (G79)", () => {
+        const written = readFileSync(join(mirrors, 'alpha-code', '.gitignore'), 'utf8');
+        expect(written).toBe(
+            `${TEXT['server.deposit.ignore_header']}\nresults/\nfigures/\nattic/\n`
+        );
+    });
 });
 
 describe('a deposit of a project of the second hub', () => {

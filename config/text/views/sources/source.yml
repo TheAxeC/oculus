@@ -148,7 +148,7 @@ text:
         lsp_edit_loading: "The folders are still loading, so whether {0} is open in a tab cannot be told yet and the language server's edit was not made."
         lsp_edit_local: "{0} would hold a key the machine does not read ({1}), so the language server's edit was not made."
         lsp_edit_not_text: "{0} is not UTF-8 text throughout, so the language server's edit was not made."
-        lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder other than a hub's .oculus folder, or in the secrets folder of a hub or ~/.oculus, so the language server's edit was not made."
+        lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder other than a hub's .oculus folder, or in a hub's folder of secrets or ~/.oculus, so the language server's edit was not made."
         lsp_edit_partial:
             one: "The language server's edit stopped at {0} after {1} file was written. History undoes it."
             other: "The language server's edit stopped at {0} after {1} files were written. History undoes them."
@@ -196,6 +196,7 @@ text:
         submit: Submit Job
         submit_ask: 'Copy the code of {0} to {1} and submit {2}?'
         submit_bad_cluster: 'The cluster folder of this project is not valid: {0}'
+        submit_no_cluster_folder: This project's manifest names no paths.cluster, and slurm.cluster_folder names no folder on the cluster for it.
         submit_busy: A copy of this project's code to the cluster is already running.
         submit_changed: The files or the commands changed since the question was asked; press Submit Job again.
         submit_cluster: Cluster
@@ -228,7 +229,7 @@ text:
         submit_unconfirmed: The question was not answered, so nothing was run.
         submit_unknown_cluster: '{0}'
         submit_unread: 'Not read: {0}.'
-        submit_warning: 'This job script never names /local/$SLURM_JOB_ID, the per-job scratch folder of the cluster.'
+        submit_warning: 'This job script never names {0}, the per-job scratch folder of the cluster.'
         toggle_word_wrap: 'View: Toggle Word Wrap'
         truncated: This file is longer than the editor reads; its first 2 MB are shown and it saves nothing.
         untitled_name: File name

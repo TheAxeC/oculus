@@ -14,17 +14,17 @@
 
 <script lang="ts">
     // Layer 3, view. The deposit of one project uses a mirror clone under the machine-local state
-    // folder, into which the
-    // project's `code/` is synced and committed, and from which the tool pushes, lists, creates and
-    // switches branches. One instance per project, and the project it is for is the `id` in its
-    // instance state, exactly as the editor and the project tab read their own.
+    // folder, into which the project's code folder (the hub's `code_dir`) is synced and committed,
+    // and from which the tool pushes, lists, creates and switches branches. One instance per
+    // project, and the project it is for is the `id` in its instance state, exactly as the editor
+    // and the project tab read their own.
     //
     // Every write goes to POST /api/deposit with the write token, and the seven that write outside
-    // this machine or over `code/` (commit, push, snapshot, the two branch actions, and For review
-    // and Publish of the Zenodo section, DepositZenodo.svelte) carry a confirm this view sets only
-    // from the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
-    // payload arriving; a write happens when a button is pressed and never otherwise. The Zenodo
-    // section needs no mirror and is drawn whether or not the mirror exists.
+    // this machine or over the code folder (commit, push, snapshot, the two branch actions, and
+    // For review and Publish of the Zenodo section, DepositZenodo.svelte) carry a confirm this view
+    // sets only from the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer
+    // or on a payload arriving; a write happens when a button is pressed and never otherwise. The
+    // Zenodo section needs no mirror and is drawn whether or not the mirror exists.
     //
     // The sync plan, its files, changes and findings, is DepositPlan.svelte. A changed file of the
     // plan and a file that differs from `origin/main` each open their diff in the diff editor
