@@ -35,6 +35,12 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
   brief_check: .scratch/migration/agents/reviews/O181-brief-check.md (a4bdaa2be7367ccb1, claude-opus-5-5, 211076 tokens, 61 tool uses, 617 s)
+- step: O182
+  landing: preparing
+  brief_check: "running: a141355f691370c1f"
+- step: O183
+  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O183-brief-check.md (ac94e9d0644cf48ec, claude-opus-5-5, 133797 tokens, 32 tool uses, 278 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -193,6 +199,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 750 (2026-11-10, the space under a running agent's terminal), closed by Axel the same day: (a), step O183, as `plan.md` Rulings "Open item 750" says.
+- Open item 749 (2026-11-10, the Sessions list's indent), closed by Axel the same day: (b), step O182, as `plan.md` Rulings "Open item 749" says.
 - Open item 748 (2026-11-09, step O181, what counts as hardcoding and who names the new keys), withdrawn the same day: the rulings Hardcoding sweep and O180 scope and the step's own line had settled all three questions, so there was no choice to put to Axel.
 - Open item 747 (2026-11-09, `cv_hide` on a manifest's `cv:` record), withdrawn the same day: its option (b), a named field in `projectCv`, broke the rule on hardcoding, so there was no choice to put to Axel. O180's repair round makes `projectCv` keep every key as `publication()` does, with `ProjectCv` typing only what `cv.ts` uses; `cv.cv_hide` is then a row in `config/schemas/manifest-schema.yml` and the `cv.*` line of `docs/data-map.md`.
 - Open item 746 (2026-11-09, O180's hub lines without a worktree of the hub), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 746" says; step O180.
