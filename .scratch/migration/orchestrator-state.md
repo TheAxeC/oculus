@@ -56,9 +56,11 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: abda66a3208c14d3e
   launched: 2026-11-10
   report: .scratch/migration/agents/reviews/O183-report.md
-  round: 0
+  builder_usage: "143393 tokens, 56 tool uses, 431 s"
+  round: 1
   landing: not-started
   shared_paths: "src/lib/views/sessions/terminal/grid/TerminalGrid.svelte, under O181 (migration) whose path list is src/**; simple: O183 removes one block, its derived flag, its import and two comments, which O181 has no reason to touch"
+  reviewer_report: .scratch/migration/agents/reviews/O183-refuter.md (a099bdd2e603b13e4, claude-opus-5-5, 150126 tokens, 44 tool uses, 474 s)
   brief_check: .scratch/migration/agents/reviews/O183-brief-check.md (ac94e9d0644cf48ec, claude-opus-5-5, 133797 tokens, 32 tool uses, 278 s)
 ```
 
