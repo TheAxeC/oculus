@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-  - step: O181
-    base: f88e2648e
-    worktree: .agents/worktrees/migration-O181
-    executor: agent
-    worker: claude:opus
-    session_id: a954c186d0c9de69b
-    builders_before: "a10198f634a8b9cea, claude-opus-5-5, stopped by Axel"
-    launched: 2026-11-09
-    report: .scratch/migration/agents/reviews/O181-report.md
-    round: 0
-    landing: not-started
-    brief_check: ".scratch/migration/agents/reviews/O181-brief-check.md (aae22591a037e332b, claude-opus-5-5, 203183 tokens, 24 tool uses, 452 s)"
-    shared_paths: "migration O180: hub-names.ts, config/defaults/behavior.yml, config/options/behavior.yml, model-machine.ts, model-entities.ts, settings/files.ts, the website files of src/state, docs/templates.md. O181 leaves the website block and audit/website to O180, so each merge takes separate lines or added rows; O180 lands first."
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -892,6 +879,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-10 (O181 deleted on Axel's word). Its worktree, branch and base copy are removed; O181 is prepared again from main's head under the ruling O181 keys. In flight (0 of 6): none. Open items: none.
 - 2026-11-10 (O180 landed). The website's field names are the hub's configuration (booking in `plan.md`, `agents/reviews/O180-landing.md`); the hub's lines are written, the hub commit on Axel's word. O181 builds on in its worktree from base f88e2648e under builder a954c186d0c9de69b. In flight (1 of 6): O181. Open items: none.
 - 2026-11-09 (O181's builder launched). O180's repair round 1 builds; O181 builds from base f88e2648e. In flight (2 of 6): O180, O181. Open items: none.
 - 2026-11-09 (O179 landed). The list drawing is on main (booking in `plan.md`, `agents/reviews/O179-landing.md`). O180's review runs; O181 is prepared next. In flight (1 of 6): O180. Open items: none.

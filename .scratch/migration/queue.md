@@ -1,7 +1,7 @@
-In flight (1 of 6 slots in use):
-- O181 (no hardcoding left in oculus), building.
+In flight (0 of 6 slots in use): none.
 
-Queued: none.
+Queued:
+- O181 (no hardcoding left in oculus), prepared again from main.
 
 Owed looks: none.
 
