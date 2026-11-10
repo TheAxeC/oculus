@@ -142,3 +142,177 @@ Ids and asynchronous paths: the step introduces no id or key. `SteerBox`'s `send
 - Every case is checked by reading only; the Live height and the absence of an empty band under an agent's input line are for the look at landing.
 - One read-only `git grep -n -E "SteerBox|data-steer" -- tests` was run to confirm the brief's statement; `git grep` is outside the three git read commands `agents/spec.md:33` allows. It changed nothing and printed nothing (exit 1).
 - The suite's fixture folders went to the system's temporary folder during `test:quick`, which the suite cleans itself; `.agents/scratch/` is removed.
+
+## Repair round 1
+
+Everything in the round is done. Two files beyond the ones the round names were changed for item 3, `src/lib/state/sessions/terminal/terminal-tabs.ts:51` and `src/lib/views/sessions/terminal/transcript/tab-session.svelte.ts:84`. They carry the same plural sentence about the lock ("the tab's boxes and grids"), and `agents/spec.md:72` asks for a change to reach every hit.
+
+### DONE / NOT DONE
+
+| Item | State | Proof |
+| --- | --- | --- |
+| 1. The head comment's clause on steering removed, paragraph rewrapped (S1) | DONE | `diff` of `TerminalGrid.svelte` against `../O183-base` (below); line widths 92, 98, 100, 96, 100, 99, 99, 99, 97, 94, 14, and no line's next word fits within 100 |
+| 2. SteerBox has one size (St1) | DONE | `diff` of `SteerBox.svelte` and `TranscriptBody.svelte` (below); `grep -rn -E "\bsmall\b" src/lib/views/shared/sessions/SteerBox.svelte src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` prints one line, `TranscriptBody.svelte:407: small`, which is the `small` prop of the `ToolButton` of the older-turns retry (`:406-408`) and not of SteerBox |
+| 3. The lock's sentences name one box (St2) | DONE | `diff` of `terminal.yml`, `SessionTools.svelte`, `terminal-tabs.ts`, `tab-session.svelte.ts` (below); `docs/HELP.md:257` is not edited and is named below |
+| 4. The report: B1, B2, S2, S4 | DONE | the sections below |
+| Verify: `npm run diagrams`, then `env -u TMPDIR npm run test:quick` once | DONE | diagrams exit 0, no further diagram change; `test:quick` exit 0, last line `test:quick: 146.4 s; every command passed` |
+| Verify: the brief's grep | DONE | 13 hits, the same 13 as in the step; 0 in `TerminalGrid.svelte` (`grep -c` prints 0) |
+| Verify: unused exports | DONE | `diff ../O183-base/unused-exports.txt <output of sh utils/unused-exports.sh>` printed nothing, exit 0 |
+| Verify: the ASCII check of `agents/spec.md:103` over every file changed | DONE | printed nothing, exit 0 |
+
+The `test:quick` lines as printed:
+
+```
+test:quick: 12 changed file(s), from git since HEAD
+test:quick: 17 test file(s)
+        tests/routes/sessions/terminal.test.ts: named for a changed file
+        tests/state/sessions/terminal/reading-tab.test.ts: imports at depth 1
+        tests/checks/tree/boundaries.test.ts: imports at depth 2
+        tests/state/sessions/terminal/ending.client.test.ts: imports at depth 2
+        tests/state/sessions/terminal/show-focus.client.test.ts: imports at depth 2
+        tests/state/workbench/layout/folder-opener.test.ts: imports at depth 2
+ok      prettier (12.8 s): All matched files use Prettier code style!
+ok      ASCII gate (13.6 s)
+ok      svelte-kit sync (18.8 s): See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+ok      eslint (38.5 s)
+ok      svelte-check (44.7 s): 1794302665784 COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (83.0 s): Duration  36.22s (transform 51.64s, setup 0ms, import 77.71s, tests 697ms, environment 2.93s)
+ok      vitest checks (124.1 s): Duration  77.22s (transform 33.34s, setup 0ms, import 68.69s, tests 179.80s, environment 3ms)
+test:quick: 146.4 s; every command passed
+```
+
+The 12 changed files are the nine tracked files below plus the three ledger files the round added (`O183-round-1.md`, `O183-refuter.md` and this report). The verify list ran once in this round, and no whole-suite command ran. The round adds or changes no test. `grep -rn -E "terminal_lock_tip|boxes and|take no typing" tests` finds no test on the lock's wording; its one hit is an unrelated diagram sentence in `tests/checks/source/html-sites.test.ts:44`.
+
+### 1. The head comment (S1)
+
+```
+<     // terminal panel draws one: xterm.js over the `pty:` channel, with the steer box under it only
+<     // when Claude or Codex runs in it (a shell is typed into at the grid, which then takes the
+<     // whole height). A split tab draws two of these side by side, so everything one grid holds (the
+...
+>     // terminal panel draws one: xterm.js over the `pty:` channel. The grid takes the whole height
+>     // of its box whatever runs in it, a shell, Claude or Codex, and each is typed into at the grid.
+>     // A split tab draws two of these side by side, so everything one grid holds (the mount, the
+>     // subscription, the resize, the bell, the paste question and the file drop) is this component's
+>     // own. A paste of several lines is asked about before it is sent, since each line would run; a
+>     // file dropped from the Files view types its quoted path; a bell is reported to the tab, which
+>     // marks the terminal's row. While the tab is locked the grid is read-only: it takes no typing,
+>     // paste or drop. A by-hand terminal is drawn at the size of its pane from the terminals list
+>     // and scrolls inside the grid, and the grid sends no resize, since the pane's size is the
+>     // user's.
+```
+
+The comment now names no other component. The whole paragraph is rewrapped greedily at 100 columns, so the last line holds the one word `user's.`.
+
+### 2. SteerBox has one size (St1)
+
+```
+SteerBox.svelte
+8,10c8,9
+<     // ended, each with a line of its own. Its text box and that line are at the body's `--fs-md`,
+<     // or at `--fs-sm` with `small`, in a view whose text is `--fs-sm` (a Terminal tab's transcript
+<     // body).
+>     // ended, each with a line of its own. Its text box and that line are at `--fs-sm`, since the
+>     // box sits in a Terminal tab's transcript body, whose text is `--fs-sm`.
+27,28d25
+<         /** Whether the text box and the line under it are at `--fs-sm`. */
+<         small?: boolean;
+31c28
+<     let { terminal, locked = false, ended = false, small = false }: Props = $props();
+>     let { terminal, locked = false, ended = false }: Props = $props();
+89c86
+< <div class="steer" class:small data-steer>
+> <div class="steer" data-steer>
+174c171
+<         font-size: var(--fs-md);
+>         font-size: var(--fs-sm);
+177,178c174
+<     .small .elsewhere,
+<     .small :global(.oculus-field) {
+>     .steer :global(.oculus-field) {
+
+TranscriptBody.svelte
+419c419
+<         <SteerBox terminal={terminalOfSession(record)} {locked} ended={!record.live} small />
+>         <SteerBox terminal={terminalOfSession(record)} {locked} ended={!record.live} />
+```
+
+On the base, the field's size under `.small` came from `.small :global(.oculus-field) { font-size: var(--fs-sm) }`. That selector compiles to a scoped class plus `.oculus-field`, two classes, so it overrides `src/lib/ui/theme/field.css:12-19` (`.oculus-field { font-size: var(--fs-md) }`, one class) and `body.rice .oculus-field` (one class and one element). The new `.steer :global(.oculus-field)` has the same two-class weight and the same place in the same stylesheet, so the field keeps `--fs-sm`. `TextArea.svelte` sets no `font-size` on `.area` or `.area.bare` (`grep -n font-size` finds only `.area.tree` at `:124`). `.elsewhere` is at `--fs-sm`, which is what `.small .elsewhere` gave it. `grep -rn "<SteerBox" src` finds one caller, `TranscriptBody.svelte:419`.
+
+### 3. The lock's sentences (St2)
+
+```
+config/text/views/sessions/terminal.yml
+106c106
+<         terminal_lock_tip: 'Lock this tab: its boxes and its grids take no typing until it is unlocked'
+>         terminal_lock_tip: 'Lock this tab: its box and its grids take no typing until it is unlocked'
+
+SessionTools.svelte
+3,4c3,4
+<     // TerminalActions.svelte: Lock, drawn while a terminal with a session shows, which leaves every
+<     // box and grid of the tab read-only, and Jump to the last turn while Transcript shows.
+>     // TerminalActions.svelte: Lock, drawn while a terminal with a session shows, which leaves the
+>     // box and every grid of the tab read-only, and Jump to the last turn while Transcript shows.
+
+terminal-tabs.ts
+51c51
+<     /** Whether the tab's boxes and grids take no typing. */
+>     /** Whether the tab's box and grids take no typing. */
+
+tab-session.svelte.ts
+84c84
+<         /** Whether the tab's boxes and grids are read-only; a lock binds a tab's own terminals. */
+>         /** Whether the tab's box and grids are read-only; a lock binds a tab's own terminals. */
+```
+
+The places were found with `grep -rn -i -E "boxes" src config docs README.md --exclude=local.yml`, filtered to lines that name a grid, the lock, steering or a terminal. The other hits (`Surface.svelte:21`, `html.ts:175`, `card-layout.ts:36`, `Panel.svelte:17`, `slide-layout.ts:246`) are about other things. The YAML still parses: `python3 -c "import yaml; yaml.safe_load(open('config/text/views/sessions/terminal.yml'))"` printed `yaml ok`, and that command only reads. `SessionTools.svelte:2-4` measures 95, 98 and 97 columns.
+
+`docs/HELP.md:257` is not edited, for the orchestrator. It reads "- Lock this tab keeps the tab's boxes and grids from taking typing until it is unlocked, and holds after a reload." The words that would match the tooltip are "the tab's box and grids".
+
+### 4. The report (B1, B2, S2, S4)
+
+- **B1, the lost tab stops.** On the base, Live under an agent's grid held three tab stops, in order: the text box (`TextArea`), Stop and Send (`SteerBox.svelte:92-117`). After the change Live holds none of them, and Tab from the grid moves focus to the next focusable element past the terminal body. Look: on a Live tab of a running Claude or Codex, press Tab from the grid; focus leaves the terminal body without stopping on a text box, Stop or Send.
+- **B2, an agent terminal the page cannot link yet.** On the base, the Live grid drew `SteerBox` with `terminal` from `terminalById(id)`, which was neither null nor foreign, so `usable` was true (`SteerBox.svelte:44` on the base). The box offered a working text box, Send and Stop, which steered the terminal by its id. After the change no box is drawn anywhere in the tab, because the tab has no Transcript switch. This case loses its Send and Stop. Escape typed at the grid still reaches the agent through xterm (`TerminalGrid.svelte:323`, `term.onData`) and interrupts the turn. The brief's case accepts the loss. The step's before-and-after line, which listed the unlinked case among the read-only lines, is corrected here.
+- **S2, the diagrams.** `docs/diagrams/layer-views.dot` and `docs/diagrams/layer-views.svg` stay in the diff. `npm run diagrams` writes them because the grid's `SteerBox` import is gone: the edge `views/sessions to views/shared` counts 20 imports instead of 21. The round's run of `npm run diagrams` changed them no further (`git status --short` lists the same two files before and after it).
+- **S4, git commands.** The only git commands this round ran are `git status --short` and `git diff --numstat`.
+
+### Files changed (`diff -rq` against `../O183-base` over `config src tests utils`, `git diff --numstat` for the lines)
+
+| Path | Lines | In the brief's or the round's list |
+| --- | --- | --- |
+| `src/lib/views/sessions/terminal/grid/TerminalGrid.svelte` | +11 -17 | yes |
+| `src/lib/views/shared/sessions/SteerBox.svelte` | +6 -10 | yes (round item 2) |
+| `src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` | +1 -1 | yes (round item 2) |
+| `config/text/views/sessions/terminal.yml` | +1 -1 | yes (round item 3) |
+| `src/lib/views/sessions/terminal/bar/SessionTools.svelte` | +2 -2 | yes (round item 3) |
+| `src/lib/state/sessions/terminal/terminal-tabs.ts` | +1 -1 | no: the same lock sentence as item 3, carried per `agents/spec.md:72` |
+| `src/lib/views/sessions/terminal/transcript/tab-session.svelte.ts` | +1 -1 | no: the same lock sentence as item 3, carried per `agents/spec.md:72` |
+| `docs/diagrams/layer-views.dot` | +1 -1 | no: written by `npm run diagrams` (S2) |
+| `docs/diagrams/layer-views.svg` | +1 -1 | no: written by `npm run diagrams` (S2) |
+| `.scratch/migration/agents/reviews/O183-report.md` | this section | yes |
+
+### Greps and re-reads
+
+- **History words** over every comment and catalog line the round changed (`SteerBox.svelte:8-9`, `SessionTools.svelte:2-4`, `terminal-tabs.ts:51`, `tab-session.svelte.ts:84`, `TerminalGrid.svelte:2-12` and `:104`, `terminal.yml:106`): one hit, "asked about before it is sent". That is the base's own sentence about when the paste question is asked, so it is not history.
+- **Re-read and rewritten:**
+  - `SteerBox.svelte` head comment `:2-9`.
+  - `TerminalGrid.svelte` head comment `:2-12`.
+  - `SessionTools.svelte:2-4`.
+  - the doc comments at `terminal-tabs.ts:51` and `tab-session.svelte.ts:84`.
+- **Re-read and still true:**
+  - `TranscriptBody.svelte:46-49`, whose head comment names no size.
+  - `TranscriptBody.svelte:81`, "the prompt box read-only".
+  - `config/text/views/sessions/composer.yml:1`.
+- **Ids and asynchronous paths:** the round introduces no id or key. Removing the `small` prop changes no asynchronous path in SteerBox.
+
+### Judgment calls (each reversible)
+
+- The two doc comments at `terminal-tabs.ts:51` and `tab-session.svelte.ts:84` are reworded like the tooltip, as named above.
+- The SessionTools sentence reads "which leaves the box and every grid of the tab read-only".
+
+### User-visible changes, before and after
+
+- **The Lock tooltip on a Terminal tab's header:** before, "Lock this tab: its boxes and its grids take no typing until it is unlocked"; after, "Lock this tab: its box and its grids take no typing until it is unlocked". Look: hover Lock on a tab whose terminal has a session.
+- **The Transcript box:** no change. The text box and the line under it stay at `--fs-sm`, as with `small` on the base. Look: on a Transcript tab of a live session and of an ended one, the box's text and its line are the same size as on main.
+- **Live, tab order under an agent's grid:** the three stops of B1 are gone.
+- **Live, an agent the page cannot link yet:** the usable box with Send and Stop of B2 is gone, and no box is left in the tab.

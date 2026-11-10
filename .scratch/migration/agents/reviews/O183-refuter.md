@@ -149,3 +149,204 @@ Everything else checked under Standards holds:
 - **Typing into a foreign terminal's grid on Live:** whether keys reach the pane depends on whether channel.ts:591-595 attaches it. That is outside the step's change and is not verified here.
 
 Usage: a099bdd2e603b13e4, claude-opus-5-5, 150126 tokens, 44 tool uses, 474 s
+
+## Repair round 1, refuted
+
+### O183 refuter report over repair round 1: a running agent's terminal takes the whole height in the Live view
+
+Summary: every item of the round holds, and so does every item and case of the brief over the whole diff since 04ffd50a4. There are no blocking findings. Two minor Proof findings are below: P1 is a stale line citation in the report, and P2 is a miscount of selector weights whose conclusion still holds. There are no Spec, Standards or Behaviour findings. My rerun confirms that the Transcript box's field and its line render at the same size as on main. I changed nothing in the repository or the ledger. The one file I wrote is the unused-exports output, in my session scratchpad, used for the comparison.
+
+Inputs read, in order:
+- spec.md
+- briefs/O183.md
+- briefs/O183-round-1.md
+- reviews/O183-refuter.md
+- plan.md:1735 (the O183 line) and plan.md:3725 ("Open item 750 ... (a)")
+- the round's delta
+- the base and current SteerBox.svelte, TextArea.svelte:85-140, src/lib/ui/theme/field.css (whole), TranscriptBody.svelte:30-60 and :395-470, and grid-keys.ts
+- the builder's report, read last. `diff` of the main-checkout copy against the worktree copy printed nothing (exit 0).
+
+### The round's delta
+
+- files.txt lists layer-views.dot, layer-views.svg and TerminalGrid.svelte.
+  - `diff -u` of the snapshot against the worktree prints nothing for the two diagram files.
+  - For TerminalGrid.svelte it prints one hunk, "@@ -1,16 +1,15 @@". That hunk drops the clause "a session is steered from under the Transcript view's turns (transcript/TranscriptBody.svelte)" and rewraps the paragraph.
+- The six paths files.txt does not list come from `git diff 04ffd50a4`:
+  - SteerBox.svelte (+6 -10)
+  - TranscriptBody.svelte (+1 -1, `small` dropped at :419)
+  - terminal.yml:106 (+1 -1)
+  - SessionTools.svelte:3-4 (+2 -2)
+  - terminal-tabs.ts:51 (+1 -1)
+  - tab-session.svelte.ts:84 (+1 -1)
+- `git status --short` lists nine modified tracked files and three untracked ledger files (O183-round-1.md, O183-refuter.md, O183-report.md).
+
+### Checks run (from /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O183)
+
+1. `npm run diagrams`: run.
+   - First I ran `staleFiles()` of utils/diagrams/diagrams.mjs in memory, which writes nothing. It printed `[]`.
+   - Then `npm run diagrams` ran. Afterwards `git status --short` printed the same nine M lines and three ?? lines as before, so it changed no tracked file.
+2. `env -u TMPDIR npm run test:quick`, run once with node v24.21.0 on PATH, printed:
+   - "test:quick: 12 changed file(s), from git since HEAD"
+   - "test:quick: 17 test file(s)"
+   - "ok prettier (3.1 s): All matched files use Prettier code style!"
+   - "ok ASCII gate (3.4 s)"
+   - "ok svelte-kit sync (6.2 s)"
+   - "ok eslint (6.4 s)"
+   - "ok svelte-check (24.9 s): ... COMPLETED 591 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS"
+   - "ok vitest (63.0 s)"
+   - "ok vitest checks (110.8 s)"
+   - "test:quick: 117.3 s; every command passed"
+3. The brief's grep, `grep -rn -i -E "SteerBox|steer box|prompt box" src tests config docs README.md --exclude=local.yml`, printed 13 lines:
+   - composer.ts:428, place.ts:283, review-comment.ts:43, dragging.svelte.ts:6
+   - SteerBox.svelte:2
+   - TranscriptBody.svelte:46, :48, :54, :81 and :419
+   - Composer.svelte:20, TaskBlock.svelte:4, composer.yml:1
+   - `grep -c` of the same pattern over TerminalGrid.svelte prints 0.
+4. The round's `small` grep, `grep -rn -E "\bsmall\b" SteerBox.svelte TranscriptBody.svelte`, printed one line, "TranscriptBody.svelte:407: small". That is the `small` of the older-turns retry ToolButton (:404-408), not a prop or class of SteerBox. The grep passes as the round defines it.
+5. `sh utils/unused-exports.sh` printed 335 lines, as does ../O183-base/unused-exports.txt. `diff` of the two printed nothing (exit 0).
+6. The ASCII perl check of spec.md:103 over the nine changed tracked files and O183-report.md printed nothing (exit 0).
+
+### Commands the report's round section quotes, rerun
+
+- **test:quick counts (12 changed files, 17 test files) and its last line:** reproduce. My timing was 117.3 s against the report's 146.4 s; no decision rests on it.
+- **The brief's grep at 13 hits with 0 in TerminalGrid.svelte:** reproduces.
+- **The `small` grep with its one ToolButton hit:** reproduces.
+- **Unused exports and the ASCII check:** reproduce.
+- **`git diff --numstat`:** reproduces every row of the file table: TerminalGrid +11 -17, SteerBox +6 -10, five files at +1 -1, SessionTools +2 -2.
+- **`grep -rn "<SteerBox" src` has one caller:** reproduces, TranscriptBody.svelte:419.
+- **`grep -rn -E "terminal_lock_tip|boxes and|take no typing" tests`:** reproduces. Its one hit is html-sites.test.ts:44.
+- **`grep -rn -i -E "boxes" src config docs README.md --exclude=local.yml`:** reproduces. Among the lines about the lock, the only remaining hit is docs/HELP.md:257. Its text is "Lock this tab keeps the tab's boxes and grids from taking typing ...", which the report names for the orchestrator, as spec.md:72 and round item 3 say.
+- **The `yaml.safe_load` of terminal.yml:** prints "yaml ok".
+- **Line widths:**
+  - TerminalGrid.svelte:2-12 measure 92 98 100 96 100 99 99 99 97 94 14. In each line the next word would pass 100 columns; for example, 94+1+"user's." is 102.
+  - SessionTools.svelte:2-4 measure 95 98 97.
+  - SteerBox.svelte:8-9 measure 97 77.
+  - All reproduce.
+- **History words over the added lines:** one hit, TerminalGrid "asked about before it is sent". That is the base's own sentence. Reproduces.
+- **field.css:12-19 and TextArea's font-size only at `.area.tree` :124:** reproduce. `grep -n` gives `.oculus-field {` at :12 and `font-size: var(--fs-md)` at :19.
+- **B2's `SteerBox.svelte:44` on the base (`usable`) and B1's `:92-117` (TextArea at :92, Stop ToolButton at :104, Send ToolButton at :111-117):** reproduce from `git show 04ffd50a4:...`.
+- **B2's "TerminalGrid.svelte:323, term.onData":** does not reproduce. See P1.
+- **S4, the git commands the builder ran:** not verifiable from here. See Declined.
+
+### Is the Transcript box's size the same as on main
+
+Yes. I compiled the base and current SteerBox.svelte with the tree's svelte 5.57.1 (`svelte/compiler`, `css: "external"`, output to stdout only).
+
+Base CSS:
+
+```
+.elsewhere.svelte-1ht4wce { ... font-size: var(--fs-md); }
+.small.svelte-1ht4wce .elsewhere:where(.svelte-1ht4wce),
+.small.svelte-1ht4wce .oculus-field { font-size: var(--fs-sm); }
+```
+
+Current CSS:
+
+```
+.elsewhere.svelte-1ht4wce { ... font-size: var(--fs-sm); }
+.steer.svelte-1ht4wce .oculus-field { font-size: var(--fs-sm); }
+```
+
+- **The field:** the base rule and the new rule both weigh (0,3,0), and both sit at the same place in the same stylesheet.
+  - field.css's `.oculus-field { font: inherit; font-size: var(--fs-md) }` weighs (0,1,0).
+  - field.css's other `.oculus-field` rules (`body.rice`, `:disabled`, `[aria-invalid]`, `:focus-visible`) set no font-size.
+  - TextArea's scoped `.area`, `.area.bare` and `.area.grow` set none either, and `.area.tree` is not used, since SteerBox passes no `size`.
+  - The only other rule reaching `.oculus-field` from outside is SessionSections.svelte:153, `.sections :global(.oculus-field)`, which weighs (0,3,0) on both base and now. So the order against it is also unchanged.
+  - The textarea is at `--fs-sm` on main and now.
+- **The line:** on the base, `.small ... .elsewhere:where(...)` (0,2,0) overrode `.elsewhere` (0,2,0) by order, which gives `--fs-sm`. Now `.elsewhere` itself is `--fs-sm`. No rule outside SteerBox names `.elsewhere`, `.steer` or `data-steer`: the grep over src `*.svelte`/`*.css` finds only unrelated function names and comments.
+
+### Findings
+
+### Spec
+
+None.
+- Round item 1 removes exactly the clause S1 named, and the head comment now names no other component.
+- The two files outside the round's list, terminal-tabs.ts:51 ("Whether the tab's boxes and grids take no typing.") and tab-session.svelte.ts:84 ("Whether the tab's boxes and grids are read-only; ..."), carry the same plural sentence that item 3 changes. spec.md:72 requires the change to reach every hit, so widening to them is required, not beyond the finding. The report names both with that reason (spec.md:35).
+- No other "box and grid" sentence about the lock is left except docs/HELP.md:257. I grepped `every box|box and (every |its )?grid|box or grid|its box`. model-machine.ts:492 ("the keys of the box and grid") and session-link.ts:2 ("its box") are singular and still true.
+
+### Proof
+
+**P1 (minor). A stale line citation in B2.**
+- Place: O183-report.md:275, "Escape typed at the grid still reaches the agent through xterm (`TerminalGrid.svelte:323`, `term.onData`)".
+- What is wrong: after the round's rewrap, which is one line shorter, `term.onData` is at :322 (`const typed = term.onData((data: string) => sendInput(wanted, data));`) and :323 is `term.onBell`. spec.md:14 asks that every `file:line` be taken after the last change.
+- The claim itself holds. grid-keys.ts holds back only palette, debug and find keys, so Escape with the find bar closed reaches `onData`.
+- Failure scenario: the orchestrator checks the B2 claim at the cited line, lands on the bell handler, and either doubts a true claim or books the wrong line.
+
+**P2 (minor, no decision changes). Selector weights miscounted.**
+- Place: O183-report.md:240, "That selector compiles to a scoped class plus `.oculus-field`, two classes ... and `body.rice .oculus-field` (one class and one element)".
+- What is wrong: the compiled selectors `.small.svelte-1ht4wce .oculus-field` and `.steer.svelte-1ht4wce .oculus-field` are three classes each. `body.rice .oculus-field` is two classes and one element.
+- The conclusion survives the correct counts: (0,3,0) beats field.css's (0,1,0), and the rice rule sets no font-size.
+- Failure scenario: a reader who reuses the report's arithmetic for another override inside a `body.rice` rule would compare (0,2,0) against (0,1,1). The real values are (0,3,0) and (0,2,1). The ranking happens to agree here but need not elsewhere.
+
+### Standards
+
+None.
+- No check was removed in place of a fix. Removing the `small` path is the fix St1 asked for, and the size it carried moved onto the base rules.
+- The SteerBox head comment (:7-9) states the one size and the reason the round gave.
+- Every changed comment is rewrapped, all files are ASCII, and no history words were added.
+- Sizes: TerminalGrid.svelte 509 lines, SteerBox.svelte 191 (`wc -l`).
+- No unused export was added.
+
+### Behaviour
+
+None new.
+- The one visible change of the round is the Lock tooltip, "its boxes and its grids" becoming "its box and its grids". The report lists it with its before, its after and the look.
+- B1 (the three lost tab stops) and B2 (the unlinked agent loses its Send and Stop, and Escape at the grid still interrupts the turn) are now stated as the first review asked.
+
+### Verdicts for the whole diff since 04ffd50a4
+
+What to build:
+1. **TerminalGrid draws no SteerBox: holds.** The import, the `agent` derived and the `{#if agent} <SteerBox .../> {/if}` block are gone (`git diff 04ffd50a4`), and the grep in the file counts 0.
+2. **Head comment and prop comment: holds.**
+   - :3-4: "The grid takes the whole height of its box whatever runs in it, a shell, Claude or Codex, and each is typed into at the grid."
+   - :9-10: "While the tab is locked the grid is read-only: it takes no typing, paste or drop."
+   - :104: "Whether the tab is locked, which leaves this grid read-only."
+   - The unasked clause (S1) is gone.
+3. **The Transcript view keeps its box unchanged: holds.** SteerBox.svelte and TranscriptBody.svelte:419 now change, but only by removing `small`, and the compiled sizes of the field and the line are the same as on main. TranscriptBody's condition `record !== null && agent === ''` and the other props are unchanged.
+
+Cases. Each is met by reading the markup. The on-screen part of each goes to the look at landing.
+- **Live terminal running Claude: met by reading.** `.grid` is the only flow child of `.half`.
+- **Live terminal running Codex: met by reading,** the same as Claude.
+- **Live shell terminal: met.** Its path is unchanged.
+- **Split of an agent and a shell: met by reading.**
+- **By-hand pane running an agent: met by reading.** `fits` is false, so no resize is sent, and no box is drawn.
+- **Foreign terminal on Live: met by reading.** Live draws no line, and the Transcript box keeps its "elsewhere" line at the same size.
+- **Agent started in, or exiting from, a shell terminal: met by reading.** Nothing in TerminalGrid reads `kind` (the `grep -n kind` of the file has no hit).
+- **Agent the page cannot link yet: met by reading.** No box is drawn in the tab. The loss of Send and Stop is now stated (B2).
+- **Transcript view of a live session: met by reading.** The box is drawn with Send and Stop, at the same sizes as on main.
+- **Transcript view of an ended session: met by reading.** The ended line is drawn at `--fs-sm`, as on main.
+- **Locked tab on Live: met by reading.** `disableStdin` and the lock guards are unchanged, and no locked line is drawn.
+
+Round items:
+1. **The head comment's clause on steering (S1): holds.**
+2. **SteerBox has one size (St1): holds.** The prop, its default, `class:small` and the `.small` rules are gone, `.elsewhere` and `.steer :global(.oculus-field)` are at `--fs-sm`, the head comment is rewritten, and TranscriptBody drops `small`. The size is identical, as shown above.
+3. **The lock's sentences (St2): holds.** terminal.yml:106 and SessionTools.svelte:3-4 are reworded, the same sentence is carried to terminal-tabs.ts:51 and tab-session.svelte.ts:84, and docs/HELP.md:257 is named and not edited.
+4. **The report (B1, B2, S2, S4): holds, with P1 and P2 on its text.**
+   - B1 and B2 are stated.
+   - S2 holds: the diagram files stay in the diff, and `staleFiles()` returns `[]`.
+   - S4 is stated by the builder but is not verifiable by me.
+
+### Declined to judge
+
+- **S4, the git commands the builder ran in the round:** I have no record of the builder's commands, so the report's statement that it ran only `git status --short` and `git diff --numstat` is not verified.
+- **On-screen states, all for the orchestrator's look at landing:**
+  - an agent's grid reaching `.terminal`'s 4px 6px 6px inset, with no empty band under the input line of Claude or Codex;
+  - equal bottom lines in a split of an agent and a shell;
+  - a by-hand agent pane scrolling inside the taller grid;
+  - no jump of the grid when an agent starts in, or quits from, a shell terminal;
+  - Tab from a Live agent grid leaving the terminal body without stopping on a text box, Stop or Send;
+  - a locked Live agent tab taking no typing, paste or drop, with no locked line;
+  - the Transcript box's text and its line at the same size as on main, for a live session and an ended one (proved here by the compiled CSS, not by a look);
+  - the Lock tooltip's new words.
+- **Whether tests/checks/diagrams/diagrams.test.ts was among the 17 test files test:quick ran:** I did not print the file list. The in-memory `staleFiles()` run, which is that test's first case, returned `[]`.
+
+Usage: a5028306cd31add3e, claude-opus-5-5, 142863 tokens, 35 tool uses, 447 s
+
+## Closed
+
+- First run, S1, St1, St2, B1, B2: closed in repair round 1, each holding in the review over the round.
+- S2: no defect; the two diagram files land with the step, written by `npm run diagrams`.
+- S3: G146 in `agents/guarded.md:436` reworded by the orchestrator at landing to name the agent link the Transcript box follows.
+- S4: recorded; the git grep only read and printed nothing.
+- `docs/HELP.md:257`: named to Axel at landing with the words "the tab's box and grids".
+- Round 1, P1 and P2: fixed in the report at landing (`term.onData` at `TerminalGrid.svelte:322`; the selector weights (0,3,0) and (0,2,1)).

@@ -44,9 +44,11 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-10
   report: .scratch/migration/agents/reviews/O182-report.md
-  round: 0
+  builder_usage: "187726 tokens, 73 tool uses, 688 s"
+  round: 1
   landing: not-started
   shared_paths: "every path of the brief, under O181 (migration) whose path list is src/**; simple: O182 changes tree CSS measures, moves the guides and Tree.svelte's Props type into files of their own and drops the session rows' border, which O181's config keys and hub words have no reason to touch (its worktree changes none of them)"
+  reviewer_report: .scratch/migration/agents/reviews/O182-refuter.md (a4ff19f942d440a18, claude-opus-5-5, 181896 tokens, 54 tool uses, 812 s)
   brief_check: .scratch/migration/agents/reviews/O182-brief-check.md (a141355f691370c1f, claude-opus-5-5, 183093 tokens, 52 tool uses, 495 s)
 - step: O183
   base: 04ffd50a4
@@ -56,11 +58,11 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: abda66a3208c14d3e
   launched: 2026-11-10
   report: .scratch/migration/agents/reviews/O183-report.md
-  builder_usage: "143393 tokens, 56 tool uses, 431 s"
+  builder_usage: "143393 tokens, 56 tool uses, 431 s; round 1 notice: 182046 tokens, 89 tool uses, 409 s"
   round: 1
   landing: not-started
   shared_paths: "src/lib/views/sessions/terminal/grid/TerminalGrid.svelte, under O181 (migration) whose path list is src/**; simple: O183 removes one block, its derived flag, its import and two comments, which O181 has no reason to touch"
-  reviewer_report: .scratch/migration/agents/reviews/O183-refuter.md (a099bdd2e603b13e4, claude-opus-5-5, 150126 tokens, 44 tool uses, 474 s)
+  reviewer_report: .scratch/migration/agents/reviews/O183-refuter.md (a099bdd2e603b13e4, claude-opus-5-5, 150126 tokens, 44 tool uses, 474 s); over round 1: a5028306cd31add3e, claude-opus-5-5, 142863 tokens, 35 tool uses, 447 s
   brief_check: .scratch/migration/agents/reviews/O183-brief-check.md (ac94e9d0644cf48ec, claude-opus-5-5, 133797 tokens, 32 tool uses, 278 s)
 ```
 
