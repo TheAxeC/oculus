@@ -37,7 +37,8 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O181-brief-check.md (a4bdaa2be7367ccb1, claude-opus-5-5, 211076 tokens, 61 tool uses, 617 s)
 - step: O182
   landing: preparing
-  brief_check: "running: a141355f691370c1f"
+  shared_paths: "every path of the brief, under O181 (migration) whose path list is src/**; simple: O182 changes tree CSS measures, moves the guides and Tree.svelte's Props type into files of their own and drops the session rows' border, which O181's config keys and hub words have no reason to touch (its worktree changes none of them)"
+  brief_check: .scratch/migration/agents/reviews/O182-brief-check.md (a141355f691370c1f, claude-opus-5-5, 183093 tokens, 52 tool uses, 495 s)
 - step: O183
   base: 04ffd50a4
   worktree: .agents/worktrees/migration-O183
