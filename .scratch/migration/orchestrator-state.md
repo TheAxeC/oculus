@@ -39,7 +39,16 @@ dispatch:           # steps in flight, up to six (Z632)
   landing: preparing
   brief_check: "running: a141355f691370c1f"
 - step: O183
-  landing: preparing
+  base: 04ffd50a4
+  worktree: .agents/worktrees/migration-O183
+  executor: agent
+  worker: claude:opus
+  session_id: abda66a3208c14d3e
+  launched: 2026-11-10
+  report: .scratch/migration/agents/reviews/O183-report.md
+  round: 0
+  landing: not-started
+  shared_paths: "src/lib/views/sessions/terminal/grid/TerminalGrid.svelte, under O181 (migration) whose path list is src/**; simple: O183 removes one block, its derived flag, its import and two comments, which O181 has no reason to touch"
   brief_check: .scratch/migration/agents/reviews/O183-brief-check.md (ac94e9d0644cf48ec, claude-opus-5-5, 133797 tokens, 32 tool uses, 278 s)
 ```
 
@@ -897,6 +906,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-10 (O183 building; O182 brief check running). Rulings 749 (b) and 750 (a) booked as steps O182 and O183. O183 prepared at 04ffd50a4, builder abda66a3208c14d3e (claude-opus-5-5) launched. In flight (3 of 6): O181 building, O182 preparing, O183 building. Open items: none.
 - 2026-11-10 (O181 building). Prepared again from main at 1a5794ae8 under the ruling O181 keys and Axel's words on its scope; brief check a4bdaa2be7367ccb1 closed in the brief. Builder a262222362d5b2ee3 (claude-opus-5-5) launched in `.agents/worktrees/migration-O181`. In flight (1 of 6): O181. Open items: none.
 
 - 2026-11-10 (O181 deleted on Axel's word). Its worktree, branch and base copy are removed; O181 is prepared again from main's head under the ruling O181 keys. In flight (0 of 6): none. Open items: none.
