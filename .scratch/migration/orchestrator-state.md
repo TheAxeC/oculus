@@ -25,7 +25,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O181
-  landing: preparing
+  base: 1a5794ae8
+  worktree: .agents/worktrees/migration-O181
+  executor: agent
+  worker: claude:opus
+  session_id: a262222362d5b2ee3
+  launched: 2026-11-10
+  report: .scratch/migration/agents/reviews/O181-report.md
+  round: 0
+  landing: not-started
   brief_check: .scratch/migration/agents/reviews/O181-brief-check.md (a4bdaa2be7367ccb1, claude-opus-5-5, 211076 tokens, 61 tool uses, 617 s)
 ```
 
@@ -881,6 +889,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-10 (O181 building). Prepared again from main at 1a5794ae8 under the ruling O181 keys and Axel's words on its scope; brief check a4bdaa2be7367ccb1 closed in the brief. Builder a262222362d5b2ee3 (claude-opus-5-5) launched in `.agents/worktrees/migration-O181`. In flight (1 of 6): O181. Open items: none.
 
 - 2026-11-10 (O181 deleted on Axel's word). Its worktree, branch and base copy are removed; O181 is prepared again from main's head under the ruling O181 keys. In flight (0 of 6): none. Open items: none.
 - 2026-11-10 (O180 landed). The website's field names are the hub's configuration (booking in `plan.md`, `agents/reviews/O180-landing.md`); the hub's lines are written, the hub commit on Axel's word. O181 builds on in its worktree from base f88e2648e under builder a954c186d0c9de69b. In flight (1 of 6): O181. Open items: none.
