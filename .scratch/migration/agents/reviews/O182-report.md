@@ -82,7 +82,7 @@ Now `g = 0` and shift `8px` everywhere from `:root`, so a level is `8s` and guid
 
 Folder sizes: `src/lib/ui/tree/row/` holds five items, `src/lib/views/shared/explorer/tree/control/` ten (`ls`). No file was changed by a script; `npx prettier --write` over the 11 files reported each `(unchanged)`.
 
-Comments and documents re-read after the change: TreeItem head comment (rewritten: names `row/Guides.svelte`), TreeItem style-block head (rewritten: names the two tokens, says the gap is the one not multiplied), the `--row-least` comment (still true), the guide comment (rewritten, moved to `Guides.svelte` with its rule), `tokens.css:209-211` (still true: the four tokens it lists are multiplied), the new token comment (new), Tree.svelte head comment (rewritten: names `control/tree-props.ts`), its `.rows` comment (rewritten), the CommitRow, GraphHead and CommitFiles style comments (rewritten), ChangesRepo's `.lines` comment (still true), SessionWorkspace head comment line 13 "keeps its amber left edge" (still true), TerminalRows `.row` comment (rewritten), `Graph.svelte:20` "one step in" (still true), `docs/` (`grep -rn -i -E "indent guide|indent|twistie|amber" docs README.md` finds only `HELP.md:573` on the Tab key, unrelated; no sentence of HELP.md, data-map.md or decks.md is made false).
+Comments and documents re-read after the change: TreeItem head comment (rewritten: names `row/Guides.svelte`), TreeItem style-block head (rewritten: names the two tokens, says the gap is the one not multiplied), the `--row-least` comment (still true), the guide comment (rewritten, moved to `Guides.svelte` with its rule), `tokens.css:209-211` (still true: the four tokens it lists are multiplied), the new token comment (new), Tree.svelte head comment (rewritten: names `control/tree-props.ts`), its `.rows` comment (rewritten), the CommitRow, GraphHead and CommitFiles style comments (rewritten), ChangesRepo's `.lines` comment (still true), SessionWorkspace head comment line 13 "keeps its amber left edge" (still true), TerminalRows `.row` comment (rewritten), `Graph.svelte:20` "one step in" (still true), `docs/` (`grep -rn -i -E "indent guide|indent|twistie|amber" docs README.md` finds four hits, each judged under "Repair round 1"; no sentence of HELP.md, data-map.md or decks.md is made false).
 
 Reuse grep before adding the type: `grep -rn "tree-props\|TreeProps" src tests` found only `TreeView.svelte:179`'s local `treeProps`, unrelated.
 
@@ -105,9 +105,119 @@ Reuse grep before adding the type: `grep -rn "tree-props\|TreeProps" src tests` 
 ## Anything in the brief that was wrong
 
 - The premise "their guides sit 2px right of the parent's twistie centre" (`What is on the tree`, the Sessions list bullet) does not hold on the unchanged tree: from the base CSS a bordered session row's guide k sits at `2 + 2 + 16k + 4 = 8 + 16k` and the parent twistie's centre at `10 + 16k`, 2px left of the centre. The sentence is true of the bordered rows under the new measures (`2 + 2 + 8k + 8 = 12 + 8k` against `10 + 8k`), which is the offset item 4 removes. The work does not change.
+- Item 1 dictated a false clause for the tokens comment: "the gap is the one tree measure a row does not multiply by the text scale". `--tree-end-inset` (`tokens.css:263`) is a tree measure a row also reads unmultiplied (`TreeItem.svelte:463`, `:487`). The comment now says only that the row multiplies the shift by the text scale and not the gap (repair round 1, item 1).
 
 ## Limitations and sharp edges
 
 - The amber bar is square and sits over the row's rounded corner (`--radius-sm` on `.item`), and over the left 1px of the focus outline of a waiting row that has the keyboard's focus. Look at landing: a waiting session row focused by the keyboard.
 - A commit's file row is one level under its commit only when its passing lanes are as wide as the commit's own lanes; the lanes are drawn by `Lanes.svelte` from different inputs (`row.width` against the highest passing lane), which the step does not change.
 - `--tree-guide-shift` resolves `calc(var(--icon-box) / 2)` on `:root`; a tree that sets its own `--icon-box` would keep the root's shift unless it sets the shift too. No ancestor sets `--icon-box` today (`grep -rn -E -- '--icon-box\s*:' src` prints only `tokens.css:260`).
+
+## Repair round 1
+
+Everything in the round's brief (`agents/briefs/O182-round-1.md`) is done.
+
+### DONE / NOT DONE
+
+| Item | State | Proof |
+| --- | --- | --- |
+| 1. tokens comment: the false clause removed; named under "Anything in the brief that was wrong" | DONE | `tokens.css:216-220` below; the added bullet in that section above |
+| 2. Every comment paragraph the step edited rewrapped as a whole at 100 columns | DONE | the width table below: no line inside a paragraph takes its next word within 100 |
+| 3. The amber bar's comment drops "rather than beside it" | DONE | history grep below prints no "rather than" |
+| 4. A commit's pending and error lines drawn in the `.file` frame, passing lanes included | DONE | the `CommitFiles.svelte` diff below; the positions under "Case after the change" |
+| 5. The report: B1, B2, P1 | DONE | the sections below |
+| Verify: `npm run diagrams`, then `env -u TMPDIR npm run test:quick` once | DONE | diagrams exit 0 and `git status --short` lists only the step's paths and the ledger files; the list printed `ok prettier`, `ok ASCII gate`, `ok svelte-kit sync`, `ok eslint`, `ok svelte-check (55.0 s): ... COMPLETED 592 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest checks (145.2 s)`, last line `test:quick: 167.1 s; every command passed` |
+| Gate 2 | DONE | `grep -rn -E "tree-guide-(gap\|shift), " src` prints nothing, exit 1 |
+| Gate 3 | DONE | 15 hits, the same as the step's, with `CommitFiles.svelte:261` (moved down by the snippet) in place of `:251` |
+| Gate 4 | DONE | `Unused exports (226)`; `diff` against `../O182-base/unused-exports.txt` prints nothing, exit 0 |
+| Gate 5 | DONE | `wc -l`: `520 TreeItem.svelte`, `463 Tree.svelte` (`CommitFiles.svelte` 273) |
+| Gate 6 | DONE | the perl ASCII check over the 11 changed files prints nothing, exit 0 |
+
+The list ran once in this round; no whole-suite command was run. The round adds and changes no test. Files changed in this round: `tokens.css`, `Tree.svelte`, `SessionWorkspace.svelte`, `CommitRow.svelte`, `CommitFiles.svelte`, `TreeItem.svelte`, `Guides.svelte` and this report, all in the brief's write list; `git diff --numstat` for the step as a whole now reads `CommitFiles.svelte` +20 -9, `CommitRow.svelte` +6 -5, `Tree.svelte` +10 -80, the other rows unchanged.
+
+### 1. The tokens comment
+
+```css
+    /* The indent guide of a tree level: the gap either side of its column, and how far its line
+       sits right of the column's left edge, half an icon's box, so the line runs down the centre of
+       the twistie of the row above. A row multiplies the shift by `--text-scale` and not the gap; a
+       level is the indent and twice the gap, which is the indent alone at this gap of 0, as in VS
+       Code's Explorer. */
+```
+
+The clause "the one tree measure that stays a fixed number of pixels" is gone. `TreeItem.svelte:259-262` says "Each but the gap is multiplied by the text size where it is drawn"; it names the row's height, the indent, the two type sizes and the two guide measures, and among those that is true (`--tree-end-inset` is not in that list).
+
+### 2. Widths after the rewrap
+
+Measured with an awk that prints each comment line's width and, for a line inside a paragraph, the width with the next line's first word added (reads only). No line inside a paragraph is short of its next word:
+
+| Paragraph | Line widths | With the next word |
+| --- | --- | --- |
+| `tokens.css:216-220` | 96, 100, 100, 98, 26 | 101, 104, 106, 105 |
+| `Tree.svelte:28-38` | 98, 90, 96, 98, 100, 93, 96, 95, 95, 93, 29 | 114, 102, 103, 104, 110, 101, 102, 105, 101, 116 |
+| `Tree.svelte:423-424` | 100, 91 | 104 |
+| `SessionWorkspace.svelte:242-244` | 96, 100, 45 | 102, 104 |
+| `CommitRow.svelte:229-235` | 98, 98, 99, 100, 98, 99, 47 | 102, 102, 103, 104, 106, 107 |
+| `GraphHead.svelte:71-75` | 96, 98, 99, 95, 92 | 101, 104, 105, 103 |
+| `CommitFiles.svelte:253-256` | 97, 97, 97, 100 | 102, 101, 101 |
+| `TerminalRows.svelte:147-148` | 98, 25 | 101 |
+| `TreeItem.svelte:2-6` | 96, 98, 99, 100, 65 | 103, 105, 104, 105 |
+| `TreeItem.svelte:259-262` | 97, 98, 97, 58 | 103, 101, 103 |
+| `Guides.svelte:2-5` | 95, 100, 98, 99 | 102, 103, 104 |
+| `Guides.svelte:22-28` | 99, 100, 100, 97, 100, 95, 75 | 102, 107, 103, 104, 107, 101 |
+| `tree-props.ts:1-5` | 99, 93, 100, 98, 84 | 109, 103, 107, 108 |
+
+`Tree.svelte:29` (90) is a line the step did not edit; its next word is "pressing.ts", which takes it to 102.
+
+### 3. The amber bar's comment
+
+```css
+    /* A session needing input is marked by a 2px amber bar laid over the row's left edge, so it
+       takes no width, the row's words stay where they are when it comes and goes, and it shows over
+       the row's hover and selection tint. */
+```
+
+History grep over the added lines of `git diff -U0 -- src` and the two new files, with "rather than" added to the word list: one hit, `Guides.svelte:25` "The gap before a guide", the place on the line.
+
+### 4. A commit's pending and error lines
+
+```svelte
+{#snippet said(label: string, tone: 'error' | 'muted')}
+    <li role="none" class="file">
+        {#if passing.length > 0}
+            <Lanes {passing} {open} />
+        {/if}
+        <div class="item">
+            <TreeItem {label} depth={1} {tone} />
+        </div>
+    </li>
+{/snippet}
+
+{#if failure !== ''}
+    {@render said(failure, 'error')}
+{:else if reading && files.length === 0}
+    {@render said(t('repositories.graph_pending'), 'muted')}
+{/if}
+```
+
+(each `{@render}` carries the file's `eslint-disable-next-line` comment for a render tag). The two lines take the `.file` frame and the passing lanes a file row takes, at depth 1, the depth of a file row at the top of the commit's files (`depth={1 + row.depth}` with `row.depth` 0). The `.file` comment says so in one sentence.
+
+Case after the change, scale 1, `Lp` the width of the passing lanes' SVG (the same `Lanes` call a file row makes): the line's twistie slot starts at `8 + Lp + 2 + 8 = 18 + Lp`, where a top file row's starts (`18 + Lp`). With no lanes passing both are at 18. Before this round (after the step) the line was at `2 + 2*8 = 18` whatever the lanes, so with lanes passing it stood `Lp` left of the file rows; on the unchanged tree it was at `2 + 2*16 = 34` against file rows at `12 + Lp + 2 + 16 = 30 + Lp`. Look at landing: Repositories, Graph, a commit opened while its files are read (and a commit whose files fail to read), with lanes passing and with none; the line starts where the file rows start, its lanes drawn beside it.
+
+### 5. The report
+
+- B1, the amber bar. Before: a 2px square amber border on `.row`, outside `.item`; the row's rounded tint (`border-radius: var(--radius-sm)`, `TreeItem.svelte:279`) and its whole focus outline (`outline: 1px solid var(--accent); outline-offset: -1px`, `:318-319`) began 2px to its right. After: the bar lies at `.row`'s left edge over the tint's top-left and bottom-left corners and over the left edge of the focus outline. Look at landing: a waiting session at rest, hovered, selected and focused by the keyboard.
+- B2, the tint. The hover and selection tint of every session row and terminal row starts 2px further left, at the list's row edge, level with the tint of the group rows (the workspace rows and the Terminals row); before, it started after the 2px transparent border. Look at landing: hover a session row under a group row and select one; the two tints start at the same left edge.
+- P1, the docs grep `grep -rn -i -E "indent guide|indent|twistie|amber" docs README.md` prints four hits, none about a tree level:
+  - `docs/decks.md:91`: `design: amber` in a slide's tag palette. Not made false.
+  - `docs/HELP.md:31`: a rail badge's colours, "red before amber before green". Not made false.
+  - `docs/HELP.md:302`: the editor's indentation settings. Not made false.
+  - `docs/HELP.md:573`: Tab indents in an editor. Not made false.
+
+### Anything in the brief that was wrong
+
+- Item 1 of the step's brief dictated the false clause for the tokens comment (the gap as the one tree measure a row does not multiply); `--tree-end-inset` is read unmultiplied too (`TreeItem.svelte:463`, `:487`). Named in the step's section of the same name above, and fixed by item 1.
+
+### Limitations
+
+- The pending and error lines are drawn in the same frame as the file rows, so the width of their lanes follows the file rows' (`Lanes.svelte` sized from the highest passing lane), the same relation to the commit's own lanes the step's limitations name.

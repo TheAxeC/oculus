@@ -44,11 +44,11 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-10
   report: .scratch/migration/agents/reviews/O182-report.md
-  builder_usage: "187726 tokens, 73 tool uses, 688 s"
+  builder_usage: "187726 tokens, 73 tool uses, 688 s; round 1 notice: 231019 tokens, 30 tool uses, 430 s"
   round: 1
   landing: not-started
   shared_paths: "every path of the brief, under O181 (migration) whose path list is src/**; simple: O182 changes tree CSS measures, moves the guides and Tree.svelte's Props type into files of their own and drops the session rows' border, which O181's config keys and hub words have no reason to touch (its worktree changes none of them)"
-  reviewer_report: .scratch/migration/agents/reviews/O182-refuter.md (a4ff19f942d440a18, claude-opus-5-5, 181896 tokens, 54 tool uses, 812 s)
+  reviewer_report: .scratch/migration/agents/reviews/O182-refuter.md (a4ff19f942d440a18, claude-opus-5-5, 181896 tokens, 54 tool uses, 812 s); over round 1: adb4c0871606a1a9d, claude-opus-5-5, 161585 tokens, 32 tool uses, 366 s
   brief_check: .scratch/migration/agents/reviews/O182-brief-check.md (a141355f691370c1f, claude-opus-5-5, 183093 tokens, 52 tool uses, 495 s)
 - step: O183
   base: 04ffd50a4
