@@ -32,8 +32,10 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a262222362d5b2ee3
   launched: 2026-11-10
   report: .scratch/migration/agents/reviews/O181-report.md
-  round: 0
+  builder_usage: "383627 tokens, 1320 tool uses, 11147 s"
+  round: 1
   landing: not-started
+  reviewer_report: .scratch/migration/agents/reviews/O181-refuter.md (ad84e3a4fb08a1397, claude-opus-5-5, 370567 tokens, 82 tool uses, 1050 s)
   brief_check: .scratch/migration/agents/reviews/O181-brief-check.md (a4bdaa2be7367ccb1, claude-opus-5-5, 211076 tokens, 61 tool uses, 617 s)
 - step: O182
   base: 3e1d5f960
@@ -920,6 +922,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-10 (O181 repair round 1 sent). Review ad84e3a4fb08a1397 saved at `agents/reviews/O181-refuter.md`; round brief `agents/briefs/O181-round-1.md`; G13 names the new tests; builder a262222362d5b2ee3 resumed. O182 and O183 ready to land after O181. In flight (3 of 6): O181 round 1, O182 and O183 ready. Open items: none.
 - 2026-11-10 (O183 building; O182 brief check running). Rulings 749 (b) and 750 (a) booked as steps O182 and O183. O183 prepared at 04ffd50a4, builder abda66a3208c14d3e (claude-opus-5-5) launched. In flight (3 of 6): O181 building, O182 preparing, O183 building. Open items: none.
 - 2026-11-10 (O181 building). Prepared again from main at 1a5794ae8 under the ruling O181 keys and Axel's words on its scope; brief check a4bdaa2be7367ccb1 closed in the brief. Builder a262222362d5b2ee3 (claude-opus-5-5) launched in `.agents/worktrees/migration-O181`. In flight (1 of 6): O181. Open items: none.
 
