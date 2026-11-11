@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), brief checked, builder next.
+- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), building.
 - O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), brief check running.
 
 Queued, in order (0 steps):
