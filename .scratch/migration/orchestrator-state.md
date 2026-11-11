@@ -32,7 +32,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a230564e2afc12cab (claude-opus-5-5, served model read from the runner's record)
   launched: 2026-11-11, on Axel's approval of the launch message
   report: agents/reviews/O187-report.md
-  round: 0
+  builder_usage: 127259 tokens, 39 tool uses, 373.4 s
+  reviewer_report: agents/reviews/O187-refuter.md (a565d66ff1bae5d4a, claude-opus-5-5, 161685 tokens, 39 tool uses, 399.6 s)
+  round: 1
   brief_check: agents/reviews/O187-brief-check.md (abe2dd01598571517, claude-opus-5-5, stopped and resumed on Axel's word; the resumed run 153886 tokens, 2 tool uses, 77.1 s; 54 tool uses in all)
   landing: not-started
 ```
@@ -904,6 +906,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O187 repair round 1 sent). The review (`agents/reviews/O187-refuter.md`) found 3.1 (a false head-comment clause), 4.1 (the Clone press clones the untrimmed address), 2.1 and 4.2 (report sentences); all four go to repair round 1 (`agents/briefs/O187-round-1.md`), which widens the paths to `clone-routes.ts` and G80's `tests/routes/git/clone.test.ts`. Axel approved the round's message ("Approved, please continue instead of constantly asking"). Snapshot `.agents/worktrees/migration-O187-round-1`.
+- 2026-11-11 (O187 reported, in review). The builder reported everything in the brief done (report saved at `agents/reviews/O187-report.md`, usage under builder_usage); the orchestrator read the whole diff (2 files). Reviewer a565d66ff1bae5d4a (ordo-high, claude-opus-5-5) dispatched by /refute.
 - 2026-11-11 (O187 building). Builder a230564e2afc12cab (ordo-high, claude-opus-5-5) launched on Axel's approval of its launch message, in `.agents/worktrees/migration-O187` from base 66ecbeee8.
 - 2026-11-11 (O187 prepared). Open item 761 ruled (1) (a), (2) (a), (3) (a) (booked in `plan.md` Rulings and on O187's line): the card also draws `code_availability.url` where the manifest has no `repository.url`, the lane card stays, the Clone row needs a non-empty trimmed `repository.url`; the brief carries it (`ProjectCard.svelte` added to its paths, cases 14 to 22), and the brief check is not run again. The builder is launched only after Axel approves its launch message.
 - 2026-11-11 (O187 pause lifted). On Axel's word ("Resume the brief check, the pause is fully lifted"), the brief check abe2dd01598571517 is resumed by a message to it; the builder is launched after its report, the brief's fixes and the preparation commit, on Axel's approval of its launch message. In flight (1 of 6): O187, preparing. Open items: none.
