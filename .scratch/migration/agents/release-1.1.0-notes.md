@@ -10,6 +10,7 @@ What is new since 1.0.0:
 - Findings shows the hub of each finding's file and takes in the Audit; the Status view takes in the Gallery.
 - One Terminal view serves a session: a running agent's terminal takes the whole height of the Live view, the tab's bar keeps its height when its session links, and the Transcript reads as a conversation, loading older turns as it scrolls up.
 - Every tree indents as the Files view does, and Live HPC shows its refresh running.
+- Every file of the Settings groups Catalogs, Schemas and Texts opens from its row: Show File reads oculus's own copy in a tab that saves nothing, in the app as in the development server, Open file edits it where a folder of the workspace holds oculus's checkout, and each catalog and the texts say where the workspace sets its own values.
 - Interview and offered are statuses after applied, stopped is a status the Funding template offers, and a note has an Add Front Matter command.
 - The server parses again only the config files whose text changed.
 
