@@ -1,6 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O187, preparing.
 
-Queued, in order (0 steps): none.
+Queued, in order (0 steps): none; after O187 lands, v1.1.0 is made once more.
 
 Owed looks: none.
 
