@@ -1,11 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps):
-- Release v1.1.0: the whole suite ran green once and `npm run app:release` built the three archives (2026-11-11); the preparation commit waits on open item 755, the tag and the upload on open item 756.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- Release v1.1.0, 2026-11-11, 24f324bdc, tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
 - O185 (the whole suite runs green), 2026-11-11.
 - O184 (a terminal tab's bar keeps its height when its session links), 2026-11-11.
 - O182 (every tree indents as the Files view), 2026-11-11, a5852eb8a.
