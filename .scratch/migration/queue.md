@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps):
-- Release v1.1.0, only once every step is done and this queue is otherwise empty: the whole suite once green with nothing else running, then `npm run app:release`; the tag and the upload wait for Axel's word on the push.
+- Release v1.1.0: the whole suite ran green once and `npm run app:release` built the three archives (2026-11-11); the preparation commit waits on open item 755, the tag and the upload on open item 756.
 
 Owed looks: none.
 
