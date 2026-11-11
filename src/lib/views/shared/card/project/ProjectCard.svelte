@@ -156,7 +156,9 @@
     /** The repository the project names that is not cloned anywhere yet: its address. */
     const toClone = $derived.by(() => {
         const block = item.project.repository;
-        return block?.url !== undefined && block.clones.length === 0 ? block.url : null;
+        if (block === undefined) return null;
+        const url = block.url?.trim() ?? '';
+        return url !== '' && block.clones.length === 0 ? url : null;
     });
     /**
      * Where the project is cloned: the first folder of the workspace whose origin is its address.

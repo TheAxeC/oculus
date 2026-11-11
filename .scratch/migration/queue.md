@@ -1,12 +1,13 @@
-In flight (1 of 6 slots in use): O187, building.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none; after O187 lands, v1.1.0 is made once more.
+Queued, in order (0 steps): none; v1.1.0 is made once more, now that O187 has landed.
 
 Owed looks: none.
 
 Landed, newest first:
+- O187 (a project card draws its repository's address), 2026-11-11.
 - O186 (every file row of Settings opens its file), 2026-11-11.
-- Release v1.1.0, 2026-11-11, 24f324bdc, tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
+- Release v1.1.0, 2026-11-11, made again at e34e44fb5 (first at 24f324bdc), tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
 - O185 (the whole suite runs green), 2026-11-11.
 - O184 (a terminal tab's bar keeps its height when its session links), 2026-11-11.
 - O182 (every tree indents as the Files view), 2026-11-11, a5852eb8a.

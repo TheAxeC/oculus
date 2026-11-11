@@ -102,3 +102,60 @@ Weighed, with no finding:
 - The builder's statement that it ran `npx prettier --check` and `npx eslint` once each and the verify list once (report:134). Only the builder's transcript shows its command count.
 
 Reviewer usage: a565d66ff1bae5d4a, claude-opus-5-5, 161685 tokens, 39 tool uses, 399.6 s.
+
+## Repair round 1, refuted
+
+```
+$ npm run test:quick   (worktree, TMPDIR unset)
+test:quick: 7 changed file(s), from git since HEAD
+test:quick: 14 test file(s)
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.7 s)
+ok      eslint (2.3 s)
+ok      svelte-check (9.2 s): 1794426758973 COMPLETED 592 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (21.3 s): Duration  9.62s (transform 7.06s, setup 0ms, import 12.42s, tests 0ms, environment 1ms)
+ok      vitest slow (37.7 s): Duration  26.02s (transform 6.73s, setup 0ms, import 11.71s, tests 27.59s, environment 1ms)
+ok      vitest checks (49.5 s): Duration  37.74s (transform 13.64s, setup 0ms, import 28.83s, tests 81.24s, environment 3ms)
+test:quick: 52.3 s; every command passed
+$ npx vitest run tests/routes/git/clone.test.ts
+     Tests  25 passed (25)
+$ npx vitest run --tagsFilter slow --exclude 'tests/checks/**' --testTimeout 20000 tests/routes/git/clone.test.ts
+     Tests  25 passed (25)
+$ the perl ASCII gate over the five paths
+exit 0
+$ sh utils/unused-exports.sh, diff against O187-unused-base.txt
+diff exit 0
+```
+
+The report's quoted commands, rerun: the open items empty; the history grep prints nothing; the name grep gives `ProjectCard.svelte:47,157,258,262,407,411`; the helper grep gives the report's 25 lines; the two listing commands give 18 repository manifests and 16 deposit manifests with the report's urls; no line of the test file removed.
+
+### Verdicts
+
+- Round items: 3.1 holds (`CardAddresses.svelte:8-9`); 4.1 holds (`clone-routes.ts:114-115`; `placeClones` still finds a padded clone through `addressKey`); 2.1 holds; 4.2 holds, with new finding 2.1.
+- The two new rows: the padded row tests what it names and would fail with the trim taken out (its failure on the unchanged route quoted, report:259-270); the spaces-only row passes on the unchanged route too, since `cloneRepository` refuses at `clone.ts:100`, as the builder states; no finding, the round brief ordered it.
+- Items 1 to 14 of "What to build": all hold except 8, violated by finding 3.1.
+- Cases 1 to 22: all met (case 22 now including the press).
+
+### Findings
+
+- Proof 2.1 `O187-report.md:206`: "none with `links:`" has no producing command; the quoted listing command reads no `links:`. The clause is true: `grep -n -E '^links:'` over the 16 manifests prints nothing. Failure scenario: a reader rerunning the command cannot check the "After: 1 line" column. Fix: quote that grep.
+- Standards 3.1 `CardAddresses.svelte:2-5`: the comment says the `links:` lines carry the glyph of a link, but an entry `posting` names no web page for is drawn as `<LinkedText>` with no glyph (`:78`), while the code line's words keep theirs; failure scenario: a maintainer reads the missing glyph on a plain-text entry as a defect, or changes the code line to match; verdict: item 8 violated. Fix: say a `links:` entry `posting` names a web page for carries the link glyph and any other carries none.
+- Standards 3.2 `clone-routes.ts:21-23`: "so tests/routes/git/clone.test.ts drives the whole endpoint without running git or `gh` at all" is false (the test runs real git over scratch repositories, `clone.test.ts:3,31`); the sentence was false at the base and sits in the head comment the round rewrote; failure scenario: a maintainer drops the file's slow tag. Fix: say the test drives the endpoint with real git over scratch repositories and its own `gh`.
+- Standards 3.3 `O187-report.md:112`: the quoted name grep recurses into `config/` without `--exclude=local.yml`; the builder's rules file does not state that rule; failure scenario: rerunning it greps the file that holds the calendar secret. Fix: add `--exclude=local.yml`.
+- Behaviour: none. Spec: none.
+
+### Declined to judge
+
+- The padded row's failure on the unchanged route: reproducing it needs the trim removed; consistent by reading.
+- What git says for a padded https address: settled in a scratch folder by `git remote add origin ' https://github.com/TheAxeC/x ' && git ls-remote --symref origin HEAD`, outside this review's git commands.
+- The builder's run counts, and the rendered card (owed to the look: cases 1, 2, 9, 10, 14 and 15).
+- Whether the worktree holds a `config/local.yml`: not checked, by the rule that forbids touching it.
+
+Reviewer usage over round 1: a92592978de2dffeb, claude-opus-5-5, 186729 tokens, 52 tool uses, 520.7 s.
+
+## Closed
+
+- First review 2.1, 3.1, 4.1, 4.2: closed by repair round 1, each verdict holds over the round.
+- Round review 3.1 and 3.2: fixed at landing in `CardAddresses.svelte` and `clone-routes.ts` (comments only, inside the brief).
+- Round review 2.1 and 3.3: fixed at landing in `O187-report.md`.

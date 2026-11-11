@@ -140,6 +140,33 @@ describe('cloning the repository of a project into the folder the reader chose',
         expect(readFileSync(join(clone, 'a.txt'), 'utf8')).toBe('one\n');
     });
 
+    it('clones a repository url with spaces around it as the address without them, its origin that address', async () => {
+        const bare = remote({ 'a.txt': 'one\n' });
+        const clone = join(scratchDir('oculus-clone-route-padded-'), 'p');
+        const answer = await post(optionsFor(`  ${bare}  `), {
+            action: 'clone',
+            id: 'p',
+            dir: clone
+        });
+        expect(answer).toMatchObject({ status: 200, body: { ok: true, dir: clone } });
+        expect(readFileSync(join(clone, 'a.txt'), 'utf8')).toBe('one\n');
+        expect(git(clone, 'remote', 'get-url', 'origin').trim()).toBe(bare);
+    });
+
+    it('refuses a repository url that holds only spaces with the sentence of a missing one and leaves no folder', async () => {
+        const clone = join(scratchDir('oculus-clone-route-spaces-'), 'p');
+        const seen: Seen = { rescans: 0 };
+        const answer = await post(optionsFor('   ', {}, seen), {
+            action: 'clone',
+            id: 'p',
+            dir: clone
+        });
+        expect(answer.status).toBe(400);
+        expect(String(answer.body.error)).toContain('no repository url');
+        expect(existsSync(clone)).toBe(false);
+        expect(seen.rescans).toBe(0);
+    });
+
     const TRACKED = [
         { name: 'its project.yml', file: 'project.yml' },
         { name: 'its README.md', file: 'README.md' }

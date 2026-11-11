@@ -9,17 +9,18 @@
 //     github-clone  { repo, parent }     clone a repository into `<parent>/<its name>`
 //
 // There is no confirm: a clone adds files to a folder and refuses to overwrite one. The project a
-// `clone` names must be in the last published portfolio and have a repository `url`; the folder is
-// the reader's to choose and is where the repository goes, made when missing. A clone from GitHub
-// writes nothing into its folder besides the repository. Neither clone changes the workspace or
-// writes a `project.yml`: the page asks the reader what to do with the folder once it is cloned.
-// The answer of a clone that went through is `{ ok: true, dir }`; one refused because the folder
-// holds files the repository tracks is `{ error, held }`, the files in `held`, which is how the
-// page asks for another folder.
+// `clone` names must be in the last published portfolio and have a repository `url` that holds more
+// than spaces, which is cloned with the spaces around it taken off; the folder is the reader's to
+// choose and is where the repository goes, made when missing. A clone from GitHub writes nothing
+// into its folder besides the repository. Neither clone changes the workspace or writes a
+// `project.yml`: the page asks the reader what to do with the folder once it is cloned. The answer
+// of a clone that went through is `{ ok: true, dir }`; one refused because the folder holds files
+// the repository tracks is `{ error, held }`, the files in `held`, which is how the page asks for
+// another folder.
 //
 // git is the option the route builds from the server context's credentials and every other
 // operation is an option with a real default, so tests/routes/git/clone.test.ts drives the whole
-// endpoint without running git or `gh` at all.
+// endpoint with real git over scratch repositories and a `gh` of its own, reaching no network.
 
 import { isAbsolute } from 'node:path';
 import { json } from '@sveltejs/kit';
@@ -110,8 +111,8 @@ async function cloneProject(id: string, dir: string, options: CloneOptions, sign
     const { text } = options;
     const found = options.project(id);
     if (found === null) return refused(words(text, 'server.clone.no_such_project'), 404);
-    const url = found.repository?.url;
-    if (url === undefined) return refused(words(text, 'server.clone.no_url'));
+    const url = found.repository?.url?.trim() ?? '';
+    if (url === '') return refused(words(text, 'server.clone.no_url'));
     if (dir === '' || !isAbsolute(dir)) return refused(words(text, 'server.clone.no_parent'));
     return exclusive(options, dir, async () => {
         const done = await cloneRepository({ dir, url, text, git: options.git, signal });

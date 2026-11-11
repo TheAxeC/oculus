@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O187
-  base: 66ecbeee8
-  worktree: .agents/worktrees/migration-O187
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: a230564e2afc12cab (claude-opus-5-5, served model read from the runner's record)
-  launched: 2026-11-11, on Axel's approval of the launch message
-  report: agents/reviews/O187-report.md
-  builder_usage: 127259 tokens, 39 tool uses, 373.4 s
-  reviewer_report: agents/reviews/O187-refuter.md (a565d66ff1bae5d4a, claude-opus-5-5, 161685 tokens, 39 tool uses, 399.6 s)
-  round: 1
-  brief_check: agents/reviews/O187-brief-check.md (abe2dd01598571517, claude-opus-5-5, stopped and resumed on Axel's word; the resumed run 153886 tokens, 2 tool uses, 77.1 s; 54 tool uses in all)
-  landing: not-started
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -906,6 +893,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O187 landed). A project card draws its repository's address, or its code deposit's where it has none, as its first address line with the folder-git glyph; the Clone row and the Clone press use the trimmed address (booking in `plan.md` under O187, `agents/reviews/O187-landing.md`). Next: v1.1.0 made once more (ruling 760 (ii), the steps of ruling 758), then `~/Applications/oculus.app` replaced with 8790 stopped first. In flight (0 of 6): none. Open items: none.
 - 2026-11-11 (O187 repair round 1 sent). The review (`agents/reviews/O187-refuter.md`) found 3.1 (a false head-comment clause), 4.1 (the Clone press clones the untrimmed address), 2.1 and 4.2 (report sentences); all four go to repair round 1 (`agents/briefs/O187-round-1.md`), which widens the paths to `clone-routes.ts` and G80's `tests/routes/git/clone.test.ts`. Axel approved the round's message ("Approved, please continue instead of constantly asking"). Snapshot `.agents/worktrees/migration-O187-round-1`.
 - 2026-11-11 (O187 reported, in review). The builder reported everything in the brief done (report saved at `agents/reviews/O187-report.md`, usage under builder_usage); the orchestrator read the whole diff (2 files). Reviewer a565d66ff1bae5d4a (ordo-high, claude-opus-5-5) dispatched by /refute.
 - 2026-11-11 (O187 building). Builder a230564e2afc12cab (ordo-high, claude-opus-5-5) launched on Axel's approval of its launch message, in `.agents/worktrees/migration-O187` from base 66ecbeee8.
