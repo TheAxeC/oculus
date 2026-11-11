@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O187
+  base: 66ecbeee8
+  worktree: .agents/worktrees/migration-O187
+  executor: agent
+  worker: ordo-high on opus (claude-opus-5-5)
+  session_id: a230564e2afc12cab (claude-opus-5-5, served model read from the runner's record)
+  launched: 2026-11-11, on Axel's approval of the launch message
+  report: agents/reviews/O187-report.md
+  round: 0
   brief_check: agents/reviews/O187-brief-check.md (abe2dd01598571517, claude-opus-5-5, stopped and resumed on Axel's word; the resumed run 153886 tokens, 2 tool uses, 77.1 s; 54 tool uses in all)
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -896,6 +904,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O187 building). Builder a230564e2afc12cab (ordo-high, claude-opus-5-5) launched on Axel's approval of its launch message, in `.agents/worktrees/migration-O187` from base 66ecbeee8.
 - 2026-11-11 (O187 prepared). Open item 761 ruled (1) (a), (2) (a), (3) (a) (booked in `plan.md` Rulings and on O187's line): the card also draws `code_availability.url` where the manifest has no `repository.url`, the lane card stays, the Clone row needs a non-empty trimmed `repository.url`; the brief carries it (`ProjectCard.svelte` added to its paths, cases 14 to 22), and the brief check is not run again. The builder is launched only after Axel approves its launch message.
 - 2026-11-11 (O187 pause lifted). On Axel's word ("Resume the brief check, the pause is fully lifted"), the brief check abe2dd01598571517 is resumed by a message to it; the builder is launched after its report, the brief's fixes and the preparation commit, on Axel's approval of its launch message. In flight (1 of 6): O187, preparing. Open items: none.
 - 2026-11-11 (O187 paused). On Axel's word ("Please pause the builder"), O187's builder is not launched until he lifts the pause; the brief is written; its brief check (abe2dd01598571517) is stopped on his word ("Please pause the brief check") before its report, and nothing it found is used. The v1.1.0 release made again at e34e44fb5 is published (`gh release view v1.1.0`: not a draft, the three archives uploaded at their local sizes); `~/Applications/oculus.app` is that build, not started; v1.1.0 is made once more after O187 lands (ruling 760). In flight (1 of 6): O187, preparing. Open items: none.
