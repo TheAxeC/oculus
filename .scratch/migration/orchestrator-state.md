@@ -38,7 +38,15 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O184-brief-check.md (aa2f320938434f843, claude-opus-5-5, 150981 tokens, 44 tool uses, 398 s)
   reviewer_report: .scratch/migration/agents/reviews/O184-refuter.md (a0bbb4de829304e8e, claude-opus-5-5, 147919 tokens, 35 tool uses, 318 s)
 - step: O185
-  landing: preparing
+  base: 746518eba
+  worktree: .agents/worktrees/migration-O185
+  executor: agent
+  worker: claude:opus
+  session_id: ad4d4274f77374e16 (claude-opus-5-5)
+  launched: 2026-11-11
+  report: .scratch/migration/agents/reviews/O185-report.md
+  round: 0
+  landing: not-started
   brief_check: .scratch/migration/agents/reviews/O185-brief-check.md (aa439017cc1038d36, claude-opus-5-5, 228691 tokens, 66 tool uses, 696 s)
 ```
 
