@@ -39,20 +39,6 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "every path of the brief, under O181 (migration) whose path list is src/**; simple: O182 changes tree CSS measures, moves the guides and Tree.svelte's Props type into files of their own and drops the session rows' border, which O181's config keys and hub words have no reason to touch (its worktree changes none of them)"
   reviewer_report: .scratch/migration/agents/reviews/O182-refuter.md (a4ff19f942d440a18, claude-opus-5-5, 181896 tokens, 54 tool uses, 812 s); over round 1: adb4c0871606a1a9d, claude-opus-5-5, 161585 tokens, 32 tool uses, 366 s
   brief_check: .scratch/migration/agents/reviews/O182-brief-check.md (a141355f691370c1f, claude-opus-5-5, 183093 tokens, 52 tool uses, 495 s)
-- step: O183
-  base: 04ffd50a4
-  worktree: .agents/worktrees/migration-O183
-  executor: agent
-  worker: claude:opus
-  session_id: abda66a3208c14d3e
-  launched: 2026-11-10
-  report: .scratch/migration/agents/reviews/O183-report.md
-  builder_usage: "143393 tokens, 56 tool uses, 431 s; round 1 notice: 182046 tokens, 89 tool uses, 409 s"
-  round: 1
-  landing: not-started
-  shared_paths: "src/lib/views/sessions/terminal/grid/TerminalGrid.svelte, under O181 (migration) whose path list is src/**; simple: O183 removes one block, its derived flag, its import and two comments, which O181 has no reason to touch"
-  reviewer_report: .scratch/migration/agents/reviews/O183-refuter.md (a099bdd2e603b13e4, claude-opus-5-5, 150126 tokens, 44 tool uses, 474 s); over round 1: a5028306cd31add3e, claude-opus-5-5, 142863 tokens, 35 tool uses, 447 s
-  brief_check: .scratch/migration/agents/reviews/O183-brief-check.md (ac94e9d0644cf48ec, claude-opus-5-5, 133797 tokens, 32 tool uses, 278 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -912,6 +898,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O183 landed). A running agent's terminal takes the whole height of the Live view (booking in `plan.md` under O183, `agents/reviews/O183-landing.md`). The look's flaw, the tab's bar growing 6px when a session links, is step O184 (ruling Look flaws), after the v1.1.0 build. In flight (1 of 6): O182 (landing next: the report table rows, the B-r1 bullet, the Sp1 premise; look items the amber bar corner and lanes Lp vs L). Then the whole suite once with nothing else running, then `npm run app:release` for v1.1.0; the tag and upload wait for Axel's word on the push. Open items: none.
 - 2026-11-11 (O181 landed). The values of the user's setup and data are config keys (booking in `plan.md` under O181, `agents/reviews/O181-landing.md`), with open item 752 (a) carried out at the landing. The hub's lines are in the hub at commit 375697686 on Axel's word. In flight (2 of 6): O183 (landing next: P1 `term.onData` at `TerminalGrid.svelte:322`, P2 the selector weights, G146 at `guarded.md:436` reworded, `docs/HELP.md:257` to Axel), O182 (after O183: the report table rows, the B-r1 bullet, the Sp1 premise; look items the amber bar corner and lanes Lp vs L). Then the whole suite once with nothing else running, then `npm run app:release` for v1.1.0; the tag and upload wait for Axel's word on the push. Open items: none.
 - 2026-11-10 (O181 repair round 1 reported and refuted; round 2 sent). The builder reported round 1 with eight parts handed back unbuilt for its context budget (report saved in the main ledger, usage under builder_usage). The review over round 1 (af31c0ae7070d15f8, claude-opus-5-5) is appended to `agents/reviews/O181-refuter.md` under "Repair round 1, refuted": items read, 1 to 3 and round items 1, 5 to 10 violated; the new keys carry no findings; eight defaults take Decision 2. Round 2 (`agents/briefs/O181-round-2.md`) is the one extra round the round cap allows for acceptance items left unbuilt and too large for landing; it carries the read of files 1513 to 2144, the moves found, the findings of every new key, the defaults ruled by Decision 2 for hub content and today's value for oculus's project layout (`code_dir`, `deck_dir`), the fallbacks, the marker pattern, the primary hub read from its held config, the chat instruction, comments, proofs, the visible-changes table and the report. Snapshot `.agents/worktrees/migration-O181-round-2`. At landing: the new test rows written into the Test lines of G125, G32, G8 and G61 (review Spec 6). To report to Axel: round 1 edited two files by `perl -0pi` and `sed -i` and wrote scratch files by redirect, against the round brief. In flight (3 of 6): O181 (round 2), O182 and O183 (ready to land after O181). Open items: none.
 - 2026-11-10 (O181 repair round 1 sent). Review ad84e3a4fb08a1397 saved at `agents/reviews/O181-refuter.md`; round brief `agents/briefs/O181-round-1.md`; G13 names the new tests; builder a262222362d5b2ee3 resumed. O182 and O183 ready to land after O181. In flight (3 of 6): O181 round 1, O182 and O183 ready. Open items: none.

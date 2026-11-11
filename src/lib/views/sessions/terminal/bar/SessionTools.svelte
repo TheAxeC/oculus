@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. The tools a Terminal tab's header holds for its session, right of
-    // TerminalActions.svelte: Lock, drawn while a terminal with a session shows, which leaves every
-    // box and grid of the tab read-only, and Jump to the last turn while Transcript shows.
+    // TerminalActions.svelte: Lock, drawn while a terminal with a session shows, which leaves the
+    // box and every grid of the tab read-only, and Jump to the last turn while Transcript shows.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

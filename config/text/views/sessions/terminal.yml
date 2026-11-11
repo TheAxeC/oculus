@@ -104,7 +104,7 @@ text:
         terminal_kill_armed: Press again to kill this terminal
         terminal_bell: Bell
         terminal_lock: Lock this tab
-        terminal_lock_tip: 'Lock this tab: its boxes and its grids take no typing until it is unlocked'
+        terminal_lock_tip: 'Lock this tab: its box and its grids take no typing until it is unlocked'
         terminal_unlock: Unlock this tab
         terminal_show_live: Live
         terminal_show_live_tip: Show the terminal this session runs in

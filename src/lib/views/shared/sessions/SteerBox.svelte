@@ -5,9 +5,8 @@
     // terminal is typed into like any other. A session that runs in no terminal the page lists, or
     // in a `foreign` one, cannot be typed into from here, and the box says so and holds no controls
     // that would pretend otherwise, as it does for a tab the reader locked and for a session that
-    // ended, each with a line of its own. Its text box and that line are at the body's `--fs-md`,
-    // or at `--fs-sm` with `small`, in a view whose text is `--fs-sm` (a Terminal tab's transcript
-    // body).
+    // ended, each with a line of its own. Its text box and that line are at `--fs-sm`, since the
+    // box sits in a Terminal tab's transcript body, whose text is `--fs-sm`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
@@ -24,11 +23,9 @@
         locked?: boolean;
         /** Whether the session ended, which the line says for a box with no terminal. */
         ended?: boolean;
-        /** Whether the text box and the line under it are at `--fs-sm`. */
-        small?: boolean;
     };
 
-    let { terminal, locked = false, ended = false, small = false }: Props = $props();
+    let { terminal, locked = false, ended = false }: Props = $props();
 
     const {
         terminals: { interruptTerminal, steerTerminal }
@@ -86,7 +83,7 @@
     }
 </script>
 
-<div class="steer" class:small data-steer>
+<div class="steer" data-steer>
     <div class="box" class:off={!usable}>
         <div class="field">
             <TextArea
@@ -171,11 +168,10 @@
     .elsewhere {
         margin: 4px 0 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
-    .small .elsewhere,
-    .small :global(.oculus-field) {
+    .steer :global(.oculus-field) {
         font-size: var(--fs-sm);
     }
 

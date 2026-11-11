@@ -416,7 +416,7 @@
         {/if}
     </div>
     {#if record !== null && agent === ''}
-        <SteerBox terminal={terminalOfSession(record)} {locked} ended={!record.live} small />
+        <SteerBox terminal={terminalOfSession(record)} {locked} ended={!record.live} />
     {/if}
 </div>
 

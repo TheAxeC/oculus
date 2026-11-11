@@ -48,7 +48,7 @@ export type TerminalTabState = {
     label: string;
     /** What the tab draws while it has a session: its grids, or that session's turns. */
     showing: 'live' | 'transcript';
-    /** Whether the tab's boxes and grids take no typing. */
+    /** Whether the tab's box and grids take no typing. */
     locked: boolean;
     /** The session a tab with no terminal reads, or null. */
     transcript: TabTranscript | null;

@@ -1,15 +1,15 @@
 <script lang="ts">
     // Layer 3, view partial. The grid of one terminal in a Terminal tab, drawn as VS Code's
-    // terminal panel draws one: xterm.js over the `pty:` channel, with the steer box under it only
-    // when Claude or Codex runs in it (a shell is typed into at the grid, which then takes the
-    // whole height). A split tab draws two of these side by side, so everything one grid holds (the
-    // mount, the subscription, the resize, the bell, the paste question and the file drop) is this
-    // component's own. A paste of several lines is asked about before it is sent, since each line
-    // would run; a file dropped from the Files view types its quoted path; a bell is reported to
-    // the tab, which marks the terminal's row. While the tab is locked the grid takes no typing,
-    // paste or drop, and its box is read-only. A by-hand terminal is drawn at the size of its pane
-    // from the terminals list and scrolls inside the grid, and the grid sends no resize, since the
-    // pane's size is the user's.
+    // terminal panel draws one: xterm.js over the `pty:` channel. The grid takes the whole height
+    // of its box whatever runs in it, a shell, Claude or Codex, and each is typed into at the grid.
+    // A split tab draws two of these side by side, so everything one grid holds (the mount, the
+    // subscription, the resize, the bell, the paste question and the file drop) is this component's
+    // own. A paste of several lines is asked about before it is sent, since each line would run; a
+    // file dropped from the Files view types its quoted path; a bell is reported to the tab, which
+    // marks the terminal's row. While the tab is locked the grid is read-only: it takes no typing,
+    // paste or drop. A by-hand terminal is drawn at the size of its pane from the terminals list
+    // and scrolls inside the grid, and the grid sends no resize, since the pane's size is the
+    // user's.
     //
     // xterm.js is loaded inside the effect (grid-look.ts, `buildGrid`) rather than at the top of
     // the module: it needs a DOM, and this view renders on the server like every other. The effect
@@ -49,7 +49,6 @@
     // The grid is subscribed once its window has the grid's size (`subscribePty`), and an effect of
     // its own follows the `terminal:` cursor, Option and copy settings (grid-look.ts).
 
-    import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { isOwnTerminal, titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { keptViewport } from './kept-viewport';
@@ -102,7 +101,7 @@
     type Props = {
         /** The terminal this grid shows. */
         id: string;
-        /** Whether the tab is locked, which leaves this grid and its box read-only. */
+        /** Whether the tab is locked, which leaves this grid read-only. */
         locked: boolean;
         /** The terminal a pointer press asked to focus, whose grid takes focus; null for none. */
         focusing: string | null;
@@ -196,8 +195,6 @@
      * Whether Split is offered: a terminal oculus knows a folder for, which the split starts in.
      */
     const splits = $derived(terminal !== null && terminal.cwd !== '');
-    /** Whether an agent runs in the terminal, which is what the steer box is drawn under. */
-    const agent = $derived(terminal !== null && terminal.kind !== 'shell');
     /** Whether the grid fits its box and the terminal follows it; a by-hand pane keeps its size. */
     const fits = $derived(isOwnTerminal(id));
 
@@ -474,9 +471,6 @@
             ontoggles={(flipped: FindToggles) => find.toggled(flipped)}
             onaction={(action: FindAction) => find.action(action)}
         />
-    {/if}
-    {#if agent}
-        <SteerBox {terminal} {locked} />
     {/if}
 </div>
 

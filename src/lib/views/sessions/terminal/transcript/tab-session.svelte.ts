@@ -81,7 +81,7 @@ export function tabSession(
         get lockable() {
             return tab.shown !== null && (tab.locked || running !== null);
         },
-        /** Whether the tab's boxes and grids are read-only; a lock binds a tab's own terminals. */
+        /** Whether the tab's box and grids are read-only; a lock binds a tab's own terminals. */
         get locked() {
             return tab.locked && tab.shown !== null;
         },
