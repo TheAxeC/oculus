@@ -184,6 +184,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 753 (2026-11-11, the red whole suite before v1.1.0), closed by Axel the same day: (a), step O185, as `plan.md` Rulings "Open item 753" says; O184 and O185 are two steps; the release waits for an empty queue (ruling Release v1.1.0 queue empty).
 - Open item 752 (2026-11-10), closed by Axel 2026-11-11: (a), as `plan.md` Rulings "Open item 752" says; built at O181's landing. The lazy option was (c).
 - Open item 750 (2026-11-10, the space under a running agent's terminal), closed by Axel the same day: (a), step O183, as `plan.md` Rulings "Open item 750" says.
 - Open item 749 (2026-11-10, the Sessions list's indent), closed by Axel the same day: (b), step O182, as `plan.md` Rulings "Open item 749" says.

@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## O182 landing (2026-11-11, the look, the orchestrator, automode): the shape of a waiting session's bar
+
+- Chosen: a straight 2px amber bar at the row's left edge, inset 4px from the row's top and bottom with 1px rounded ends, so it stays inside the 6px rounded corners of the selection tint and the focus outline in every state (`SessionWorkspace.svelte`, `.row.input::after`).
+- Not chosen: the step's full-height square bar, whose ends stood outside the rounded corners when the row was selected or focused, the lazy option; and an inset shadow on the row's rounded box, which follows the corners but bends at both ends into a bracket when the row is at rest.
+
 ## Z1105 (2026-11-02, O116's brief check, the orchestrator, automode): every transcript read yields
 
 - Chosen: a loop that yields between pieces carries every read of `/api/transcript`, with G148.

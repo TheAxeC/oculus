@@ -1,11 +1,17 @@
-In flight (1 of 6 slots in use): O181 (no hardcoding left in oculus), building.
+In flight (0 of 6 slots in use): none.
 
 Queued:
+- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), preparing.
+- O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), preparing; runs beside O184.
+- Release v1.1.0, only once every step is done and this queue is otherwise empty: the whole suite once green with nothing else running, then `npm run app:release`; the tag and the upload wait for Axel's word on the push.
 
 Owed looks: none.
 
 Landed, newest first:
-- O180 (the fields of a paper on the website come from configuration), 2026-11-10.
+- O182 (every tree indents as the Files view), 2026-11-11, a5852eb8a.
+- O183 (a running agent's terminal takes the whole height of the Live view), 2026-11-11, 72df8aee1.
+- O181 (the user's setup and data as config keys), 2026-11-11, b952fa485; hub 375697686.
+- O180 (the fields of a paper on the website come from configuration), 2026-11-10, ba14893eb.
 - O179 (an absent list told from an empty one), 2026-11-09, 60751d00e.
 - O178 (the CV's sections set in the hub, a publication's cv_hide), 2026-11-09, b224e2c30; hub eb801a32e.
 - O176 (the decks repaired after O151), 2026-11-09, 5976da035; hub 83b3034df.
