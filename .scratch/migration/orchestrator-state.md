@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O186
-  landing: preparing
-  brief_check: "running: acb6e5a864c75ef20"
+  brief_check: agents/reviews/O186-brief-check.md (acb6e5a864c75ef20, claude-opus-5-5, 181473 tokens, 50 tool uses, 413.5 s)
+  base: 448c2b636
+  worktree: .agents/worktrees/migration-O186
+  executor: agent
+  worker: claude:opus
+  session_id: a87bf6fcc96c1b7f7
+  launched: 2026-11-11
+  report: agents/reviews/O186-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -892,6 +900,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O186 building). Prepared at 448c2b636 (brief check acb6e5a864c75ef20 closed in the brief; the Show File button taken in automode, `choices.md`); builder a87bf6fcc96c1b7f7 (claude-opus-5-5) launched on Axel's approval of its message. In flight (1 of 6): O186. Open items: none.
 - 2026-11-11 (O186 booked). Open item 757 ruled (a): every file row of the Settings groups Catalogs, Schemas and Texts opens its file read-only through `:oculus`, with the edit open where a workspace folder holds oculus's `config/`; step O186 builds it. In flight (0 of 6). Queued: O186, prepared next by /spec. Open items: none.
 - 2026-11-11 (v1.1.0 released). On rulings 755 (a) and 756 (a): the preparation committed as 24f324bdc "Prepare the 1.1.0 release", tagged `v1.1.0`, main and the tag pushed to origin (`git ls-remote` gives 24f324bdc for both), the GitHub Release "Oculus 1.1.0" published with the three archives, each uploaded at its local size; `~/Applications/oculus.app` replaced by the 1.1.0 build (its `package.json` and `CFBundleShortVersionString` read 1.1.0, `codesign --verify --deep` passes), the 1.0.0 app moved to the Trash as `oculus-1.0.0.app`. In flight (0 of 6). Queue empty. Open items: none.
 - 2026-11-11 (v1.1.0 built). The whole suite ran green once in the gate at 7ef6c1421 with nothing else running ("test:landing: 580.0 s; every command passed"); `npm run app:release` built the three 1.1.0 archives, copied into main's `release/`. The preparation (version, README archive names, release notes) is on main, uncommitted. In flight (0 of 6). Open items: 755 (the preparation commit), 756 (the tag and upload).
