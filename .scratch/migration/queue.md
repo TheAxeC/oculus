@@ -1,5 +1,4 @@
-In flight (1 of 6 slots in use):
-- O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), builder running.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps):
 - Release v1.1.0, only once every step is done and this queue is otherwise empty: the whole suite once green with nothing else running, then `npm run app:release`; the tag and the upload wait for Axel's word on the push.
@@ -7,6 +6,7 @@ Queued, in order (0 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O185 (the whole suite runs green), 2026-11-11.
 - O184 (a terminal tab's bar keeps its height when its session links), 2026-11-11.
 - O182 (every tree indents as the Files view), 2026-11-11, a5852eb8a.
 - O183 (a running agent's terminal takes the whole height of the Live view), 2026-11-11, 72df8aee1.

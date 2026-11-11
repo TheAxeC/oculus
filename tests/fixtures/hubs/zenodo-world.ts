@@ -22,6 +22,7 @@ import { handleDeposit } from '../../../src/lib/server/git/deposit/deposit-route
 import { noCredentials } from '../doubles.ts';
 import { plantFile, scratchDir } from '../scratch.ts';
 import { depositTarget } from './deposit-world.ts';
+import { engineConfigCopy, engineParses } from './engine-load.ts';
 import { ZENODO_ADDRESS, type FakeZenodo } from './zenodo-answers.ts';
 
 /** The page's write token of the fixture's requests. */
@@ -39,7 +40,7 @@ export const PROJECT = 'hub:alpha';
 /** The terms every case anonymises unless it names its own: invented words. */
 const TERMS = [{ term: 'Quillmore' }, { term: 'Northbridge Institute', as: 'an institute' }];
 
-const TEXT = textCatalog(loadConfig(engineDir()).config);
+const TEXT = textCatalog(engineConfigCopy());
 
 /** One sentence of the server's catalog. */
 export function said(key: string, ...args: (string | number)[]): string {
@@ -118,7 +119,7 @@ export function fixture(
     for (const [name, body] of Object.entries(files)) {
         plantFile(hub, join('projects/alpha/code', name), Buffer.from(body));
     }
-    const merged = loadConfig(engineDir(), { hub }).config;
+    const merged = loadConfig(engineDir(), { hub, parses: engineParses() }).config;
     const target = depositTarget(dir, hub, {
         ...portfolioConfigFrom(merged),
         scan: [{ dir: 'projects' }]
@@ -150,7 +151,7 @@ export function withLab(primary: ManifestSetup, setup: ManifestSetup): Fixture {
     plantFile(lab, '.oculus/config.yml', settingsText(setup));
     const manifest = plantFile(lab, 'projects/alpha/project.yml', manifestText(setup));
     plantFile(lab, 'projects/alpha/code/README.md', '# The tools\n');
-    const merged = loadConfig(engineDir(), { hub: lab }).config;
+    const merged = loadConfig(engineDir(), { hub: lab, parses: engineParses() }).config;
     const config = { ...portfolioConfigFrom(merged), scan: [{ dir: 'projects' }] };
     return { ...at, manifest, into: { ...at.into, hubs: [{ key: 'lab', hub: lab, config }] } };
 }

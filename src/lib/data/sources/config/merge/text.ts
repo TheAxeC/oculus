@@ -5,14 +5,14 @@
 // produced, since the catalog is one of the things being read. The read of one file of oculus's
 // config folder into its top-level map, with the findings of what is wrong with it, is here too,
 // since the defaults, catalog, schema and text files (merge.ts) and the options files
-// (options-folder.ts) are read by it alike.
+// (options-folder.ts) are read by it alike; the file's text and its parse, which may be one kept
+// from an earlier load, come from the source merge.ts makes for it (`configSource`).
 //
 // A word that changes with a count is a plural key: a map of the CLDR forms (zero, one, two, few,
 // many, other), `other` always among them, and the readers pick the form by the count
 // (finding-text.ts). A plural map with no `other`, and a key of one that is none of the six forms,
 // are findings of the merge.
 
-import { parse } from 'yaml';
 import {
     findingText,
     isPluralMap,
@@ -54,21 +54,29 @@ export function notAMap(file: string): PendingFinding {
 export const keysShape = mapOfShape(z.unknown());
 
 /**
- * One file of oculus's config folder read into its top-level map, each thing wrong with it pushed
- * as a finding: a text that does not parse, one that is no map, and each issue of the whole-file
- * shape that `name` gives it (data/shapes/catalog-files/). Null when the text does not parse or is
- * no map. `empty` is what a file with no content reads as.
+ * One file of oculus's config folder as readConfigFile reads it: its path, how its text is read and
+ * how that text is parsed (merge.ts, `configSource`).
+ */
+export type ConfigSource = { file: string; text: () => string; parse: (text: string) => unknown };
+
+/**
+ * One file of oculus's config folder read into its top-level map, its text and its parse taken from
+ * `source`, each thing wrong with it pushed as a finding naming `source.file`: a text that cannot
+ * be read or does not parse, one that is no map, and each issue of the whole-file shape that `name`
+ * gives it (data/shapes/catalog-files/). Null when the text does not parse or is no map. `empty` is
+ * what a file with no content reads as; it is laid over the parse on every call, so a parse kept
+ * from an earlier load reads as that load's did.
  */
 export function readConfigFile(
-    file: string,
+    source: ConfigSource,
     name: string,
-    text: () => string,
     pending: PendingFinding[],
     empty: unknown
 ): Record<string, unknown> | null {
+    const { file } = source;
     let parsed: unknown;
     try {
-        parsed = parse(text()) ?? empty;
+        parsed = source.parse(source.text()) ?? empty;
     } catch (error) {
         pending.push(unparsed(file, error));
         return null;

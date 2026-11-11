@@ -266,8 +266,8 @@ describe('the config cache of the server context', () => {
             engine,
             hub: () => null,
             workspace: () => null,
-            load: () => ({ config: { one: 1 }, findings: [finding], from: {} }),
-            loadHub: () => ({ config: {}, findings: [], from: {} }),
+            load: () => ({ config: { one: 1 }, findings: [finding], from: {}, parses: {} }),
+            loadHub: () => ({ config: {}, findings: [], from: {}, parses: {} }),
             report: (findings) => said.push(findings),
             ...NO_HUBS
         });
@@ -296,8 +296,8 @@ describe('the config cache of the server context', () => {
         );
         const primary = plantScratch('oculus-hook-hub-', { '.oculus/config.yml': 'one: 2\n' });
         const said: Finding[][] = [];
-        const load = vi.fn(() => ({ config: { one: 2 }, findings: [], from: {} }));
-        const loadHub = vi.fn(() => ({ config: { one: 3 }, findings: [], from: {} }));
+        const load = vi.fn(() => ({ config: { one: 2 }, findings: [], from: {}, parses: {} }));
+        const loadHub = vi.fn(() => ({ config: { one: 3 }, findings: [], from: {}, parses: {} }));
         const cache = createConfigCache({
             engine,
             hub: () => primary,

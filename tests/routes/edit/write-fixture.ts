@@ -28,7 +28,7 @@ import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/wr
 import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
-import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
+import { demoConfigCopy, engineConfigCopy, engineParses } from '../../fixtures/hubs/engine-load.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { plantHub, plantSaved, workspaceWith } from '../../fixtures/hubs/workspace.ts';
@@ -71,8 +71,20 @@ export const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/write`;
 
-export function target(): PrimaryTarget {
-    const dir = scratchDir('oculus-route-');
+/** A new folder `name` inside `parent`, asserted to be inside it before it is made. */
+function folderIn(parent: string, name: string): string {
+    const dir = join(parent, name);
+    expect(resolve(dir).startsWith(resolve(parent) + sep)).toBe(true);
+    mkdirSync(dir);
+    return dir;
+}
+
+/**
+ * The write target over a synthetic hub holding the project `alpha`, the registries and a LinkedIn
+ * idea: a scratch directory of its own, or the folder `hub` of `parent` when one is given.
+ */
+export function target(parent?: string): PrimaryTarget {
+    const dir = parent === undefined ? scratchDir('oculus-route-') : folderIn(parent, 'hub');
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(folder, { recursive: true });
@@ -113,12 +125,13 @@ export function target(): PrimaryTarget {
 }
 
 /**
- * Loads the engine's configuration once. The first load of a process costs about twice a later one,
- * so a file that loads it in every case registers this as a hook, and that cost is the hook's and
- * not the first case's.
+ * Takes a copy of the engine's configuration. The configuration is loaded when engine-load.ts is
+ * first imported, which this file does, so the first load of a process, which costs about twice a
+ * later one, is the import's and not the first case's; a file that registers this as a hook has
+ * that load made before its first case.
  */
 export function warmConfig(): void {
-    loadConfig(engineDir());
+    engineConfigCopy();
 }
 
 /**
@@ -132,7 +145,7 @@ export function targetOver(
     keep = 500
 ): PrimaryTarget {
     // The hub reads its leads and radar registries as feeds, as its settings file names them.
-    const merged = { ...loadConfig(engineDir()).config, feed_registries: ['leads', 'radar'] };
+    const merged = { ...engineConfigCopy(), feed_registries: ['leads', 'radar'] };
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
@@ -145,8 +158,8 @@ export function targetOver(
             layout: { ...real.layout, linkedinIdeaPrefix: 'xx-' }
         },
         engine: engineDir(),
-        engineConfig: () => loadConfig(engineDir()).config,
-        career: careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
+        engineConfig: engineConfigCopy,
+        career: careerRules(demoConfigCopy()),
         overrides: files.overrides,
         projects: () => [],
         bookmarks: files.bookmarks,
@@ -314,7 +327,7 @@ export function deckTarget(): PrimaryTarget {
         writeFileSync(join(folder, 'present.yml'), 'order: [main.md]\n');
         writeFileSync(join(folder, 'main.md'), `# ${project.title}\n`);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(engineConfigCopy());
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {
@@ -322,8 +335,8 @@ export function deckTarget(): PrimaryTarget {
         primary: 'hub',
         config: { ...real, portfolioDeck: DECK_FOLDER },
         engine: engineDir(),
-        engineConfig: () => loadConfig(engineDir()).config,
-        career: careerRules(loadConfig(engineDir(), { hub: DEMO_HUB }).config),
+        engineConfig: engineConfigCopy,
+        career: careerRules(demoConfigCopy()),
         projects: () => projects,
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
@@ -501,8 +514,8 @@ export function insideHubTarget(base: PrimaryTarget = target(), second = false):
     ];
     const open = workspaceWith(folders, 'hub').open();
     const settings = (hub: string): ReturnType<typeof loadConfig> =>
-        loadConfig(engineDir(), { hub });
-    const { repositories } = primaryConfig(loadConfig(engineDir()).config, open, settings);
+        loadConfig(engineDir(), { hub, parses: engineParses() });
+    const { repositories } = primaryConfig(engineConfigCopy(), open, settings);
     const config = { ...base.config, repositories };
     return { into: { ...base, config, hubs: hubTargets(open, settings) }, dir, file };
 }
@@ -539,12 +552,17 @@ export function defaultsFile(engine: string, name: string): string {
 }
 
 /**
- * The write target of a scratch engine: the synthetic hub and change log of `target()`, over an
- * engine that is not the checkout, with the saved workspace `<hub>/.oculus/workspaces/main.yml`
- * open (its `settings:` block `settings`, or none), so a Settings write lands in that file.
+ * The write target of a scratch engine: the synthetic hub and change log of `target()` (made in
+ * `parent` when one is given), over an engine that is not the checkout, with the saved workspace
+ * `<hub>/.oculus/workspaces/main.yml` open (its `settings:` block `settings`, or none), so a
+ * Settings write lands in that file.
  */
-export function configTarget(engine: string = scratchEngine(), settings = ''): PrimaryTarget {
-    const base = target();
+export function configTarget(
+    engine: string = scratchEngine(),
+    settings = '',
+    parent?: string
+): PrimaryTarget {
+    const base = target(parent);
     return { ...base, engine, workspace: plantSaved(base.hub, settings).open };
 }
 
@@ -558,14 +576,17 @@ export type LabTarget = { into: WriteTarget; hub: string; lab: string };
 export const LAB_SETTINGS = '# the lab\nwallpaper_dir: pictures\n';
 
 /**
- * The config target of a scratch engine with a second hub, `lab`: a folder under the system
- * temporary directory holding `.oculus/config.yml` (`settings`) and a folder `pictures` of its own.
- * With `primary` false the workspace has no primary, and the target lists both hubs as its other
- * hubs, the primary's folder under the name `hub`.
+ * The config target of a scratch engine with a second hub, `lab`, holding `.oculus/config.yml`
+ * (`settings`) and a folder `pictures` of its own. The primary hub and lab are the folders `hub`
+ * and `lab` of one scratch directory of their own, so `<hub>/..` is that directory and never the
+ * shared temporary directory, and a case can prove nothing was written beside the hubs. With
+ * `primary` false the workspace has no primary, and the target lists both hubs as its other hubs,
+ * the primary's folder under the name `hub`.
  */
 export function labTarget(settings = LAB_SETTINGS, primary = true): LabTarget {
-    const base = configTarget();
-    const lab = scratchDir('oculus-lab-');
+    const pair = scratchDir('oculus-lab-');
+    const base = configTarget(scratchEngine(), '', pair);
+    const lab = folderIn(pair, 'lab');
     for (const folder of ['.oculus', 'pictures']) {
         expect(resolve(join(lab, folder)).startsWith(resolve(lab) + sep)).toBe(true);
         mkdirSync(join(lab, folder), { recursive: true });

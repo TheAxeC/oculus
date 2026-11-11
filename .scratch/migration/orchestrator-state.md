@@ -23,18 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O185
-  base: 746518eba
-  worktree: .agents/worktrees/migration-O185
-  executor: agent
-  worker: claude:opus
-  session_id: ad4d4274f77374e16 (claude-opus-5-5)
-  launched: 2026-11-11
-  report: .scratch/migration/agents/reviews/O185-report.md
-  round: 0
-  landing: not-started
-  brief_check: .scratch/migration/agents/reviews/O185-brief-check.md (aa439017cc1038d36, claude-opus-5-5, 228691 tokens, 66 tool uses, 696 s)
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -896,6 +885,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-11 (O185 landed). The whole suite's two causes of red are ended (booking in `plan.md` under O185, `agents/reviews/O185-landing.md`): `labTarget`'s hubs live in a private parent folder, so a stray `/tmp/x` no longer reaches the 11 config-key rows; `loadConfig` takes and returns `parses`, the server's config cache and the test fixtures reparse only what changed; `zenodo.test.ts:428` fixed at landing. Every step of `plan.md` is ticked and the queue is empty. In flight (0 of 6). Next: the whole suite once with nothing else running, then the v1.1.0 preparation and `npm run app:release`; the tag and upload wait for Axel's word on the push. Open items: none.
 - 2026-11-11 (O184 landed). A terminal tab's bar keeps its height when its session links (booking in `plan.md` under O184, `agents/reviews/O184-landing.md`): Live and Transcript are 20px icon buttons, the bar 33px with and without them; the review's four findings fixed at landing. In flight (1 of 6): O185 (builder ad4d4274f77374e16 running, base 746518eba). Next: O185's report, /refute, /land; then the whole suite once with nothing else running, then `npm run app:release` for v1.1.0; the tag and upload wait for Axel's word on the push. Open items: none.
 - 2026-11-11 (O182 landed). Every tree indents as the Files view (booking in `plan.md` under O182, `agents/reviews/O182-landing.md`), with the waiting session's bar fixed at landing to stay inside the row's rounded corners. In flight (0 of 6). Next: the whole suite once with nothing else running, then `npm run app:release` for v1.1.0; the tag and upload wait for Axel's word on the push; O184 after that. Open items: none.
 - 2026-11-11 (O183 landed). A running agent's terminal takes the whole height of the Live view (booking in `plan.md` under O183, `agents/reviews/O183-landing.md`). The look's flaw, the tab's bar growing 6px when a session links, is step O184 (ruling Look flaws), after the v1.1.0 build. In flight (1 of 6): O182 (landing next: the report table rows, the B-r1 bullet, the Sp1 premise; look items the amber bar corner and lanes Lp vs L). Then the whole suite once with nothing else running, then `npm run app:release` for v1.1.0; the tag and upload wait for Axel's word on the push. Open items: none.

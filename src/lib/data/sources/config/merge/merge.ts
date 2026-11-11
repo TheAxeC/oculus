@@ -10,9 +10,16 @@
 // The text catalog is folded out of the fragments (text.ts). A catalog or text file is also parsed
 // with its whole-file shape (data/shapes/catalog-files/), and each issue of the shape is a finding;
 // the merge keeps every key the file holds, as the readers expect.
+//
+// Parsing oculus's folder is most of what a load costs, so a load hands back the parse of each of
+// its files with the text it was made of (`parses`), and a caller that keeps them and hands them to
+// its next load has a file parsed again only when its text changed. They are a value the caller
+// holds, never state of this module, and every load reads each file and compares its text, so a
+// reused parse is never stale.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
+import { parse } from 'yaml';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { HUB_FILE, fromHubFile } from '../../../helpers/hub-names.ts';
 import { hubKeys } from '../../../shapes/hub-keys.ts';
@@ -21,7 +28,14 @@ import { DEFAULTS_DIR, configDir, engineFile } from '../folder.ts';
 import { mergeHub } from './hub-layer.ts';
 import { layLanguage, type LanguageSource } from './language.ts';
 import { readOptionsFolder } from './options-folder.ts';
-import { TEXT_KEY, mergeText, readConfigFile, worded, type PendingFinding } from './text.ts';
+import {
+    TEXT_KEY,
+    mergeText,
+    readConfigFile,
+    worded,
+    type ConfigSource,
+    type PendingFinding
+} from './text.ts';
 import { SETTINGS_KEY, mergeWorkspace, type WorkspaceLayer } from './workspace-layer.ts';
 
 /** The folder under config/ holding the vocabulary catalogs, merged like the defaults files. */
@@ -81,10 +95,49 @@ export type ReplacedFile =
     | { name: string; text: string; layer: 'engine' }
     | { name: string; text: string | null; layer: 'hub' };
 
+/** The text of one file of oculus's config folder and what `yaml`'s `parse` made of it. */
+type KeptParse = { readonly text: string; readonly parsed: unknown };
+
 /**
- * What loadConfig takes besides the engine: the hub whose settings file is merged, the open
- * workspace file whose `settings:` is merged last, and a file read from a given text.
+ * The parses of the files of oculus's config folder that one load parsed without error, each by
+ * its name relative to config/ (`defaults/behavior.yml`, `options/local.yml`) with the text it was
+ * made of. A load handed them parses again only a file whose text on disk differs.
  */
+type ConfigParses = Readonly<Record<string, KeptParse>>;
+
+/** The parses one load was handed (`given`, only read) and those it hands back (`kept`). */
+type ParseKeep = { readonly given: ConfigParses; readonly kept: Record<string, KeptParse> };
+
+/**
+ * The file `name` (relative to config/) of the config folder `dir`. A file `instead` names is read
+ * from the given text and parsed, and `keep` hands back for it the entry it was handed, so a
+ * candidate's text is never kept. Any other file is read from the disk; its parse is the one `keep`
+ * was handed when that was made of the same text, else a new one, and either is kept. The merge
+ * receives a copy, so nothing the merge or a caller changes in a result reaches a kept parse.
+ */
+function configSource(
+    dir: string,
+    name: string,
+    instead: { name: string; text: string } | undefined,
+    keep: ParseKeep
+): ConfigSource {
+    const file = join(dir, name);
+    const given = Object.hasOwn(keep.given, name) ? keep.given[name] : undefined;
+    if (instead?.name === name) {
+        if (given !== undefined) keep.kept[name] = given;
+        return { file, text: () => instead.text, parse };
+    }
+    return {
+        file,
+        text: () => readFileSync(file, 'utf8'),
+        parse: (text) => {
+            const entry: KeptParse = given?.text === text ? given : { text, parsed: parse(text) };
+            keep.kept[name] = entry;
+            return structuredClone(entry.parsed);
+        }
+    };
+}
+
 /**
  * What loadConfig lays over oculus's files: the hub's settings file (`hub`, its folder), the open
  * workspace file (`workspace`), the source of the display language `locale` names (`language`), the
@@ -92,7 +145,8 @@ export type ReplacedFile =
  * than the primary is read with, so its findings and records are worded as the workspace's), and
  * one file's text read instead of the disk (`instead`). `other` is the name of the hub when it is
  * not the primary, so a key the primary alone is read for is a finding of its settings file naming
- * that hub (hub-layer.ts).
+ * that hub (hub-layer.ts). `parses` are those an earlier load returned, whose parse of a file of
+ * oculus's folder is reused while the file's text is the same; they are only read.
  */
 export type ConfigOptions = {
     hub?: string;
@@ -101,6 +155,7 @@ export type ConfigOptions = {
     language?: LanguageSource;
     words?: Readonly<Record<string, unknown>>;
     instead?: ReplacedFile;
+    parses?: ConfigParses;
 };
 
 /**
@@ -143,6 +198,12 @@ export function droppedFile(
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
  * hold it) is written as the key followed by its arguments, so the finding still names what broke.
+ *
+ * Every file of oculus's folder is read from the disk on every call. `parses` holds, by each file's
+ * name relative to config/, the text and the raw parse of every file this call parsed without
+ * error, the file `instead` replaces left as it was handed in, so a caller that hands them to its
+ * next call has only the files whose text changed parsed again; the shape check and every finding
+ * are made on every call, so the result is the one a call with no `parses` gives.
  */
 export function loadConfig(
     engine: string,
@@ -151,6 +212,7 @@ export function loadConfig(
     config: Record<string, unknown>;
     findings: Finding[];
     from: Record<string, string>;
+    parses: ConfigParses;
 } {
     const instead = opts.instead?.layer === 'engine' ? opts.instead : undefined;
     const dir = configDir(engine);
@@ -158,6 +220,8 @@ export function loadConfig(
     const pending: PendingFinding[] = [];
     /** Which file each top-level key came from, so a clash can name both sides. */
     const from: Record<string, string> = {};
+    const keep: ParseKeep = { given: opts.parses ?? {}, kept: {} };
+    const sourceOf = (name: string): ConfigSource => configSource(dir, name, instead, keep);
 
     const names = configNames(dir);
     if (names === null) {
@@ -166,15 +230,14 @@ export function loadConfig(
             key: '',
             words: (catalog) => findingText(catalog, 'findings.config.directory_missing')
         });
-        return { config, findings: worded(pending, config), from };
+        return { config, findings: worded(pending, config), from, parses: keep.kept };
     }
 
     for (const path of names) {
-        const file = join(dir, path);
+        const source = sourceOf(path);
+        const { file } = source;
         const name = logicalName(path);
-        const text = (): string =>
-            instead?.name === path ? instead.text : readFileSync(file, 'utf8');
-        const top = readConfigFile(file, name, text, pending, {});
+        const top = readConfigFile(source, name, pending, {});
         if (top === null) continue;
         for (const [key, value] of Object.entries(top)) {
             if (key === TEXT_KEY) {
@@ -194,7 +257,7 @@ export function loadConfig(
             from[key] = name;
         }
     }
-    readOptionsFolder(dir, instead, config, from, pending);
+    readOptionsFolder(dir, sourceOf, config, from, pending);
 
     for (const key of hubKeys()) {
         const top = key.split('.')[0];
@@ -212,7 +275,7 @@ export function loadConfig(
     layLanguage(config, from, pending, opts.language, (key) => keyPlace(where, key), own);
     if (opts.words !== undefined) config[TEXT_KEY] = { ...opts.words };
 
-    return { config, findings: worded(pending, config), from };
+    return { config, findings: worded(pending, config), from, parses: keep.kept };
 }
 
 /**

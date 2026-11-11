@@ -1,12 +1,14 @@
 // Layer 2, server. The parse of the engine's config folder, of the hub's settings file and of the
 // open workspace file's `settings:`, kept by the server context between requests. Reading and
-// parsing every config file costs about 75 ms and holds the one event loop the socket's upgrade
+// parsing every config file costs 200 to 290 ms and holds the one event loop the socket's upgrade
 // waits on, and a page that boots makes several requests at once, so a request takes the parse the
 // previous request made while the folder and the files are as they were: the stamp of the folder
 // (the path, size, inode and times of every entry) and of each file (its size, inode and times) is
 // the same, and so are the hub and the workspace file the parse was made for. Adding, removing or
 // writing a file of the folder, or writing, adding or removing either file, moves the stamp, so the
-// next request parses again. The settings file is `<hub>/.oculus/config.yml`, the hub is the open
+// next request parses again. That parse reads every file and parses again only those whose text
+// changed, reusing the parse the last load made of every other file of the engine's folder
+// (context/config-parse.ts). The settings file is `<hub>/.oculus/config.yml`, the hub is the open
 // workspace's primary at each request, and the workspace file is the one open at each request; a
 // file that is not there is stamped as absent, so making it moves the stamp.
 //

@@ -15,7 +15,6 @@ import { join } from 'node:path';
 import { strToU8, zipSync, zlibSync } from 'fflate';
 import { afterEach, describe, expect, vi } from 'vitest';
 import type { MirrorState } from '../../../src/lib/data/model/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { createRunningGit } from '../../../src/lib/server/core/git/running.ts';
 import type { Account } from '../../../src/lib/server/core/reader/request.ts';
@@ -29,6 +28,7 @@ import {
     type FakeZenodo,
     type ZenodoSetup
 } from '../../fixtures/hubs/zenodo-answers.ts';
+import { engineConfigCopy } from '../../fixtures/hubs/engine-load.ts';
 import {
     CREATORS,
     FUNDING,
@@ -425,7 +425,7 @@ describe('the Zenodo token', () => {
 
     it('keeps the shipped auth and time limit under a hub that lays only the address', async () => {
         const at = fixture({});
-        const shipped = loadConfig(engineDir()).config.deposit as { zenodo: object };
+        const shipped = engineConfigCopy().deposit as { zenodo: object };
         expect(at.into.config.merged.deposit).toEqual({
             ...shipped,
             zenodo: { ...shipped.zenodo, address: ZENODO_ADDRESS }

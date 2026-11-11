@@ -639,7 +639,8 @@ export function watchPortfolio(
             const workspace = paths.open();
             const primaryDir = workspace.primaryDir;
             const layers = configOptions(workspace, paths.language);
-            const { config, findings, from } = loadConfig(paths.engine, layers);
+            const loaded = loadConfig(paths.engine, layers);
+            const { config, from } = loaded;
             followSettings(workspace.file);
             // The hubs other than the primary are read again at every rebuild, each with its own
             // settings, so a folder that left the workspace or lost its config is out of this
@@ -659,9 +660,8 @@ export function watchPortfolio(
             if (withConfig || hubsText !== publishedHubs) {
                 publishedHubs = hubsText;
                 paths.icons.set = iconSet(config);
-                const read = { config, findings, from };
                 const parts = { hubs, icons: paths.icons.set };
-                const payload = configPayload(paths, read, workspace, others, parts);
+                const payload = configPayload(paths, loaded, workspace, others, parts);
                 hub.publish('config', payload);
                 if (closed) return;
             }

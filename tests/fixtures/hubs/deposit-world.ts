@@ -7,12 +7,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { folderGlobs } from '../../../src/lib/data/sources/documents/folder-globs.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { isolateGit } from '../../server/git/refs/repo.ts';
 import { test } from '../scratch.ts';
+import { engineConfigCopy } from './engine-load.ts';
 
 /** The committer of every commit of the deposit tests, theirs and the deposit's own. */
 const COMMITTER = {
@@ -66,13 +67,13 @@ export function depositTarget(
     hub: string,
     over: Partial<ReturnType<typeof portfolioConfigFrom>>
 ): WriteTarget {
-    const loaded = loadConfig(engineDir()).config;
+    const loaded = engineConfigCopy();
     return {
         hub,
         primary: 'hub',
         config: { ...portfolioConfigFrom(loaded), ...over },
         engine: engineDir(),
-        engineConfig: () => loadConfig(engineDir()).config,
+        engineConfig: engineConfigCopy,
         career: careerRules(loaded),
         overrides: join(dir, 'sessions.json'),
         projects: () => [],

@@ -4,9 +4,11 @@
 //
 // It is one concern of the composition root built apart: the start, every request, every finding
 // and every move of the workspace read the folders through this one cache while no file of them
-// changes, and nothing in it depends on another object the context builds. The display language
-// is read from the apps, which are read after the config that names their folder, so the holder
-// of the apps starts empty and the context points it at the apps watcher once that is built.
+// changes, and nothing in it depends on another object the context builds. Each load is handed the
+// parses of the engine's files the last one made (merge.ts), which `contextConfig` holds, so a
+// parse again after a write parses only the files whose text changed. The display language is read
+// from the apps, which are read after the config that names their folder, so the holder of the
+// apps starts empty and the context points it at the apps watcher once that is built.
 
 import { workspaceVocabs } from '../../../../data/index.ts';
 import type { LanguageSource } from '../../../../data/sources/config/merge/language.ts';
@@ -41,16 +43,23 @@ export function contextConfig(
     // the read that changes a language republishes the config.
     const appsHeld = { now: (): AppsHeld => noApps() };
     const language = languageSource(() => appsHeld.now());
-    const load = (): ReturnType<typeof loadConfig> =>
-        loadConfig(engine, configOptions(open(), language));
+    // The parses of the engine's files the last load made or reused, handed to the next load of
+    // any hub, so a load after a write, and a load for another hub, parse again only the engine's
+    // files whose text changed since the last load.
+    let parses: ReturnType<typeof loadConfig>['parses'] = {};
+    const parsed = (options: Parameters<typeof loadConfig>[1]): ReturnType<typeof loadConfig> => {
+        const read = loadConfig(engine, { ...options, parses });
+        parses = read.parses;
+        return read;
+    };
+    const load = (): ReturnType<typeof loadConfig> => parsed(configOptions(open(), language));
     const configCache = createConfigCache({
         engine,
         hub: () => open().primaryDir,
         workspace: () => open().file,
         load,
         loadHub: (dir, words) =>
-            loadConfig(
-                engine,
+            parsed(
                 dir === null
                     ? {}
                     : {

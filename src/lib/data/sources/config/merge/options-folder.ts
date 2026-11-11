@@ -16,14 +16,14 @@
 // shape finds is a finding; what the options reader words itself is left to it
 // (catalog/option-findings.ts).
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { OPTIONS_DIR } from '../folder.ts';
 import { LOCAL_NAME } from '../local.ts';
 import { inPlaceOf } from './in-place.ts';
-import { readConfigFile, type PendingFinding } from './text.ts';
+import { readConfigFile, type ConfigSource, type PendingFinding } from './text.ts';
 import { valueAt } from './tree.ts';
 
 /** The key of the merged map that holds every options file's entries, by the file they describe. */
@@ -37,9 +37,6 @@ const GROUPS_KEY = 'option_groups';
  * records its fields name by `described_by` (catalog/options.ts).
  */
 const DESCRIPTIONS_KEY = 'option_descriptions';
-
-/** A file of the folder read from this text instead of from the disk, named relative to config/. */
-type Instead = { name: string; text: string } | undefined;
 
 /** The described file whose entries carry no default: the workspace's words. */
 const NO_DEFAULTS = 'text.yml';
@@ -98,11 +95,12 @@ function withDefaults(
 /**
  * Read every file of config/options/ into the merged map's `options` and `option_groups`, with the
  * findings of a file that does not read or whose shape refuses a key. A file the shape refuses
- * whole contributes nothing, and the folder missing contributes nothing.
+ * whole contributes nothing, and the folder missing contributes nothing. Each file's text and parse
+ * come from `sourceOf`, by its name relative to config/ (merge.ts, `configSource`).
  */
 export function readOptionsFolder(
     dir: string,
-    instead: Instead,
+    sourceOf: (name: string) => ConfigSource,
     config: Record<string, unknown>,
     from: Record<string, string>,
     pending: PendingFinding[]
@@ -113,10 +111,7 @@ export function readOptionsFolder(
     const groups: Record<string, unknown> = {};
     const descriptions: Record<string, unknown> = {};
     for (const name of names) {
-        const file = join(dir, name);
-        const text = (): string =>
-            instead?.name === name ? instead.text : readFileSync(file, 'utf8');
-        const parsed = readConfigFile(file, name, text, pending, null);
+        const parsed = readConfigFile(sourceOf(name), name, pending, null);
         if (parsed === null) continue;
         const described = name.slice(OPTIONS_DIR.length + 1);
         if (isMap(parsed.options)) {
