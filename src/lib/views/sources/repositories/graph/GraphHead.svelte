@@ -71,13 +71,13 @@
     /* The ring of the circle is the row's own background: the two values TreeItem gives its own
        line at rest and under the pointer (this row is never drawn selected), set here because the
        lanes sit beside the row and not inside it. Under the pointer the same background is painted
-       under the lanes. The row stands one step in from the Graph's section head, the width of one
-       guide of a tree row, its lanes included. */
+       under the lanes. The row, its lanes included, stands one level of a tree row in from the
+       Graph's section head (the indent and twice the guide's gap), as a commit row does. */
     .head {
         display: flex;
         align-items: center;
         min-width: 0;
-        padding-left: calc(var(--tree-guide-gap, 4px) + var(--tree-indent) * var(--text-scale, 1));
+        padding-left: calc(var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap));
         border-radius: var(--radius-sm);
         --row-bg: var(--panel);
     }

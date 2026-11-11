@@ -137,7 +137,7 @@
        indent guides and the arrow's box. */
     .lines {
         --inset: calc(
-            2 * (var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap, 4px)) +
+            2 * (var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap)) +
                 var(--icon-box) * var(--text-scale, 1) + 6px
         );
         display: flex;

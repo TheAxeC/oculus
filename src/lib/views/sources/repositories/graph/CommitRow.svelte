@@ -228,15 +228,16 @@
 <style>
     /* The ring of a circle is the row's own background, which the lanes, drawn beside the row and
        not inside it, read from here: the two values TreeItem gives its own line at rest and under
-       the pointer (a graph row is never drawn selected, so its third value has no row here).
-       Under the pointer the same background is painted under the lanes, so the row reads as one
-       line with its circle. The row stands one step in from the Graph's section head, the width
-       of one guide of a tree row, its lanes included. */
+       the pointer (a graph row is never drawn selected, so its third value has no row here). Under
+       the pointer the same background is painted under the lanes, so the row reads as one line with
+       its circle. The row, its lanes included, stands one level of a tree row in from the Graph's
+       section head (the indent and twice the guide's gap), so its twistie is where a depth-1 row's
+       twistie is, moved right by the lanes. */
     .commit {
         display: flex;
         align-items: center;
         min-width: 0;
-        padding-left: calc(var(--tree-guide-gap, 4px) + var(--tree-indent) * var(--text-scale, 1));
+        padding-left: calc(var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap));
         border-radius: var(--radius-sm);
         --row-bg: var(--panel);
     }

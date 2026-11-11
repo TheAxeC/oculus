@@ -144,10 +144,10 @@
         min-width: 0;
     }
 
-    /* The same left edge as a session row, so the two kinds of row line up. */
+    /* A row starts where its level puts it, the same left edge as a session row, so the two kinds
+       of row line up. */
     .row {
         min-width: 0;
-        border-left: 2px solid transparent;
     }
 
     .confirm {

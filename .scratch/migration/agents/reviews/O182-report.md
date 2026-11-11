@@ -70,10 +70,10 @@ Now `g = 0` and shift `8px` everywhere from `:root`, so a level is `8s` and guid
 | `src/lib/themes/tokens.css` | +7 -0 | yes |
 | `src/lib/ui/tree/TreeItem.svelte` | +14 -34, 520 lines | yes |
 | `src/lib/ui/tree/row/Guides.svelte` | new, 43 lines | yes |
-| `src/lib/views/shared/explorer/tree/Tree.svelte` | +8 -78, 463 lines | yes |
+| `src/lib/views/shared/explorer/tree/Tree.svelte` | +10 -80, 463 lines | yes |
 | `src/lib/views/shared/explorer/tree/control/tree-props.ts` | new, 76 lines | yes |
-| `src/lib/views/sources/repositories/graph/CommitFiles.svelte` | +4 -3 | yes |
-| `src/lib/views/sources/repositories/graph/CommitRow.svelte` | +4 -3 | yes |
+| `src/lib/views/sources/repositories/graph/CommitFiles.svelte` | +20 -9, 273 lines | yes |
+| `src/lib/views/sources/repositories/graph/CommitRow.svelte` | +6 -5 | yes |
 | `src/lib/views/sources/repositories/graph/GraphHead.svelte` | +3 -3 | yes |
 | `src/lib/views/shared/sessions/sections/changes/ChangesRepo.svelte` | +1 -1 | yes |
 | `src/lib/views/sessions/session-list/SessionWorkspace.svelte` | +12 -3 | yes |
@@ -213,6 +213,7 @@ Case after the change, scale 1, `Lp` the width of the passing lanes' SVG (the sa
   - `docs/HELP.md:31`: a rail badge's colours, "red before amber before green". Not made false.
   - `docs/HELP.md:302`: the editor's indentation settings. Not made false.
   - `docs/HELP.md:573`: Tab indents in an editor. Not made false.
+- B-r1, the lanes: a commit's pending and error lines now draw the passing lanes beside them, as a file row does; before this round, with lanes passing, the line stood the lanes' width left of the file rows and no lane ran through its row. Look at landing: a commit with lanes passing, its files being read and its files failing to read.
 
 ### Anything in the brief that was wrong
 

@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, primitive. One row of an explorer: a line of one fixed height holding the indent
-    // guides of its depth, the expand arrow of a row that opens, a glyph or a file's Seti icon, the
-    // name and a muted detail, then the row's own controls, and at the right edge a count or a
-    // mark; controls given as `after` follow the count. A heading row is the same line drawn as the
-    // head of a section, its name in capitals.
+    // guides of its depth (row/Guides.svelte), the expand arrow of a row that opens, a glyph or a
+    // file's Seti icon, the name and a muted detail, then the row's own controls, and at the right
+    // edge a count or a mark; controls given as `after` follow the count. A heading row is the same
+    // line drawn as the head of a section, its name in capitals.
     //
     // A row with something to do when pressed carries a button over its name, which is what a
     // pointer presses, and the row itself answers a press on the space beyond its parts, so the
@@ -57,6 +57,7 @@
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
+    import Guides from './row/Guides.svelte';
     import RowIcon from './row/RowIcon.svelte';
     import TreeActions from './row/TreeActions.svelte';
     import { pressedByKey } from './tree-keys.ts';
@@ -100,7 +101,8 @@
         drag
     }: TreeItemProps = $props();
 
-    const guides = $derived(Array.from({ length: Math.max(0, depth) }, (_, at) => at));
+    /** The levels the row stands in, one guide each; a depth below 0 draws none. */
+    const levels = $derived(Math.max(0, depth));
 
     /** Whether the focus is on the row or one of its controls. */
     let inside = $state(false);
@@ -140,9 +142,7 @@
 </script>
 
 {#snippet line()}
-    {#each guides as at (at)}
-        <span class="guide" aria-hidden="true"></span>
-    {/each}
+    <Guides depth={levels} />
     <span
         class={['twisty', { open: expanded === true, leaf: expanded === undefined }]}
         aria-hidden="true"
@@ -169,7 +169,7 @@
 
 <div
     class="item"
-    style:--depth={guides.length}
+    style:--depth={levels}
     class:selected
     class:current
     class:heading
@@ -256,9 +256,10 @@
 </div>
 
 <style>
-    /* The row's height, one level's indent and the two type sizes are the tokens of
-       themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
-       the text size. */
+    /* The row's height, one level's indent, the two type sizes and the two measures of an indent
+       guide (`--tree-guide-gap`, `--tree-guide-shift`) are the tokens of themes/tokens.css, which
+       an ancestor may set for a tree of its own. Each but the gap is multiplied by the text size
+       where it is drawn, here or in row/Guides.svelte. */
     /* A row never narrows past its guides, its arrow, its icon and the first characters of its
        name (`--depth` guides, each its indent and twice its gap, and the 4px gaps of the line):
        in a pane narrower than that it runs past the pane's edge, its tint with it, and the pane
@@ -268,7 +269,7 @@
     .item {
         --row-least: calc(
             var(--depth, 0) *
-                (var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap, 4px)) + 2 *
+                (var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap)) + 2 *
                 (var(--icon-box) * var(--text-scale, 1) + 4px) + 4ch + 6px
         );
         display: flex;
@@ -360,27 +361,6 @@
         align-items: center;
         gap: 4px;
         min-width: 0;
-    }
-
-    /* One guide per level: a column the indent's width with the line on its left edge, so the
-       guides of the rows under one folder join into one vertical rule. It is drawn while the tree
-       is hovered or holds the focus, and is transparent otherwise. A tree sets the gap before a
-       guide and how far the line sits right of its column (`--tree-guide-gap`,
-       `--tree-guide-shift`). The margin after a guide is its gap less the row's 4px gap, so each
-       level is the indent and twice the gap: 16px by default, the indent alone at a gap of 0. */
-    .guide {
-        flex: 0 0 calc(var(--tree-indent) * var(--text-scale, 1));
-        align-self: stretch;
-        box-sizing: border-box;
-        margin-left: var(--tree-guide-gap, 4px);
-        margin-right: calc(var(--tree-guide-gap, 4px) - 4px);
-        border-left: 1px solid transparent;
-        translate: calc(var(--tree-guide-shift, 0px) * var(--text-scale, 1));
-    }
-
-    :global([role='tree']:hover) .guide,
-    :global([role='tree']:focus-within) .guide {
-        border-left-color: var(--line);
     }
 
     .twisty {

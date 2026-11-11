@@ -213,6 +213,13 @@
     --tree-font: 13px;
     --tree-indent: 8px;
     --tree-heading-font: 11px;
+    /* The indent guide of a tree level: the gap either side of its column, and how far its line
+       sits right of the column's left edge, half an icon's box, so the line runs down the centre of
+       the twistie of the row above. A row multiplies the shift by `--text-scale` and not the gap; a
+       level is the indent and twice the gap, which is the indent alone at this gap of 0, as in VS
+       Code's Explorer. */
+    --tree-guide-gap: 0px;
+    --tree-guide-shift: calc(var(--icon-box) / 2);
     /* How much of a tree row shows while the row is on the clipboard as Cut. */
     --tree-cut-opacity: 0.5;
     /* The count pill of a tree row: the size of its box and of its number, and the width of one

@@ -186,14 +186,23 @@
     }
 </script>
 
+{#snippet said(label: string, tone: 'error' | 'muted')}
+    <li role="none" class="file">
+        {#if passing.length > 0}
+            <Lanes {passing} {open} />
+        {/if}
+        <div class="item">
+            <TreeItem {label} depth={1} {tone} />
+        </div>
+    </li>
+{/snippet}
+
 {#if failure !== ''}
-    <li role="none">
-        <TreeItem label={failure} depth={2} tone="error" />
-    </li>
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render said(failure, 'error')}
 {:else if reading && files.length === 0}
-    <li role="none">
-        <TreeItem label={t('repositories.graph_pending')} depth={2} tone="muted" />
-    </li>
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render said(t('repositories.graph_pending'), 'muted')}
 {/if}
 {#each rows as row (row.kind === 'folder' ? `dir:${row.path}` : row.path)}
     <li role="none" class="file" data-commit-file={row.kind === 'file' ? row.path : undefined}>
@@ -241,13 +250,15 @@
 {/each}
 
 <style>
-    /* A file row stands one step in from the Graph's section head, as its commit does, its lanes
-       included, and its own depth puts it one step under the commit. */
+    /* A file row, its lanes included, stands one level of a tree row in from the Graph's section
+       head (the indent and twice the guide's gap), as its commit does, and its own depth puts it
+       one level under the commit. The line that says the files are being read, or why they could
+       not be, stands in the same frame at a top file row's depth, so it starts where they start. */
     .file {
         display: flex;
         align-items: center;
         min-width: 0;
-        padding-left: calc(var(--tree-guide-gap, 4px) + var(--tree-indent) * var(--text-scale, 1));
+        padding-left: calc(var(--tree-indent) * var(--text-scale, 1) + 2 * var(--tree-guide-gap));
     }
 
     .item {

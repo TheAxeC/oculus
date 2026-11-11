@@ -227,9 +227,10 @@
         min-width: 0;
     }
 
+    /* A row starts where its level puts it, as a row of the Files tree does. */
     .row {
+        position: relative;
         min-width: 0;
-        border-left: 2px solid transparent;
     }
 
     .box {
@@ -238,8 +239,18 @@
         min-width: 0;
     }
 
-    .row.input {
-        border-left-color: var(--c-amber);
+    /* A session needing input is marked by a 2px amber bar at the row's left edge, laid over the
+       row so it takes no width, the row's words stay where they are when it comes and goes, and it
+       shows over the row's hover and selection tint. It stops 4px short of the row's top and bottom
+       so it stays inside the rounded corners of the tint and the focus outline. */
+    .row.input::after {
+        position: absolute;
+        inset: 4px auto 4px 0;
+        width: 2px;
+        border-radius: 1px;
+        background: var(--c-amber);
+        content: '';
+        pointer-events: none;
     }
 
     .row.away {
