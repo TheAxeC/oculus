@@ -376,10 +376,10 @@ export async function loadHeadFile(
 
 /**
  * Whether the file is locked by its mode on this machine. A file of oculus's own `config/` folder,
- * read through the read-only route over it (Settings' Show Defaults), is always read-only, since no
- * route writes there. A request that fails answers false: the save is what refuses a file that
- * cannot be written, and an editor nobody could open over a hiccup in one request would be worse
- * than one whose save says so.
+ * read through the read-only route over it (Settings' Show Defaults and Show File), is always
+ * read-only, since no route writes there. A request that fails answers false: the save is what
+ * refuses a file that cannot be written, and an editor nobody could open over a hiccup in one
+ * request would be worse than one whose save says so.
  */
 export async function loadSourceReadonly(root: string, path: string): Promise<boolean> {
     if (root === OCULUS_CONFIG_ROOT) return true;

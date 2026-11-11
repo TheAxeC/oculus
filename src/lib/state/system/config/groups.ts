@@ -17,6 +17,8 @@
 // hub (`localRows`), which the This machine scope does; its line describes the file. After it come
 // the Catalogs, Schemas and Texts groups, one row per file of config/catalogs/, config/schemas/ and
 // config/text/ and its subfolders, made from the listings the caller hands in (view/folders.ts).
+// The view draws each with Show File, which opens the file read-only wherever oculus runs, and with
+// Open file where a folder of the workspace holds oculus's config/ folder.
 
 import {
     HEADINGS,

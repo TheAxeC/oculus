@@ -25,7 +25,9 @@ export type Listed = {
 };
 
 /**
- * One file listed in a group: the path and the open action, with its description when it has one.
+ * One file listed in a group: its path and its description when it has one. The view draws the
+ * path with Show File, the open that only reads it, and with Open file where a folder of the
+ * workspace holds oculus's config/ folder.
  */
 export type FileRow = RowBase & { kind: 'file'; file: string };
 

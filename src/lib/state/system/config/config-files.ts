@@ -30,7 +30,8 @@ export const PRIMARY_ROOT = '';
  * folder (`OCULUS_CONFIG_ROOT`) through the workspace folder that holds it, a file of the primary
  * hub (`PRIMARY_ROOT`) through the primary's folder, and a file of any other served root, such as
  * the open workspace file, there. Null when no folder of the workspace holds the file (a root or a
- * path that is null), which is when Settings offers no open and says why.
+ * path that is null), which is when a row of oculus's own files draws Show File, the open that only
+ * reads it, and no Open file.
  */
 export function openTarget(
     root: string | null,

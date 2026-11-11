@@ -2,9 +2,10 @@
 // file the scope reads and writes. A scope draws the rows whose key its file takes (scope.ts
 // `takes`) under today's headings, a heading with none left out and a heading's file lines kept
 // only for the files it still draws rows from; the settings the apps declare in the primary hub's
-// file alone; and the Catalogs, Schemas and Texts groups, which show oculus's own files, in every
-// scope. The Repository scope draws its folder's row of `editor.languages` in the place of the
-// workspace's.
+// file alone; and the Catalogs, Schemas and Texts groups, which list oculus's own files, each
+// opened to read and, where a folder of the workspace holds oculus's config/ folder, to edit, in
+// every scope. The Repository scope draws its folder's row of `editor.languages` in the place of
+// the workspace's.
 //
 // The scope's file is named as the scope bar names it, with whether it is there, why nothing is
 // written to it while it is being read, cannot be read, is cut or does not parse (each row of the

@@ -7,8 +7,11 @@
     // it; none for the workspace's words, whose default is the whole text catalog). The machine's
     // own file has a line with its title, its description and its tag. No line opens a user's
     // file: the user's values are set in the rows, in the file of the scope on screen. The
-    // Catalogs, Schemas and Texts groups list oculus's own files instead: one row per file with its
-    // path and the control that shows it. A folder that is not listed says so under its group.
+    // Catalogs, Schemas and Texts groups list oculus's own files instead, one row per file: its
+    // path, then Show File, which opens the file in a source tab that only reads it wherever oculus
+    // runs, then Open file where a folder of the workspace holds oculus's `config/` folder, which
+    // opens the file through that folder to edit. Show File comes first, so the control every row
+    // has stands in one place on every row. A folder that is not listed says so under its group.
     // Each heading and each section carries the id the table of contents scrolls to.
     //
     // Each group is the group every grouping of a view is drawn as
@@ -92,14 +95,18 @@
     const targetOf = (root: string | null, file: string | null) =>
         openTarget(root, file, workspaces());
 
-    /** Open one file of oculus's config tree in a source tab. */
+    /** Open one file of oculus's config tree in a source tab through the folder that holds it. */
     function openFile(root: string | null, file: string | null): void {
         const target = targetOf(root, file);
         if (target !== null) openView('source', sourceTabState(target.root, target.path));
     }
 
-    /** Open oculus's file a line's Show Defaults names in a source tab, which cannot save it. */
-    function showDefaults(path: string): void {
+    /**
+     * Open a file of oculus's own `config/` folder through the read-only route over it, in a source
+     * tab that cannot save it: the file a line's Show Defaults names and the file of a row's Show
+     * File.
+     */
+    function showOculusFile(path: string): void {
         openView('source', sourceTabState(OCULUS_CONFIG_ROOT, path));
     }
 </script>
@@ -129,7 +136,7 @@
                                 glyph="open_preview"
                                 title={t('settings.show_defaults_tip', defaults)}
                                 compact
-                                onclick={() => showDefaults(defaults)}
+                                onclick={() => showOculusFile(defaults)}
                             />
                         {/if}
                     </div>
@@ -159,6 +166,13 @@
                                 <div class="file" data-file={row.file}>
                                     <div class="file-head">
                                         <span class="file-path">{row.file}</span>
+                                        <ToolButton
+                                            label={t('settings.show_file')}
+                                            glyph="open_preview"
+                                            title={t('settings.show_file_tip', row.file)}
+                                            compact
+                                            onclick={() => showOculusFile(row.file)}
+                                        />
                                         {#if targetOf(OCULUS_CONFIG_ROOT, row.file) !== null}
                                             <ToolButton
                                                 label={t('views.open_source')}
@@ -168,10 +182,6 @@
                                                 onclick={() =>
                                                     openFile(OCULUS_CONFIG_ROOT, row.file)}
                                             />
-                                        {:else}
-                                            <span class="unavailable">
-                                                {t('workbench.settings_open_unavailable', row.file)}
-                                            </span>
                                         {/if}
                                     </div>
                                     {#if row.help !== ''}
@@ -243,11 +253,6 @@
 
     .file .about {
         padding: 0;
-    }
-
-    .unavailable {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
     }
 
     .note {

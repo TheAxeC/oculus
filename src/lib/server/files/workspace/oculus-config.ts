@@ -1,9 +1,9 @@
-// Layer 2, server. The read-only view of oculus's own `config/` folder that the Settings view
-// reads its defaults from: the text of one file and the listing of one folder (`catalogs/`,
-// `schemas/`, `text/`), under no workspace folder and under no other path than that folder's.
-// Nothing is written here and a path that leaves the folder is refused. A workspace that lists the
-// folder holding the config as one of its folders reaches the same files through the Files view
-// like any other file.
+// Layer 2, server. The read-only view of oculus's own `config/` folder that the Settings view reads
+// its defaults and its catalog, schema and text files from (Show Defaults and Show File): the text
+// of one file and the listing of one folder (`catalogs/`, `schemas/`, `text/`), under no workspace
+// folder and under no other path than that folder's. Nothing is written here and a path that leaves
+// the folder is refused. A workspace that lists the folder holding the config as one of its folders
+// reaches the same files through the Files view like any other file.
 
 import { json } from '@sveltejs/kit';
 import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
