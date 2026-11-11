@@ -48,8 +48,8 @@ Each button on the rail at the left opens a page:
 
 Download the archive for your machine from the [releases page](https://github.com/TheAxeC/oculus/releases):
 
-- `oculus-1.0.0-darwin-arm64.zip` is the macOS app for Apple silicon. Unzip it and open `oculus.app`. The app is signed ad hoc and not notarized, so macOS refuses to open it the first time: open System Settings, Privacy and Security, and choose Open Anyway beside the message about oculus.
-- `oculus-1.0.0-linux-x64.tar.gz` and `oculus-1.0.0-linux-arm64.tar.gz` are the Linux app. Unpack the archive and run the `oculus` program in the folder `oculus-linux-<arch>`.
+- `oculus-1.1.0-darwin-arm64.zip` is the macOS app for Apple silicon. Unzip it and open `oculus.app`. The app is signed ad hoc and not notarized, so macOS refuses to open it the first time: open System Settings, Privacy and Security, and choose Open Anyway beside the message about oculus.
+- `oculus-1.1.0-linux-x64.tar.gz` and `oculus-1.1.0-linux-arm64.tar.gz` are the Linux app. Unpack the archive and run the `oculus` program in the folder `oculus-linux-<arch>`.
 
 The app carries its own runtime, so it needs no Node. It uses these programs when they are on the PATH:
 

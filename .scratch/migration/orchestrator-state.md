@@ -171,8 +171,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
-- Open item 755 (2026-11-11, the commit of the v1.1.0 preparation). The whole suite ran green once in the gate at 7ef6c1421 with nothing else running (`npm run test:landing`, "test:landing: 580.0 s; every command passed"), and `npm run app:release` built `oculus-1.1.0-darwin-arm64.zip`, `oculus-1.1.0-linux-arm64.tar.gz` and `oculus-1.1.0-linux-x64.tar.gz` in the gate with the preparation applied, copied into main's `release/` (each app's `package.json` reads 1.1.0; `codesign --verify --deep` passes on the macOS app). The preparation is on main, uncommitted: the version 1.1.0 in `package.json` and `package-lock.json`, the archive names at `README.md:51-52`, and the release notes `agents/release-1.1.0-notes.md`. Options: (a) commit them as "Prepare the 1.1.0 release", as 8e334774d did for 1.0.0. Pros: main names the version the archives carry. Cons: none found. (b) leave them uncommitted. Pros: none. Cons: main's version and README disagree with the archives, and the tag of 756 has no commit to point at. Recommended: (a); (b) is the lazy option.
-- Open item 756 (2026-11-11, the tag and the upload of v1.1.0). Pushing is on the ask list and done only on Axel's word. Options: (a) after 755 (a), tag `v1.1.0` at that commit, push main and the tag to origin, and make the GitHub Release v1.1.0 with the three archives and the notes of `agents/release-1.1.0-notes.md`, as for v1.0.0. Pros: the release the plan's last queue line names is published. Cons: it publishes to GitHub, which cannot be taken back once seen. (b) tag only, locally, with no push. Pros: nothing leaves the machine. Cons: the release stays unpublished. Recommended: (a); (b) is the lazy option.
 
 
 
@@ -187,6 +185,8 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 756 (2026-11-11, the tag and upload of v1.1.0), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 756" says, with the app in `~/Applications` replaced by the 1.1.0 build. The lazy option was (b).
+- Open item 755 (2026-11-11, the commit of the v1.1.0 preparation), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 755" says. The lazy option was (b).
 - Open item 754 (2026-11-11, how a terminal tab's bar keeps its height when its session links), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 754" says. The lazy option was (c).
 - Open item 753 (2026-11-11, the red whole suite before v1.1.0), closed by Axel the same day: (a), step O185, as `plan.md` Rulings "Open item 753" says; O184 and O185 are two steps; the release waits for an empty queue (ruling Release v1.1.0 queue empty).
 - Open item 752 (2026-11-10), closed by Axel 2026-11-11: (a), as `plan.md` Rulings "Open item 752" says; built at O181's landing. The lazy option was (c).
