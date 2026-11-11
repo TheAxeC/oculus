@@ -6071,3 +6071,5 @@ Builds on it: O162
 Builds on it: O170
 - 2026-11-08, O172's brief check: `src/lib/views/shared/card/Clamp.svelte` moves into a new folder `card/text/` beside the new `FieldMarkdown.svelte`, since `card/` is at its limit of ten items; nothing a user sees changes. Named in the next report.
 Builds on it: O172
+- 2026-11-11, O186's brief check: the read-only open of a Settings file row (Catalogs, Schemas, Texts) is a button of its own, `Show File`, tip `Open oculus's {0} in a tab that only reads it`, with Show Defaults' glyph and route, since Show Defaults' words "the values in force where you set none" are false of `schemas/cpp-schema.yml` and `schemas/deck-schema.yml`; the heading lines keep Show Defaults. Show Defaults' words on every row, false on two, was the lazy option. Named in the next report.
+Builds on it: O186

@@ -1,4 +1,5 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O186 (every file row of Settings opens its file): brief check running.
 
 Queued, in order (0 steps): none.
 
