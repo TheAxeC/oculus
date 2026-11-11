@@ -1,8 +1,8 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), brief checked, builder next.
+- O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), brief check running.
 
-Queued, in order (2 steps):
-- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), waits on Axel's ruling on open item 754.
-- O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), its /spec waits until Axel has ruled on open item 754; runs beside O184.
+Queued, in order (0 steps):
 - Release v1.1.0, only once every step is done and this queue is otherwise empty: the whole suite once green with nothing else running, then `npm run app:release`; the tag and the upload wait for Axel's word on the push.
 
 Owed looks: none.

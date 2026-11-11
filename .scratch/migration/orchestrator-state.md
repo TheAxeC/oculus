@@ -23,7 +23,12 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O184
+  landing: preparing
+  brief_check: "running: aa2f320938434f843"
+- step: O185
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -171,7 +176,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
-- Open item 754 (2026-11-11, step O184, how a terminal tab's bar keeps its height when its session links). **What the tree shows.** The bar is the Pane's `.viewbar` (`src/lib/ui/frame/Pane.svelte:216-227`): 6px of padding above and below and a 1px line under it. Its other tools are 20px: the font buttons are `compact` icon buttons (`TerminalFontTools.svelte`, `--header-action`, `tokens.css:198`), so the bar is 33px. Live and Transcript (`ShowSwitch.svelte`) are full text buttons, 12px words on a 16px line with 4px padding and a 1px border, 26px (`ToolButton.svelte:136-153`), so the bar is 39px once they show and the grid moves down 6px. **The choice.** (a) Live and Transcript drawn as 20px `compact` icon buttons with their glyphs (`terminal`, `chat`), the name in the tooltip, the one in force shown pressed, as the font buttons beside them. Pro: the bar is 33px in every state, the grid keeps its height, and the bar holds one kind of control. Con: the words Live and Transcript are no longer written on the bar; they are read from the tooltip and the glyph. (b) The words kept, the two drawn at 20px as `compact` buttons with glyph and word, no border, the one in force filled. Pro: the words stay and the bar is 33px. Con: a borderless button with words at 20px is a shape the bar's other controls do not have, and a word without a border reads less as a control. (c) The switches unchanged and the bar held at 39px for every terminal tab, with or without a session. Pro: the words and their border stay and nothing new is drawn. Con: every terminal tab, a shell with no agent included, gives 6px of its grid to an emptier bar. **Recommendation:** (a), as a judgment: the bar then holds one kind of control at one size, the grid loses nothing, and every icon action in oculus already names itself in its tooltip. (c) is the lazy option: one line of CSS that gives the height away instead of sizing the switch to the bar. In every option `docs/HELP.md:257` is changed to the Lock tooltip's words, "its box and its grids".
 
 
 
@@ -185,6 +189,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- Open item 754 (2026-11-11, how a terminal tab's bar keeps its height when its session links), closed by Axel the same day: (a), as `plan.md` Rulings "Open item 754" says. The lazy option was (c).
 - Open item 753 (2026-11-11, the red whole suite before v1.1.0), closed by Axel the same day: (a), step O185, as `plan.md` Rulings "Open item 753" says; O184 and O185 are two steps; the release waits for an empty queue (ruling Release v1.1.0 queue empty).
 - Open item 752 (2026-11-10), closed by Axel 2026-11-11: (a), as `plan.md` Rulings "Open item 752" says; built at O181's landing. The lazy option was (c).
 - Open item 750 (2026-11-10, the space under a running agent's terminal), closed by Axel the same day: (a), step O183, as `plan.md` Rulings "Open item 750" says.
