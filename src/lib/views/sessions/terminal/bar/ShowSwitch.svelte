@@ -1,7 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The Live and Transcript buttons on a Terminal tab's bar, drawn while
-    // the tab has a session to read. Each is a ToolButton of its own rather than a Segment, since
-    // Live is disabled while the session has no terminal and a Segment has no disabled item.
+    // the tab has a session to read. Each is an icon button as high as the font buttons beside
+    // them, so the two add no height to the bar's line when a session links. The name is the
+    // button's accessible name and begins its tooltip, ahead of what the button does, and the one
+    // in force is drawn pressed. Each is a ToolButton of its own rather than a Segment, since Live
+    // is disabled while the session has no terminal and a Segment has no disabled item.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
@@ -23,6 +26,7 @@
     label={t('sessions.terminal_show_live')}
     title={live ? t('sessions.terminal_show_live_tip') : t('sessions.terminal_show_live_none')}
     glyph={t('sessions.terminal_glyph')}
+    compact
     active={!reading}
     pressed={!reading}
     disabled={!live}
@@ -32,6 +36,7 @@
     label={t('sessions.view_transcript')}
     title={t('sessions.terminal_show_transcript_tip')}
     glyph={t('sessions.transcript_glyph')}
+    compact
     active={reading}
     pressed={reading}
     onclick={() => onchoose('transcript')}

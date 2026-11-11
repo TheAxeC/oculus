@@ -27,7 +27,7 @@ No case is one the brief's rules get wrong. Each case needs a page, so each was 
 | Item | State | Proof |
 | --- | --- | --- |
 | 1. Live and Transcript are `compact` icon buttons with their glyphs, `active`, `pressed`, `disabled={!live}` and `label` kept | DONE | `git diff src/lib/views/sessions/terminal/bar/ShowSwitch.svelte`: `+    compact` after `glyph={t('sessions.terminal_glyph')}` and after `glyph={t('sessions.transcript_glyph')}`; the other props unchanged |
-| 1. Head comment says what the two buttons are | DONE | `sed -n 2,7p` of the file: "Each is an icon button as high as the font buttons beside them, so the two add no height to the bar's line when a session links. The name is the button's accessible name and opens its tooltip, ahead of what the button does, and the one in force is drawn pressed." |
+| 1. Head comment says what the two buttons are | DONE | `sed -n 2,7p` of the file: "Each is an icon button as high as the font buttons beside them, so the two add no height to the bar's line when a session links. The name is the button's accessible name and begins its tooltip, ahead of what the button does, and the one in force is drawn pressed." (the word "begins", in place of "opens", fixed at landing) |
 | 2. The three tips in the Lock tooltip's form, keys kept | DONE | `git diff config/text/views/sessions/terminal.yml`: `terminal_show_live_tip: 'Live: show the terminal this session runs in'`, `terminal_show_live_none: 'Live: this session has no terminal to show'`, `terminal_show_transcript_tip: 'Transcript: read the turns of this session'` |
 | 3. HELP.md line 257 | DONE | `sed -n 257p docs/HELP.md`: "- Lock this tab keeps the tab's box and its grids from taking typing until it is unlocked, and holds after a reload." |
 | Verify 1: `npm run diagrams && npm run test:quick`, run once | DONE | last line "test:quick: 77.5 s; every command passed" (lines quoted below) |
@@ -36,7 +36,7 @@ No case is one the brief's rules get wrong. Each case needs a page, so each was 
 | Verify 4: each case before and after | DONE | the first run above; after the change below |
 | Verify 5: new sentences against the prose rules | DONE | below |
 | Unused exports | DONE | `sh utils/unused-exports.sh > .agents/scratch/unused.txt` (exit 0), `diff` against `O184-base/unused-exports.txt`: no output, exit 0; no line added |
-| History words in the changed comment | DONE | `sed -n 2,6p ShowSwitch.svelte \| grep -niE "before\|used to\|no longer\|still\|always has been\|always had\|as before\|previously\|the step adds\|after this package lands"`: no hit, exit 1 |
+| History words in the changed comment | DONE | `sed -n 2,7p ShowSwitch.svelte \| grep -niE "before\|used to\|no longer\|still\|always has been\|always had\|as before\|previously\|the step adds\|after this package lands"`: no hit, exit 1 |
 
 The list's output (`env -u TMPDIR npm run test:quick`, after `npm run diagrams`):
 
@@ -106,6 +106,7 @@ No scratch file is left: `.agents/scratch/` was made for the unused-exports outp
 | Live and Transcript on a Terminal tab's bar | text buttons with glyph and word, 26px high (22px under a terminal palette with brackets, 30px at text scale 1.25), bordered | icon buttons with glyph only, 20px (25px at 1.25), no border, as the font buttons |
 | Bar height when a session links | 33px to 39px, the grid moving 6px down | 33px with and without the switches |
 | The one in force | accent fill on a bordered button | accent fill on the 20px icon box (accent text with no fill under a terminal palette with brackets); Lock in the header shows pressed with the lighter `--accent-bg` (`ToolButton.svelte:245-251`), so the two pressed looks differ and the look judges them side by side |
+| Hover over the one not in force | the border turns accent (`ToolButton.svelte:203-205`) | the 20px box fills with `--chip` and the glyph goes to ink (`:181-184`), no border, as the font buttons |
 | Accessible name | from the word drawn in the button, no `aria-label` | `aria-label` "Live" and "Transcript"; the tooltip text as description |
 | Live tooltip | "Show the terminal this session runs in" | "Live: show the terminal this session runs in" |
 | Disabled Live tooltip | "This session has no terminal to show" | "Live: this session has no terminal to show" |
@@ -122,6 +123,7 @@ Nothing that changes the work. The brief's case 10 names `tab-session.svelte.ts:
 - `Terminal.svelte:27` ("the bar's switch (bar/ShowSwitch.svelte) sets `showing`"): still true.
 - `SessionTools.svelte:4`: still true, and agrees with the new HELP line.
 - `tab-session.svelte.ts:88` ("Move the switch: ..."): still true.
+- `TranscriptBody.svelte:9,16`, `tab-session.svelte.ts:7,73`, `terminal-tabs.ts:79`, `TerminalBar.svelte:54` and `tests/state/sessions/terminal/reading-tab.test.ts:1,6`: still true, none describes the switches as text buttons or gives a height (read at landing, as the review read them).
 - `docs/HELP.md:257`: rewritten, as ruled.
 - The grep `grep -rn "Live and Transcript\|Live or Transcript\|ShowSwitch\|show switch\|the switch" src docs README.md config --exclude=local.yml` finds no other place that describes the switches as text buttons or by height.
 

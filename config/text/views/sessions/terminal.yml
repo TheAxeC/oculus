@@ -107,9 +107,9 @@ text:
         terminal_lock_tip: 'Lock this tab: its box and its grids take no typing until it is unlocked'
         terminal_unlock: Unlock this tab
         terminal_show_live: Live
-        terminal_show_live_tip: Show the terminal this session runs in
-        terminal_show_live_none: This session has no terminal to show
-        terminal_show_transcript_tip: Read the turns of this session
+        terminal_show_live_tip: 'Live: show the terminal this session runs in'
+        terminal_show_live_none: 'Live: this session has no terminal to show'
+        terminal_show_transcript_tip: 'Transcript: read the turns of this session'
         paste_confirm:
             one: Paste {0} line into the terminal?
             other: Paste {0} lines into the terminal?

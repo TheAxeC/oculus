@@ -254,7 +254,7 @@ Terminals running Claude, Codex or a shell, inside tmux, so they survive a serve
 - A start from a task's `agent` button runs the task's text only after Approve and Start, kept in the approvals file. A changed text asks again.
 - An agent typed in a shell terminal is detected from the process table within five seconds.
 - Each pane of a tmux session you started yourself is a terminal while Claude or Codex runs in it. Attach to Session takes it in, and closing its tab leaves the tmux session running.
-- Lock this tab keeps the tab's boxes and grids from taking typing until it is unlocked, and holds after a reload.
+- Lock this tab keeps the tab's box and its grids from taking typing until it is unlocked, and holds after a reload.
 - A terminal starts with git's credential settings for the git hosts you signed in to.
 - Closing a tab, pane or page ends its terminals, asking when one runs a program. Moving and reloading keep them running.
 

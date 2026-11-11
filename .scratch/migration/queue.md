@@ -1,5 +1,4 @@
-In flight (2 of 6 slots in use):
-- O184 (a terminal tab's bar keeps its height when its session links, and `docs/HELP.md:257` says the Lock tooltip's words), reviewed; its four findings are fixed at landing; landing next, with the look.
+In flight (1 of 6 slots in use):
 - O185 (the whole suite runs green: `config-key.test.ts` off the shared temp folder, the 5 rows that time out under the suite's load), builder running.
 
 Queued, in order (0 steps):
@@ -8,6 +7,7 @@ Queued, in order (0 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O184 (a terminal tab's bar keeps its height when its session links), 2026-11-11.
 - O182 (every tree indents as the Files view), 2026-11-11, a5852eb8a.
 - O183 (a running agent's terminal takes the whole height of the Live view), 2026-11-11, 72df8aee1.
 - O181 (the user's setup and data as config keys), 2026-11-11, b952fa485; hub 375697686.
