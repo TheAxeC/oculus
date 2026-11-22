@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step): O189 (the terminal's locale and its colours); after it lands, `~/Applications/oculus.app` is built again and replaced (ruling App rebuild after O189), with no GitHub release.
 
 Owed looks: none.
 
