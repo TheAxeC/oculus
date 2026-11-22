@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use): O189, brief check.
+In flight (1 of 6 slots in use): O189, building.
 
 Queued, in order (0 steps): none. After O189 lands, `~/Applications/oculus.app` is built again and replaced (ruling App rebuild after O189), with no GitHub release.
 
-Owed looks: none.
+Owed looks: O189 (at its landing).
 
 Landed, newest first:
 - `~/Applications/oculus.app` replaced by the build of O188 (dce9afce7), 2026-11-22, no release.

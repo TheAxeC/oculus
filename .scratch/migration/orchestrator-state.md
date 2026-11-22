@@ -25,7 +25,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O189
-  landing: preparing
+  base: 7fd63e7a2
+  worktree: .agents/worktrees/migration-O189
+  executor: agent
+  worker: ordo-high on opus (claude-opus-5-5)
+  session_id: aeba585072c7eec9c (claude-opus-5-5, served model read from the runner's record)
+  launched: 2026-11-23, on Axel's rulings 770 to 774
+  report: agents/reviews/O189-report.md
+  round: 0
+  landing: not-started
   brief_check: agents/reviews/O189-brief-check.md (a4d05a14db5bd64bf, claude-opus-5-5, 284488 tokens, 60 tool uses, 528 s)
 ```
 
@@ -900,6 +908,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-23 (O189 building). Builder aeba585072c7eec9c (ordo-high, claude-opus-5-5) launched in `.agents/worktrees/migration-O189` from base 7fd63e7a2; the brief check's findings are closed in the brief. Next: its report, the whole diff read, `/refute`, `/land` with the look, then the app built again and replaced. Open items: none.
 - 2026-11-23 (O189 booked). Rulings 770 (a), 771 (a) and 772 are booked; step O189 is next, through `/spec`. After it lands, `~/Applications/oculus.app` is built again and replaced, with no release (ruling App rebuild after O189). In flight (0 of 6): none. Open items: none; 773 and 774, at which `/spec` stopped O189, are ruled (a) and (a), and `/spec` runs again.
 - 2026-11-22 (app replaced after O188). `~/Applications/oculus.app` is the build of dce9afce7 (`npm run app:release` in the gate, darwin arm64 only, version 1.1.0): the running app (pid 90218) closed with `kill -TERM`, 8790 free, the old app in the Trash as `oculus-1.1.0-before-O188.app`, `codesign --verify --deep` passes, the copy equals the archive's (`diff -rq`), the workers' sources are in it, and its server run from the archive's copy with a scratch HOME picked up a new transcript through the scan worker. The app was left closed. Nothing was tagged, pushed or released; the archive stands in the gate's `release/`. In flight (0 of 6): none. Next: nothing queued. Open items: none.
 - 2026-11-22 (O188 landed). O188 is on main (booked under O188 in `plan.md`, `agents/reviews/O188-landing.md`); main's staged diff equals the gate's; no whole `test:quick` run was green, each failing file passed in the rerun; the look taken on scratch servers on 8797 from the gate, stopped after. In flight (0 of 6): none. Next: `~/Applications/oculus.app` built from this commit and replaced, the running app closed first, no release (ruling App rebuild after O188). Open items: none.
