@@ -1,6 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O188 (the server thread kept free, slides laid out ahead, the command center's emails unfolded).
 
 Owed looks: none.
 
