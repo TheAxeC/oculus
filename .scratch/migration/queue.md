@@ -1,9 +1,8 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O188, building.
 
-Queued, in order (1 step):
-- O188 (the server thread kept free, slides laid out ahead, the command center's emails unfolded).
+Queued, in order (0 steps): none.
 
-Owed looks: none.
+Owed looks: O188 (at its landing).
 
 Landed, newest first:
 - Release v1.1.0, 2026-11-11, made again at 3b45e3893 to carry O187 (before at e34e44fb5 and 24f324bdc), tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
