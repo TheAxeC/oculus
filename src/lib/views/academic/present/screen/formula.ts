@@ -1,9 +1,9 @@
 // Layer 3, view helper. The fit of a slide's typeset formula to its card: a formula wider than the
 // card's content width is drawn smaller until it fits (`equationScale`), measured at its own size
 // first. The card runs it when it is drawn and when its width changes (parts/Equation.svelte), and
-// the slide's layout runs it at each size it tries (Slide.svelte), so the slide's text is measured
-// with each formula fitted to the box the layout gives it. It lives apart from the card's
-// component so that both can import it.
+// the slide's layout runs it at each size it tries and where it puts on a kept layout
+// (layout/search.svelte.ts), so the slide's text is measured with each formula fitted to the box
+// the layout gives it. It lives apart from the card's component so that both can import it.
 
 import { equationScale } from '$lib/state/life/present';
 

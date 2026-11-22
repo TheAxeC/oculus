@@ -244,6 +244,91 @@ export type SessionsPayload = {
     terminals?: Terminal[];
 };
 
+/** Where grouping filed one session: what a grouped session adds to its record, and its title. */
+type PlacedSession = Pick<
+    GroupedSession,
+    'path' | 'workspace' | 'area' | 'secondaryAreas' | 'kind' | 'pinned' | 'title'
+> & { top: boolean };
+
+/**
+ * One workspace of the tree with its sessions as their placements alone. An area and a workspace
+ * carry no last activity, which is the newest of the sessions under it.
+ */
+export type PlacedWorkspace = Omit<Workspace, 'lastActivity' | 'areas'> & {
+    areas: (Omit<Area, 'lastActivity' | 'sessions'> & { sessions: PlacedSession[] })[];
+};
+
+/**
+ * What a message of the `sessions` channel carries in place of the whole payload for a page that
+ * holds one: what changed since the message of version `base`, the one the page was last sent. A
+ * record is named by its path, since two stores can hold one id.
+ */
+export type SessionsDifference = {
+    base: number;
+    /** The path of every record, in the payload's order. */
+    order: string[];
+    /** The records that are new or differ, whole. */
+    records: SessionRecord[];
+    /** The tree as placements, when it differs. */
+    placed?: PlacedWorkspace[];
+    /** The terminals, when they differ. */
+    terminals?: Terminal[];
+};
+
+/** The newest last activity among the items, or null when none has one. */
+export function newestActivity(items: { lastActivity?: string | null }[]): string | null {
+    let best = '';
+    for (const { lastActivity } of items) {
+        if (typeof lastActivity === 'string' && lastActivity > best) best = lastActivity;
+    }
+    return best || null;
+}
+
+/** The placements of a payload's tree. */
+export function placedOf(workspaces: Workspace[]): PlacedWorkspace[] {
+    return workspaces.map(({ key, name, areas }) => ({
+        key,
+        name,
+        areas: areas.map((area) => ({
+            key: area.key,
+            short: area.short,
+            full: area.full,
+            known: area.known,
+            sessions: area.sessions.map((session: GroupedSession & { top?: boolean }) => ({
+                path: session.path,
+                workspace: session.workspace,
+                area: session.area,
+                secondaryAreas: session.secondaryAreas,
+                kind: session.kind,
+                pinned: session.pinned,
+                top: session.top === true,
+                title: session.title
+            }))
+        }))
+    }));
+}
+
+/**
+ * The tree of a payload, joined from its records and the placements: each session is its record
+ * with its placement on it, and each area and workspace has the newest activity of its sessions, as
+ * server/sessions/group.ts builds them. A placement whose record is not among the records is left
+ * out. Both ends of the `sessions` channel join by this function, so a page's tree is the server's.
+ */
+export function joinSessions(records: SessionRecord[], placed: PlacedWorkspace[]): Workspace[] {
+    const byPath = new Map(records.map((record) => [record.path, record]));
+    return placed.map(({ key, name, areas }) => {
+        const joined: Area[] = areas.map(({ key: area, short, full, known, sessions }) => {
+            const listed = sessions.flatMap(({ path, ...place }) => {
+                const record = byPath.get(path);
+                return record === undefined ? [] : [{ ...record, ...place }];
+            });
+            const lastActivity = newestActivity(listed);
+            return { key: area, short, full, known, lastActivity, sessions: listed };
+        });
+        return { key, name, lastActivity: newestActivity(joined), areas: joined };
+    });
+}
+
 // ------------------------------------------------------------------ git
 // The read-only git state of a workspace, as server/core/git/state.ts produces it and the `git`
 // channel carries it. JSON-safe like everything above.

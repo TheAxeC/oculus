@@ -16,9 +16,9 @@
     // (views/shared/card/record/RecordCard.svelte), with its strip, its menu with the Add run and a
     // foot of the portfolio's first projects; its actions write nothing.
     //
-    // The search and the form of the chips are local, since they mean nothing once the samples have
-    // left the page. `reset` is exported, and the section's Reset, which stands in its heading,
-    // calls it.
+    // The search, the form of the chips and the fold of the Ticker's sample row that folds are
+    // local, since they mean nothing once the samples have left the page. `reset` is exported, and
+    // the section's Reset, which stands in its heading, calls it.
     //
     // The sample data is the config's own vocabulary: the Chips and the Tags sections draw every
     // word of `stages`, `forms` and `chips`, grouped by its list in the config's order, and the
@@ -41,6 +41,7 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import FoldControl from '$lib/ui/controls/heads/FoldControl.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import SubHead from '$lib/ui/controls/heads/SubHead.svelte';
     import Meter from '$lib/ui/display/meters/Meter.svelte';
@@ -51,6 +52,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
+    import { rowWords, type TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -166,6 +168,31 @@
     let form = $state('both');
     let query = $state('');
     let asking = $state(false);
+    /** Whether the Ticker's row that folds is open. */
+    let unfolded = $state(false);
+
+    /** The Ticker's rows: one per hue, then a row that folds the first chips. */
+    const tickerRows = $derived.by((): TickerRow[] => [
+        ...leading.map((row) => ({
+            id: row.tone,
+            glyph: t('gallery.empty_glyph'),
+            label: row.chip,
+            tail: t('gallery.ticker_tail'),
+            tone: row.tone
+        })),
+        {
+            id: 'fold',
+            glyph: t('gallery.empty_glyph'),
+            label: t('gallery.group_chips'),
+            fold: unfolded
+        },
+        ...(unfolded ? chips.slice(0, 3) : []).map((chip) => ({
+            id: `under:${chip.key}`,
+            glyph: chip.glyph,
+            label: chip.label,
+            under: true
+        }))
+    ]);
 
     const shown = $derived(
         rows.filter((row) => {
@@ -178,10 +205,11 @@
     /** The largest count among the rows the Meters draw, which a full meter stands for. */
     const most = $derived(leading.reduce((top, row) => Math.max(top, row.count), 1));
 
-    /** Put the search and the form of the chips back. */
+    /** Put the search, the form of the chips and the Ticker's fold back. */
     export function reset(): void {
         form = 'both';
         query = '';
+        unfolded = false;
     }
 </script>
 
@@ -207,6 +235,14 @@
     {:else}
         {cellText(row[column.key])}
     {/if}
+{/snippet}
+
+{#snippet folder(row: TickerRow)}
+    <FoldControl
+        name={rowWords(row)}
+        open={row.fold === true}
+        ontoggle={() => (unfolded = !unfolded)}
+    />
 {/snippet}
 
 <!-- The record card's text. -->
@@ -367,15 +403,7 @@
         ontoggle={() => fold.toggle('ticker')}
     >
         <Surface>
-            <Ticker
-                rows={leading.map((row) => ({
-                    id: row.tone,
-                    glyph: t('gallery.empty_glyph'),
-                    label: row.chip,
-                    tail: t('gallery.ticker_tail'),
-                    tone: row.tone
-                }))}
-            />
+            <Ticker rows={tickerRows} {folder} />
         </Surface>
     </GroupHead>
 

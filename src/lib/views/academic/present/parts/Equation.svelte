@@ -5,7 +5,7 @@
     // one mistyped line costs its own slide. A formula wider than the card is drawn smaller until
     // it fits (screen/formula.ts), inside the box the slide's layout gives the text and at the size
     // of the slide's type scale: the card fits it when it is drawn and when its width changes, and
-    // the slide's layout (Slide.svelte) fits it at each size it tries.
+    // the slide's layout (screen/layout/search.svelte.ts) fits it at each size it tries.
 
     import type { Attachment } from 'svelte/attachments';
     import { tex } from '../markup';

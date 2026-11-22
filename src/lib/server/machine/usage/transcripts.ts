@@ -1,14 +1,20 @@
-// Layer 2, server. Stream the last seven days of Claude transcripts and Codex rollouts into
+// Layer 2, server. Fold the last seven days of Claude transcripts and Codex rollouts into
 // day-and-model token rows. A day is the machine's calendar day, data/helpers/dates.ts's localDate,
 // since the table answers "what did today cost".
+//
+// A file is read from the byte after its last complete line, with what its fold carried: the model
+// and the running totals of a Codex rollout, and its rows. It is read from zero when it shrank,
+// when its inode changed, and when its modification time moved with its size as it was; a file
+// rewritten in place that grew is read as one that was appended to, as the sessions scan reads it.
+// A last line with no newline is a record still being written and waits for the next fold. The
+// fold's state is in memory, so the first fold of a process reads the week's files whole.
 
-import { createReadStream, realpathSync } from 'node:fs';
-import { createInterface } from 'node:readline';
+import { realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import type { UsageAccountConfig, UsageDay, UsageTool } from '../../../data/model/index.ts';
 import { localDate } from '../../../data/helpers/dates.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { foldYielding } from '../../sessions/stores/transcripts.ts';
 import { claudeTranscripts, codexRollouts, type TranscriptFile } from '../../transcripts/stores.ts';
 import {
     claudeUsage,
@@ -20,7 +26,25 @@ import {
 export const USAGE_DAYS = 7;
 
 type Found = TranscriptFile & { tool: UsageTool; account: string };
-type Cached = { size: number; mtimeMs: number; rows: UsageDay[] };
+
+/** What the fold of one file holds between two folds. */
+type HeldFile = {
+    ino: number;
+    size: number;
+    mtimeMs: number;
+    /** The byte after the last complete line read. */
+    offset: number;
+    /** The model the last `turn_context` of a Codex rollout named. */
+    model: string;
+    /** The lifetime totals of a Codex rollout as last read. */
+    totals: Partial<UsageTotals>;
+    /** The file's rows, which carry no account: the label is put on as a fold answers. */
+    rows: Map<string, UsageDay>;
+};
+
+/** One fold as its thread is asked for it (fold-worker.ts). */
+export type FoldAsk = { accounts: UsageAccountConfig[]; now: number };
+
 export type UsageFold = {
     rows: UsageDay[];
     files: number;
@@ -59,12 +83,12 @@ function add(rows: Map<string, UsageDay>, row: UsageDay): void {
     held.cacheCreation += row.cacheCreation;
 }
 
-function row(event: UsageEvent, tool: UsageTool, account: string, model: string): UsageDay | null {
+function row(event: UsageEvent, tool: UsageTool, model: string): UsageDay | null {
     const day = dayOf(event.stamp);
     if (day === '' || model === '') return null;
     return {
         tool,
-        account,
+        account: '',
         day,
         model,
         input: event.input,
@@ -82,40 +106,37 @@ const turnContextShape = z.object({
         .catch(undefined)
 });
 
-async function foldFile(file: Found): Promise<UsageDay[]> {
-    const rows = new Map<string, UsageDay>();
-    let model = '';
-    const previous: Partial<UsageTotals> = {};
-    const input = createReadStream(file.path, { encoding: 'utf8' });
-    const lines = createInterface({ input, crlfDelay: Infinity });
-    try {
-        for await (const line of lines) {
-            if (line.trim() === '') continue;
-            let value: unknown;
-            try {
-                value = JSON.parse(line) as unknown;
-            } catch {
-                continue;
-            }
-            if (!isMap(value)) continue;
-            if (file.tool === 'codex' && value.type === 'turn_context') {
-                const named = turnContextShape.safeParse(value);
-                if (named.success && named.data.payload?.model) model = named.data.payload.model;
-            }
-            const event = file.tool === 'claude' ? claudeUsage(value) : codexUsage(value, previous);
-            if (event === null) continue;
-            const usageRow = row(
-                event,
-                file.tool,
-                file.account,
-                file.tool === 'claude' ? event.model : model
-            );
-            if (usageRow !== null) add(rows, usageRow);
-        }
-    } catch {
-        return [];
+/**
+ * What a fold reads a file on from: what is held of it, itself when the file did not move and as
+ * what was read of it when the file grew. Nothing is read of a file nothing is held of, and of one
+ * that is another file, that shrank, or that was written in place at its size.
+ */
+function readOn({ ino, size, mtimeMs }: Found, held: HeldFile | undefined): HeldFile {
+    if (held?.ino === ino) {
+        if (size === held.size && mtimeMs === held.mtimeMs) return held;
+        if (size > held.size) return { ...held, size, mtimeMs };
     }
-    return [...rows.values()];
+    return { ino, size, mtimeMs, offset: 0, model: '', totals: {}, rows: new Map() };
+}
+
+/** Fold the lines of a file from the byte held of it into what is held, up to its listed size. */
+async function foldFile(
+    file: Found,
+    held: HeldFile,
+    ended: AbortSignal | undefined
+): Promise<void> {
+    const apply = (value: Record<string, unknown>): void => {
+        if (file.tool === 'codex' && value.type === 'turn_context') {
+            const named = turnContextShape.safeParse(value);
+            if (named.success && named.data.payload?.model) held.model = named.data.payload.model;
+        }
+        const event = file.tool === 'claude' ? claudeUsage(value) : codexUsage(value, held.totals);
+        if (event === null) return;
+        const usageRow = row(event, file.tool, file.tool === 'claude' ? event.model : held.model);
+        if (usageRow !== null) add(held.rows, usageRow);
+    };
+    const options = { until: file.size, signal: ended };
+    held.offset += await foldYielding(file.path, held.offset, apply, options);
 }
 
 /** What joins the labels of the accounts that share one store into the label its rows carry. */
@@ -168,28 +189,38 @@ function files(accounts: UsageAccountConfig[], now: number): Found[] {
     return found.sort((left, right) => left.path.localeCompare(right.path));
 }
 
-/** One reusable in-memory size-and-mtime cache. Unchanged files are never opened again. */
+/**
+ * The fold of one owner's folds: what it holds of each file is read on from at the next, so a file
+ * with nothing new is not opened.
+ */
 export class UsageTranscriptFold {
-    #cache = new Map<string, Cached>();
+    #held = new Map<string, HeldFile>();
 
-    async fold(accounts: UsageAccountConfig[], now: number = Date.now()): Promise<UsageFold> {
+    /** The rows of the accounts' transcripts at `now`; `ended` ends the reads where they are. */
+    async fold(
+        accounts: UsageAccountConfig[],
+        now: number = Date.now(),
+        ended?: AbortSignal
+    ): Promise<UsageFold> {
         const found = files(accounts, now);
         const current = new Set(found.map((file) => file.path));
-        for (const path of this.#cache.keys()) if (!current.has(path)) this.#cache.delete(path);
+        for (const path of this.#held.keys()) if (!current.has(path)) this.#held.delete(path);
         const rows = new Map<string, UsageDay>();
         let readFiles = 0;
         let readBytes = 0;
         for (const file of found) {
-            let held = this.#cache.get(file.path);
-            if (held?.size !== file.size || held.mtimeMs !== file.mtimeMs) {
-                held = { size: file.size, mtimeMs: file.mtimeMs, rows: await foldFile(file) };
-                this.#cache.set(file.path, held);
+            if (ended?.aborted === true) break;
+            const before = this.#held.get(file.path);
+            const held = readOn(file, before);
+            if (held !== before) {
+                this.#held.set(file.path, held);
                 readFiles += 1;
-                readBytes += file.size;
+                readBytes += file.size - held.offset;
+                await foldFile(file, held, ended);
             }
-            for (const row of held.rows) {
+            for (const row of held.rows.values()) {
                 if (new Date(`${row.day}T00:00:00`).getTime() >= dayStart(now))
-                    add(rows, { ...row });
+                    add(rows, { ...row, account: file.account });
             }
         }
         return {

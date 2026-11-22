@@ -21,10 +21,10 @@
 // config push, so a root that appears later is watched from then on.
 //
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
-// hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions` and
-// `config` channels, so the watchers meet on the socket protocol and none imports another. A
-// subscription is answered with the channel's current message, so a git watcher started after the
-// first scan reads the workspaces immediately.
+// hub rather than from the sessions watcher: it reads the `sessions`, `config` and `portfolio`
+// channels, so the watchers meet on the hub and none imports another. A reader is handed each
+// channel's current message as it starts, so a git watcher started after the first scan reads the
+// workspaces immediately.
 //
 // A configured root holds repositories below it as well as, when it is one, itself (a `~/workspace`
 // of clones, a monorepo with repositories inside). Every folder down to `repository_scan_depth`
@@ -98,7 +98,7 @@ import type {
     Message,
     SessionsPayload
 } from '../../../data/model/index.ts';
-import type { Hub, Sink } from '../../core/channels.ts';
+import type { Hub } from '../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../core/files/file-poll.ts';
 import { readState, type FetchFailures, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
@@ -758,39 +758,26 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
         if (reads.length > 0) void firstReads(reads);
     }
 
-    // The sink is this watcher's own end of the `sessions` channel. It sends nothing back and is
-    // never closed by the hub, so `close` below is what removes it.
-    const sink: Sink = {
-        send: (message: string) => {
-            try {
-                const held = JSON.parse(message) as Message;
-                if (held.channel === 'sessions') {
-                    named = rootsOf(held.payload as SessionsPayload);
-                    follow();
-                }
-                // A portfolio push is how a repository cloned for a project reaches the channel:
-                // the folders the projects clone into are read again, and only those.
-                if (held.channel === 'portfolio') {
-                    cloned = clonedOf();
-                    follow();
-                }
-                // A config push is how a changed configuration reaches this watcher: the roots
-                // option reads the workspace as it is now, so reading it again and following is the
-                // whole work. A sessions push keeps the copy: it says nothing about config. The
-                // workspaces are said to have moved too, since the folders of the workspace are
-                // what the file browser serves.
-                if (held.channel === 'config') {
-                    readRoots();
-                    follow();
-                    announceWorkspaces();
-                }
-            } catch (error) {
-                console.error(`git watch: unreadable message: ${reason(error)}`);
-            }
-            return Promise.resolve();
-        },
-        close: () => {
-            // The probe holds no handle, so closing it frees nothing.
+    /** This watcher's reader of the hub, which `close` below takes off. */
+    const took = (message: Message): void => {
+        if (message.channel === 'sessions') {
+            named = rootsOf(message.payload as SessionsPayload);
+            follow();
+        }
+        // A portfolio push is how a repository cloned for a project reaches the channel: the
+        // folders the projects clone into are read again, and only those.
+        if (message.channel === 'portfolio') {
+            cloned = clonedOf();
+            follow();
+        }
+        // A config push is how a changed configuration reaches this watcher: the roots option reads
+        // the workspace as it is now, so reading it again and following is the whole work. A
+        // sessions push keeps the copy: it says nothing about config. The workspaces are said to
+        // have moved too, since the folders of the workspace are what the file browser serves.
+        if (message.channel === 'config') {
+            readRoots();
+            follow();
+            announceWorkspaces();
         }
     };
     // The folders are read again when the open workspace moves, so a folder added by the page or by
@@ -817,7 +804,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
         readRoots();
         follow();
     }
-    hub.subscribe(sink, ['sessions', 'config', 'portfolio']);
+    const stopReading = hub.read(['sessions', 'config', 'portfolio'], took);
 
     return {
         refresh(root: string): Promise<void> {
@@ -827,7 +814,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
         },
         close(): void {
             closed = true;
-            hub.remove(sink);
+            stopReading();
             unfollow?.();
             unfollow = null;
             for (const root of [...handles.keys()]) drop(root);

@@ -1,13 +1,14 @@
-// Layer 3, view helper. What the slide's layout (Slide.svelte) reads off a slide as drawn: the
-// figures whose image is drawn and the box each is drawn in, what an image's padding adds to it,
-// the least width of a figure's box its words need, the gap between two figures of a block, where
-// the room for a Markdown image starts under the heading, and every formula fitted to its box.
-// Each is a read of the document the layout calls between two of its own draws, at each factor it
-// tries; they live apart from the component so the component holds the search and the state, and
+// Layer 3, view helper. What a slide's search (search.svelte.ts) reads off a slide as drawn: the
+// figures whose image is drawn and the box each is drawn in, the state of each of its images, what
+// an image's padding adds to it, the least width of a figure's box its words need, the gap between
+// two figures of a block, where the room for a Markdown image starts under the heading, and every
+// formula fitted to its box. Each is a read of the document the search calls between two of its own
+// draws, at each factor it tries; they live apart from the search so that it holds the state and
 // these the measures. A length is answered as a fraction of the frame's width (`across`, the
-// frame's drawn width), the unit the layout works in (screen/slide-layout.ts).
+// frame's drawn width), the unit the layout works in (slide-layout.ts).
 
-import { fitFormula } from './formula';
+import type { LayoutInputs } from '$lib/state/life/present';
+import { fitFormula } from '../formula';
 
 /** One figure of the drawn slide: its index on the slide and its image. */
 type Drawn = { index: number; image: HTMLImageElement };
@@ -18,6 +19,26 @@ export function figuresIn(within: HTMLElement): Drawn[] {
         index: Number(image.dataset.figure),
         image
     }));
+}
+
+/**
+ * The images of a slide as a layout is made from them: the indexes of the figures that are drawn as
+ * words because their image failed, and each drawn image by its natural size, or that it failed or
+ * has not loaded.
+ */
+export function imagesOf(
+    within: HTMLElement,
+    failed: readonly number[]
+): Pick<LayoutInputs, 'images' | 'loaded'> {
+    const states = [...within.querySelectorAll('img')].map((image) => {
+        if (!image.complete) return 'waiting';
+        return image.naturalWidth === 0 ? 'failed' : `${image.naturalWidth} ${image.naturalHeight}`;
+    });
+    const broken = failed.length > 0 || states.includes('failed');
+    return {
+        images: JSON.stringify([failed.toSorted((one, other) => one - other), states]),
+        loaded: states.includes('waiting') ? 'waiting' : broken ? 'failed' : 'all'
+    };
 }
 
 /** The box a figure is drawn in: its panel with the caption and explanation, or its image. */

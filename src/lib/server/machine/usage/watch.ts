@@ -4,11 +4,12 @@
 //
 // The debounce is lodash's, with a quiet (USAGE_DEBOUNCE) and a maximum wait (USAGE_MAX_WAIT) so a
 // source written more often than the quiet is still rebuilt. It is handed a function that starts
-// the rebuild and returns at once, since lodash does not wait on a promise. `refresh` never runs
-// two rebuilds at once and never keeps more than one waiting: a refresh that arrives while a
-// rebuild is folding waits for it and starts one rebuild after it, and every refresh that arrives
-// while that one waits joins it. A fold slower than the maximum wait under steady writes therefore
-// leaves one rebuild queued, built from what is on disk when it starts, not one per maximum wait.
+// the rebuild and returns at once, since lodash does not wait on a promise. The fold of a rebuild
+// runs in a worker thread held here (machine/threads/held.ts), and the accounts are read and the
+// payload published on the server's thread when it has answered. At most one rebuild runs and one
+// waits, which every refresh in that time joins, so a fold slower than the maximum wait under
+// steady writes leaves one rebuild queued, built from what is on disk when it starts, not one per
+// maximum wait.
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -19,8 +20,10 @@ import type {
     UsageRefresher
 } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
+import { ownFolder } from '../lsp/servers.ts';
+import { HeldWorker } from '../threads/held.ts';
 import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
-import { UsageTranscriptFold } from './transcripts.ts';
+import type { FoldAsk, UsageFold } from './transcripts.ts';
 
 /** Milliseconds of quiet after the last change before one rebuild starts. */
 export const USAGE_DEBOUNCE = 500;
@@ -42,7 +45,6 @@ export type UsageWatchOptions = {
     usageRoot?: string;
     debounce?: number;
     now?: () => number;
-    fold?: UsageTranscriptFold;
     /** The hidden Claude session state attached to each Claude account in the payload. */
     refresherFor?: (account: UsageAccountConfig) => UsageRefresher;
     /** Milliseconds between clock-driven rebuilds; the debounce coalesces one with a file event. */
@@ -81,7 +83,6 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
     const interval = options.interval ?? USAGE_INTERVAL;
     const now = options.now ?? Date.now;
     const usageRoot = options.usageRoot ?? defaultUsageRoot();
-    const fold = options.fold ?? new UsageTranscriptFold();
     const watchFolder =
         options.watchFolder ??
         ((folder: string, changed: (filename: string | Buffer | null) => void) =>
@@ -89,55 +90,38 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
     let tiers = options.tiers;
     const handles: { close(): void }[] = [];
     let closed = false;
-    let running: Promise<void> | null = null;
-    let waiting: Promise<void> | null = null;
+    /** The moment of the rebuild that runs. */
+    let at = 0;
 
-    const build = async (): Promise<void> => {
-        if (closed) return;
-        const at = now();
-        const daily = await fold.fold(options.accounts, at);
-        const payload: UsagePayload = {
-            accounts: usageAccounts(options.accounts, tiers, usageRoot, at, options.refresherFor),
-            days: daily.rows,
-            builtAt: new Date(at).toISOString()
-        };
-        hub.publish('usage', payload);
-    };
-
-    /**
-     * Start a rebuild now, one microtask later, and note it as the one running until it ends. A
-     * rebuild that fails is logged here, so neither a caller nor the rebuild that waits on it is
-     * handed the failure.
-     */
-    const start = (): Promise<void> => {
-        const run = Promise.resolve()
-            .then(build)
-            .catch((error: unknown) => {
-                console.error(`usage watch: cannot rebuild: ${reason(error)}`);
-            });
-        running = run;
-        const ended = (): void => {
-            if (running === run) running = null;
-        };
-        run.then(ended, ended);
-        return run;
-    };
-
-    /**
-     * Rebuild now when none runs. While one runs, the one rebuild that waits for it, which every
-     * refresh in that time shares and which starts when the running one has ended.
-     */
-    const refresh = (): Promise<void> => {
-        if (running === null) return start();
-        if (waiting === null) {
-            const after = (): Promise<void> => {
-                waiting = null;
-                return start();
+    const folds = new HeldWorker<'fold', FoldAsk, UsageFold>({
+        file: join(ownFolder(), 'src/lib/server/machine/usage/fold-worker.ts'),
+        request: () => {
+            at = now();
+            return { accounts: options.accounts, now: at };
+        },
+        join: (waiting) => waiting,
+        answered: (daily) => {
+            const payload: UsagePayload = {
+                accounts: usageAccounts(
+                    options.accounts,
+                    tiers,
+                    usageRoot,
+                    at,
+                    options.refresherFor
+                ),
+                days: daily.rows,
+                builtAt: new Date(at).toISOString()
             };
-            waiting = running.then(after, after);
-        }
-        return waiting;
-    };
+            hub.publish('usage', payload);
+        },
+        failed: (why) => console.error(`usage watch: cannot rebuild: ${why}`)
+    });
+
+    /**
+     * Rebuild now when none runs, else with the one rebuild that waits for it; settles when that
+     * rebuild has ended, whichever way.
+     */
+    const refresh = (): Promise<void> => folds.ask('fold');
 
     const queued = debounced(
         () => {
@@ -201,6 +185,7 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
             offSessions();
             clearInterval(clock);
             queued.cancel();
+            folds.close();
             for (const handle of handles) handle.close();
             handles.length = 0;
         }

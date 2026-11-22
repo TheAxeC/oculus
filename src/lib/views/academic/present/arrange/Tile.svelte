@@ -9,12 +9,12 @@
     // a right-click.
     //
     // The tile's shape, place, title, menu and drag are drawn at once. Its slide is mounted at the
-    // tile's turn on the Overview's queue (screen/layout-turns.ts), flushed inside that turn so its
-    // cost counts against the queue's budget, and every layout of the slide waits on that queue
-    // too, so a deck of many tiles leaves the page answering while they arrive. Until then the shot
-    // holds the slide's shape, empty. A tile's turn does not depend on its being on screen, so
-    // every slide is drawn and measured once the queue has emptied. The shot is contained, so the
-    // forced layouts of one slide do not lay out the rest of the page.
+    // tile's turn on the Overview's queue (screen/layout/layout-turns.ts), flushed inside that turn
+    // so its cost counts against the queue's budget, and every layout of the slide waits on that
+    // queue too, so a deck of many tiles leaves the page answering while they arrive. Until then
+    // the shot holds the slide's shape, empty. A tile's turn does not depend on its being on
+    // screen, so every slide is drawn and measured once the queue has emptied. The shot is
+    // contained, so the forced layouts of one slide do not lay out the rest of the page.
     //
     // The drawn slide is inert: nothing inside it takes a press or the focus, so a press anywhere
     // on the tile is the tile's press, which shows the slide, and the keyboard presses the card's
@@ -31,7 +31,7 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Framed from '../screen/Framed.svelte';
-    import { layoutTurns } from '../screen/layout-turns';
+    import { layoutTurns } from '../screen/layout/layout-turns';
     import { t } from '$lib/state/shared/words/text';
     import { SLIDE_SHAPE, slideTone, type DeckSlide } from '$lib/state/life/present';
     import type { TileView } from '$lib/state/life/arrange';

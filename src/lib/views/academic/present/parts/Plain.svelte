@@ -6,12 +6,12 @@
     //
     // An image slide's image is its one figure (index 0): it is drawn in the room under the
     // heading at the box the slide's layout gives it (`place`, Slide.svelte and
-    // screen/slide-layout.ts), in container units of the frame, the whole room for its proportions
-    // and centred, its padding inside the box. It is not drawn until its image has loaded, and an
-    // image that fails to load is drawn as the missing-figure words, as an image the folder lacks
-    // is. Every size here is a fraction of the frame's width (`cqw`), as every size inside a slide
-    // is (themes/slide.css), and a hairline is a shadow or an outline one pixel wide, which takes
-    // no room.
+    // screen/layout/slide-layout.ts), in container units of the frame, the whole room for its
+    // proportions and centred, its padding inside the box. It is not drawn until its image has
+    // loaded, and an image that fails to load is drawn as the missing-figure words, as an image the
+    // folder lacks is. Every size here is a fraction of the frame's width (`cqw`), as every size
+    // inside a slide is (themes/slide.css), and a hairline is a shadow or an outline one pixel
+    // wide, which takes no room.
     //
     // Every other kind marks the box of its Markdown as its room (`data-room`), so an image in the
     // Markdown is held to the room under the slide's heading: under the heading drawn above the
@@ -20,8 +20,8 @@
     import Equation from './Equation.svelte';
     import Words from './Words.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { DECK_GAP, type DeckSlide } from '$lib/state/life/present';
-    import { cqw, type Box, type SlidePlace } from '../screen/slide-layout';
+    import { DECK_GAP, type Box, type DeckSlide } from '$lib/state/life/present';
+    import { cqw, type SlidePlace } from '../screen/layout/slide-layout';
 
     type Props = {
         row: Extract<DeckSlide, { kind: 'text' | 'image' | 'columns' | 'equation' | 'code' }>;

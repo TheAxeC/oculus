@@ -46,10 +46,16 @@ export function heldBack(
     return !(at.control && event.key === ' ');
 }
 
-/** Tab and Shift+Tab move through the slide's controls and wrap inside the box. */
+/**
+ * Tab and Shift+Tab move through the slide's controls and wrap inside the box. A control of an
+ * inert slide (a tile's, or one laid out ahead of being shown) takes no focus and is none of them.
+ */
 export function keepTab(event: KeyboardEvent, box: HTMLElement): void {
     const stops = [...box.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-        (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
+        (element) =>
+            element.tabIndex >= 0 &&
+            element.getClientRects().length > 0 &&
+            element.closest('[inert]') === null
     );
     const at = document.activeElement;
     const first = stops.at(0);

@@ -1,5 +1,6 @@
-// Layer 2, client state. Pure grouping, tones, search and saved view state for the Inbox, so the
-// section a thread lands in is decided in one place rather than in the markup.
+// Layer 2, client state. Pure grouping, tones, search, saved view state and the words a thread is
+// named and dated by, for the Inbox and for the threads of Focus's line of emails, so the section a
+// thread lands in and what it is called are decided in one place rather than in the markup.
 //
 // A thread's kind is its triage note's, which the triage skill or the reader wrote; a thread nobody
 // has classified yet has none and is drawn in its own section ahead of the three, since it is the
@@ -15,7 +16,7 @@ import { ageOf, mailKey } from '../../data/accounts/mail.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
 import { instanceFolded } from '../shared/page/folds.ts';
 import { t } from '../shared/words/text.ts';
-export { ageOf, mailKey } from '../../data/accounts/mail.ts';
+export { mailKey } from '../../data/accounts/mail.ts';
 export type { Age } from '../../data/accounts/mail.ts';
 export type {
     InboxKind,
@@ -112,11 +113,6 @@ export function accountOf(accounts: MailAccount[], thread: InboxThread): MailAcc
     return accounts.find((account) => mailKey(account) === thread.account) ?? null;
 }
 
-/** How old one thread is at the moment the page is in, or null when the time cannot be read. */
-export function threadAge(thread: InboxThread, now: number): ReturnType<typeof ageOf> {
-    return ageOf(thread.received, now);
-}
-
 /**
  * A From line read as `Name <address>`, the name unquoted: what comes before the angle brackets.
  */
@@ -132,6 +128,26 @@ export function senderParts(from: string): { name: string; address: string } {
     const quoted = /^"(.*)"$/.exec(match[1]);
     const name = quoted === null ? match[1] : quoted[1].replace(/\\(.)/g, '$1');
     return { name: name.trim(), address: match[2].trim() };
+}
+
+/**
+ * The name a thread goes by on the page: its sender's display name, else the address, else the
+ * subject, else the catalog's words for a thread with none of them.
+ */
+export function threadName(thread: InboxThread): string {
+    const from = senderParts(thread.sender);
+    return from.name || from.address || thread.subject || t('inbox.thread');
+}
+
+/**
+ * A thread's age at the moment the page is in, in the reader's own words, and nothing when its time
+ * cannot be read.
+ */
+export function threadAge(thread: InboxThread, now: number): string {
+    const age = ageOf(thread.received, now);
+    if (age === null) return '';
+    if (age.unit === 'd') return t('inbox.age_days', age.value);
+    return age.unit === 'h' ? t('inbox.age_hours', age.value) : t('inbox.age_minutes', age.value);
 }
 
 /**

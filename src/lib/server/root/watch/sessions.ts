@@ -1,8 +1,14 @@
-// Layer 2, server. The `sessions` channel: scan the session stores at start, then rescan and
-// publish whenever one changes. It watches, for every account the
-// `accounts` of the hubs' `.oculus/local.yml` files name, `<dir>/projects` (transcripts) and
-// `<dir>/sessions` (the registry) of each Claude account and `<dir>/sessions` (the rollouts) of
-// each Codex account, every folder once by its real path (sessions/folders.ts).
+// Layer 2, server. The `sessions` channel: scan the session stores at start, then rescan whenever
+// one changes and publish what differs from what stands on the channel. It watches, for every
+// account the `accounts` of the hubs' `.oculus/local.yml` files name, `<dir>/projects`
+// (transcripts) and `<dir>/sessions` (the registry) of each Claude account and `<dir>/sessions`
+// (the rollouts) of each Codex account, every folder once by its real path (sessions/folders.ts).
+//
+// Every scan runs in a worker thread held here (machine/threads/held.ts), at most one at a time and
+// one waiting, so the server's thread reads no store, runs no `ps` and parses no cache file. The
+// hooks and the terminals are put on its answer here, so a hook that arrives while a scan runs is
+// on the record it publishes. A scan that fails is written to stderr and the previous payload
+// stands.
 //
 // One debounce over every handle, lodash's `debounce` with a quiet (DEBOUNCE) and a maximum wait
 // (MAX_WAIT). A transcript is appended to as a session works, so a change there is an ordinary
@@ -14,7 +20,7 @@
 // session writes: the overrides file, which is api/write's, and without it a dismissal or a pin
 // made on one page would not reach another until a transcript happened to change. The byte-offset
 // cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather than the
-// whole store, and the watch keeps the latest record stamp of each subagent's transcript
+// whole store, and the worker keeps the latest record stamp of each subagent's transcript
 // (sessions/stores/stamps.ts), so such a file is read again only when its size or time moved.
 //
 // The 15 s liveness re-check covers the changes to the payload no file event announces. A process
@@ -30,19 +36,24 @@
 // for the next write.
 
 import { watch } from 'node:fs';
-import { basename, dirname } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import type { FSWatcher } from 'node:fs';
 import { debounce as debounced } from 'lodash-es';
 import type { SessionRecord, SessionsPayload, Terminal } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
-import { sessions } from '../../sessions/index.ts';
-import type { CodexProbe } from '../../sessions/stores/codex.ts';
+import { ownFolder } from '../../machine/lsp/servers.ts';
+import { HeldWorker } from '../../machine/threads/held.ts';
 import { distinctFolders } from '../../sessions/folders.ts';
-import type { Probe } from '../../sessions/registry.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
 import type { ProjectFolder } from '../../sessions/group.ts';
-import type { HookStore } from '../../sessions/stores/hooks.ts';
-import { createStamps } from '../../sessions/stores/stamps.ts';
+import {
+    samePayload,
+    Scanned,
+    sessionsDifference,
+    type ScanAnswer,
+    type ScanAsk
+} from '../../sessions/stores/changes.ts';
+import { HookStore } from '../../sessions/stores/hooks.ts';
 import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
@@ -120,16 +131,21 @@ export type SessionsWatchOptions = {
     terminals?: TerminalSource;
     /** The request hook store owned by ServerContext. */
     hooks?: HookStore;
-    /** What the Claude liveness check asks of the system; stubbed by every test. */
-    probe?: Probe;
-    /** What the Codex liveness check asks of the system; stubbed by every test. */
-    codexProbe?: CodexProbe;
 };
 
 export type SessionsWatcher = Watcher & {
-    /** Subscribe to completed rescans owned by this watcher. */
+    /** Subscribe to the rescans of this watcher that published a change. */
     onChange: (listener: () => void) => () => void;
 };
+
+/**
+ * Why a scan was asked for: a file event or the start (`rescan`), the slow clock, or the liveness
+ * re-check.
+ */
+type ScanKind = 'rescan' | 'clock' | 'recheck';
+
+/** The kinds from the weakest rule to the strongest, which a scan asked for by several runs by. */
+const KINDS: ScanKind[] = ['recheck', 'clock', 'rescan'];
 
 /** What the liveness re-check compares: every live session's id and the state it is in. */
 export function liveSignature(records: SessionRecord[]): string {
@@ -146,10 +162,10 @@ function reason(error: unknown): string {
 }
 
 /**
- * Watch every account's session stores and registry, and publish on the `sessions` channel. A
- * rescan that throws is written to stderr and the previous payload stands. A store that cannot be
- * watched (it does not exist on this machine, say) is said once on stderr and the others are
- * watched anyway.
+ * Watch every account's session stores and registry, and publish on the `sessions` channel, whose
+ * messages it has the hub send as what changed. The first publish comes when the first scan has
+ * answered. A store that cannot be watched (it does not exist on this machine, say) is said once on
+ * stderr and the others are watched anyway.
  */
 export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): SessionsWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
@@ -159,75 +175,64 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     const changeListeners = new Set<() => void>();
     let ticker: ReturnType<typeof setInterval> | null = null;
     let clock: ReturnType<typeof setInterval> | null = null;
+    const hooks = options.hooks ?? new HookStore();
     let signature: string | null = null;
     let closed = false;
-    const stamps = createStamps();
 
-    const read = (): SessionsPayload =>
-        sessions({
-            stores: options.stores,
-            codexStores: options.codexStores,
-            registries: options.registries,
-            cachePath: options.cache,
-            overridesPath: options.overrides,
-            roots: options.roots,
-            projectFolders: options.projectFolders?.() ?? [],
-            windowDays: options.windowDays ?? WINDOW_DAYS,
-            maxSessions: options.maxSessions ?? MAX_SESSIONS,
-            probe: options.probe,
-            codexProbe: options.codexProbe,
-            hooks: options.hooks,
-            stamps,
-            terminals: options.terminals === undefined ? null : options.terminals.list()
-        });
+    const standing = (): SessionsPayload | undefined =>
+        hub.latest('sessions')?.payload as SessionsPayload | undefined;
+    const scanned = new Scanned(standing());
 
-    const publish = (payload: SessionsPayload): void => {
-        signature = liveSignature(payload.records);
-        hub.publish('sessions', payload);
-    };
-
-    const rescan = (): void => {
-        try {
-            publish(read());
-            for (const listener of changeListeners) listener();
-        } catch (error) {
-            console.error(`sessions watch: rescan failed: ${reason(error)}`);
-        }
-    };
+    const request = (): ScanAsk => ({
+        stores: options.stores,
+        codexStores: options.codexStores,
+        registries: options.registries,
+        cachePath: options.cache,
+        overridesPath: options.overrides,
+        roots: [...(options.roots ?? [])],
+        projectFolders: options.projectFolders?.() ?? [],
+        windowDays: options.windowDays ?? WINDOW_DAYS,
+        maxSessions: options.maxSessions ?? MAX_SESSIONS
+    });
 
     /**
-     * The slow clock's full rescan: read both stores again whatever the events said, and publish
-     * only when what was read is not what stands on the channel, so a quiet machine sees no
-     * traffic.
+     * Publish what a scan found. A rescan, whatever asked for it, publishes what is not what stands
+     * on the channel and tells the listeners; a re-check publishes when a session started, ended or
+     * changed state and tells nobody. So a quiet machine sees no traffic.
      */
-    const sweep = (): void => {
-        try {
-            const payload = read();
-            const standing = hub.latest('sessions')?.payload;
-            if (standing !== undefined && JSON.stringify(standing) === JSON.stringify(payload)) {
-                return;
-            }
-            publish(payload);
-            for (const listener of changeListeners) listener();
-        } catch (error) {
-            console.error(`sessions watch: rescan failed: ${reason(error)}`);
+    const answered = (answer: ScanAnswer, kind: ScanKind): void => {
+        scanned.take(answer);
+        const before = standing();
+        const terminals = options.terminals === undefined ? null : options.terminals.list();
+        const payload = scanned.payload(before, hooks, Date.now(), terminals);
+        const live = liveSignature(payload.records);
+        if (kind === 'recheck') {
+            if (live === signature) return;
+            signature = live;
+            hub.publish('sessions', payload);
+            return;
         }
+        signature = live;
+        if (before !== undefined && samePayload(before, payload)) return;
+        hub.publish('sessions', payload);
+        for (const listener of changeListeners) listener();
     };
 
-    /** A rescan whose result is published only when a session started, ended or changed state. */
-    const recheck = (): void => {
-        try {
-            const payload = read();
-            if (liveSignature(payload.records) === signature) return;
-            publish(payload);
-        } catch (error) {
-            console.error(`sessions watch: liveness re-check failed: ${reason(error)}`);
+    const scans = new HeldWorker<ScanKind, ScanAsk, ScanAnswer>({
+        file: join(ownFolder(), 'src/lib/server/machine/threads/scan-worker.ts'),
+        request,
+        join: (waiting, next) => (KINDS.indexOf(next) > KINDS.indexOf(waiting) ? next : waiting),
+        answered,
+        failed: (why, kind) => {
+            const what = kind === 'recheck' ? 'liveness re-check' : 'rescan';
+            console.error(`sessions watch: ${what} failed: ${why}`);
         }
-    };
+    });
+    hub.difference('sessions', sessionsDifference);
 
     const queued = debounced(
         () => {
-            rescan();
+            void scans.ask('rescan');
         },
         debounce,
         { maxWait: MAX_WAIT }
@@ -251,8 +256,8 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
      * The overrides file, watched through its own directory: fs.watch on a file that is replaced
      * by a rename, which is how server/core/json.ts writes it, stops seeing the new inode. One
      * watch per directory, not recursive, firing only for the names asked for, because the
-     * transcript cache sits beside it in ~/.oculus and every scan rewrites it, so watching the
-     * directory as a whole would make each scan cause the next one.
+     * transcript cache sits beside it in ~/.oculus and a scan that read something writes it, so
+     * watching the directory as a whole would make each such scan cause the next one.
      */
     const openFiles = (files: string[]): void => {
         const names = new Map<string, Set<string>>();
@@ -275,7 +280,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
         }
     };
 
-    rescan();
+    void scans.ask('rescan');
     // A terminal starting, stopping or being renamed is a change to the payload and nothing under
     // the stores moved, so this handle is what carries it to every open page.
     const offTerminals = options.terminals?.onChange(() => queue()) ?? null;
@@ -293,13 +298,15 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     // resolved at the call, so a process whose home directory differs sees its own.
     openFiles([options.overrides ?? defaultOverridesPath()]);
     if (liveness > 0) {
-        ticker = setInterval(recheck, liveness);
+        ticker = setInterval(() => {
+            void scans.ask('recheck');
+        }, liveness);
         // The re-check must not be the reason a process stays up.
         if (typeof ticker === 'object' && typeof ticker.unref === 'function') ticker.unref();
     }
     if (rescanEvery > 0) {
         clock = setInterval(() => {
-            if (!closed) sweep();
+            void scans.ask('clock');
         }, rescanEvery);
         if (typeof clock === 'object' && typeof clock.unref === 'function') clock.unref();
     }
@@ -319,6 +326,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
             clock = null;
             for (const handle of handles) handle.close();
             handles.length = 0;
+            scans.close();
             changeListeners.clear();
         }
     };

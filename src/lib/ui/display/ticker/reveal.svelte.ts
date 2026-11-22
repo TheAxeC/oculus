@@ -18,9 +18,9 @@
 // one the row exists for, is drawn all the time, where the caller lists it, on a plain row too, and
 // the button holding the keyboard is never taken back.
 //
-// A row whose name is cut says the whole line as its hover words: the label and the tail, set when
-// the pointer or the focus arrives, since only then is the room the name has known. A name that
-// fits has no hover words.
+// A row whose name is cut says the whole line as its hover words: the label, the detail and the
+// tail, set when the pointer or the focus arrives, since only then is the room the name has known.
+// A name that fits has no hover words.
 //
 // A finger opens a row before it presses anything in it. On a device that also has a pointer the
 // buttons of a closed row are not in the page, so a tap that pressed straight through would reach
@@ -29,11 +29,11 @@
 // drawn has nothing to open, so a tap in one is an ordinary press. The pointer and the finger open
 // the same one row: the pointer arriving over a row closes the one a tap opened, and the finger
 // reaching the list takes the pointer off it, which closes the row the pointer was in. A row a tap
-// opened is held by the id it was drawn under, so the lines around it may change under it; a row
-// the list does not hold is not open. A stylus hovers without pressing, so it opens a row as a
-// mouse does.
+// opened is held by the id it was drawn under, and the row the keyboard is in by what the list
+// tells it apart by, so the lines around either may change under it; a row the list does not hold
+// is not open. A stylus hovers without pressing, so it opens a row as a mouse does.
 
-import type { TickerRow } from './ticker-rows';
+import { rowWords, type TickerRow } from './ticker-rows';
 
 /**
  * How much of its name a row keeps whatever its buttons ask for, in the row's own text size.
@@ -53,10 +53,18 @@ export type Open = { at: number; shown: number[] | null };
  */
 type Tapped = { id: string; shown: number[] | null };
 
+/**
+ * The row the keyboard is in, by what the list tells it apart by (`rowKeys`): the focus goes with
+ * the row when rows join or leave around it.
+ */
+type Keyed = { key: string; shown: number[] | null };
+
 /** What the reveal reads from the list it serves, each read when it is needed. */
 export type RevealInput = {
     list: () => HTMLUListElement | undefined;
     rows: () => TickerRow[];
+    /** What each row is told apart by, in the rows' order. */
+    keys: () => string[];
     /** Whether the list draws a row's buttons only under the pointer or the keyboard. */
     reveal: () => boolean;
     /** Whether the caller listens to the buttons at all. */
@@ -104,12 +112,6 @@ export function short(open: Open | null, spot: number): boolean {
     return open?.shown != null && !open.shown.includes(spot);
 }
 
-/** The text a row's cut name says whole: the label and the tail. */
-function whole(row: TickerRow): string {
-    const tail = row.tail ?? '';
-    return tail === '' ? row.label : `${row.label} ${tail}`;
-}
-
 /**
  * The state of the pointer, the keyboard and the finger over one list, with the listeners the list
  * puts on itself. It registers its effects, so it is made while a component initialises.
@@ -123,7 +125,7 @@ export function createReveal(input: RevealInput) {
     let wasOpen = false;
 
     let pointed = $state<Open | null>(null);
-    let keyed = $state<Open | null>(null);
+    let keyed = $state<Keyed | null>(null);
     let tapped = $state<Tapped | null>(null);
     /** The row whose name is cut as the pointer or the focus last arrived, and its whole line. */
     let cut = $state<{ id: string; text: string } | null>(null);
@@ -133,6 +135,9 @@ export function createReveal(input: RevealInput) {
         const held = tapped;
         return held === null ? -1 : input.rows().findIndex((row) => row.id === held.id);
     });
+
+    /** Where the row the keyboard is in is drawn now, and -1 for one the list does not hold. */
+    const keyedAt = $derived(keyed === null ? -1 : input.keys().indexOf(keyed.key));
 
     /** The row an event happened in, by its place in this list, and nothing outside a row. */
     function rowAt(target: EventTarget | null): { li: HTMLElement; at: number } | null {
@@ -145,7 +150,7 @@ export function createReveal(input: RevealInput) {
 
     /** What one line of this list is drawn as: the buttons it has room for, or nothing. */
     function opened(at: number): Open | null {
-        if (keyed !== null && keyed.at === at) return keyed;
+        if (keyed !== null && keyedAt === at) return { at, shown: keyed.shown };
         if (pointed !== null && pointed.at === at) return pointed;
         if (tapped !== null && tappedAt === at) return { at, shown: tapped.shown };
         return null;
@@ -190,7 +195,10 @@ export function createReveal(input: RevealInput) {
     // outside it.
     $effect(() => {
         if (pointed !== null && pointed.shown === null) pointed = measured(pointed);
-        if (keyed !== null && keyed.shown === null) keyed = measured(keyed);
+        if (keyed !== null) {
+            if (keyedAt < 0) keyed = null;
+            else if (keyed.shown === null) keyed = { key: keyed.key, shown: roomAt(keyedAt) };
+        }
         if (tapped === null) return;
         // The line a tap opened may have been written away by what a button on it did.
         if (tappedAt < 0) tapped = null;
@@ -223,7 +231,7 @@ export function createReveal(input: RevealInput) {
         if (!input.reveal() || held === undefined) return;
         const watch = new ResizeObserver(() => {
             pointed = afresh(pointed);
-            keyed = afresh(keyed);
+            keyed = keyed === null ? null : { key: keyed.key, shown: null };
             tapped = tapped === null ? null : { id: tapped.id, shown: null };
         });
         watch.observe(held);
@@ -245,12 +253,13 @@ export function createReveal(input: RevealInput) {
          */
         measureCut: (event: Event, row: TickerRow): void => {
             const li = event.currentTarget;
-            const name = li instanceof Element ? li.querySelector('.name') : null;
+            const name =
+                li instanceof Element ? li.querySelector('.whole .words, .name:not(.whole)') : null;
             if (name === null || name.scrollWidth <= name.clientWidth) {
                 if (cut?.id === row.id) cut = null;
                 return;
             }
-            cut = { id: row.id, text: whole(row) };
+            cut = { id: row.id, text: rowWords(row) };
         },
 
         /** The row a pointer is in. */
@@ -294,7 +303,7 @@ export function createReveal(input: RevealInput) {
             // The press moved the focus onto the row's name on its way here, which is not the
             // reader reaching the row with the keyboard: the tap holds the row open, and it alone,
             // so the pointer entering another row has one thing to close.
-            if (keyed !== null && keyed.at === found.at) keyed = null;
+            if (keyedAt === found.at) keyed = null;
             tapped = { id: row.id, shown: null };
             event.preventDefault();
             event.stopPropagation();
@@ -303,8 +312,8 @@ export function createReveal(input: RevealInput) {
         /** The row the keyboard is in. */
         into: (event: FocusEvent): void => {
             const found = rowAt(event.target);
-            if (found === null || keyed?.at === found.at) return;
-            keyed = { at: found.at, shown: null };
+            if (found === null || keyedAt === found.at) return;
+            keyed = { key: input.keys()[found.at], shown: null };
         },
 
         /** The keyboard leaving this list altogether, rather than stepping inside it. */

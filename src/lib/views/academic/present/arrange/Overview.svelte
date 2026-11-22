@@ -22,11 +22,11 @@
     // the decks it hides kept in their places. The Add tile lists the decks the group's `find:`
     // matches and does not hold, which the filter does not narrow.
     //
-    // The Overview makes one queue of its own (screen/layout-turns.ts) and hands it through context
-    // to every tile drawn inside it, those of its groups included. Each tile mounts and lays out
-    // its slide on that queue, a time budget's worth per frame, so the page goes on answering while
-    // the tiles of a large deck arrive; the queue goes with the Overview, and a tile that goes
-    // away leaves nothing on it.
+    // The Overview makes one queue of its own (screen/layout/layout-turns.ts) and hands it through
+    // context to every tile drawn inside it, those of its groups included. Each tile mounts and
+    // lays out its slide on that queue, a time budget's worth per frame, so the page goes on
+    // answering while the tiles of a large deck arrive; the queue goes with the Overview, and a
+    // tile that goes away leaves nothing on it.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -36,7 +36,7 @@
     import Tile from './Tile.svelte';
     import { createArrange, createOpener } from './arrange.svelte';
     import { isArrange, isAct, tileMenu } from '../acts/menu';
-    import { createLayoutTurns, provideLayoutTurns } from '../screen/layout-turns';
+    import { createLayoutTurns, provideLayoutTurns } from '../screen/layout/layout-turns';
     import {
         deckHues,
         overviewRuns,

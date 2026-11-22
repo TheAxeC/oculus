@@ -19,7 +19,8 @@
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
     // are read again on a tick of their own. Both slides are drawn in the slide's shape, each at
     // the largest box of it its room holds, and measured (screen/Framed.svelte); both draw the
-    // strip of a project's facts by the pane's Project facts toggle (`facts`).
+    // strip of a project's facts by the pane's Project facts toggle (`facts`). The slides of
+    // `around` are laid out ahead of being shown, in the current slide's room.
     //
     // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
     // end-of-deck line and the notes are read off a `Surface`.
@@ -41,6 +42,8 @@
         /** The slide on show, and the one after it (null after the last). */
         row: DeckSlide;
         next: DeckSlide | null;
+        /** The slides on either side that the screen does not draw. */
+        around: readonly DeckSlide[];
         deck: Deck;
         /** Whether the strip of a project's facts shows its words: the pane's toggle. */
         facts: boolean;
@@ -60,6 +63,7 @@
     let {
         row,
         next,
+        around,
         deck,
         facts,
         at,
@@ -116,7 +120,7 @@
         <!-- A click on the slide is the way to the next one; the keys are the pane's own. -->
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="current" data-current onclick={onadvance}>
-            <Framed {row} {deck} {facts} />
+            <Framed {row} {deck} {facts} {around} />
         </div>
         <div class="side">
             <section class="next" data-next aria-label={t('present.presenter_next')}>

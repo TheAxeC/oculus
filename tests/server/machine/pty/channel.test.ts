@@ -91,6 +91,9 @@ function driver(
                     return text;
                 });
             },
+            async type(_id: string, args: string[]): Promise<void> {
+                await this.run(args);
+            },
             run(args: string[]): Promise<string> {
                 calls.push(args);
                 if (args[0] === 'capture-pane') return Promise.resolve(captures(args));

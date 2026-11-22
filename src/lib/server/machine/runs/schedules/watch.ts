@@ -53,7 +53,7 @@ import type {
     ScheduleRow,
     ScheduleRun
 } from '../../../../data/model/index.ts';
-import type { Hub, Sink } from '../../../core/channels.ts';
+import type { Hub } from '../../../core/channels.ts';
 import type { Entry } from '../../processes/table.ts';
 import { HUB_FILE, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import { repositoryOf } from '../commands/repo.ts';
@@ -293,20 +293,15 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             resolve();
             return;
         }
-        const waiting: Sink = {
-            send() {
-                if (sessionsNow() !== null) {
-                    hub.remove(waiting);
-                    resolve();
-                }
-                return Promise.resolve();
+        stopWaiting = hub.read(
+            ['sessions'],
+            () => {
+                if (sessionsNow() === null) return;
+                stopWaiting();
+                resolve();
             },
-            close() {
-                // The hub never closes a sink it did not open; there is no socket behind this one.
-            }
-        };
-        hub.subscribe(waiting, ['sessions'], false);
-        stopWaiting = () => hub.remove(waiting);
+            false
+        );
     });
     const stopListening = options.listing.onChange(() => publish());
 

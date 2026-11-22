@@ -1,11 +1,12 @@
 // Layer 3, view helper. Where a slide's figures and its text go in the room under the slide's
-// title, every length a fraction of the frame's width. Slide.svelte measures the drawn slide (the
-// room, each figure's width over its height, the height of its caption and explanation, the text's
-// height at its least size), divides each length by the frame's drawn width and hands the numbers
-// here; the parts draw the boxes this answers in container units of the frame, so a box is the
-// same part of the slide at any size the slide is drawn at. It is arithmetic alone, with no DOM
-// and no import, so the same numbers give the same boxes on every surface, and it can be run as
-// it is under Node.
+// title, every length a fraction of the frame's width. The slide's search (search.svelte.ts)
+// measures the drawn slide (the room, each figure's width over its height, the height of its
+// caption and explanation, the text's height at its least size), divides each length by the frame's
+// drawn width and hands the numbers here; the parts draw the boxes this answers in container units
+// of the frame, so a box is the same part of the slide at any size the slide is drawn at. It is
+// arithmetic alone, with no DOM and no import but the types of a layout, which the state layer
+// declares because it keeps layouts, so the same numbers give the same boxes on every surface, and
+// it can be run as it is under Node.
 //
 // The figures of a slide are placed as one block: one figure alone, or every figure side by side
 // (one image height) or stacked (one image width), whichever of the candidates draws the figures
@@ -28,6 +29,8 @@
 // room, so the slide is measured too tall with its figures drawn. A block whose captions and
 // explanations are themselves taller than the room is never a column of no width: it is drawn
 // under the text, its images as large as the room allows them alone.
+
+import type { Box, Layout } from '$lib/state/life/present';
 
 /** The least width the text keeps beside a column of figures, a fraction of the frame's width. */
 const TEXT_LEAST = 0.28125;
@@ -54,9 +57,6 @@ export function cqw(length: number): string {
 
 type Size = { width: number; height: number };
 
-/** A box in the room, its corner from the room's top left. */
-export type Box = Size & { x: number; y: number };
-
 /** One figure as the layout takes it. */
 export type Figure = {
     /** The image's width over its height. */
@@ -69,27 +69,9 @@ export type Figure = {
     least?: number;
 };
 
-/** How the figures of the block are set against each other. */
-type Arrangement = 'one' | 'side' | 'stacked';
+type Arrangement = Layout['arrangement'];
 
-/** Where the block sits: a column beside the text, under the text, or alone in the room. */
-type Shape = 'tall' | 'wide' | 'alone';
-
-export type Layout = {
-    arrangement: Arrangement;
-    shape: Shape;
-    /** The box of every figure together, captions included. */
-    block: Box;
-    /** Each figure's box, its image and frame, what is under it left out, in the asked order. */
-    figures: Box[];
-    /** The box the text has, null on a slide with no text. */
-    text: Box | null;
-    /**
-     * The height the layout takes: the room's, or more when the text at its least size leaves no
-     * room under it and the block is drawn under the text, past the room.
-     */
-    height: number;
-};
+type Shape = Layout['shape'];
 
 /** What a slide's part draws its room from, as Slide.svelte hands it on. */
 export type SlidePlace = {

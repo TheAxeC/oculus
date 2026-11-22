@@ -25,6 +25,10 @@
 // and only once the new address answers, so a page forwarded under the same number, whose new port
 // its own machine does not serve, stays put.
 //
+// A message of a channel that sends differences (shapes/differences.ts) is made whole here, before
+// anything else of the page sees it, over the message the page holds. A page that does not hold
+// the one a difference is over asks the channel again and is sent the whole payload.
+//
 // A socket is admitted to write when the token its subscription carries is the server's. The first
 // open is admitted by the token the page was loaded with. After a reconnect the server may be a
 // restarted one that minted another token, so the socket is admitted once the page's load has run
@@ -41,6 +45,7 @@ import {
     unchanged
 } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
+import { applied } from './shapes/differences.ts';
 import { payloadShapes } from './shapes/payloads.ts';
 import { configInstalled } from '../shared/words/generation.svelte.ts';
 import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
@@ -123,6 +128,12 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
      * on a `pty:` channel that rule would drop the chunk before the one that arrived.
      */
     const listeners = new Map<string, Set<(message: Message) => void>>();
+
+    /**
+     * The channels whose whole payload was asked for again, or came and failed its schema, until a
+     * whole payload is taken or the socket opens again.
+     */
+    const asked = new Set<string>();
 
     /** Whether connect() is in force; a close reconnects only while it is. */
     let wanted = false;
@@ -275,6 +286,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
 
         ws.addEventListener('open', () => {
             backoff = FIRST;
+            asked.clear();
             const reconnected = opened;
             // The seed's bound names a version of the hub the page was built against. A reconnect
             // may reach a restarted server, whose hub numbers its pushes from the start again, so
@@ -414,6 +426,32 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         entities.receive({ channel: 'apps', version: through, payload });
     }
 
+    /**
+     * The message with its whole payload, or null for a frame that is dropped. A difference is
+     * applied over the message held, and one the page holds nothing to apply it over has the
+     * channel asked again, once until a whole payload came. A whole payload of a channel the page
+     * types is checked on its top-level fields, so each channel's reader takes its payload as the
+     * type the data model declares, and one that fails is not asked for again.
+     */
+    function wholeOf(message: Message): Message | null {
+        const { channel } = message;
+        const over = applied(entities.message(channel), message);
+        if (over === null) {
+            const shape = byKey<z.ZodType>(payloadShapes, channel);
+            if (shape !== undefined && !shape.safeParse(message.payload).success) {
+                asked.add(channel);
+                return null;
+            }
+            asked.delete(channel);
+            return message;
+        }
+        if (over === 'unheld' && !asked.has(channel)) {
+            asked.add(channel);
+            subscribe([channel], true);
+        }
+        return typeof over === 'string' ? null : { ...message, payload: over.payload };
+    }
+
     function handle(data: string): void {
         let parsed: unknown;
         try {
@@ -423,11 +461,8 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         }
         const frame = frameShape.safeParse(parsed);
         if (!frame.success) return;
-        const message = frame.data;
-        // A channel the page types is checked on its top-level fields, so each channel's reader
-        // takes its payload as the type the data model declares.
-        const shape = byKey<z.ZodType>(payloadShapes, message.channel);
-        if (shape !== undefined && !shape.safeParse(message.payload).success) return;
+        const message = wholeOf(frame.data);
+        if (message === null) return;
         if (message.channel === 'config' && message.version <= seededThrough) return;
         if (message.channel === 'apps' && message.version <= seededApps) return;
         const heard = listeners.get(message.channel);

@@ -6,17 +6,19 @@
     // groups and the box they stand in, with its red left edge, are drawn by
     // ui/display/ticker/TickerGroup.svelte, so their look is written there once; this file keeps
     // the look of its own content, the Needs attention group's lines of projects behind their
-    // documents and of projects no lane shows. The heading row ends with how many rows the Focus
-    // filter hides, when it hides any, and the live HPC pill.
+    // documents and of projects no lane shows, and the fold control of that group's line of emails,
+    // which the section's headings draw too (ui/controls/heads/FoldControl.svelte). The heading row
+    // ends with how many rows the Focus filter hides, when it hides any, and the live HPC pill.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
-    import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
+    import { rowWords, type TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import FoldControl from '$lib/ui/controls/heads/FoldControl.svelte';
     import FoldHead from '$lib/ui/controls/heads/FoldHead.svelte';
 
     const {
@@ -41,6 +43,8 @@
         /** How many rows the Focus filter hides, said on the heading row when any. */
         hidden: number;
         attentionRows: TickerRow[];
+        /** The press of the fold control of the line of emails. */
+        onemails: () => void;
         refreshRows: TickerRow[];
         onproject: (id: string) => void;
         onpick: (id: string) => void;
@@ -56,6 +60,7 @@
         ontoggle,
         hidden,
         attentionRows,
+        onemails,
         refreshRows,
         onproject,
         onpick,
@@ -118,6 +123,10 @@
 
 {#snippet marked(text: string)}
     <RootChip record={{ root: text }} />
+{/snippet}
+
+{#snippet folder(row: TickerRow)}
+    <FoldControl name={rowWords(row)} open={row.fold === true} ontoggle={onemails} />
 {/snippet}
 
 {#snippet end()}
@@ -191,6 +200,7 @@
                 glyph={t('focus.command.grp_attention_glyph')}
                 runs={attentionRows.length > 0 ? [{ key: 'attention', rows: attentionRows }] : []}
                 onpick={onattention}
+                {folder}
                 after={behind}
             />
         {/if}

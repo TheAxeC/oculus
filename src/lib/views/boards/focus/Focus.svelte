@@ -32,7 +32,9 @@
     // command center, the tasks section, each cluster or lane section of the lanes and the band
     // fold the same way, each by a control on its heading, and which of them is closed is kept in
     // the tab's instance state under its key (state/boards/focus.ts `FoldKey`), so a reload and a
-    // move of the tab keep it; all of them start open.
+    // move of the tab keep it; all of them start open. The threads under the command center's line
+    // of emails fold by a control on that line and start closed, and whether they are open is kept
+    // beside the others.
     //
     // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier, Pillar
     // and Hub checklists, kept in the tab's instance state beside the folds. The page works the
@@ -320,6 +322,8 @@
                     {now}
                     open={foldOpen(folds, 'command')}
                     ontoggle={() => fold('command')}
+                    emailsOpen={foldOpen(folds, 'emails')}
+                    onemails={() => fold('emails')}
                     onproject={openProject}
                     onsaid={(text: string) => (said = text)}
                 />

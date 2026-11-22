@@ -28,6 +28,10 @@
     // project's facts at the foot of its slides shows its words by: a change of the toggle alone is
     // drawn at once, with no read of the deck.
     //
+    // The page keeps the layouts of the slides it has drawn in a set of its own, as the Present
+    // store keeps the workbench's, for the deck it holds. Once its slide has been laid out it lays
+    // out the slide after it and the one before it while it is idle, unseen (screen/Ahead.svelte).
+    //
     // A browser enters full screen only from a press in the window, so the page has a Full Screen
     // control and the key F. The control shows at the load, goes after the pointer has rested,
     // comes back with the pointer and is not drawn while the window fills the screen, which is the
@@ -35,20 +39,23 @@
 
     import { onMount } from 'svelte';
     import Slide from '$lib/views/academic/present/Slide.svelte';
+    import Ahead from '$lib/views/academic/present/screen/Ahead.svelte';
     import Stage from '$lib/views/academic/present/screen/Stage.svelte';
     import { CONTROLS, moveOf } from '$lib/views/academic/present/screen/keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         deckLabel,
         movedKey,
+        neighbours,
         parseMessage,
         presentName,
         slideAt,
         stepKey,
         type Deck,
-        type DeckRef
+        type DeckRef,
+        type DeckSlide
     } from '$lib/state/life/present';
-    import { readDeck } from '$lib/state/life/present.svelte';
+    import { createKeptLayouts, readDeck } from '$lib/state/life/present.svelte';
     import { configuredLook } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
@@ -77,6 +84,12 @@
     let closable = $state(false);
 
     const shown = $derived(deck === null ? null : slideAt(deck.slides, key));
+    const around = $derived(deck === null ? [] : neighbours(deck.slides, key));
+
+    /** The layouts of the slides this page has drawn. */
+    const kept = createKeptLayouts();
+    /** The slide last laid out; null for none. */
+    let laid = $state.raw<DeckSlide | null>(null);
 
     let channel: BroadcastChannel | null = null;
     let name = '';
@@ -152,6 +165,7 @@
         if (typeof held !== 'string' && held.slides.length > 0) {
             mark(false);
             deck = held;
+            kept.prune((one) => held.slides.some((row) => row.key === one.key));
         } else if (reloaded()) {
             // The presenter screen is told the window is gone, so it ends after its wait.
             channel?.postMessage({ kind: 'closed' });
@@ -276,8 +290,13 @@
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="slide" onclick={advance}>
             <Stage bare={full}>
-                <Slide row={shown} {deck} {facts} />
+                <Slide row={shown} {deck} {facts} {kept} onlaid={() => (laid = shown)} />
             </Stage>
+            {#if laid === shown && around.length > 0}
+                {#key JSON.stringify(around.map((row) => row.key))}
+                    <Ahead rows={around} {deck} bare={full} {facts} {kept} />
+                {/key}
+            {/if}
         </div>
         {#if !full && !resting}
             <div class="control">
@@ -299,7 +318,9 @@
         color: var(--ink-txt, var(--ink));
     }
 
+    /* The slides laid out ahead lie in it unseen. */
     .slide {
+        position: relative;
         width: 100%;
         height: 100%;
     }

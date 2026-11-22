@@ -380,6 +380,7 @@ describe('an agent in a pane, the timer of the table', () => {
                         return list();
                     },
                     read: () => Promise.resolve(''),
+                    type: () => Promise.resolve(),
                     onOutput: noop,
                     onChange: noop,
                     attached,

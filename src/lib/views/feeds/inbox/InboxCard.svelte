@@ -41,6 +41,7 @@
         sendConfirm,
         senderParts,
         threadAge,
+        threadName,
         type InboxThread
     } from '$lib/state/feeds/inbox';
     import type { MailAnswer, TriageFields } from '$lib/state/feeds/inbox.svelte';
@@ -99,17 +100,9 @@
     const draft = $derived(typed ?? saved);
     const from = $derived(senderParts(thread.sender));
     /** What the card is titled by: the display name, else the address, else the subject. */
-    const name = $derived(from.name || from.address || thread.subject || t('inbox.thread'));
-    const age = $derived(threadAge(thread, minuteNow()));
-
+    const name = $derived(threadName(thread));
     /** The age in the reader's own words, and nothing when the provider's time cannot be read. */
-    function ageText(): string {
-        if (age === null) return '';
-        if (age.unit === 'd') return t('inbox.age_days', age.value);
-        return age.unit === 'h'
-            ? t('inbox.age_hours', age.value)
-            : t('inbox.age_minutes', age.value);
-    }
+    const age = $derived(threadAge(thread, minuteNow()));
 
     function kindLabel(): string {
         if (kind === 'reply') return t('inbox.reply');
@@ -224,8 +217,8 @@
     {#if accountTag}
         <Tag label={account} />
     {/if}
-    {#if ageText() !== ''}
-        <span class="age">{ageText()}</span>
+    {#if age !== ''}
+        <span class="age">{age}</span>
     {/if}
     {#if thread.messages > 1}
         <span class="age">{t('inbox.messages', thread.messages)}</span>

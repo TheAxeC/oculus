@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use): O188, building.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (0 steps): none; next, `~/Applications/oculus.app` is built again from O188 and replaced (ruling App rebuild after O188), with no GitHub release.
 
-Owed looks: O188 (at its landing).
+Owed looks: none.
 
 Landed, newest first:
+- O188 (the server thread kept free, slides laid out ahead, the command center's emails unfolded), 2026-11-22.
 - Release v1.1.0, 2026-11-11, made again at 3b45e3893 to carry O187 (before at e34e44fb5 and 24f324bdc), tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
 - O187 (a project card draws its repository's address), 2026-11-11.
 - O186 (every file row of Settings opens its file), 2026-11-11.

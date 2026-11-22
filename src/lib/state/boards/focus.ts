@@ -767,33 +767,49 @@ export function portfolioProjects(snapshot: Snapshot | null): Project[] {
 }
 
 /**
- * What of the Focus board folds, by the key its closed state is kept under: the command center and
- * the tasks by their names, and each group of cards by the key `groupFold` makes for it.
+ * What of the Focus board folds, by the key its fold is kept under: the command center and the
+ * tasks by their names, the threads under the command center's line of emails as `emails`, and each
+ * group of cards by the key `groupFold` makes for it.
  */
-export type FoldKey = 'command' | 'tasks' | 'band' | `cluster:${string}` | `lane:${string}`;
+export type FoldKey =
+    'command' | 'tasks' | 'emails' | 'band' | `cluster:${string}` | `lane:${string}`;
 
 /**
  * The fold key of a group of cards on the Focus board: a `columns` cluster's is `cluster:<key>`, a
  * lane's section of a `full_width` cluster `lane:<lane key>`, and the band's `band`. The prefixes
- * keep a hub's cluster or lane key from naming the command center or the tasks.
+ * keep a hub's cluster or lane key from naming the command center, the tasks or the emails.
  */
 export function groupFold(kind: 'cluster' | 'lane' | 'band', key = ''): FoldKey {
     return kind === 'band' ? 'band' : `${kind}:${key}`;
 }
 
-/** The folded sections a Focus tab's saved state names as closed; a wrong value names none. */
-const closedShape = z.object({ closed: fieldItemsShape });
+/**
+ * The two lists a Focus tab's saved state keeps its folds in: what starts open and is closed, and
+ * what starts closed and is open. A wrong value names none.
+ */
+const foldsShape = z.object({ closed: fieldItemsShape, opened: fieldItemsShape });
 
-/** Whether a section is open in a Focus tab's state: every section is, until it is closed. */
-export function foldOpen(state: unknown, key: FoldKey): boolean {
-    return !(readAs(closedShape, state)?.closed ?? []).includes(key);
+/** The list one fold is kept in: `opened` for the emails, which start closed, else `closed`. */
+function foldList(key: FoldKey): 'closed' | 'opened' {
+    return key === 'emails' ? 'opened' : 'closed';
 }
 
-/** The tab's state with one section's fold turned over, and every other key of it kept. */
+/**
+ * Whether a fold is open in a Focus tab's state: the emails while `opened` names them, anything
+ * else until `closed` names it.
+ */
+export function foldOpen(state: unknown, key: FoldKey): boolean {
+    const list = foldList(key);
+    const named = (readAs(foldsShape, state)?.[list] ?? []).includes(key);
+    return list === 'opened' ? named : !named;
+}
+
+/** The tab's state with one fold turned over, and every other key of it kept. */
 export function foldToggled(state: unknown, key: FoldKey): Record<string, unknown> {
-    const closed = readAs(closedShape, state)?.closed ?? [];
+    const list = foldList(key);
+    const named = readAs(foldsShape, state)?.[list] ?? [];
     return {
         ...(readAs(mapShape, state) ?? {}),
-        closed: closed.includes(key) ? closed.filter((one) => one !== key) : [...closed, key]
+        [list]: named.includes(key) ? named.filter((one) => one !== key) : [...named, key]
     };
 }

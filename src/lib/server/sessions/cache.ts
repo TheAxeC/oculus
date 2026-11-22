@@ -42,7 +42,8 @@ const IMPORTED = /\bfrom\s+'([^']+)'/g;
 /**
  * The digest of the reader under the checkout `root`: the modules READER_FILES names and every
  * module of READER_FOLDERS they import, directly or not, each hashed whole with its path, in the
- * order of the paths. A scan reads it once, for the cache it loads and the cache it writes.
+ * order of the paths. A scan reads it once, for the cache it loads and the cache it writes, unless
+ * its caller gives it.
  */
 export function readerDigest(root: string = engineDir()): string {
     const folders = READER_FOLDERS.map((folder) => join(root, folder) + sep);
@@ -119,10 +120,21 @@ export function loadCache(path: string, version: string): Record<string, CacheEn
     return kept;
 }
 
+/** Whether two entries describe the same read of the same file. */
+function sameRead(one: CacheEntry | undefined, other: CacheEntry): boolean {
+    return (
+        one?.inode === other.inode &&
+        one.size === other.size &&
+        one.mtime === other.mtime &&
+        one.offset === other.offset
+    );
+}
+
 /**
  * Write the cache back: what was there, updated with what this scan folded, dropping entries whose
- * file is gone and keeping the newest MAX_CACHE_ENTRIES. A cache that cannot be written is not an
- * error: the next scan simply pays for a full read. It is written under the reader's `version`.
+ * file is gone and keeping the newest MAX_CACHE_ENTRIES. When that is what was there, nothing is
+ * written. A cache that cannot be written is not an error: the next scan simply pays for a full
+ * read. It is written under the reader's `version`.
  */
 export function saveCache(
     path: string,
@@ -135,6 +147,10 @@ export function saveCache(
         .filter((entry) => entry.path && existsSync(entry.path))
         .sort((a, b) => b.mtime - a.mtime)
         .slice(0, MAX_CACHE_ENTRIES);
+    const standing = Object.keys(previous).length;
+    if (keep.length === standing && keep.every((entry) => sameRead(previous[entry.path], entry))) {
+        return;
+    }
     const entries: Record<string, CacheEntry> = {};
     for (const entry of keep) entries[entry.path] = entry;
     try {

@@ -74,6 +74,7 @@ export function idleDriver(): TerminalDriver {
     return {
         run: () => Promise.resolve(''),
         read: () => Promise.resolve(''),
+        type: () => Promise.resolve(),
         onOutput: noop,
         onChange: noop,
         attached: noop,

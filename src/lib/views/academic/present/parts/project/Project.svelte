@@ -6,7 +6,7 @@
     // alone, and that Markdown is what the slide draws.
     //
     // A slide with a figure draws its text and its figures in a room under the headline, at the
-    // boxes the slide's layout gives (`place`, Slide.svelte and screen/slide-layout.ts), in
+    // boxes the slide's layout gives (`place`, Slide.svelte and screen/layout/slide-layout.ts), in
     // container units of the frame: the figures as one block, a column at the room's right with
     // the text beside it, or across the room's width under the text, or centred in the room when
     // the slide has no text. While the room is measured the text takes the room's width and no
@@ -25,7 +25,7 @@
     import Equation from '../Equation.svelte';
     import Panel from '../../Panel.svelte';
     import Words from '../Words.svelte';
-    import { TEXT_GAP, cqw, type SlidePlace } from '../../screen/slide-layout';
+    import { TEXT_GAP, cqw, type SlidePlace } from '../../screen/layout/slide-layout';
     import { hasSlideContent } from '$lib/state/life/present';
     import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';

@@ -17,11 +17,27 @@
 // newest root and its bookmark-change marker are independent facts in one payload. The
 // `debug-console` channel registers one too: its held append and the next append of the same
 // session are joined into one, so a page that falls behind gets every console line, late.
+//
+// A state channel whose payload is large may also name what one payload differs from another by,
+// which is what the `sessions` channel does: a sink is sent the whole payload first, and from then
+// on the difference from the message it was last sent, made as the text is made. A sink that was
+// behind is therefore sent one difference over everything it missed.
+//
+// A reader inside the server (`read`) is handed each message itself, with no text made for it.
 
 import type { Message } from '../../data/model/index.ts';
 
 /** How a channel's held message and its next one combine when a sink is behind. */
 export type Merge = (held: Message, next: Message) => Message;
+
+/**
+ * The payload that says `to` for a sink whose last message was `from`, or null when only the whole
+ * payload says it.
+ */
+type Difference = (from: Message, to: Message) => unknown;
+
+/** A reader inside the server, with the channels it reads. */
+type Reader = { channels: Set<string>; take: (message: Message) => void };
 
 /** A client, as this module needs it: something a text can be sent to and that can be closed. */
 export type Sink = {
@@ -42,13 +58,17 @@ type Subscriber = {
     sending: boolean;
     /** The newest unsent message per channel, at most one entry per channel. */
     pending: Map<string, Message>;
+    /** The last message sent, whole or as a difference, of each channel that names a difference. */
+    sent: Map<string, Message>;
 };
 
 export class Hub {
     /** The current message of every channel that has one. */
     #latest = new Map<string, Message>();
     #subscribers = new Map<Sink, Subscriber>();
+    #readers = new Set<Reader>();
     #merges = new Map<string, Merge>();
+    #differences = new Map<string, Difference>();
     /** The callbacks per channel for the change from no subscriber to one. */
     #firstListeners = new Map<string, Set<() => void>>();
     /** The version of the last message `send` made per channel, which keeps no latest message. */
@@ -107,7 +127,7 @@ export class Hub {
 
     /**
      * Add channels to a sink's subscription and send it the current message of each named channel
-     * that has one. A sink that subscribes twice keeps the channels of both calls.
+     * that has one, whole. A sink that subscribes twice keeps the channels of both calls.
      *
      * `replay` is false for a `pty:` terminal channel: its current message is the previous chunk of
      * pane output, which the scrollback server/machine/pty/channel.ts sends already holds, so
@@ -117,12 +137,18 @@ export class Hub {
     subscribe(sink: Sink, channels: string[], replay = true): void {
         let subscriber = this.#subscribers.get(sink);
         if (subscriber === undefined) {
-            subscriber = { channels: new Set(), sending: false, pending: new Map() };
+            subscriber = {
+                channels: new Set(),
+                sending: false,
+                pending: new Map(),
+                sent: new Map()
+            };
             this.#subscribers.set(sink, subscriber);
         }
         const gained = [...new Set(channels)].filter((channel) => !this.hasSubscriber(channel));
         for (const channel of channels) subscriber.channels.add(channel);
         if (replay) {
+            for (const channel of channels) subscriber.sent.delete(channel);
             for (const channel of channels) {
                 const message = this.#latest.get(channel);
                 if (message !== undefined) this.#deliver(sink, subscriber, message);
@@ -152,14 +178,60 @@ export class Hub {
     }
 
     /**
+     * Say how a channel's message is sent as what differs from the message a sink was last sent. A
+     * channel that names none sends every message whole.
+     */
+    difference(channel: string, difference: Difference): void {
+        this.#differences.set(channel, difference);
+    }
+
+    /**
+     * Hand every message of the channels to a reader inside the server as it is published, and at
+     * once the current message of each that has one, unless `replay` is false. A reader that throws
+     * is written to stderr. Returns the function that takes the reader off.
+     */
+    read(channels: string[], take: (message: Message) => void, replay = true): () => void {
+        const reader: Reader = { channels: new Set(channels), take };
+        this.#readers.add(reader);
+        if (replay) {
+            for (const channel of reader.channels) {
+                const message = this.#latest.get(channel);
+                if (message !== undefined) this.#hand(reader, message);
+            }
+        }
+        return () => {
+            this.#readers.delete(reader);
+        };
+    }
+
+    #hand(reader: Reader, message: Message): void {
+        try {
+            reader.take(message);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            console.error(`hub: a reader of channel ${message.channel} failed: ${reason}`);
+        }
+    }
+
+    /** Give a message to every subscriber and every reader of its channel. */
+    #tell(message: Message): void {
+        for (const [sink, subscriber] of this.#subscribers) {
+            if (subscriber.channels.has(message.channel)) this.#deliver(sink, subscriber, message);
+        }
+        for (const reader of [...this.#readers]) {
+            if (this.#readers.has(reader) && reader.channels.has(message.channel)) {
+                this.#hand(reader, message);
+            }
+        }
+    }
+
+    /**
      * Store a payload as the channel's current message and send it to that channel's subscribers.
      */
     publish(channel: string, payload: unknown): number {
         const message: Message = { channel, version: this.nextVersion(channel), payload };
         this.#latest.set(channel, message);
-        for (const [sink, subscriber] of this.#subscribers) {
-            if (subscriber.channels.has(channel)) this.#deliver(sink, subscriber, message);
-        }
+        this.#tell(message);
         return message.version;
     }
 
@@ -171,10 +243,7 @@ export class Hub {
     send(channel: string, payload: unknown): number {
         const version = (this.#sentVersions.get(channel) ?? 0) + 1;
         this.#sentVersions.set(channel, version);
-        const message: Message = { channel, version, payload };
-        for (const [sink, subscriber] of this.#subscribers) {
-            if (subscriber.channels.has(channel)) this.#deliver(sink, subscriber, message);
-        }
+        this.#tell({ channel, version, payload });
         return version;
     }
 
@@ -222,6 +291,7 @@ export class Hub {
         for (const channel of channels) {
             subscriber.channels.delete(channel);
             subscriber.pending.delete(channel);
+            subscriber.sent.delete(channel);
         }
         this.#released();
     }
@@ -246,12 +316,26 @@ export class Hub {
         void this.#drain(sink, subscriber, message);
     }
 
+    /**
+     * The text of a message for one subscriber: what differs from the message it was last sent on
+     * the channel, where the channel names a difference and it was sent one, else the message
+     * whole. The message is then the one it was last sent.
+     */
+    #text(subscriber: Subscriber, message: Message): string {
+        const difference = this.#differences.get(message.channel);
+        if (difference === undefined) return JSON.stringify(message);
+        const from = subscriber.sent.get(message.channel);
+        subscriber.sent.set(message.channel, message);
+        const payload = from === undefined ? null : difference(from, message);
+        return JSON.stringify(payload === null ? message : { ...message, payload });
+    }
+
     /** Send one message, then whatever piled up while it was in flight, newest per channel. */
     async #drain(sink: Sink, subscriber: Subscriber, first: Message): Promise<void> {
         let message: Message | undefined = first;
         while (message !== undefined) {
             try {
-                await sink.send(JSON.stringify(message));
+                await sink.send(this.#text(subscriber, message));
             } catch (error) {
                 // The connection is broken; the socket layer will close it. Nothing is retried,
                 // since a reconnecting page subscribes again and gets the current message then.

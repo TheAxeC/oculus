@@ -23,18 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:        # steps in flight, up to six (Z632)
-- step: O188
-  base: 35520d42d
-  worktree: .agents/worktrees/migration-O188
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: af764a4d90f774307 (claude-opus-5-5, served model read from the runner's record)
-  launched: 2026-11-22, on Axel's rulings 763 to 766
-  report: agents/reviews/O188-report.md
-  round: 0
-  brief_check: agents/reviews/O188-brief-check.md (afa29be52347a316a, claude-opus-5-5, 370820 tokens, 75 tool uses, 537.3 s)
-  landing: not-started
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -906,7 +895,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-11-22 (O188 building). Builder af764a4d90f774307 (ordo-high, claude-opus-5-5) launched in `.agents/worktrees/migration-O188` from base 35520d42d; the brief check's findings are closed in the brief, and its choices a reader sees are ruled as open item 767 by the orchestrator under automode. Open items: none.
+- 2026-11-22 (O188 landed). O188 is on main (booked under O188 in `plan.md`, `agents/reviews/O188-landing.md`); main's staged diff equals the gate's; no whole `test:quick` run was green, each failing file passed in the rerun; the look taken on scratch servers on 8797 from the gate, stopped after. In flight (0 of 6): none. Next: `~/Applications/oculus.app` built from this commit and replaced, the running app closed first, no release (ruling App rebuild after O188). Open items: none.
+- 2026-11-22 (O188 building). Builder af764a4d90f774307 (ordo-high, claude-opus-5-5) launched in `.agents/worktrees/migration-O188` from base 35520d42d; the brief check's findings are closed in the brief, and its choices a reader sees are ruled as open item 767 by the orchestrator under automode. After O188 lands, the running app is closed and `~/Applications/oculus.app` is replaced by a build of that commit, with no release (ruling App rebuild after O188). Open items: none.
 - 2026-11-22 (O188 booked). Rulings 763 (a), 764 (a), 765 (a) and 766 are booked; step O188 is next, through `/spec`. In flight (0 of 6): none. Open items: none.
 - 2026-11-11 (v1.1.0 published again). v1.1.0 is tagged at 3b45e3893 and pushed with main (`git ls-remote`: main 47425c18a, tag 3b45e3893); the release is published, not a draft, with darwin-arm64.zip 306646998, linux-arm64.tar.gz 264605396 and linux-x64.tar.gz 266006237, each uploaded (`gh release view v1.1.0`); the installed app (pid 6176, on 8790) was stopped with `kill -TERM`, 8790 confirmed free, and `~/Applications/oculus.app` replaced from the new archive (codesign ok, version 1.1.0, the code line and the trimmed clone in its build), the previous app in `~/.Trash/oculus-1.1.0-second.app`; the app is not restarted. In flight (0 of 6): none. Open items: none.
 - 2026-11-11 (open item 762 ruled (a)). v1.1.0 is made once more at 3b45e3893 as ruling 758 says.

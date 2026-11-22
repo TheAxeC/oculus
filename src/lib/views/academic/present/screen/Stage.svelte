@@ -15,6 +15,10 @@
     // not fit at its least size, scrolls inside it. The room is measured here, and the frame stays
     // hidden until it has a size.
     //
+    // The slides laid out ahead of being shown (Ahead.svelte) are drawn through this too, each in a
+    // frame that nobody sees (`hidden`). Such a frame is not marked as a place to scroll, since the
+    // keys that scroll a view take the first marked box in it.
+    //
     // Given `onmeasure`, the Stage measures the slide it draws: how far the frame's content runs
     // past the frame's height, as a fraction of that height, 0 when it fits, so a tile measures
     // what the pane does. The heights are taken from the drawn boxes unrounded, so a frame drawn
@@ -35,6 +39,8 @@
     type Props = {
         /** Whether the frame goes edge to edge with no line and no corner, as on the monitor. */
         bare?: boolean;
+        /** Whether the frame is drawn where nobody sees it, so no key scrolls it. */
+        hidden?: boolean;
         /**
          * Told how far the slide runs past the frame, as a fraction of the frame's height, 0 when
          * it fits; none: no measure.
@@ -46,7 +52,7 @@
         children: Snippet;
     };
 
-    let { bare = false, onmeasure, drawing = '', children }: Props = $props();
+    let { bare = false, hidden = false, onmeasure, drawing = '', children }: Props = $props();
 
     /** The room's measured size, 0 until it has been laid out and while its tab is hidden. */
     let width = $state(0);
@@ -89,7 +95,7 @@
             class="frame slide-frame"
             class:bare
             data-frame
-            data-scroll
+            data-scroll={hidden ? undefined : ''}
             data-surface
             bind:this={drawn}
             style:visibility={width === 0 || height === 0 ? 'hidden' : undefined}

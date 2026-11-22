@@ -16,7 +16,7 @@ import {
 import type { Payloads } from '../../shared/stores/shapes.ts';
 
 /** A list; its items are checked where they are read. */
-const listShape = z.instanceof(Array);
+export const listShape = z.instanceof(Array);
 
 const snapshotShape = unchangedAs<Payloads['portfolio']>(
     z.object({

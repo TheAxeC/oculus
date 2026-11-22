@@ -10,6 +10,7 @@ import {
     run,
     tmuxRuns,
     RESTART_MS,
+    TIMEOUT_MS,
     type ControlClient,
     type TmuxOptions
 } from '../tmux.ts';
@@ -45,6 +46,13 @@ export type TerminalDriver = {
      * attached control client is read by `run`, and `replied` is called as the answer comes.
      */
     read(id: string, args: string[], replied: () => void): Promise<string>;
+    /**
+     * One command that types into a terminal, run by its control client when that client is
+     * attached and by `run` when none is. The client answers it with no process started. It fails
+     * when the client ends, refuses it or has not replied within TIMEOUT_MS, and it is sent one way
+     * alone, since a command that failed after it was written may have been typed.
+     */
+    type(id: string, args: string[]): Promise<void>;
     /** Pane output, already routed to the terminal it belongs to. */
     onOutput(listener: (id: string, bytes: Buffer) => void): void;
     /** Something tmux said that moves the terminal list. */
@@ -63,6 +71,19 @@ export type TerminalDriver = {
     serverRuns(pid: number): Promise<boolean>;
     close(): void;
 };
+
+/** Settles as the command does, and fails when the client has not replied within TIMEOUT_MS. */
+async function answered(command: Promise<string>): Promise<void> {
+    const late = Promise.withResolvers<never>();
+    const timer = setTimeout(() => {
+        late.reject(new Error(`the control client did not reply in ${String(TIMEOUT_MS)} ms`));
+    }, TIMEOUT_MS);
+    try {
+        await Promise.race([command, late.promise]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 /**
  * One control client per attached terminal, each restarted on its own when it exits and closed a
@@ -174,6 +195,11 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
                         ? client.command(args, replied)
                         : runRead(id, args, replied)
                 );
+        },
+        async type(id, args): Promise<void> {
+            const client = clients.get(id);
+            if (client?.attached() === true) await answered(client.command(args));
+            else await run(args, options);
         },
         onOutput(listener): void {
             outputs = listener;

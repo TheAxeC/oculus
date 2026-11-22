@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, primitive of the headings beside it (GroupHead.svelte and FoldHead.svelte). The fold
-    // control a heading that folds starts with: a bare button named "Fold <name>" or "Unfold
-    // <name>" with the fold glyph of the state, written once so both headings name and draw it
+    // Layer 3, primitive. The fold control that stands before what it folds: a heading's beside it
+    // (GroupHead.svelte and FoldHead.svelte) and a ticker row's, which its view draws (the command
+    // center's line of emails, the Gallery's ticker). It is a bare button named "Fold <name>" or
+    // "Unfold <name>" with the fold glyph of the state, written once so each names and draws it
     // alike.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

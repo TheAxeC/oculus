@@ -6,13 +6,13 @@
     // text as large as fits (Slide.svelte), so it is too tall only when its text, or a figure with
     // its caption, does not fit at the least size. The Present pane, both slides of its presenter
     // screen and the Overview's tiles draw a slide through this, so every slide the workbench
-    // draws is measured the one way; the audience window draws its Stage itself and measures
-    // nothing. The Stage is told what it draws (the deck's root and folder, the slide's key, its
-    // title and the file and line it is written at), so a pane moved to another slide, a slide
-    // given another title or a slide moved in its file is measured again and its finding names
-    // the slide as drawn. The strip of a project's facts shows its words by the pane's Project
-    // facts toggle (`facts`), and keeps its room either way, so the measure does not change with
-    // the toggle.
+    // draws is measured the one way and reads and fills the store's kept layouts; the audience
+    // window draws its Stage itself and measures nothing. The Stage is told what it draws (the
+    // deck's root and folder, the slide's key, its title and the file and line it is written at),
+    // so a pane moved to another slide, a slide given another title or a slide moved in its file
+    // is measured again and its finding names the slide as drawn. The strip of a project's facts
+    // shows its words by the pane's Project facts toggle (`facts`), and keeps its room either way,
+    // so the measure does not change with the toggle.
     //
     // A slide given `turns` (an Overview tile's) is laid out at its turn on that queue, and what
     // the Stage measures while a layout waits there is a slide its layout has not caught up with.
@@ -22,10 +22,14 @@
     // has the Stage measure the slide anew. A tile with a layout waiting therefore writes no
     // measure, its earlier mark and finding staying as they were, and a tile destroyed while
     // waiting writes none. A slide given no queue is measured at once.
+    //
+    // The slides of `around` are laid out ahead of being shown (Ahead.svelte) once this one has
+    // been laid out, and a switch to another slide drops what is left of that work.
 
     import Slide from '../Slide.svelte';
+    import Ahead from './Ahead.svelte';
     import Stage from './Stage.svelte';
-    import type { LayoutTurns } from './layout-turns';
+    import type { LayoutTurns } from './layout/layout-turns';
     import type { Deck, DeckSlide } from '$lib/state/life/present';
     import { useState } from '$lib/state/client/use';
 
@@ -38,26 +42,31 @@
         facts: boolean;
         /** The queue the slide's layouts wait on, an Overview tile's; none: at once. */
         turns?: LayoutTurns;
+        /** The slides to lay out ahead, in that order. */
+        around?: readonly DeckSlide[];
         /** Told each time the slide has been laid out. */
         onlaid?: () => void;
     };
 
-    let { row, deck, bare = false, facts, turns, onlaid }: Props = $props();
+    let { row, deck, bare = false, facts, turns, around = [], onlaid }: Props = $props();
 
     const {
-        present: { measured }
+        present: { layouts: kept, measured }
     } = useState();
 
     /** Whether a layout of the slide has been asked of the queue and has not run. */
     let asked = false;
     /** How many layouts have finished, which has the Stage of a tile measure anew at each. */
     let layouts = $state(0);
+    /** The slide last laid out; null for none. */
+    let laid = $state.raw<DeckSlide | null>(null);
 
     /** The queue as the slide asks it: an ask starts the wait for that layout. */
     const watched = $derived.by((): LayoutTurns | undefined => {
         const queue = turns;
         if (queue === undefined) return undefined;
         return {
+            stepped: queue.stepped,
             ask: (job) => {
                 asked = true;
                 queue.ask(job);
@@ -75,6 +84,7 @@
     function settled(): void {
         asked = false;
         layouts += 1;
+        laid = row;
         onlaid?.();
     }
 
@@ -90,6 +100,28 @@
     );
 </script>
 
-<Stage {bare} drawing={turns === undefined ? drawing : `${drawing}${layouts}`} onmeasure={report}>
-    <Slide {row} {deck} {facts} turns={watched} onlaid={settled} />
-</Stage>
+<div class="framed">
+    <Stage
+        {bare}
+        drawing={turns === undefined ? drawing : `${drawing}${layouts}`}
+        onmeasure={report}
+    >
+        <Slide {row} {deck} {facts} turns={watched} {kept} onlaid={settled} />
+    </Stage>
+    {#if laid === row && around.length > 0}
+        {#key JSON.stringify([deck.root, deck.path, around.map((one) => one.key)])}
+            <Ahead rows={around} {deck} {bare} {facts} {kept} />
+        {/key}
+    {/if}
+</div>
+
+<style>
+    /* The room the parent gives, which the slides laid out ahead lie in unseen. */
+    .framed {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+    }
+</style>

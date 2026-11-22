@@ -3,9 +3,9 @@
     // the inline diagram markup the slide wrote, with the caption and the explanation under it.
     //
     // A figure is drawn in the slide's room at the box the slide's layout gives it, in container
-    // units of the frame (screen/slide-layout.ts), its image whole at its own proportions inside
-    // the box's padding, the caption and the explanation under it in the box's column. Every size
-    // here is a fraction of the frame's width (`cqw`), as every size inside a slide is
+    // units of the frame (screen/layout/slide-layout.ts), its image whole at its own proportions
+    // inside the box's padding, the caption and the explanation under it in the box's column. Every
+    // size here is a fraction of the frame's width (`cqw`), as every size inside a slide is
     // (themes/slide.css), and a hairline is a shadow or an outline one pixel wide, which takes no
     // room. Its image names its index on the slide (`data-figure`), by which the slide reads its
     // ratio once it has loaded and gives it its box; until then the figure is not drawn. The
@@ -23,8 +23,8 @@
     import { sanitiseDiagram } from '$lib/ui/html/html';
     import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
-    import type { PresentPanel } from '$lib/state/life/present';
-    import { cqw, type Box } from './screen/slide-layout';
+    import type { Box, PresentPanel } from '$lib/state/life/present';
+    import { cqw } from './screen/layout/slide-layout';
 
     type Props = {
         panel: PresentPanel;

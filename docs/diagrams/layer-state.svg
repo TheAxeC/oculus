@@ -124,7 +124,7 @@
 <g id="node20" class="node">
 <title>folder state/client to layer data</title>
 <polygon fill="none" stroke="none" points="329.33,-987.76 314.67,-987.76 314.67,-975.28 329.33,-975.28 329.33,-987.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="322" y="-979.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">29</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="322" y="-979.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">32</text>
 </g>
 <!-- folder state/client&#45;&gt;folder state/client to layer data -->
 <g id="edge28" class="edge">

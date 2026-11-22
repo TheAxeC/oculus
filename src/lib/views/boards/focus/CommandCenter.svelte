@@ -21,6 +21,13 @@
     // it when no registry venue has its id; refresh lines ask the shell for the Update tray through
     // the ui store.
     //
+    // The line of emails folds the threads its count counts, closed until the reader opens it, the
+    // fold kept in the tab's state by the board. Open, the threads follow the line in the Inbox's
+    // sections, those to reply to, those to act on and those not sorted yet, each under its heading
+    // and in the plate's order, named and dated as the Inbox's cards name and date them
+    // (state/feeds/inbox.ts). A thread's row opens the Inbox at its card, and its sender and
+    // subject are drawn as the characters they hold, since a mail header is not Markdown.
+    //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
     // state/system/machine/hpc/hpc.svelte.ts, summed over the clusters whose queue is current and
     // drawn only while that sum is not empty, and a click on it opens the Live HPC view.
@@ -34,6 +41,7 @@
     } from '$lib/state/boards/ticker';
     import type { Snapshot } from '$lib/state/boards/focus';
     import { attention, refresh } from '$lib/state/feeds/feeds';
+    import { threadAge, threadName, type InboxThread } from '$lib/state/feeds/inbox';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
@@ -46,7 +54,7 @@
 
     const {
         selectors: { configMap },
-        inbox: { actionable, state: inboxState },
+        inbox: { actionable, split, state: inboxState },
         layout: { openView },
         schedule: { offered, taskLabel },
         ui: { instanceState, requestUpdateTray, setInstanceState }
@@ -57,9 +65,23 @@
         snapshot: Snapshot | null;
         /** How many rows the Focus filter hides from the command center. */
         hidden: number;
+        /** Whether the threads under the line of emails are open, and the press that folds them. */
+        emailsOpen: boolean;
+        onemails: () => void;
     };
 
-    let { week, now, open, ontoggle, onproject, onsaid, snapshot, hidden }: Props = $props();
+    let {
+        week,
+        now,
+        open,
+        ontoggle,
+        onproject,
+        onsaid,
+        snapshot,
+        hidden,
+        emailsOpen,
+        onemails
+    }: Props = $props();
 
     const config = $derived(configMap());
     const needs = $derived(
@@ -153,23 +175,71 @@
         };
     });
 
+    /** A thread's row: its name, its subject when that is not its name, and its age. */
+    function threadRow(thread: InboxThread): TickerRow {
+        const name = threadName(thread);
+        return {
+            id: `attention:thread:${thread.id}`,
+            glyph: '',
+            label: name,
+            detail: name === thread.subject ? '' : thread.subject,
+            tail: threadAge(thread, now),
+            whole: true,
+            under: true
+        };
+    }
+
+    /**
+     * The rows under the line of emails, the threads its count counts under the heading of each
+     * Inbox section that holds one, and the thread each row opens.
+     */
+    const emails = $derived.by(() => {
+        const index: Record<string, InboxThread | undefined> = {};
+        const { replies, actions, unsorted } = split();
+        const sections = [
+            { key: 'reply', label: t('inbox.sec_reply'), threads: replies },
+            { key: 'action', label: t('inbox.sec_action'), threads: actions },
+            { key: 'unsorted', label: t('inbox.sec_unsorted'), threads: unsorted }
+        ];
+        const rows = sections
+            .filter(({ threads }) => threads.length > 0)
+            .flatMap(({ key, label, threads }): TickerRow[] => [
+                {
+                    id: `attention:section:${key}`,
+                    glyph: '',
+                    label,
+                    plain: true,
+                    heading: true,
+                    under: true
+                },
+                ...threads.map((thread) => {
+                    const row = threadRow(thread);
+                    index[row.id] = thread;
+                    return row;
+                })
+            ]);
+        return { index, rows };
+    });
+
     /**
      * The "needs attention" rows: a count, its words, and what each line opens, a view or a
-     * venue's page.
+     * venue's page, and after the line of emails its threads while they are open.
      */
     const attentionView = $derived.by(() => {
         const index: Record<string, (typeof needs)[number] | undefined> = {};
-        const rows = needs.map((one, at): TickerRow => {
+        const rows = needs.flatMap((one, at): TickerRow | TickerRow[] => {
             const id =
                 one.kind === 'venue' ? `attention:venue:${one.id ?? at}` : `attention:${one.kind}`;
             index[id] = one;
             if (one.kind === 'inbox') {
-                return {
+                const line = {
                     id,
                     glyph: attentionGlyph(one.kind),
                     label: String(one.count),
-                    tail: t('focus.command.emails')
+                    tail: t('focus.command.emails'),
+                    fold: emailsOpen
                 };
+                return emailsOpen ? [line, ...emails.rows] : line;
             }
             if (one.kind === 'linkedin') {
                 return {
@@ -220,7 +290,7 @@
     });
 
     /** Put transient reveal state on the instance that was activated, never in layout identity. */
-    function reveal(view: 'leads' | 'venues', item: string, expiredOpen = false): void {
+    function reveal(view: 'inbox' | 'leads' | 'venues', item: string, expiredOpen = false): void {
         const id = openView(view);
         setInstanceState(id, {
             ...instanceMap(instanceState(id)),
@@ -243,11 +313,14 @@
 
     /**
      * Open the view named by one attention line: a venue line opens the venue's page, of the id the
-     * line names, and reveals it in the Venues view when no registry venue has that id.
+     * line names, and reveals it in the Venues view when no registry venue has that id. A thread
+     * under the line of emails opens the Inbox at its card.
      */
     function pickAttention(id: string): void {
+        const thread = emails.index[id];
         const line = attentionView.index[id];
-        if (line?.kind === 'inbox') openView('inbox');
+        if (thread !== undefined) reveal('inbox', thread.id);
+        else if (line?.kind === 'inbox') openView('inbox');
         else if (line?.kind === 'linkedin') openView('linkedin');
         else if (line?.kind === 'venue' && line.id !== undefined) {
             const page = venuePage(line.id, pageLookup(client));
@@ -275,6 +348,7 @@
     {hidden}
     {ontoggle}
     attentionRows={attentionView.rows}
+    {onemails}
     refreshRows={refreshView.rows}
     {onproject}
     onpick={pick}

@@ -36,9 +36,15 @@
 // the audience page is answered both when it asks and told both again whenever either changes,
 // while the pane is drawn or not.
 //
+// What a slide's layout settled on is kept (`layouts`), one layout per slide of a deck, so a slide
+// shown again is drawn with no search. Every Slide of the workbench reads and fills the one set,
+// since a layout is the same on every surface, and a layout leaves with its slide as a measure
+// does. The set is made once for the page and is in memory alone.
+//
 // The print and audience routes hold no store: they read the deck through `readDeck` under the
 // kept list they were told and draw the strip of a project's facts by the toggle they were told,
-// and the print page asks the exporting pane for both (`exportKeep`).
+// the print page asks the exporting pane for both (`exportKeep`), and the audience page keeps its
+// layouts in a set of its own (`createKeptLayouts`).
 
 import { untrack } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
@@ -64,6 +70,7 @@ import {
     startedTimer,
     type DeckDraft,
     type DeckRef,
+    type KeptLayout,
     type Timer
 } from './present.ts';
 
@@ -85,17 +92,72 @@ export type DeckAnswer = {
 /** One project's deck as the deck menu lists it. */
 type ProjectDeck = { ref: DeckRef; id: string; title: string };
 
+/** A slide of a deck: the deck by its root and folder, and the slide's key. */
+type SlideRef = { root: string; path: string; key: string };
+
+/** The text a slide of a deck is held under. */
+function slideKey({ root, path, key }: SlideRef): string {
+    return JSON.stringify([root, path, key]);
+}
+
+/** The slide of a deck its key names. */
+function slideRef({ root, path }: Deck, key: string): SlideRef {
+    return { root, path, key };
+}
+
 /**
- * A slide a Stage measured taller than its frame: the deck by its root and folder, the slide's key
- * and the file and line it is written at, and the message its finding carries.
+ * A slide a Stage measured taller than its frame: the file and line it is written at, and the
+ * message its finding carries.
  */
-type TooTall = {
-    root: string;
-    path: string;
-    key: string;
-    source: DeckSlide['source'];
-    message: string;
+type TooTall = SlideRef & { source: DeckSlide['source']; message: string };
+
+/** The layouts of the slides a page has drawn, one per slide of a deck. */
+export type KeptLayouts = {
+    /** The layout kept of a slide of a deck. */
+    of: (deck: Deck, key: string) => KeptLayout | undefined;
+    /**
+     * Keep a slide's layout in place of the one held, unless the held one is of the same slide with
+     * more of its images loaded.
+     */
+    keep: (deck: Deck, key: string, layout: KeptLayout) => void;
+    /** Drop the layouts of the slides `held` answers false for. */
+    prune: (held: (slide: SlideRef) => boolean) => void;
+    /** How often fonts have finished loading on the page. */
+    fontLoads: () => number;
 };
+
+/** How far the images of a layout have come, from the least. */
+const LOADED = ['waiting', 'failed', 'all'] as const;
+
+/**
+ * A page's set of kept layouts. It counts the font loads of the page it is made on, so it is made
+ * once for the page and before any slide is drawn, and its count has moved when a slide hears of a
+ * load.
+ */
+export function createKeptLayouts(): KeptLayouts {
+    const held = new Map<string, SlideRef & { layout: KeptLayout }>();
+    let fonts = 0;
+    if (typeof document !== 'undefined') {
+        document.fonts.addEventListener('loadingdone', () => {
+            fonts += 1;
+        });
+    }
+    const rank = ({ from }: KeptLayout): number => LOADED.indexOf(from.loaded);
+    return {
+        of: (deck, key) => held.get(slideKey(slideRef(deck, key)))?.layout,
+        keep(deck, key, layout) {
+            const slide = slideRef(deck, key);
+            const before = held.get(slideKey(slide))?.layout;
+            const less = before !== undefined && rank(layout) < rank(before);
+            if (less && layout.from.slide === before.from.slide) return;
+            held.set(slideKey(slide), { ...slide, layout });
+        },
+        prune(stays) {
+            for (const [key, one] of held) if (!stays(one)) held.delete(key);
+        },
+        fontLoads: () => fonts
+    };
+}
 
 /**
  * How far a slide may run past its frame and count as fitting, as a fraction of the frame's height,
@@ -193,6 +255,8 @@ export type PresentStore = {
      * another, since a reaction does not track a signal made while it runs.
      */
     tallMark: (deck: Deck, key: string) => TallMark;
+    /** The layouts kept of the slides this page has drawn. */
+    layouts: KeptLayouts;
     /** One finding for each slide too tall in a deck, at the slide's file and line. */
     findings: () => Finding[];
     /** The portfolio deck, null when the configuration names none. */
@@ -427,6 +491,8 @@ export function createPresent(
      */
     const tall = new SvelteMap<string, TooTall>();
 
+    const layouts = createKeptLayouts();
+
     /**
      * One reactive cell per slide a tile's mark has read, holding that slide's finding's message
      * (empty for none) under the key of `tall`, so a tile's mark runs again only when its own slide
@@ -434,11 +500,6 @@ export function createPresent(
      * slide's. A cell lives as long as the store, since a live mark holds on to it.
      */
     const marks = new Map<string, { message: string }>();
-
-    /** The key of a slide of a deck in `tall`. */
-    function tallKey(deck: Deck, key: string): string {
-        return JSON.stringify([deck.root, deck.path, key]);
-    }
 
     /** The cell of a slide's mark, made from what `tall` holds the first time it is read. */
     function markOf(key: string): { message: string } {
@@ -468,8 +529,8 @@ export function createPresent(
     /** The deck each pane draws, by the pane's instance id. */
     const drawnBy = new Map<string, Deck>();
 
-    /** Whether a deck is the one a measure was taken in and holds its slide. */
-    function holds(deck: Deck | null | undefined, one: TooTall): boolean {
+    /** Whether a deck is the one a slide is of and holds it. */
+    function holds(deck: Deck | null | undefined, one: SlideRef): boolean {
         return (
             deck?.root === one.root &&
             deck.path === one.path &&
@@ -500,15 +561,16 @@ export function createPresent(
     }
 
     /**
-     * Drop the measures of the slides that neither a saved deck nor any pane's deck holds.
-     * `arriving` is a saved deck's answer under its query key, which the query does not hold yet.
+     * Drop the measures and the layouts of the slides that neither a saved deck nor any pane's deck
+     * holds. `arriving` is a saved deck's answer under its query key, which the query does not hold
+     * yet.
      */
     function prune(arriving: { key: string[]; deck: Deck } | null): void {
-        for (const [key, one] of tall) {
-            if (savedOf(one.root, one.path, arriving).some((deck) => holds(deck, one))) continue;
-            if ([...drawnBy.values()].some((deck) => holds(deck, one))) continue;
-            holdTall(key, null);
-        }
+        const held = (one: SlideRef): boolean =>
+            savedOf(one.root, one.path, arriving).some((deck) => holds(deck, one)) ||
+            [...drawnBy.values()].some((deck) => holds(deck, one));
+        for (const [key, one] of tall) if (!held(one)) holdTall(key, null);
+        layouts.prune(held);
     }
 
     /** The query key each pane reads its saved deck under, by the pane's instance id. */
@@ -534,20 +596,15 @@ export function createPresent(
     }
 
     function measured(deck: Deck, row: DeckSlide, over: number): void {
-        const key = tallKey(deck, row.key);
+        const slide = slideRef(deck, row.key);
+        const key = slideKey(slide);
         if (over <= TOO_TALL) {
             holdTall(key, null);
             return;
         }
         const percent = Math.max(1, Math.round(over * 100));
         const message = t('findings.deck.too_tall', row.title, String(percent));
-        const next = {
-            root: deck.root,
-            path: deck.path,
-            key: row.key,
-            source: row.source,
-            message
-        };
+        const next = { ...slide, source: row.source, message };
         if (JSON.stringify(tall.get(key)) !== JSON.stringify(next)) holdTall(key, next);
     }
 
@@ -604,7 +661,8 @@ export function createPresent(
     return {
         measured,
         drawing,
-        tallMark: (deck, key) => markOf(tallKey(deck, key)),
+        layouts,
+        tallMark: (deck, key) => markOf(slideKey(slideRef(deck, key))),
         findings: () => tallFindings,
         portfolio: () => portfolio,
         projectDecks: () => projectDecks,

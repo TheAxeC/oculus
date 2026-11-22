@@ -80,6 +80,8 @@ export type ScanOptions = {
      * an unchanged file is not read again; a scan without them reads each file once.
      */
     stamps?: Stamps;
+    /** The digest of the reader (cache.ts, `readerDigest`), for a caller that scans again. */
+    version?: string;
 };
 
 /** The bytes a read takes from a file at a time. */
@@ -357,9 +359,9 @@ function gather(folders: string[], list: (store: string) => Found[]): Located[] 
 /**
  * Every store of every account, folded into one list of records, newest activity first. The
  * registries are read once per scan rather than once per record, and so is the Codex process probe;
- * the cache is read once at the start and written once at the end, holding both kinds keyed by
- * path. With no folders given nothing is read: the folders come from the accounts, never from a
- * home path held here.
+ * the cache is read once at the start and, when an entry changed, written once at the end, holding
+ * both kinds keyed by path. With no folders given nothing is read: the folders come from the
+ * accounts, never from a home path held here.
  */
 export function scan(options: ScanOptions = {}): SessionRecord[] {
     const stores = distinctFolders(options.stores ?? []);
@@ -371,7 +373,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const now = options.now ?? Date.now();
     const stamps = options.stamps ?? createStamps();
 
-    const version = readerDigest();
+    const version = options.version ?? readerDigest();
     const previous = loadCache(cachePath, version);
     const probe = options.probe ?? systemProbe;
     const candidates = registryCandidates(options.registries ?? [], probe);

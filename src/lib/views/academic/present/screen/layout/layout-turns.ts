@@ -1,9 +1,12 @@
-// Layer 3, Present partial. The queue that gives the Overview's tiles their turns. Mounting a
-// tile's slide and laying it out each measure the page synchronously, and a deck of a hundred
-// tiles doing that in one task holds the page for minutes, so each of them is a job on this queue,
-// which runs a time budget's worth of jobs per animation frame and yields between frames. A queue
-// is made from its inputs (the frame source, the clock and the time budget) and holds its own
-// state, so each Overview has one of its own and a run of the queue can be stepped by hand.
+// Layer 3, Present partial. The queue that gives the Overview's tiles, and the slides laid out
+// ahead of being shown, their turns. Mounting a slide and laying it out each measure the page
+// synchronously, and a deck of a hundred tiles doing that in one task holds the page for minutes,
+// so each of them is a job on this queue, which runs a time budget's worth of jobs per frame and
+// yields between frames. A queue is made from its inputs (the frame source, the clock, the time
+// budget and whether a turn is one step of a layout) and holds its own state, so each Overview and
+// each set of slides laid out ahead has one of its own and a run of the queue can be stepped by
+// hand. An Overview's frames are the page's animation frames; those of the slides laid out ahead
+// are its idle times, one job in each (Ahead.svelte).
 //
 // Jobs run in the order they were asked. A job already waiting is not queued twice and keeps its
 // place, so an image that loads late does not push its tile behind the others; a job asked again
@@ -14,7 +17,7 @@
 
 import { getContext, setContext } from 'svelte';
 
-/** One piece of a tile's work. */
+/** One piece of a slide's work. */
 type Job = () => void;
 
 /** What a queue takes from the page. */
@@ -25,18 +28,25 @@ type Inputs = {
     now: () => number;
     /** How long the jobs of one frame may take, in milliseconds. */
     budget: number;
+    /** Whether a slide's job is one step of its layout (`LayoutTurns`); a whole one by default. */
+    stepped?: boolean;
 };
 
-/** A queue of tile work, which the Overview makes and its tiles and their slides ask. */
+/** A queue of slide work, which its slides and what mounts them ask. */
 export type LayoutTurns = {
     /** Give a job its turn, unless it is already waiting for one. */
     ask: (job: Job) => void;
     /** Take a job out of the queue: it does not run, and it leaves nothing waiting. */
     drop: (job: Job) => void;
+    /**
+     * Whether a turn of a slide's layout is one factor of its search, the next one asked for at its
+     * end, so the page answers a key between two factors; a whole layout otherwise.
+     */
+    stepped: boolean;
 };
 
 /** Make a queue that runs its jobs a budget's worth per frame. */
-export function createLayoutTurns({ frames, now, budget }: Inputs): LayoutTurns {
+export function createLayoutTurns({ frames, now, budget, stepped = false }: Inputs): LayoutTurns {
     /** The jobs waiting, in the order they were asked; a Set holds a job once, in its place. */
     const waiting = new Set<Job>();
     /** The handle of the frame requested, null for none. */
@@ -67,6 +77,7 @@ export function createLayoutTurns({ frames, now, budget }: Inputs): LayoutTurns 
     }
 
     return {
+        stepped,
         ask(job) {
             waiting.add(job);
             schedule();

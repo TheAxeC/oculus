@@ -67,6 +67,10 @@
     // is typed in a field act, Tab wraps inside the box, and the focus leaving for an element
     // outside the box (a modified key such as Cmd+Shift+F) ends the full screen.
     //
+    // Once its slide has been laid out, the pane lays out the slide after it and the one before it
+    // while the page is idle, unseen (screen/Ahead.svelte), so a move to either draws the layout
+    // kept of it. Nothing is laid out ahead while the tab is hidden or the grid is open.
+    //
     // A slide that comes from a project's deck, whose project has a field that holds a value,
     // carries the strip of the project's facts at its foot (`slideFacts`), on the pane, the
     // presenter screen, the tiles, the audience window and the PDF. The toolbar's Project facts
@@ -108,6 +112,7 @@
         indexOf,
         labelOf,
         leftDeck,
+        neighbours,
         nothingToShow,
         pageDrafts,
         parsePresentState,
@@ -182,6 +187,13 @@
     const shown = $derived(slideAt(rows, held.slide));
     const at = $derived(indexOf(rows, held.slide));
     const next = $derived(rows.at(at + 1) ?? null);
+    /**
+     * The slides to lay out ahead of being shown: none while the tab is hidden, and not the next
+     * one on the presenter screen, which draws it.
+     */
+    const around = $derived(
+        tabShown() ? neighbours(rows, held.slide).filter((row) => !presented || row !== next) : []
+    );
     const grid = $derived(held.overview);
 
     const screen = createFullscreen({
@@ -414,6 +426,7 @@
                     <Presenter
                         row={shown}
                         {next}
+                        {around}
                         {deck}
                         facts={held.facts}
                         at={at + 1}
@@ -426,7 +439,7 @@
                         onend={() => presenting.end(instance.id)}
                     />
                 {:else}
-                    <Framed row={shown} {deck} facts={held.facts} bare={full} />
+                    <Framed row={shown} {deck} facts={held.facts} bare={full} {around} />
                 {/if}
             </ContextMenu>
         {/if}

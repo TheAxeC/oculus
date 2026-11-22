@@ -5,10 +5,10 @@
 // with their words, the groups with their members, the facts of each project a slide comes from.
 // What is here is the pane's own state (the slide it is on, whether its grid is open, the decks it
 // has shown, the controls of its filter and its Project facts toggle), the deck a tab's layout
-// state names, the moves over a deck's slides, and the one hue a slide's status tag wears. A
-// presentation adds the names its two windows share (the audience address, and the window, channel
-// and lock name), the size of the audience window, the messages they send each other, and the
-// presenter screen's timer and clock text.
+// state names, the moves over a deck's slides, the one hue a slide's status tag wears, and what a
+// slide's layout is kept as. A presentation adds the names its two windows share (the audience
+// address, and the window, channel and lock name), the size of the audience window, the messages
+// they send each other, and the presenter screen's timer and clock text.
 //
 // A pane's filter is the Projects board's filter over the member projects of the deck's groups of
 // project decks (`memberItems`): the same function works it out (state/boards/board/filter-menu.ts
@@ -307,6 +307,63 @@ export function equationScale(needed: number, room: number): number {
     return Math.max(LEAST_EQUATION_SCALE, Math.floor((room / needed) * 100) / 100);
 }
 
+/**
+ * A box in a slide's room, its corner from the room's top left, each length a fraction of the
+ * frame's width.
+ */
+export type Box = { x: number; y: number; width: number; height: number };
+
+/** Where a slide's figures and its text go in its room. */
+export type Layout = {
+    /** How the figures of the block are set against each other. */
+    arrangement: 'one' | 'side' | 'stacked';
+    /** Where the block sits: a column beside the text, under the text, or alone in the room. */
+    shape: 'tall' | 'wide' | 'alone';
+    /** The box of every figure together, captions included. */
+    block: Box;
+    /** Each figure's box, its image and frame, what is under it left out, in the asked order. */
+    figures: Box[];
+    /** The box the text has, null on a slide with no text. */
+    text: Box | null;
+    /**
+     * The height the layout takes: the room's, or more when the text at its least size leaves no
+     * room under it and the block is drawn under the text, past the room.
+     */
+    height: number;
+};
+
+/** What a slide's layout is made from, by which a layout made from the same is told. */
+export type LayoutInputs = {
+    /** The slide and its strip, as text. */
+    slide: string;
+    /**
+     * The width and height of a line of the slide's body type, as fractions of the frame's width.
+     */
+    probe: readonly [number, number];
+    /** The page: its theme, its text scale, its configuration and the fonts it has loaded. */
+    page: string;
+    /** Each image of the slide: its natural size, or that it failed or has not loaded. */
+    images: string;
+    /** How far the images have come: some yet to load, all come but some failed, all loaded. */
+    loaded: 'waiting' | 'failed' | 'all';
+};
+
+/** What a slide's layout settled on, with what it was made from. */
+export type KeptLayout = {
+    from: LayoutInputs;
+    /** The factor on the slide type scale the content is drawn at. */
+    fit: number;
+    /** The height a Markdown image may take, as a fraction of the frame's width. */
+    room: number;
+    layout: Layout | null;
+    /** Each placed figure's box, by the figure's index on the slide. */
+    boxes: Readonly<Record<number, Box>>;
+    /** The indexes of the figures whose image failed to load. */
+    failed: readonly number[];
+    /** The bottom of the lowest figure's box, or 0 when the layout's height holds it. */
+    depth: number;
+};
+
 /** The hue a slide's status chip wears, from the deck's `tag_tones` by the tag's class. */
 export function tagToneOf(deck: Deck, slide: PresentSlide): string | undefined {
     return byKey(deck.tagTones, slide.tag?.class ?? '');
@@ -330,6 +387,12 @@ export function indexOf(slides: DeckSlide[], key: string): number {
 /** The slide a key names, the first slide when the deck does not hold it, null for none. */
 export function slideAt(slides: DeckSlide[], key: string): DeckSlide | null {
     return item(slides, indexOf(slides, key)) ?? null;
+}
+
+/** The slides on either side of the one a key names, the one after it first; none past an end. */
+export function neighbours(slides: DeckSlide[], key: string): DeckSlide[] {
+    const at = indexOf(slides, key);
+    return [item(slides, at + 1), item(slides, at - 1)].filter((row) => row !== undefined);
 }
 
 /** The key `by` slides on, stopping at both ends; the key given back for an empty deck. */

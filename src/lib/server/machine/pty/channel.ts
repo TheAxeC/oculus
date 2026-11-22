@@ -487,8 +487,8 @@ export class Terminals {
 
     /**
      * Run one command of a terminal after the ones asked before it. Each keystroke is its own
-     * message and its own tmux process, and two started at once can finish in either order, which
-     * types "ceho" for "echo".
+     * message, typed by the terminal's control client or by a tmux process of its own, and two of
+     * them started at once can finish in either order, which types "ceho" for "echo".
      */
     #chain(id: string, work: () => Promise<void>): void {
         const after = (this.#queue.get(id) ?? Promise.resolve()).then(work, work);
@@ -699,10 +699,11 @@ export class Terminals {
 
     /**
      * Type what the page sent into the pane as the bytes it is, one `send-keys -H` per piece of at
-     * most INPUT_MOST bytes (inputArgs), in order, stopping at the first that fails. A mouse report
-     * or a focus report is one escape sequence and stays in one piece, so the pane reads it in one
-     * write and never as a lone Escape followed by text. A paste longer than INPUT_MOST arrives in
-     * several writes, in order, its opening and closing markers each whole.
+     * most INPUT_MOST bytes (inputArgs), in order, stopping at the first that fails, which is not
+     * sent again: whether the pane took it is not known. A mouse report or a focus report is one
+     * escape sequence and stays in one piece, so the pane reads it in one write and never as a lone
+     * Escape followed by text. A paste longer than INPUT_MOST arrives in several writes, in order,
+     * its opening and closing markers each whole.
      */
     async #input(id: string, encoded: string): Promise<void> {
         if (this.#streams?.has(id) === true) {
@@ -711,7 +712,7 @@ export class Terminals {
         }
         for (const args of inputArgs(id, Buffer.from(encoded, 'base64'))) {
             try {
-                await this.#driver.run(args);
+                await this.#driver.type(id, args);
             } catch (error) {
                 console.error(`pty: input to ${id} failed: ${reason(error)}`);
                 return;

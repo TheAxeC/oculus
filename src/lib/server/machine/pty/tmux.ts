@@ -340,6 +340,8 @@ export type ControlClient = {
     ready(): Promise<boolean>;
     /** Whether the child is still running. */
     live(): boolean;
+    /** Whether the client is attached and its child runs, so a command written now is taken. */
+    attached(): boolean;
     close(): void;
 };
 
@@ -364,7 +366,9 @@ export function control(
         stdio: ['pipe', 'pipe', 'pipe']
     });
     let alive = true;
+    /** Whether the reply of the attach was read, and whether it was no refusal. */
     let joined = false;
+    let attached = false;
     let settle: (attached: boolean) => void = () => {
         // Replaced by the promise below before the child can answer.
     };
@@ -401,7 +405,8 @@ export function control(
         reply: (reply) => {
             if (!joined) {
                 joined = true;
-                settle(!reply.error);
+                attached = !reply.error;
+                settle(attached);
                 return;
             }
             const waiting = pending.shift();
@@ -413,17 +418,23 @@ export function control(
         }
     });
 
-    child.stdout.on('data', (chunk: Buffer) => parser.feed(chunk));
-    // tmux writes nothing useful on stderr in control mode, but an unread pipe would fill.
-    child.stderr.resume();
-    child.on('error', () => {
-        alive = false;
-        settle(false);
-    });
-    child.on('exit', () => {
+    /** The child is gone: no command is taken any more, and those waiting for a reply fail. */
+    const ended = (): void => {
         alive = false;
         settle(false);
         while (pending.length > 0) pending.shift()?.reject(new Error('the control client exited'));
+    };
+
+    child.stdout.on('data', (chunk: Buffer) => parser.feed(chunk));
+    // tmux writes nothing useful on stderr in control mode, but an unread pipe would fill.
+    child.stderr.resume();
+    // A write to a child that ended, or whose input `close` ended, fails its own commands
+    // (`flush`). The stream says it again as an event, which would end the process were nothing to
+    // hear it.
+    child.stdin.on('error', () => undefined);
+    child.on('error', ended);
+    child.on('exit', () => {
+        ended();
         handlers.exit();
     });
 
@@ -440,6 +451,9 @@ export function control(
         ready: () => ready,
         live(): boolean {
             return alive;
+        },
+        attached(): boolean {
+            return alive && attached;
         },
         close(): void {
             alive = false;

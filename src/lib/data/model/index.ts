@@ -615,12 +615,14 @@ export type {
     UsageWindow,
     LiveEntry,
     OpenFileMessage,
+    PlacedWorkspace,
     SecondaryArea,
     SessionAgent,
     SessionCache,
     SessionEvent,
     SessionFile,
     SessionRecord,
+    SessionsDifference,
     SessionsPayload,
     SessionTokens,
     SessionTool,
@@ -628,7 +630,7 @@ export type {
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export { BRANCH_NOT_MERGED } from './model-sessions.ts';
+export { BRANCH_NOT_MERGED, joinSessions, newestActivity, placedOf } from './model-sessions.ts';
 export type {
     ClusterResolution,
     ClusterRow,

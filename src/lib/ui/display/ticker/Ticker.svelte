@@ -21,12 +21,17 @@
     // the same glyph, tail, tone, buttons, kept button and reveal, so a heading is reached and
     // opened by the keyboard as a row is. The set-in is a margin, which the room a row measures for
     // its buttons leaves out.
+    //
+    // A row that has a `fold` folds the rows after it. Its fold control is the caller's `folder`
+    // snippet, drawn before the row's glyph in a box as high as the row, and whether those rows are
+    // in the list is the caller's too: this list draws the rows it is given. A row is told apart by
+    // its own id (`rowKeys`), so a row that joins or leaves takes the keyboard from no other.
 
     import type { Snippet } from 'svelte';
     import Glyph from '../Glyph.svelte';
     import LinkedText from '../text/LinkedText.svelte';
     import { createReveal, short } from './reveal.svelte';
-    import type { TickerRow } from './ticker-rows';
+    import { rowKeys, type TickerRow } from './ticker-rows';
 
     type Props = {
         rows: TickerRow[];
@@ -40,15 +45,20 @@
         kept?: (row: TickerRow) => string | undefined;
         /** How a row's `mark` is drawn, given the mark. A row's mark is not drawn without it. */
         marked?: Snippet<[string]>;
+        /** How the fold control of a row that folds is drawn, given the row; none without it. */
+        folder?: Snippet<[TickerRow]>;
     };
 
-    let { rows, onpick, onaction, reveal = false, kept, marked }: Props = $props();
+    let { rows, onpick, onaction, reveal = false, kept, marked, folder }: Props = $props();
 
     let list: HTMLUListElement | undefined = $state();
+
+    const keys = $derived(rowKeys(rows));
 
     const shown = createReveal({
         list: () => list,
         rows: () => rows,
+        keys: () => keys,
         reveal: () => reveal,
         actionable: () => onaction !== undefined,
         kept: () => kept
@@ -70,7 +80,7 @@
     onfocusin={reveal ? shown.into : undefined}
     onfocusout={reveal ? shown.out : undefined}
 >
-    {#each rows as row, at (`${at}:${row.id}`)}
+    {#each rows as row, at (keys[at])}
         {@const here = shown.opened(at)}
         <li
             class:open={here !== null}
@@ -80,6 +90,9 @@
             onpointerenter={(event) => shown.measureCut(event, row)}
             onfocusin={(event) => shown.measureCut(event, row)}
         >
+            {#if row.fold !== undefined && folder !== undefined}
+                <span class="fold">{@render folder(row)}</span>
+            {/if}
             {#if row.glyph !== ''}
                 <Glyph name={row.glyph} />
             {/if}
@@ -90,13 +103,16 @@
                 <button
                     type="button"
                     class="name"
+                    class:whole={row.whole === true}
                     data-ticker-id={row.id}
                     onclick={() => onpick(row.id)}
                 >
-                    {row.label}
-                    {#if row.detail !== undefined && row.detail !== ''}
-                        <span class="detail">{row.detail}</span>
-                    {/if}
+                    <span class="words">
+                        {row.label}
+                        {#if row.detail !== undefined && row.detail !== ''}
+                            <span class="detail">{row.detail}</span>
+                        {/if}
+                    </span>
                     {#if row.tail !== undefined && row.tail !== ''}
                         <span
                             class="tail"
@@ -164,6 +180,16 @@
         line-height: calc(14px * var(--text-scale, 1));
     }
 
+    /* The box of a row's fold control, as high as the row, so the control, which is taller, is
+       centred on the line and the row keeps the height of a row without one. */
+    .fold {
+        display: flex;
+        flex: 0 0 auto;
+        align-self: center;
+        align-items: center;
+        height: calc(18px * var(--text-scale, 1));
+    }
+
     .name {
         min-width: 0;
         overflow: hidden;
@@ -184,7 +210,7 @@
         font-weight: 600;
     }
 
-    /* A row under a heading is set in by a margin, which the row's clientWidth leaves out, so the
+    /* A row under another is set in by a margin, which the row's clientWidth leaves out, so the
        room the reveal measures for its buttons is the row's own. */
     li.under {
         margin-left: 1.25em;
@@ -202,6 +228,18 @@
         background: none;
         text-align: left;
         cursor: pointer;
+    }
+
+    /* A row that keeps its tail whole cuts its name and detail instead. */
+    button.name.whole {
+        display: flex;
+        gap: 0.5em;
+    }
+
+    .whole .words {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     button.name:hover,

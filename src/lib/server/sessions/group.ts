@@ -16,13 +16,14 @@
 
 import { existsSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, normalize, relative, sep } from 'node:path';
-import type {
-    Area,
-    ListedSession,
-    SecondaryArea,
-    SessionFile,
-    SessionRecord,
-    Workspace
+import {
+    newestActivity,
+    type Area,
+    type ListedSession,
+    type SecondaryArea,
+    type SessionFile,
+    type SessionRecord,
+    type Workspace
 } from '../../data/model/index.ts';
 import { isMap } from '../core/json.ts';
 import { overrides as readOverrides, type Override } from './overrides.ts';
@@ -334,11 +335,11 @@ function ordered(
         const areas = [...bucket.areas.values()];
         for (const area of areas) {
             sortByActivity(area.sessions, (session) => session.id || '');
-            area.lastActivity = newest(area.sessions);
+            area.lastActivity = newestActivity(area.sessions);
         }
         sortByActivity(areas, (area) => area.key);
         bucket.workspace.areas = areas;
-        bucket.workspace.lastActivity = newest(areas);
+        bucket.workspace.lastActivity = newestActivity(areas);
         out.push(bucket.workspace);
     }
     sortByActivity(out, (workspace) => workspace.key);
@@ -364,15 +365,6 @@ function sortByActivity<T extends { lastActivity?: string | null }>(
 
 function stampOf(item: { lastActivity?: string | null }): string {
     return typeof item.lastActivity === 'string' ? item.lastActivity : '';
-}
-
-function newest(items: { lastActivity?: string | null }[]): string | null {
-    let best = '';
-    for (const item of items) {
-        const stamp = stampOf(item);
-        if (stamp > best) best = stamp;
-    }
-    return best || null;
 }
 
 // ------------------------------------------------------------------ inputs
