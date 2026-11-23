@@ -1,11 +1,12 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none. Owed: `~/Applications/oculus.app` built again from O189 and replaced (ruling App rebuild after O189), with no GitHub release.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
 - O189 (the terminal's locale and its colours; the command center's emails), 2026-11-23.
+- `~/Applications/oculus.app` replaced by the build of O189 (e7df73f49), 2026-11-23, no release.
 - `~/Applications/oculus.app` replaced by the build of O188 (dce9afce7), 2026-11-22, no release.
 - O188 (the server thread kept free, slides laid out ahead, the command center's emails unfolded), 2026-11-22, dce9afce7.
 - Release v1.1.0, 2026-11-11, made again at 3b45e3893 to carry O187 (before at e34e44fb5 and 24f324bdc), tag v1.1.0, https://github.com/TheAxeC/oculus/releases/tag/v1.1.0.
