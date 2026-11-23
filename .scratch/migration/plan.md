@@ -3778,6 +3778,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 773 (2026-11-23): (a). The terminal grid draws text at a contrast of 4.5:1 or more against its ground in every theme, through xterm's own `minimumContrastRatio`, as VS Code does. The lazy option was (c), no floor (the user).
 - Open item 774 (2026-11-23): (a). Oculus Light and Oculus Dark take VS Code's default terminal colours of their type; Phosphor, Phosphor Amber, Tokyo Neon and Oxocarbon keep their own hues in the terminal. The lazy option was (b), all six as today (the user).
 - Command center emails (2026-11-23): the line of emails folds with a chevron after its words, right while closed and down while open, in place of the plus before it (Axel: "I told you to have a > AFTER the line", "I demand you fix that too, IN LANDING"); its threads are one list, newest received first, with no section headings: (b). The lazy option was (d), the headings kept (the user).
+- O189 left undone (2026-11-23): the whole `test:quick` on O189's final code and a reviewer's read of its fixes at landing are not owed (Axel: "These are fine"). Leaving both undone is the lazy option, and it is the user's choice (the user).
 
 ## Agents
 
