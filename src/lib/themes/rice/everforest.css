@@ -6,9 +6,11 @@
    hue of the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's
    colour among the hexes of the palette's own block and an OKLCH grid around that colour (lightness
    0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of
-   10), with every measure at 10.5 or more. One block per palette, each a set of overrides on the
-   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the
-   theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+   10), with every measure at 10.5 or more. The terminal colours (`--ansi-*`) are those of the theme
+   files everforest-dark and everforest-light of @shikijs/themes. One block per palette, each a set
+   of overrides on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in
+   themes.css, and the theme list's rows are the `themes:` rows of
+   config/defaults/appearance.yml. */
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
 body.everforest {
@@ -67,6 +69,23 @@ body.everforest {
     --c-graph-ref: #7fbbb3;
     --c-graph-remote: #d699b6;
     --c-graph-base: #e69875;
+    /* The sixteen terminal colours. */
+    --ansi-black: #343f44;
+    --ansi-red: #e67e80;
+    --ansi-green: #a7c080;
+    --ansi-yellow: #dbbc7f;
+    --ansi-blue: #7fbbb3;
+    --ansi-magenta: #d699b6;
+    --ansi-cyan: #83c092;
+    --ansi-white: #d3c6aa;
+    --ansi-bright-black: #859289;
+    --ansi-bright-red: #e67e80;
+    --ansi-bright-green: #a7c080;
+    --ansi-bright-yellow: #dbbc7f;
+    --ansi-bright-blue: #7fbbb3;
+    --ansi-bright-magenta: #d699b6;
+    --ansi-bright-cyan: #83c092;
+    --ansi-bright-white: #d3c6aa;
 }
 
 /* --- Everforest Light (sainnhe/everforest) ---------------------------- */
@@ -125,4 +144,21 @@ body.everforestlight {
     --c-graph-ref: #3a94c5;
     --c-graph-remote: #df69ba;
     --c-graph-base: #f57d26;
+    /* The sixteen terminal colours. */
+    --ansi-black: #5c6a72;
+    --ansi-red: #f85552;
+    --ansi-green: #8da101;
+    --ansi-yellow: #dfa000;
+    --ansi-blue: #3a94c5;
+    --ansi-magenta: #df69ba;
+    --ansi-cyan: #35a77c;
+    --ansi-white: #939f91;
+    --ansi-bright-black: #5c6a72;
+    --ansi-bright-red: #f85552;
+    --ansi-bright-green: #8da101;
+    --ansi-bright-yellow: #dfa000;
+    --ansi-bright-blue: #3a94c5;
+    --ansi-bright-magenta: #df69ba;
+    --ansi-bright-cyan: #35a77c;
+    --ansi-bright-white: #f4f0d9;
 }

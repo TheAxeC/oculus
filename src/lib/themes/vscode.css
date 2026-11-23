@@ -6,13 +6,17 @@
    removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three
    name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme
    holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six
-   code hues and the tokens oculus adds to that theme (the converter's ADDED); its comment names
-   each token that VS Code's registered default or oculus's base gave and each token oculus adds. */
+   code hues, the sixteen terminal colours (--ansi-*, each the theme's own or, where it sets
+   none, the default Visual Studio Code 1.145.2 registers for its type) and the tokens oculus
+   adds to that theme (the converter's ADDED); its comment names each token that VS Code's
+   registered default or oculus's base gave, sixteen registered terminal colours in one phrase,
+   and each token oculus adds. */
 
 /* Light 2026: theme-defaults/themes/2026-light.json, uiTheme vs. Registered VS Code defaults:
    --c-scm-added-bg (diffEditor.insertedLineBackground), --c-scm-deleted-bg
-   (diffEditor.removedLineBackground), --c-graph-base (scmGraph.historyItemBaseRefColor). oculus
-   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
+   (diffEditor.removedLineBackground), --c-graph-base (scmGraph.historyItemBaseRefColor), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-light-2026 {
     --bg: #fafafd;
     --panel: #ffffff;
@@ -47,6 +51,22 @@ body.vscode-light-2026 {
     --c-code-name: #8250df;
     --c-code-number: #098658;
     --c-code-string: #0a3069;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
 }
 
 /* Light Modern: theme-defaults/themes/light_modern.json, uiTheme vs. Registered VS Code
@@ -56,9 +76,10 @@ body.vscode-light-2026 {
    (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
-   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor).
-   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. Nudged to
-   4.5:1: --tab-inactive-txt from #868686 (tab.inactiveForeground). */
+   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. Nudged to 4.5:1: --tab-inactive-txt from #868686
+   (tab.inactiveForeground). */
 body.vscode-light-modern {
     --bg: #f8f8f8;
     --panel: #ffffff;
@@ -93,6 +114,22 @@ body.vscode-light-modern {
     --c-code-name: #795e26;
     --c-code-number: #098658;
     --c-code-string: #a31515;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
 }
 
 /* Light+: theme-defaults/themes/light_plus.json, uiTheme vs. Registered VS Code defaults: --bg
@@ -104,8 +141,9 @@ body.vscode-light-modern {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-light-plus {
     --bg: #f3f3f3;
     --panel: #ffffff;
@@ -137,6 +175,22 @@ body.vscode-light-plus {
     --c-code-name: #795e26;
     --c-code-number: #098658;
     --c-code-string: #a31515;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
 }
 
 /* Light (Visual Studio): theme-defaults/themes/light_vs.json, uiTheme vs. Registered VS Code
@@ -149,8 +203,9 @@ body.vscode-light-plus {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline, --c-code-name. */
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline, --c-code-name. */
 body.vscode-light-visual-studio {
     --bg: #f3f3f3;
     --panel: #ffffff;
@@ -182,6 +237,22 @@ body.vscode-light-visual-studio {
     --c-code-name: #2563eb;
     --c-code-number: #098658;
     --c-code-string: #a31515;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
 }
 
 /* Quiet Light: theme-quietlight/themes/quietlight-color-theme.json, uiTheme vs. Registered VS
@@ -192,14 +263,15 @@ body.vscode-light-visual-studio {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-grey is oculus's own, since
-   the theme gives none: it brings the Focus headers drawn in it that touch with every cluster
-   open to a CIEDE2000 of 10 or more from each other and from --panel, stays 10 or more from
-   every other status hue of the theme on the hue and on its -txt, and was picked as the nearest
-   to tokens.css's #9ca3af among the hexes of the theme's own block and an OKLCH grid around that
-   colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20
-   to +20 in steps of 10), with every measure at 10.5 or more. */
+   --titlebar-txt (titleBar.activeForeground), the sixteen terminal colours (terminal.ansi*).
+   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. Added by
+   oculus: --c-grey is oculus's own, since the theme gives none: it brings the Focus headers
+   drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each other
+   and from --panel, stays 10 or more from every other status hue of the theme on the hue and on
+   its -txt, and was picked as the nearest to tokens.css's #9ca3af among the hexes of the theme's
+   own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01,
+   chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every measure at
+   10.5 or more. */
 body.vscode-quiet-light {
     --bg: #f2f2f2;
     --panel: #f5f5f5;
@@ -231,6 +303,22 @@ body.vscode-quiet-light {
     --c-code-name: #aa3731;
     --c-code-number: #9c5d27;
     --c-code-string: #448c27;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
     --c-grey: #6d705b;
 }
 
@@ -278,6 +366,22 @@ body.vscode-solarized-light {
     --c-code-name: #268bd2;
     --c-code-number: #d33682;
     --c-code-string: #2aa198;
+    --ansi-black: #073642;
+    --ansi-red: #dc322f;
+    --ansi-green: #859900;
+    --ansi-yellow: #b58900;
+    --ansi-blue: #268bd2;
+    --ansi-magenta: #d33682;
+    --ansi-cyan: #2aa198;
+    --ansi-white: #eee8d5;
+    --ansi-bright-black: #002b36;
+    --ansi-bright-red: #cb4b16;
+    --ansi-bright-green: #586e75;
+    --ansi-bright-yellow: #657b83;
+    --ansi-bright-blue: #839496;
+    --ansi-bright-magenta: #6c71c4;
+    --ansi-bright-cyan: #93a1a1;
+    --ansi-bright-white: #fdf6e3;
 }
 
 /* Abyss: theme-abyss/themes/abyss-color-theme.json, uiTheme vs-dark. Registered VS Code
@@ -327,11 +431,28 @@ body.vscode-abyss {
     --c-code-name: #ddbb88;
     --c-code-number: #f280d0;
     --c-code-string: #22aa44;
+    --ansi-black: #111111;
+    --ansi-red: #ff9da4;
+    --ansi-green: #d1f1a9;
+    --ansi-yellow: #ffeead;
+    --ansi-blue: #bbdaff;
+    --ansi-magenta: #ebbbff;
+    --ansi-cyan: #99ffff;
+    --ansi-white: #cccccc;
+    --ansi-bright-black: #333333;
+    --ansi-bright-red: #ff7882;
+    --ansi-bright-green: #b8f171;
+    --ansi-bright-yellow: #ffe580;
+    --ansi-bright-blue: #80baff;
+    --ansi-bright-magenta: #d778ff;
+    --ansi-bright-cyan: #78ffff;
+    --ansi-bright-white: #ffffff;
 }
 
 /* Dark 2026: theme-defaults/themes/2026-dark.json, uiTheme vs-dark. Registered VS Code defaults:
-   --c-graph-base (scmGraph.historyItemBaseRefColor). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. */
+   --c-graph-base (scmGraph.historyItemBaseRefColor), the sixteen terminal colours
+   (terminal.ansi*). oculus base: --c-scm-conflict-bg, --diff-added-outline,
+   --diff-deleted-outline. */
 body.vscode-dark-2026 {
     color-scheme: dark;
     --shadow: none;
@@ -372,6 +493,22 @@ body.vscode-dark-2026 {
     --c-code-name: #d2a8ff;
     --c-code-number: #b5cea8;
     --c-code-string: #a5d6ff;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Dark Modern: theme-defaults/themes/dark_modern.json, uiTheme vs-dark. Registered VS Code
@@ -381,8 +518,9 @@ body.vscode-dark-2026 {
    (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
-   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor).
-   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
+   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-dark-modern {
     color-scheme: dark;
     --shadow: none;
@@ -423,6 +561,22 @@ body.vscode-dark-modern {
     --c-code-name: #dcdcaa;
     --c-code-number: #b5cea8;
     --c-code-string: #ce9178;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Dark+: theme-defaults/themes/dark_plus.json, uiTheme vs-dark. Registered VS Code defaults:
@@ -434,8 +588,9 @@ body.vscode-dark-modern {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-dark-plus {
     color-scheme: dark;
     --shadow: none;
@@ -473,6 +628,22 @@ body.vscode-dark-plus {
     --c-code-name: #dcdcaa;
     --c-code-number: #b5cea8;
     --c-code-string: #ce9178;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Dark (Visual Studio): theme-defaults/themes/dark_vs.json, uiTheme vs-dark. Registered VS Code
@@ -485,8 +656,9 @@ body.vscode-dark-plus {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline, --c-code-name. */
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground), the
+   sixteen terminal colours (terminal.ansi*). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline, --c-code-name. */
 body.vscode-dark-visual-studio {
     color-scheme: dark;
     --shadow: none;
@@ -524,6 +696,22 @@ body.vscode-dark-visual-studio {
     --c-code-name: #2563eb;
     --c-code-number: #b5cea8;
     --c-code-string: #ce9178;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Kimbie Dark: theme-kimbie-dark/themes/kimbie-dark-color-theme.json, uiTheme vs-dark.
@@ -535,8 +723,8 @@ body.vscode-dark-visual-studio {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. */
+   --titlebar-txt (titleBar.activeForeground), the sixteen terminal colours (terminal.ansi*).
+   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
 body.vscode-kimbie-dark {
     color-scheme: dark;
     --shadow: none;
@@ -574,6 +762,22 @@ body.vscode-kimbie-dark {
     --c-code-name: #8ab1b0;
     --c-code-number: #f79a32;
     --c-code-string: #889b4a;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Monokai: theme-monokai/themes/monokai-color-theme.json, uiTheme vs-dark. Registered VS Code
@@ -624,6 +828,22 @@ body.vscode-monokai {
     --c-code-name: #a6e22e;
     --c-code-number: #ae81ff;
     --c-code-string: #e6db74;
+    --ansi-black: #333333;
+    --ansi-red: #c4265e;
+    --ansi-green: #86b42b;
+    --ansi-yellow: #b3b42b;
+    --ansi-blue: #6a7ec8;
+    --ansi-magenta: #8c6bc8;
+    --ansi-cyan: #56adbc;
+    --ansi-white: #e3e3dd;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f92672;
+    --ansi-bright-green: #a6e22e;
+    --ansi-bright-yellow: #e2e22e;
+    --ansi-bright-blue: #819aff;
+    --ansi-bright-magenta: #ae81ff;
+    --ansi-bright-cyan: #66d9ef;
+    --ansi-bright-white: #f8f8f2;
 }
 
 /* Monokai Dimmed: theme-monokai-dimmed/themes/dimmed-monokai-color-theme.json, uiTheme vs-dark.
@@ -675,6 +895,22 @@ body.vscode-monokai-dimmed {
     --c-code-name: #ce6700;
     --c-code-number: #6089b4;
     --c-code-string: #9aa83a;
+    --ansi-black: #1e1e1e;
+    --ansi-red: #c4265e;
+    --ansi-green: #86b42b;
+    --ansi-yellow: #b3b42b;
+    --ansi-blue: #6a7ec8;
+    --ansi-magenta: #8c6bc8;
+    --ansi-cyan: #56adbc;
+    --ansi-white: #e3e3dd;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f92672;
+    --ansi-bright-green: #a6e22e;
+    --ansi-bright-yellow: #e2e22e;
+    --ansi-bright-blue: #819aff;
+    --ansi-bright-magenta: #ae81ff;
+    --ansi-bright-cyan: #66d9ef;
+    --ansi-bright-white: #f8f8f2;
 }
 
 /* Red: theme-red/themes/Red-color-theme.json, uiTheme vs-dark. Registered VS Code defaults:
@@ -685,8 +921,9 @@ body.vscode-monokai-dimmed {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline, --c-code-number. */
+   --titlebar-txt (titleBar.activeForeground), the sixteen terminal colours (terminal.ansi*).
+   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline,
+   --c-code-number. */
 body.vscode-red {
     color-scheme: dark;
     --shadow: none;
@@ -724,6 +961,22 @@ body.vscode-red {
     --c-code-name: #ffb454;
     --c-code-number: #ea580c;
     --c-code-string: #cd8d8d;
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* Solarized Dark: theme-solarized-dark/themes/solarized-dark-color-theme.json, uiTheme vs-dark.
@@ -782,6 +1035,22 @@ body.vscode-solarized-dark {
     --c-code-name: #268bd2;
     --c-code-number: #d33682;
     --c-code-string: #2aa198;
+    --ansi-black: #073642;
+    --ansi-red: #dc322f;
+    --ansi-green: #859900;
+    --ansi-yellow: #b58900;
+    --ansi-blue: #268bd2;
+    --ansi-magenta: #d33682;
+    --ansi-cyan: #2aa198;
+    --ansi-white: #eee8d5;
+    --ansi-bright-black: #002b36;
+    --ansi-bright-red: #cb4b16;
+    --ansi-bright-green: #586e75;
+    --ansi-bright-yellow: #657b83;
+    --ansi-bright-blue: #839496;
+    --ansi-bright-magenta: #6c71c4;
+    --ansi-bright-cyan: #93a1a1;
+    --ansi-bright-white: #fdf6e3;
     --c-slate: #505575;
 }
 
@@ -840,6 +1109,22 @@ body.vscode-tomorrow-night-blue {
     --c-code-name: #bbdaff;
     --c-code-number: #ffc58f;
     --c-code-string: #d1f1a9;
+    --ansi-black: #111111;
+    --ansi-red: #ff9da4;
+    --ansi-green: #d1f1a9;
+    --ansi-yellow: #ffeead;
+    --ansi-blue: #bbdaff;
+    --ansi-magenta: #ebbbff;
+    --ansi-cyan: #99ffff;
+    --ansi-white: #cccccc;
+    --ansi-bright-black: #333333;
+    --ansi-bright-red: #ff7882;
+    --ansi-bright-green: #b8f171;
+    --ansi-bright-yellow: #ffe580;
+    --ansi-bright-blue: #80baff;
+    --ansi-bright-magenta: #d778ff;
+    --ansi-bright-cyan: #78ffff;
+    --ansi-bright-white: #ffffff;
     --c-blue: #699bff;
     --c-slate: #7285b7;
 }
@@ -855,8 +1140,8 @@ body.vscode-tomorrow-night-blue {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground),
-   --titlebar-line (titleBar.border). oculus base: --c-scm-conflict-bg, --c-scm-added-bg,
-   --c-scm-deleted-bg. */
+   --titlebar-line (titleBar.border), the sixteen terminal colours (terminal.ansi*). oculus base:
+   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
 body.vscode-dark-high-contrast {
     color-scheme: dark;
     --shadow: none;
@@ -894,6 +1179,22 @@ body.vscode-dark-high-contrast {
     --c-code-name: #dcdcaa;
     --c-code-number: #b5cea8;
     --c-code-string: #ce9178;
+    --ansi-black: #000000;
+    --ansi-red: #cd0000;
+    --ansi-green: #00cd00;
+    --ansi-yellow: #cdcd00;
+    --ansi-blue: #0000ee;
+    --ansi-magenta: #cd00cd;
+    --ansi-cyan: #00cdcd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #7f7f7f;
+    --ansi-bright-red: #ff0000;
+    --ansi-bright-green: #00ff00;
+    --ansi-bright-yellow: #ffff00;
+    --ansi-bright-blue: #5c5cff;
+    --ansi-bright-magenta: #ff00ff;
+    --ansi-bright-cyan: #00ffff;
+    --ansi-bright-white: #ffffff;
 }
 
 /* Light High Contrast: theme-defaults/themes/hc_light.json, uiTheme hc-light. Registered VS Code
@@ -908,8 +1209,8 @@ body.vscode-dark-high-contrast {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground),
-   --titlebar-line (titleBar.border). oculus base: --c-scm-conflict-bg, --c-scm-added-bg,
-   --c-scm-deleted-bg. */
+   --titlebar-line (titleBar.border), the sixteen terminal colours (terminal.ansi*). oculus base:
+   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
 body.vscode-light-high-contrast {
     --bg: #ffffff;
     --panel: #ffffff;
@@ -941,4 +1242,20 @@ body.vscode-light-high-contrast {
     --c-code-name: #5e2cbc;
     --c-code-number: #096d48;
     --c-code-string: #0f4a85;
+    --ansi-black: #292929;
+    --ansi-red: #cd3131;
+    --ansi-green: #136c13;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #cd3131;
+    --ansi-bright-green: #00bc00;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #0451a5;
+    --ansi-bright-magenta: #bc05bc;
+    --ansi-bright-cyan: #0598bc;
+    --ansi-bright-white: #a5a5a5;
 }

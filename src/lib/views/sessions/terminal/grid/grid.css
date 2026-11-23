@@ -6,3 +6,52 @@
 [data-terminal] .xterm .xterm-viewport {
     background-color: transparent;
 }
+
+/* Text drawn inverse in the two default colours is drawn in the panel's colour on the ink. xterm
+   measures the contrast floor of such a cell (`minimumContrastRatio`, grid-look.ts) as the ink on
+   itself, so it writes a weaker colour inline in place of its `xterm-fg-257` class; a cell the
+   floor left alone keeps its class and is not matched. Inverse text with a background of its own
+   that carries no such class, one the floor recoloured or a truecolor one, is drawn in the panel's
+   colour too, and so is a powerline, box or block glyph with a truecolor one. Dim text the rule
+   recolours takes half of that colour, as xterm draws dim text in a palette or a default colour. A
+   block cursor is left to xterm, whose blink an important declaration would stop. */
+[data-terminal] .xterm .xterm-bg-257:not([class*='xterm-fg-'], .xterm-cursor-block) {
+    color: var(--panel) !important;
+}
+[data-terminal] .xterm .xterm-bg-257.xterm-dim:not([class*='xterm-fg-'], .xterm-cursor-block) {
+    color: color-mix(in srgb, var(--panel) 50%, transparent) !important;
+}
+
+/* Text drawn inverse on the default background is drawn in the ink where a colour of its own or a
+   find mark fills the cell and the ink clears the floor on it. xterm measures the ink there, writes
+   no colour and leaves the cell its `xterm-fg-257` class, which is the panel's colour and was not
+   measured. Such text is the ink also where the panel's colour would have been readable, and so is
+   a 256-colour or truecolor cell of that class. Of the sixteen colours, one the ink fails on and
+   the panel's colour reads better on (`data-panel-on`, grid-look.ts) leaves the class to a
+   powerline, box or block glyph and to dim text, which keep the panel's colour. Dim text takes half
+   of its colour, as dim text in the default colours does. A block cursor is left to xterm. */
+[data-terminal] .xterm .xterm-fg-257:not(.xterm-bg-257, .xterm-cursor-block) {
+    --inverse: var(--ink);
+    color: var(--inverse);
+}
+[data-terminal] .xterm .xterm-fg-257.xterm-dim:not(.xterm-bg-257, .xterm-cursor-block) {
+    color: color-mix(in srgb, var(--inverse) 50%, transparent);
+}
+[data-terminal] .xterm[data-panel-on~='0'] .xterm-fg-257.xterm-bg-0,
+[data-terminal] .xterm[data-panel-on~='1'] .xterm-fg-257.xterm-bg-1,
+[data-terminal] .xterm[data-panel-on~='2'] .xterm-fg-257.xterm-bg-2,
+[data-terminal] .xterm[data-panel-on~='3'] .xterm-fg-257.xterm-bg-3,
+[data-terminal] .xterm[data-panel-on~='4'] .xterm-fg-257.xterm-bg-4,
+[data-terminal] .xterm[data-panel-on~='5'] .xterm-fg-257.xterm-bg-5,
+[data-terminal] .xterm[data-panel-on~='6'] .xterm-fg-257.xterm-bg-6,
+[data-terminal] .xterm[data-panel-on~='7'] .xterm-fg-257.xterm-bg-7,
+[data-terminal] .xterm[data-panel-on~='8'] .xterm-fg-257.xterm-bg-8,
+[data-terminal] .xterm[data-panel-on~='9'] .xterm-fg-257.xterm-bg-9,
+[data-terminal] .xterm[data-panel-on~='10'] .xterm-fg-257.xterm-bg-10,
+[data-terminal] .xterm[data-panel-on~='11'] .xterm-fg-257.xterm-bg-11,
+[data-terminal] .xterm[data-panel-on~='12'] .xterm-fg-257.xterm-bg-12,
+[data-terminal] .xterm[data-panel-on~='13'] .xterm-fg-257.xterm-bg-13,
+[data-terminal] .xterm[data-panel-on~='14'] .xterm-fg-257.xterm-bg-14,
+[data-terminal] .xterm[data-panel-on~='15'] .xterm-fg-257.xterm-bg-15 {
+    --inverse: var(--panel);
+}

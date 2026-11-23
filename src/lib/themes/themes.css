@@ -19,7 +19,8 @@
    every other status hue of the theme, on the hue and on its `-txt`. It was picked as the nearest
    to tokens.css's slate among the hexes of the dark theme's own block and an OKLCH grid around that
    colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to
-   +20 in steps of 10), with every measure at 10.5 or more. */
+   +20 in steps of 10), with every measure at 10.5 or more. The dark theme's sixteen terminal
+   colours (`--ansi-*`) are the defaults Visual Studio Code 1.145.2 registers for a dark theme. */
 
 body.dark {
     color-scheme: dark;
@@ -45,6 +46,23 @@ body.dark {
     --c-scm-added-bg: #0d2e28;
     --c-scm-deleted-bg: #351521;
     --c-scm-conflict-bg: #29133d;
+    /* The sixteen terminal colours. */
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #0dbc79;
+    --ansi-yellow: #e5e510;
+    --ansi-blue: #2472c8;
+    --ansi-magenta: #bc3fbc;
+    --ansi-cyan: #11a8cd;
+    --ansi-white: #e5e5e5;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #23d18b;
+    --ansi-bright-yellow: #f5f543;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #e5e5e5;
 }
 
 /* --- Rice: the shape the terminal palettes share ------------------------- */

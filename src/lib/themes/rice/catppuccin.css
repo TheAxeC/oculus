@@ -6,9 +6,11 @@
    hue and on its `-txt`. Each was picked as the nearest to the palette's colour, or to tokens.css's
    where the palette gives none (the slate of Mocha), among the hexes of the palette's own block and
    an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
-   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette shares
-   is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. The terminal
+   colours (`--ansi-*`) are those of the theme files catppuccin-mocha, catppuccin-macchiato,
+   catppuccin-frappe and catppuccin-latte of @shikijs/themes. One block per palette, each a set of
+   overrides on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in
+   themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
@@ -61,6 +63,23 @@ body.mocha {
     --c-graph-ref: #89b4fa;
     --c-graph-remote: #cba6f7;
     --c-graph-base: #fab387;
+    /* The sixteen terminal colours. */
+    --ansi-black: #45475a;
+    --ansi-red: #f38ba8;
+    --ansi-green: #a6e3a1;
+    --ansi-yellow: #f9e2af;
+    --ansi-blue: #89b4fa;
+    --ansi-magenta: #f5c2e7;
+    --ansi-cyan: #94e2d5;
+    --ansi-white: #a6adc8;
+    --ansi-bright-black: #585b70;
+    --ansi-bright-red: #f37799;
+    --ansi-bright-green: #89d88b;
+    --ansi-bright-yellow: #ebd391;
+    --ansi-bright-blue: #74a8fc;
+    --ansi-bright-magenta: #f2aede;
+    --ansi-bright-cyan: #6bd7ca;
+    --ansi-bright-white: #bac2de;
 }
 
 /* --- Catppuccin Macchiato (catppuccin/palette) ------------------------ */
@@ -120,6 +139,23 @@ body.macchiato {
     --c-graph-ref: #8aadf4;
     --c-graph-remote: #c6a0f6;
     --c-graph-base: #f5a97f;
+    /* The sixteen terminal colours. */
+    --ansi-black: #494d64;
+    --ansi-red: #ed8796;
+    --ansi-green: #a6da95;
+    --ansi-yellow: #eed49f;
+    --ansi-blue: #8aadf4;
+    --ansi-magenta: #f5bde6;
+    --ansi-cyan: #8bd5ca;
+    --ansi-white: #a5adcb;
+    --ansi-bright-black: #5b6078;
+    --ansi-bright-red: #ec7486;
+    --ansi-bright-green: #8ccf7f;
+    --ansi-bright-yellow: #e1c682;
+    --ansi-bright-blue: #78a1f6;
+    --ansi-bright-magenta: #f2a9dd;
+    --ansi-bright-cyan: #63cbc0;
+    --ansi-bright-white: #b8c0e0;
 }
 
 /* --- Catppuccin Frappe (catppuccin/palette) --------------------------- */
@@ -179,6 +215,23 @@ body.frappe {
     --c-graph-ref: #8caaee;
     --c-graph-remote: #ca9ee6;
     --c-graph-base: #ef9f76;
+    /* The sixteen terminal colours. */
+    --ansi-black: #51576d;
+    --ansi-red: #e78284;
+    --ansi-green: #a6d189;
+    --ansi-yellow: #e5c890;
+    --ansi-blue: #8caaee;
+    --ansi-magenta: #f4b8e4;
+    --ansi-cyan: #81c8be;
+    --ansi-white: #a5adce;
+    --ansi-bright-black: #626880;
+    --ansi-bright-red: #e67172;
+    --ansi-bright-green: #8ec772;
+    --ansi-bright-yellow: #d9ba73;
+    --ansi-bright-blue: #7b9ef0;
+    --ansi-bright-magenta: #f2a4db;
+    --ansi-bright-cyan: #5abfb5;
+    --ansi-bright-white: #b5bfe2;
 }
 
 /* --- Latte (light) (catppuccin.com) -------------------------------------- */
@@ -237,4 +290,21 @@ body.latte {
     --c-graph-ref: #1e66f5;
     --c-graph-remote: #8839ef;
     --c-graph-base: #fe640b;
+    /* The sixteen terminal colours. */
+    --ansi-black: #5c5f77;
+    --ansi-red: #d20f39;
+    --ansi-green: #40a02b;
+    --ansi-yellow: #df8e1d;
+    --ansi-blue: #1e66f5;
+    --ansi-magenta: #ea76cb;
+    --ansi-cyan: #179299;
+    --ansi-white: #acb0be;
+    --ansi-bright-black: #6c6f85;
+    --ansi-bright-red: #de293e;
+    --ansi-bright-green: #49af3d;
+    --ansi-bright-yellow: #eea02d;
+    --ansi-bright-blue: #456eff;
+    --ansi-bright-magenta: #fe85d8;
+    --ansi-bright-cyan: #2d9fa8;
+    --ansi-bright-white: #bcc0cc;
 }

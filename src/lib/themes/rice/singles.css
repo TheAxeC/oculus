@@ -17,7 +17,12 @@
    hexes of the palette's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in
    steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every
    measure at 10.5 or more; Solarized's slate, grey and grey-d were picked in that order, each with
-   the ones before it in place. One block per palette, each a set of overrides on the tokens of
+   the ones before it in place. The terminal colours (`--ansi-*`) of Nord, Dracula and Solarized are
+   those of the theme files nord, dracula and solarized-dark of @shikijs/themes, and One Dark's are
+   `g:terminal_ansi_colors` of joshdick/onedark.vim. Synthwave '84 takes the twelve of the file
+   synthwave-84 of @shikijs/themes, and its black, white and their bright twins, which that file
+   leaves out, are its own muted text and ink. Oxocarbon's are its own muted text, hues and ink, one
+   for a colour and its bright twin. One block per palette, each a set of overrides on the tokens of
    tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
    list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
@@ -73,6 +78,23 @@ body.nord {
     --c-graph-ref: #5e81ac;
     --c-graph-remote: #a37b9c;
     --c-graph-base: #d08770;
+    /* The sixteen terminal colours. */
+    --ansi-black: #3b4252;
+    --ansi-red: #bf616a;
+    --ansi-green: #a3be8c;
+    --ansi-yellow: #ebcb8b;
+    --ansi-blue: #81a1c1;
+    --ansi-magenta: #b48ead;
+    --ansi-cyan: #88c0d0;
+    --ansi-white: #e5e9f0;
+    --ansi-bright-black: #4c566a;
+    --ansi-bright-red: #bf616a;
+    --ansi-bright-green: #a3be8c;
+    --ansi-bright-yellow: #ebcb8b;
+    --ansi-bright-blue: #81a1c1;
+    --ansi-bright-magenta: #b48ead;
+    --ansi-bright-cyan: #8fbcbb;
+    --ansi-bright-white: #eceff4;
 }
 
 /* --- Dracula (draculatheme.com) ------------------------------------------ */
@@ -133,6 +155,23 @@ body.dracula {
     --c-graph-ref: #6272a4;
     --c-graph-remote: #bd93f9;
     --c-graph-base: #ffb86c;
+    /* The sixteen terminal colours. */
+    --ansi-black: #21222c;
+    --ansi-red: #ff5555;
+    --ansi-green: #50fa7b;
+    --ansi-yellow: #f1fa8c;
+    --ansi-blue: #bd93f9;
+    --ansi-magenta: #ff79c6;
+    --ansi-cyan: #8be9fd;
+    --ansi-white: #f8f8f2;
+    --ansi-bright-black: #6272a4;
+    --ansi-bright-red: #ff6e6e;
+    --ansi-bright-green: #69ff94;
+    --ansi-bright-yellow: #ffffa5;
+    --ansi-bright-blue: #d6acff;
+    --ansi-bright-magenta: #ff92df;
+    --ansi-bright-cyan: #a4ffff;
+    --ansi-bright-white: #ffffff;
 }
 
 /* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
@@ -192,6 +231,23 @@ body.solarized {
     --c-graph-ref: #268bd2;
     --c-graph-remote: #6c71c4;
     --c-graph-base: #cb4b16;
+    /* The sixteen terminal colours. */
+    --ansi-black: #073642;
+    --ansi-red: #dc322f;
+    --ansi-green: #859900;
+    --ansi-yellow: #b58900;
+    --ansi-blue: #268bd2;
+    --ansi-magenta: #d33682;
+    --ansi-cyan: #2aa198;
+    --ansi-white: #eee8d5;
+    --ansi-bright-black: #002b36;
+    --ansi-bright-red: #cb4b16;
+    --ansi-bright-green: #586e75;
+    --ansi-bright-yellow: #657b83;
+    --ansi-bright-blue: #839496;
+    --ansi-bright-magenta: #6c71c4;
+    --ansi-bright-cyan: #93a1a1;
+    --ansi-bright-white: #fdf6e3;
 }
 
 /* --- One Dark (joshdick/onedark.vim) ---------------------------------- */
@@ -251,6 +307,23 @@ body.onedark {
     --c-graph-ref: #61afef;
     --c-graph-remote: #c678dd;
     --c-graph-base: #d19a66;
+    /* The sixteen terminal colours. */
+    --ansi-black: #282c34;
+    --ansi-red: #e06c75;
+    --ansi-green: #98c379;
+    --ansi-yellow: #e5c07b;
+    --ansi-blue: #61afef;
+    --ansi-magenta: #c678dd;
+    --ansi-cyan: #56b6c2;
+    --ansi-white: #abb2bf;
+    --ansi-bright-black: #3e4452;
+    --ansi-bright-red: #be5046;
+    --ansi-bright-green: #98c379;
+    --ansi-bright-yellow: #d19a66;
+    --ansi-bright-blue: #61afef;
+    --ansi-bright-magenta: #c678dd;
+    --ansi-bright-cyan: #56b6c2;
+    --ansi-bright-white: #5c6370;
 }
 
 /* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
@@ -310,6 +383,23 @@ body.synthwave {
     --c-graph-ref: #03edf9;
     --c-graph-remote: #b381c5;
     --c-graph-base: #ff8b39;
+    /* The sixteen terminal colours. */
+    --ansi-black: var(--muted);
+    --ansi-red: #fe4450;
+    --ansi-green: #72f1b8;
+    --ansi-yellow: #f3e70f;
+    --ansi-blue: #03edf9;
+    --ansi-magenta: #ff7edb;
+    --ansi-cyan: #03edf9;
+    --ansi-white: var(--ink);
+    --ansi-bright-black: var(--muted);
+    --ansi-bright-red: #fe4450;
+    --ansi-bright-green: #72f1b8;
+    --ansi-bright-yellow: #fede5d;
+    --ansi-bright-blue: #03edf9;
+    --ansi-bright-magenta: #ff7edb;
+    --ansi-bright-cyan: #03edf9;
+    --ansi-bright-white: var(--ink);
 }
 
 /* --- Oxocarbon (nyoom-engineering/oxocarbon.nvim) --------------------- */
@@ -369,4 +459,21 @@ body.oxocarbon {
     --c-graph-ref: #78a9ff;
     --c-graph-remote: #be95ff;
     --c-graph-base: #ff832b;
+    /* The sixteen terminal colours. */
+    --ansi-black: var(--muted);
+    --ansi-red: var(--c-red);
+    --ansi-green: var(--c-green);
+    --ansi-yellow: var(--c-gold);
+    --ansi-blue: var(--c-blue);
+    --ansi-magenta: var(--c-magenta);
+    --ansi-cyan: var(--c-cyan);
+    --ansi-white: var(--ink);
+    --ansi-bright-black: var(--muted);
+    --ansi-bright-red: var(--c-red);
+    --ansi-bright-green: var(--c-green);
+    --ansi-bright-yellow: var(--c-gold);
+    --ansi-bright-blue: var(--c-blue);
+    --ansi-bright-magenta: var(--c-magenta);
+    --ansi-bright-cyan: var(--c-cyan);
+    --ansi-bright-white: var(--ink);
 }

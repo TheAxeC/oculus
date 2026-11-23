@@ -23,9 +23,12 @@
 // Besides the chrome, the Source Control, the diff's text outlines (`--diff-added-outline`,
 // `--diff-deleted-outline`), the tab and the code tokens, a block sets the window's title bar strip
 // from VS Code's title bar keys (`--titlebar-bg`, `--titlebar-txt`, whose words are nudged to 4.5:1
-// on the strip, and `--titlebar-line`, transparent when VS Code draws no border) and the Source
-// Control Graph's name colours from its `scmGraph.*` keys (`--c-graph-ref`, `--c-graph-remote`,
-// `--c-graph-base`), all with VS Code's registered defaults when the theme holds none.
+// on the strip, and `--titlebar-line`, transparent when VS Code draws no border), the Source
+// Control Graph's name colours (`--c-graph-ref`, `--c-graph-remote`, `--c-graph-base`) from its
+// `scmGraph.*` keys, and the sixteen terminal colours (`--ansi-*`) from its `terminal.ansi*` keys,
+// never nudged, since the grid holds text drawn in them or on them to a contrast floor
+// (grid-look.ts), dim text to half of it, measured in its full colour, while a powerline, box or
+// block glyph is exempt; all with VS Code's registered defaults when the theme holds none.
 
 import { ratio, readable } from './derive.ts';
 import { parseBlocks } from './parse.ts';
@@ -94,14 +97,14 @@ export const table = (
 ): TypeDefaults => ({ dark, light, hcDark, hcLight });
 
 /**
- * The workbench's registered colours for the keys the mapping names, as VS Code 1.137.0 registers
- * them in out/vs/workbench/workbench.desktop.main.js (MIT licence, Microsoft Corporation). The
- * source forms are `"#RRGGBB"` (a hex), `null`, another registered key (`contrastBorder`,
- * `focusBorder`, `foreground`), another key through `transparent(f)` (`via(key, f)`), `qe.white`
- * and `qe.black` (`#ffffff`, `#000000`), `qe.fromHex("#808080").transparent(a)` (`fade`), and the
- * colour objects of the diff tints, `new qe(new si(155, 185, 85, .2))` and
- * `new qe(new si(255, 0, 0, .2))` (`fade` of the same RGB). `sideBar.foreground` and
- * `tab.activeBorder` are registered with no default.
+ * The workbench's registered colours for the keys the mapping names, as VS Code registers them in
+ * out/vs/workbench/workbench.desktop.main.js (MIT licence, Microsoft Corporation): the
+ * `terminal.ansi*` keys as version 1.145.2 registers them, the others as 1.137.0 does. The source
+ * forms are `"#RRGGBB"` (a hex), `null`, another registered key (`contrastBorder`, `focusBorder`,
+ * `foreground`), another key through `transparent(f)` (`via(key, f)`), `qe.white` and `qe.black`
+ * (`#ffffff`, `#000000`), `qe.fromHex("#808080").transparent(a)` (`fade`), and the colour objects
+ * of the diff tints, `new qe(new si(155, 185, 85, .2))` and `new qe(new si(255, 0, 0, .2))` (`fade`
+ * of the same RGB). `sideBar.foreground` and `tab.activeBorder` are registered with no default.
  */
 const WORKBENCH: Record<string, TypeDefaults> = {
     'sideBar.background': table('#252526', '#f3f3f3', '#000000', '#ffffff'),
@@ -169,7 +172,23 @@ const WORKBENCH: Record<string, TypeDefaults> = {
     'titleBar.border': table(null, null, via('contrastBorder'), via('contrastBorder')),
     'scmGraph.historyItemRefColor': table('#59a4f9', '#0063d3', '#59a4f9', '#0063d3'),
     'scmGraph.historyItemRemoteRefColor': table('#B180D7', '#652D90', '#B180D7', '#652D90'),
-    'scmGraph.historyItemBaseRefColor': table('#EA5C00', '#EA5C00', '#EA5C00', '#EA5C00')
+    'scmGraph.historyItemBaseRefColor': table('#EA5C00', '#EA5C00', '#EA5C00', '#EA5C00'),
+    'terminal.ansiBlack': table('#000000', '#000000', '#000000', '#292929'),
+    'terminal.ansiRed': table('#cd3131', '#cd3131', '#cd0000', '#cd3131'),
+    'terminal.ansiGreen': table('#0DBC79', '#107C10', '#00cd00', '#136C13'),
+    'terminal.ansiYellow': table('#e5e510', '#949800', '#cdcd00', '#949800'),
+    'terminal.ansiBlue': table('#2472c8', '#0451a5', '#0000ee', '#0451a5'),
+    'terminal.ansiMagenta': table('#bc3fbc', '#bc05bc', '#cd00cd', '#bc05bc'),
+    'terminal.ansiCyan': table('#11a8cd', '#0598bc', '#00cdcd', '#0598bc'),
+    'terminal.ansiWhite': table('#e5e5e5', '#555555', '#e5e5e5', '#555555'),
+    'terminal.ansiBrightBlack': table('#666666', '#666666', '#7f7f7f', '#666666'),
+    'terminal.ansiBrightRed': table('#f14c4c', '#f14c4c', '#ff0000', '#cd3131'),
+    'terminal.ansiBrightGreen': table('#23d18b', '#14CE14', '#00ff00', '#00bc00'),
+    'terminal.ansiBrightYellow': table('#f5f543', '#b5ba00', '#ffff00', '#b5ba00'),
+    'terminal.ansiBrightBlue': table('#3b8eea', '#3b8eea', '#5c5cff', '#0451a5'),
+    'terminal.ansiBrightMagenta': table('#d670d6', '#d670d6', '#ff00ff', '#bc05bc'),
+    'terminal.ansiBrightCyan': table('#29b8db', '#29b8db', '#00ffff', '#0598bc'),
+    'terminal.ansiBrightWhite': table('#e5e5e5', '#a5a5a5', '#ffffff', '#a5a5a5')
 };
 
 /** The scopes each code hue is read from, in list order. */
@@ -222,6 +241,19 @@ const OUTLINE_KEYS: [string, string][] = [
 const STRIP_BG: [string, string] = ['--titlebar-bg', 'titleBar.activeBackground'];
 const STRIP_TXT: [string, string] = ['--titlebar-txt', 'titleBar.activeForeground'];
 const STRIP_LINE: [string, string] = ['--titlebar-line', 'titleBar.border'];
+
+/**
+ * The sixteen terminal colours and the key each is read from. VS Code registers a default for each
+ * key in every theme type, so each token is set in every block.
+ */
+const ANSI_KEYS: [string, string][] = ['', 'Bright'].flatMap((twin) =>
+    ['Black', 'Red', 'Green', 'Yellow', 'Blue', 'Magenta', 'Cyan', 'White'].map(
+        (name): [string, string] => [
+            `--ansi-${twin === '' ? '' : 'bright-'}${name.toLowerCase()}`,
+            `terminal.ansi${twin}${name}`
+        ]
+    )
+);
 
 /** The surfaces a tab label lands on, and the tints the editor draws code over. */
 const TAB_SURFACES = ['--bg', '--panel'];
@@ -470,6 +502,13 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
     for (const [token, keys] of GRAPH_KEYS) pick(token, keys);
     for (const [token, key] of [STRIP_BG, STRIP_TXT, STRIP_LINE]) pick(token, [key]);
     tokens[STRIP_LINE[0]] ??= 'transparent';
+    const before = registered.length;
+    for (const [token, key] of ANSI_KEYS) pick(token, [key]);
+    // Sixteen registered terminal colours are named in one phrase.
+    const given = registered.length - before;
+    if (given === ANSI_KEYS.length) {
+        registered.splice(before, given, 'the sixteen terminal colours (terminal.ansi*)');
+    }
     for (const [name, scopes] of CODE_SCOPES) {
         const colour = codeColour(theme, scopes);
         if (colour !== null) tokens[`--c-code-${name}`] = settle(colour, over());
@@ -544,7 +583,8 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
         STRIP_BG[0],
         STRIP_TXT[0],
         STRIP_LINE[0],
-        ...CODE_SCOPES.map(([name]) => `--c-code-${name}`)
+        ...CODE_SCOPES.map(([name]) => `--c-code-${name}`),
+        ...ANSI_KEYS.map(([token]) => token)
     ];
     const entries: [string, string][] = [];
     if (dark) entries.push(['color-scheme', 'dark'], ['--shadow', 'none']);

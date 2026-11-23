@@ -1,10 +1,14 @@
-/* The palette. Two layers of colour:
-     - chrome  (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
-     - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
+/* The palette. Three layers of colour:
+     - chrome   (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
+     - palette  (--c-*), the status hues shared by the sheets and the config vocabulary;
+     - terminal (--ansi-*), the sixteen colours a terminal's grid draws and no other part does.
    A theme is a block of overrides on these tokens and never a per-rule edit; themes.css and the
    family files of rice/ hold the hand-written blocks and vscode.css the generated ones. Every
-   colour a component uses resolves through a token here, so the contrast test can walk them all.
-   The -txt and --on-* tokens the components read are derived from these by derive.ts. */
+   colour a component uses resolves through a token here, so the contrast test can walk them all;
+   the terminal's have no pair in it, since the grid holds text drawn in them or on them to a
+   contrast floor (grid-look.ts), dim text to half of it, measured in its full colour, while a
+   powerline, box or block glyph is exempt. The -txt and --on-* tokens the components read are
+   derived from these by derive.ts. */
 :root {
     --bg: #f1f5f9;
     --panel: #fff;
@@ -92,6 +96,25 @@
     --c-graph-ref: #2563eb;
     --c-graph-remote: #7c3aed;
     --c-graph-base: #ea580c;
+    /* The sixteen terminal colours, which the grid of a terminal alone draws (grid-look.ts): the
+       defaults Visual Studio Code 1.145.2 registers for a light theme. Every theme block sets its
+       own sixteen. Not palette entries, so derive.ts mints nothing from them. */
+    --ansi-black: #000000;
+    --ansi-red: #cd3131;
+    --ansi-green: #107c10;
+    --ansi-yellow: #949800;
+    --ansi-blue: #0451a5;
+    --ansi-magenta: #bc05bc;
+    --ansi-cyan: #0598bc;
+    --ansi-white: #555555;
+    --ansi-bright-black: #666666;
+    --ansi-bright-red: #f14c4c;
+    --ansi-bright-green: #14ce14;
+    --ansi-bright-yellow: #b5ba00;
+    --ansi-bright-blue: #3b8eea;
+    --ansi-bright-magenta: #d670d6;
+    --ansi-bright-cyan: #29b8db;
+    --ansi-bright-white: #a5a5a5;
     /* The colours of a file's Seti icon, one per colour name seti-ui's table uses, each the value
        seti-ui's ui-variables.less gives it. They are the same in every theme, as VS Code's Seti
        colours are. ui/display/FileIcon.svelte reads the token named for a file's colour. */

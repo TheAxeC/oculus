@@ -6,9 +6,11 @@
    status hue of the theme, on the hue and on its `-txt`. Each was picked as the nearest to the
    palette's colour among the hexes of the palette's own block and an OKLCH grid around that colour
    (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in
-   steps of 10), with every measure at 10.5 or more. One block per palette, each a set of overrides
-   on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css,
-   and the theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+   steps of 10), with every measure at 10.5 or more. The terminal colours (`--ansi-*`) are those of
+   the theme files kanagawa-wave, kanagawa-dragon and kanagawa-lotus of @shikijs/themes. One block
+   per palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+   config/defaults/appearance.yml. */
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
 body.kanagawa {
@@ -67,6 +69,23 @@ body.kanagawa {
     --c-graph-ref: #7e9cd8;
     --c-graph-remote: #957fb8;
     --c-graph-base: #ffa066;
+    /* The sixteen terminal colours. */
+    --ansi-black: #16161d;
+    --ansi-red: #c34043;
+    --ansi-green: #76946a;
+    --ansi-yellow: #c0a36e;
+    --ansi-blue: #7e9cd8;
+    --ansi-magenta: #957fb8;
+    --ansi-cyan: #6a9589;
+    --ansi-white: #c8c093;
+    --ansi-bright-black: #727169;
+    --ansi-bright-red: #e82424;
+    --ansi-bright-green: #98bb6c;
+    --ansi-bright-yellow: #e6c384;
+    --ansi-bright-blue: #7fb4ca;
+    --ansi-bright-magenta: #938aa9;
+    --ansi-bright-cyan: #7aa89f;
+    --ansi-bright-white: #dcd7ba;
 }
 
 /* --- Kanagawa Dragon (rebelot/kanagawa.nvim) -------------------------- */
@@ -126,6 +145,23 @@ body.kanagawadragon {
     --c-graph-ref: #8ba4b0;
     --c-graph-remote: #8992a7;
     --c-graph-base: #b6927b;
+    /* The sixteen terminal colours. */
+    --ansi-black: #0d0c0c;
+    --ansi-red: #c4746e;
+    --ansi-green: #8a9a7b;
+    --ansi-yellow: #c4b28a;
+    --ansi-blue: #8ba4b0;
+    --ansi-magenta: #a292a3;
+    --ansi-cyan: #8ea4a2;
+    --ansi-white: #c8c093;
+    --ansi-bright-black: #a6a69c;
+    --ansi-bright-red: #e46876;
+    --ansi-bright-green: #87a987;
+    --ansi-bright-yellow: #e6c384;
+    --ansi-bright-blue: #7fb4ca;
+    --ansi-bright-magenta: #938aa9;
+    --ansi-bright-cyan: #7aa89f;
+    --ansi-bright-white: #c5c9c5;
 }
 
 /* --- Kanagawa Lotus (light) (rebelot/kanagawa.nvim) ------------------- */
@@ -184,4 +220,21 @@ body.kanagawalotus {
     --c-graph-ref: #4d699b;
     --c-graph-remote: #624c83;
     --c-graph-base: #cc6d00;
+    /* The sixteen terminal colours. */
+    --ansi-black: #1f1f28;
+    --ansi-red: #c84053;
+    --ansi-green: #6f894e;
+    --ansi-yellow: #77713f;
+    --ansi-blue: #4d699b;
+    --ansi-magenta: #b35b79;
+    --ansi-cyan: #597b75;
+    --ansi-white: #545464;
+    --ansi-bright-black: #8a8980;
+    --ansi-bright-red: #d7474b;
+    --ansi-bright-green: #6e915f;
+    --ansi-bright-yellow: #836f4a;
+    --ansi-bright-blue: #6693bf;
+    --ansi-bright-magenta: #624c83;
+    --ansi-bright-cyan: #5e857a;
+    --ansi-bright-white: #43436c;
 }

@@ -78,7 +78,13 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { terminalAppMenus } from '../app-menus';
     import { plural, t } from '$lib/state/shared/words/text';
-    import { buildGrid, followTerminalOptions, reflowLook } from './grid-look';
+    import {
+        buildGrid,
+        followTerminalOptions,
+        markPanelSlots,
+        partFromGlyphs,
+        reflowLook
+    } from './grid-look';
     import { GridFind } from './grid-find.svelte';
     import {
         clearGrid,
@@ -314,6 +320,8 @@
             );
             const detachFind = find.attach(searcher);
             term.open(at);
+            markPanelSlots(term);
+            partFromGlyphs(term);
             sized();
             grid = term;
             oncontrol(wanted, { clear });

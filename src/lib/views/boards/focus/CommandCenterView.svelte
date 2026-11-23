@@ -7,8 +7,8 @@
     // ui/display/ticker/TickerGroup.svelte, so their look is written there once; this file keeps
     // the look of its own content, the Needs attention group's lines of projects behind their
     // documents and of projects no lane shows, and the fold control of that group's line of emails,
-    // which the section's headings draw too (ui/controls/heads/FoldControl.svelte). The heading row
-    // ends with how many rows the Focus filter hides, when it hides any, and the live HPC pill.
+    // the chevron after its words (ui/controls/heads/FoldControl.svelte). The heading row ends with
+    // how many rows the Focus filter hides, when it hides any, and the live HPC pill.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
@@ -126,7 +126,7 @@
 {/snippet}
 
 {#snippet folder(row: TickerRow)}
-    <FoldControl name={rowWords(row)} open={row.fold === true} ontoggle={onemails} />
+    <FoldControl chevron name={rowWords(row)} open={row.fold === true} ontoggle={onemails} />
 {/snippet}
 
 {#snippet end()}

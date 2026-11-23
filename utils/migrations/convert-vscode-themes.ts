@@ -30,9 +30,10 @@
 // The mapping is `mapTheme` of src/lib/themes/vscode-map.ts, which the page uses too to convert the
 // colour theme of an app. This script reads the files and writes the two outputs; the git
 // extension's colours the mapping uses are the table `GIT_DEFAULTS` there, and `--check` names each
-// that differs from the installed extension's. The tokens oculus adds to a shipped theme, which no
-// VS Code file gives, are the table `ADDED` here, written after the mapping's tokens in that
-// theme's block.
+// that differs from the installed extension's. The workbench's registered colours, the sixteen
+// terminal colours among them, are the table `WORKBENCH` there, which no run compares with the
+// installed VS Code. The tokens oculus adds to a shipped theme, which no VS Code file gives, are
+// the table `ADDED` here, written after the mapping's tokens in that theme's block.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -273,7 +274,7 @@ function blockOf(cls: string, mapped: Mapped, note: string): string {
 
 function headOf(version: string): string {
     return wrapped(
-        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six code hues and the tokens oculus adds to that theme (the converter's ADDED); its comment names each token that VS Code's registered default or oculus's base gave and each token oculus adds.`
+        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six code hues, the sixteen terminal colours (--ansi-*, each the theme's own or, where it sets none, the default Visual Studio Code 1.145.2 registers for its type) and the tokens oculus adds to that theme (the converter's ADDED); its comment names each token that VS Code's registered default or oculus's base gave, sixteen registered terminal colours in one phrase, and each token oculus adds.`
     );
 }
 

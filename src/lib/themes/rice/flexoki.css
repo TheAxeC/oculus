@@ -1,8 +1,9 @@
 /* Flexoki (kepano/flexoki, MIT): dark on its 400 hues, then light on its 600 hues. Flexoki has no
    teal, so the teal of both palettes is oculus's own, chosen to read apart from the theme's other
-   status hues. One block per palette, each a set of overrides on the tokens of tokens.css; the
-   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
-   `themes:` rows of config/defaults/appearance.yml. */
+   status hues. The terminal colours (`--ansi-*`) are those of kitty/flexoki_dark.conf and
+   kitty/flexoki_light.conf of kepano/flexoki. One block per palette, each a set of overrides on the
+   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the
+   theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Flexoki (kepano/flexoki) ----------------------------------------- */
 body.flexoki {
@@ -61,6 +62,23 @@ body.flexoki {
     --c-graph-ref: #4385be;
     --c-graph-remote: #8b7ec8;
     --c-graph-base: #da702c;
+    /* The sixteen terminal colours. */
+    --ansi-black: #100f0f;
+    --ansi-red: #af3029;
+    --ansi-green: #66800b;
+    --ansi-yellow: #ad8301;
+    --ansi-blue: #205ea6;
+    --ansi-magenta: #a02f6f;
+    --ansi-cyan: #24837b;
+    --ansi-white: #878580;
+    --ansi-bright-black: #6f6e69;
+    --ansi-bright-red: #d14d41;
+    --ansi-bright-green: #879a39;
+    --ansi-bright-yellow: #d0a215;
+    --ansi-bright-blue: #4385be;
+    --ansi-bright-magenta: #ce5d97;
+    --ansi-bright-cyan: #3aa99f;
+    --ansi-bright-white: #cecdc3;
 }
 
 /* --- Flexoki Light (kepano/flexoki) ----------------------------------- */
@@ -119,4 +137,21 @@ body.flexokilight {
     --c-graph-ref: #205ea6;
     --c-graph-remote: #5e409d;
     --c-graph-base: #bc5215;
+    /* The sixteen terminal colours. */
+    --ansi-black: #100f0f;
+    --ansi-red: #d14d41;
+    --ansi-green: #879a39;
+    --ansi-yellow: #d0a215;
+    --ansi-blue: #4385be;
+    --ansi-magenta: #ce5d97;
+    --ansi-cyan: #3aa99f;
+    --ansi-white: #fffcf0;
+    --ansi-bright-black: #6f6e69;
+    --ansi-bright-red: #af3029;
+    --ansi-bright-green: #66800b;
+    --ansi-bright-yellow: #ad8301;
+    --ansi-bright-blue: #205ea6;
+    --ansi-bright-magenta: #a02f6f;
+    --ansi-bright-cyan: #24837b;
+    --ansi-bright-white: #f2f0e5;
 }

@@ -22,11 +22,10 @@
     // the ui store.
     //
     // The line of emails folds the threads its count counts, closed until the reader opens it, the
-    // fold kept in the tab's state by the board. Open, the threads follow the line in the Inbox's
-    // sections, those to reply to, those to act on and those not sorted yet, each under its heading
-    // and in the plate's order, named and dated as the Inbox's cards name and date them
-    // (state/feeds/inbox.ts). A thread's row opens the Inbox at its card, and its sender and
-    // subject are drawn as the characters they hold, since a mail header is not Markdown.
+    // fold kept in the tab's state by the board. Open, the threads follow the line in one list, the
+    // newest first, named and dated as the Inbox's cards name and date them (state/feeds/inbox.ts).
+    // A thread's row opens the Inbox at its card, and its sender and subject are drawn as the
+    // characters they hold, since a mail header is not Markdown.
     //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
     // state/system/machine/hpc/hpc.svelte.ts, summed over the clusters whose queue is current and
@@ -41,7 +40,7 @@
     } from '$lib/state/boards/ticker';
     import type { Snapshot } from '$lib/state/boards/focus';
     import { attention, refresh } from '$lib/state/feeds/feeds';
-    import { threadAge, threadName, type InboxThread } from '$lib/state/feeds/inbox';
+    import { newestFirst, threadAge, threadName, type InboxThread } from '$lib/state/feeds/inbox';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
@@ -190,34 +189,17 @@
     }
 
     /**
-     * The rows under the line of emails, the threads its count counts under the heading of each
-     * Inbox section that holds one, and the thread each row opens.
+     * The rows under the line of emails, the threads its count counts, the newest first, and the
+     * thread each row opens.
      */
     const emails = $derived.by(() => {
         const index: Record<string, InboxThread | undefined> = {};
         const { replies, actions, unsorted } = split();
-        const sections = [
-            { key: 'reply', label: t('inbox.sec_reply'), threads: replies },
-            { key: 'action', label: t('inbox.sec_action'), threads: actions },
-            { key: 'unsorted', label: t('inbox.sec_unsorted'), threads: unsorted }
-        ];
-        const rows = sections
-            .filter(({ threads }) => threads.length > 0)
-            .flatMap(({ key, label, threads }): TickerRow[] => [
-                {
-                    id: `attention:section:${key}`,
-                    glyph: '',
-                    label,
-                    plain: true,
-                    heading: true,
-                    under: true
-                },
-                ...threads.map((thread) => {
-                    const row = threadRow(thread);
-                    index[row.id] = thread;
-                    return row;
-                })
-            ]);
+        const rows = newestFirst([...replies, ...actions, ...unsorted]).map((thread) => {
+            const row = threadRow(thread);
+            index[row.id] = thread;
+            return row;
+        });
         return { index, rows };
     });
 

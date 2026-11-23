@@ -1,8 +1,12 @@
 /* Tokyo Night (folke/tokyonight.nvim, Apache-2.0, and enkia/tokyo-night-vscode-theme, MIT): Night,
    Storm and Neon, then Light. The pink of Night, Storm and Light is oculus's own, chosen to read
-   apart from the theme's other status hues. One block per palette, each a set of overrides on the
-   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the
-   theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+   apart from the theme's other status hues. The terminal colours (`--ansi-*`) of Night and Storm
+   are those of extras/alacritty/tokyonight_night.toml and tokyonight_storm.toml of
+   folke/tokyonight.nvim, and Light's are those of themes/tokyo-night-light-color-theme.json of
+   tokyo-night/tokyo-night-vscode-theme. Neon's are its own muted text, hues and ink, one for a
+   colour and its bright twin. One block per palette, each a set of overrides on the tokens of
+   tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
+   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
 body.tokyonight {
@@ -61,6 +65,23 @@ body.tokyonight {
     --c-graph-ref: #7aa2f7;
     --c-graph-remote: #bb9af7;
     --c-graph-base: #ff9e64;
+    /* The sixteen terminal colours. */
+    --ansi-black: #15161e;
+    --ansi-red: #f7768e;
+    --ansi-green: #9ece6a;
+    --ansi-yellow: #e0af68;
+    --ansi-blue: #7aa2f7;
+    --ansi-magenta: #bb9af7;
+    --ansi-cyan: #7dcfff;
+    --ansi-white: #a9b1d6;
+    --ansi-bright-black: #414868;
+    --ansi-bright-red: #ff899d;
+    --ansi-bright-green: #9fe044;
+    --ansi-bright-yellow: #faba4a;
+    --ansi-bright-blue: #8db0ff;
+    --ansi-bright-magenta: #c7a9ff;
+    --ansi-bright-cyan: #a4daff;
+    --ansi-bright-white: #c0caf5;
 }
 
 /* --- Tokyo Night Storm (folke/tokyonight.nvim) ------------------------ */
@@ -120,6 +141,23 @@ body.tokyostorm {
     --c-graph-ref: #7aa2f7;
     --c-graph-remote: #bb9af7;
     --c-graph-base: #ff9e64;
+    /* The sixteen terminal colours. */
+    --ansi-black: #1d202f;
+    --ansi-red: #f7768e;
+    --ansi-green: #9ece6a;
+    --ansi-yellow: #e0af68;
+    --ansi-blue: #7aa2f7;
+    --ansi-magenta: #bb9af7;
+    --ansi-cyan: #7dcfff;
+    --ansi-white: #a9b1d6;
+    --ansi-bright-black: #414868;
+    --ansi-bright-red: #ff899d;
+    --ansi-bright-green: #9fe044;
+    --ansi-bright-yellow: #faba4a;
+    --ansi-bright-blue: #8db0ff;
+    --ansi-bright-magenta: #c7a9ff;
+    --ansi-bright-cyan: #a4daff;
+    --ansi-bright-white: #c0caf5;
 }
 
 /* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
@@ -179,6 +217,23 @@ body.tokyoneon {
     --c-graph-ref: #82aaff;
     --c-graph-remote: #c099ff;
     --c-graph-base: #ff966c;
+    /* The sixteen terminal colours. */
+    --ansi-black: var(--muted);
+    --ansi-red: var(--c-red);
+    --ansi-green: var(--c-green);
+    --ansi-yellow: var(--c-gold);
+    --ansi-blue: var(--c-blue);
+    --ansi-magenta: var(--c-magenta);
+    --ansi-cyan: var(--c-cyan);
+    --ansi-white: var(--ink);
+    --ansi-bright-black: var(--muted);
+    --ansi-bright-red: var(--c-red);
+    --ansi-bright-green: var(--c-green);
+    --ansi-bright-yellow: var(--c-gold);
+    --ansi-bright-blue: var(--c-blue);
+    --ansi-bright-magenta: var(--c-magenta);
+    --ansi-bright-cyan: var(--c-cyan);
+    --ansi-bright-white: var(--ink);
 }
 
 /* --- Tokyo Night Light (enkia/tokyo-night-vscode-theme) --------------- */
@@ -237,4 +292,21 @@ body.tokyolight {
     --c-graph-ref: #2959aa;
     --c-graph-remote: #5a3e8e;
     --c-graph-base: #965027;
+    /* The sixteen terminal colours. */
+    --ansi-black: #343b58;
+    --ansi-red: #8c4351;
+    --ansi-green: #33635c;
+    --ansi-yellow: #8f5e15;
+    --ansi-blue: #2959aa;
+    --ansi-magenta: #7b43ba;
+    --ansi-cyan: #006c86;
+    --ansi-white: #707280;
+    --ansi-bright-black: #343b58;
+    --ansi-bright-red: #8c4351;
+    --ansi-bright-green: #33635c;
+    --ansi-bright-yellow: #8f5e15;
+    --ansi-bright-blue: #2959aa;
+    --ansi-bright-magenta: #7b43ba;
+    --ansi-bright-cyan: #006c86;
+    --ansi-bright-white: #707280;
 }

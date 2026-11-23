@@ -150,6 +150,12 @@ export function threadAge(thread: InboxThread, now: number): string {
     return age.unit === 'h' ? t('inbox.age_hours', age.value) : t('inbox.age_minutes', age.value);
 }
 
+/** The threads by the time they were received, the newest first and an unreadable time last. */
+export function newestFirst(threads: InboxThread[]): InboxThread[] {
+    const at = ({ received }: InboxThread) => Date.parse(received) || 0;
+    return [...threads].sort((a, b) => at(b) - at(a));
+}
+
 /**
  * Who a reply on this thread reaches: the address the provider will answer to, which is the newest
  * message's `Reply-To` where it has one. The card falls back to the sender only when the payload

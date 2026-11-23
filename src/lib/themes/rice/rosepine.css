@@ -5,10 +5,11 @@
    stays 10 or more from every other status hue of the theme, on the hue and on its `-txt`. It was
    picked as the nearest to the palette's pine among the hexes of the palette's own block and an
    OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
-   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette shares
-   is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. The terminal
+   colours (`--ansi-*`) are those of the theme files rose-pine, rose-pine-moon and rose-pine-dawn of
+   @shikijs/themes. One block per palette, each a set of overrides on the tokens of tokens.css; the
+   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
+   `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
 body.rosepine {
@@ -68,6 +69,23 @@ body.rosepine {
     --c-graph-ref: #31748f;
     --c-graph-remote: #c4a7e7;
     --c-graph-base: #ebbcba;
+    /* The sixteen terminal colours. */
+    --ansi-black: #26233a;
+    --ansi-red: #eb6f92;
+    --ansi-green: #31748f;
+    --ansi-yellow: #f6c177;
+    --ansi-blue: #9ccfd8;
+    --ansi-magenta: #c4a7e7;
+    --ansi-cyan: #ebbcba;
+    --ansi-white: #e0def4;
+    --ansi-bright-black: #908caa;
+    --ansi-bright-red: #eb6f92;
+    --ansi-bright-green: #31748f;
+    --ansi-bright-yellow: #f6c177;
+    --ansi-bright-blue: #9ccfd8;
+    --ansi-bright-magenta: #c4a7e7;
+    --ansi-bright-cyan: #ebbcba;
+    --ansi-bright-white: #e0def4;
 }
 
 /* --- Rose Pine Moon (rose-pine/palette) ------------------------------- */
@@ -128,6 +146,23 @@ body.rosepinemoon {
     --c-graph-ref: #3e8fb0;
     --c-graph-remote: #c4a7e7;
     --c-graph-base: #ea9a97;
+    /* The sixteen terminal colours. */
+    --ansi-black: #393552;
+    --ansi-red: #eb6f92;
+    --ansi-green: #3e8fb0;
+    --ansi-yellow: #f6c177;
+    --ansi-blue: #9ccfd8;
+    --ansi-magenta: #c4a7e7;
+    --ansi-cyan: #ea9a97;
+    --ansi-white: #e0def4;
+    --ansi-bright-black: #908caa;
+    --ansi-bright-red: #eb6f92;
+    --ansi-bright-green: #3e8fb0;
+    --ansi-bright-yellow: #f6c177;
+    --ansi-bright-blue: #9ccfd8;
+    --ansi-bright-magenta: #c4a7e7;
+    --ansi-bright-cyan: #ea9a97;
+    --ansi-bright-white: #e0def4;
 }
 
 /* --- Rose Pine Dawn (light) (rose-pine/palette) ----------------------- */
@@ -187,4 +222,21 @@ body.rosepinedawn {
     --c-graph-ref: #286983;
     --c-graph-remote: #907aa9;
     --c-graph-base: #d7827e;
+    /* The sixteen terminal colours. */
+    --ansi-black: #f2e9e1;
+    --ansi-red: #b4637a;
+    --ansi-green: #286983;
+    --ansi-yellow: #ea9d34;
+    --ansi-blue: #56949f;
+    --ansi-magenta: #907aa9;
+    --ansi-cyan: #d7827e;
+    --ansi-white: #575279;
+    --ansi-bright-black: #797593;
+    --ansi-bright-red: #b4637a;
+    --ansi-bright-green: #286983;
+    --ansi-bright-yellow: #ea9d34;
+    --ansi-bright-blue: #56949f;
+    --ansi-bright-magenta: #907aa9;
+    --ansi-bright-cyan: #d7827e;
+    --ansi-bright-white: #575279;
 }

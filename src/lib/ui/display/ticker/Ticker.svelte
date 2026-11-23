@@ -23,7 +23,7 @@
     // its buttons leaves out.
     //
     // A row that has a `fold` folds the rows after it. Its fold control is the caller's `folder`
-    // snippet, drawn before the row's glyph in a box as high as the row, and whether those rows are
+    // snippet, drawn after the row's words in a box as high as the row, and whether those rows are
     // in the list is the caller's too: this list draws the rows it is given. A row is told apart by
     // its own id (`rowKeys`), so a row that joins or leaves takes the keyboard from no other.
 
@@ -90,9 +90,6 @@
             onpointerenter={(event) => shown.measureCut(event, row)}
             onfocusin={(event) => shown.measureCut(event, row)}
         >
-            {#if row.fold !== undefined && folder !== undefined}
-                <span class="fold">{@render folder(row)}</span>
-            {/if}
             {#if row.glyph !== ''}
                 <Glyph name={row.glyph} />
             {/if}
@@ -138,6 +135,9 @@
                     </span>
                 {/if}
             {/if}
+            {#if row.fold !== undefined && folder !== undefined}
+                <span class="fold">{@render folder(row)}</span>
+            {/if}
             {#if onaction !== undefined && row.actions !== undefined}
                 {@const keep = kept?.(row)}
                 <span class="acts">
@@ -180,14 +180,19 @@
         line-height: calc(14px * var(--text-scale, 1));
     }
 
-    /* The box of a row's fold control, as high as the row, so the control, which is taller, is
-       centred on the line and the row keeps the height of a row without one. */
+    /* The box of a row's fold control, a square as high as the row, so the control stands on the
+       line close after its words and the row keeps the height of a row without one. */
     .fold {
+        --bare-box: calc(18px * var(--text-scale, 1));
+        --tab-action-pad: 0px;
+        --glyph-size: calc(14px * var(--text-scale, 1));
+
         display: flex;
         flex: 0 0 auto;
         align-self: center;
         align-items: center;
-        height: calc(18px * var(--text-scale, 1));
+        height: var(--bare-box);
+        margin-left: -4px;
     }
 
     .name {

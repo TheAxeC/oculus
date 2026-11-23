@@ -1,4 +1,87 @@
-Everything in the brief is done, with the rulings of `O189-cases.md`. Cases 13, 14 and 18 have their last proof in the look at landing, as the brief says.
+Everything in the brief is done, with the rulings of `O189-cases.md` and the seven items of `O189-round-1.md`. Cases 13, 14 and 18 have their last proof in the look at landing, as the brief says.
+
+## Repair round 1
+
+Nothing of the seven items is undone. `npm run test:quick` was run once and did not print `every command passed`: one test timed out, and its file rerun alone passes (check 1 below).
+
+| Item | What changed | Where now |
+|---|---|---|
+| 1 | Two rules: a cell with `xterm-fg-257`, no `xterm-bg-257` and no `xterm-cursor-block` is drawn in `var(--ink)`, its dim form in half of it. The comment states both accepted effects. No private member of xterm is used | `grid.css:25-37` |
+| 2 | No selector changed. Both cells are named in the first rule's comment and in "Host- and user-visible changes" with their before and after | `grid.css:13-17` |
+| 3 | `CONTRAST_FLOOR`, the head of `tokens.css` and the head of `vscode-map.ts` each say that text is held to the floor, dim text to half of it measured in its full colour, and that a powerline, box or block glyph is exempt. `CONTRAST_FLOOR` also says that the inverse text drawn in the panel's colour is at the contrast of the theme's panel and ink | `grid-look.ts:32-40`, `tokens.css:5-11`, `vscode-map.ts:24-31` |
+| 4 | "Dim text the rule recolours takes half of that colour, as xterm draws dim text in a palette or a default colour." | `grid.css:15-16` |
+| 5 | `floor.mjs` rerun with the rows asked for; the row on inverse text with its own foreground, case 18 and the look table are corrected | below, and in their sections |
+| 6 | No code. The row on bold text and a bold sample in the look table are added. Premise checked: `OptionsService.ts:20` `drawBoldTextInBrightColors: true`; the installed workbench registers `"terminal.integrated.drawBoldTextInBrightColors":{...,type:"boolean",default:!0}` | "Host- and user-visible changes", "The look at landing" |
+| 7 | The space is back in both section comments, so `git diff -U0 -- src/lib/themes/rice/tokyo.css` shows no line starting with `/*` but the head's | `rice/tokyo.css:87,163` |
+
+Choices inside the items, each reversible: the new rules carry no important declaration, since `xterm-fg-257` is a class and the cell has no inline colour, and their four and five class-level selectors outrank xterm's two and three, whichever sheet loads last. The rule also draws in the ink an inverse cell on the default background under a find mark, where xterm measures the ink on the mark too; the comment says so.
+
+### Item 5, `floor.mjs 1` and `floor.mjs 4.5`
+
+In Dark Modern's panel, ink and sixteen colours:
+
+```
+                                                      floor.mjs 1                                                  | floor.mjs 4.5
+inverse black:                                        class="xterm-bg-0 xterm-fg-257" style=""                     | the same
+inverse red:                                          class="xterm-bg-1 xterm-fg-257" style=""                     | class="xterm-bg-1" style="color:#f0f0f0;"
+inverse truecolor foreground #101010:                 class="xterm-fg-257" style="background-color:#101010;"       | the same
+inverse 256-colour 236:                               class="xterm-bg-236 xterm-fg-257" style=""                   | the same
+dim inverse black:                                    class="xterm-dim xterm-bg-0 xterm-fg-257" style=""           | the same
+dim inverse red:                                      class="xterm-dim xterm-bg-1 xterm-fg-257" style=""           | the same
+block glyph, inverse black:                           class="xterm-bg-0 xterm-fg-257" style=""                     | the same
+powerline glyph, inverse, truecolor background #c80000: class="xterm-bg-257" style="color:#c80000;"                | the same
+block glyph, inverse, truecolor background #c80000:   class="xterm-bg-257" style="color:#c80000;"                  | the same
+dim inverse, truecolor background #000000:            class="xterm-dim xterm-bg-257" style="color:#000000;"        | the same
+inverse, default colours:                             class="xterm-bg-257 xterm-fg-257" style=""                   | class="xterm-bg-257" style="color:#555555;"
+inverse dim, default colours:                         class="xterm-dim xterm-bg-257 xterm-fg-257" style=""         | class="xterm-dim xterm-bg-257" style="color:#848484;"
+blue:                                                 class="xterm-fg-4" style=""                                  | class="" style="color:#4e8ed3;"
+bold blue:                                            class="xterm-bold xterm-fg-12" style=""                      | the same
+bold red:                                             class="xterm-bold xterm-fg-9" style=""                       | the same
+```
+
+The new rule matches the 4.5 lines that hold `xterm-fg-257` and no `xterm-bg-257`: inverse black, truecolor `#101010`, 236 and the block glyph in the ink, dim inverse black and dim inverse red in half the ink. xterm brings inverse red to `#f0f0f0` itself.
+
+### The round's case, `node .agents/scratch/pairs.mjs $PWD`
+
+49 rows by sixteen colours, with xterm's own `Color.ts` (`rgba.ensureContrastRatio`, `contrastRatio`):
+
+```
+plain: 784 pairs, 678 recoloured inline by xterm, 106 given xterm-fg-257 (0 of them readable in the panel's colour)
+  panel's colour: 106 under 4.5 in 40 rows, 42 under 2, lowest 1.00 vscode-monokai-dimmed black #1e1e1e
+  the rule: 0 under 4.5, lowest 4.50 vscode-monokai-dimmed yellow #b3b42b
+  pairs no colour lifts to 4.5: none
+dim, drawn at half: 784 pairs, 471 recoloured inline by xterm, 313 given xterm-fg-257 (244 of them readable in the panel's colour)
+  panel's colour: 233 under 2.25 in 46 rows, 183 under 2, lowest 1.00 vscode-solarized-light bright-white #fdf6e3
+  the rule: 216 under 2.25, lowest 1.27 tokyoneon red #ff007c
+  pairs no colour lifts to 2.25: none
+dim default text on the panel, half the ink: 5 of 49 rows under 2.25, lowest 1.88 vscode-solarized-light ink on panel #fdf6e3
+```
+
+The first two lines of each block are the tree as this round found it (the panel's colour) and the tree with the rule. The plain case is met: no pair under 4.5:1.
+
+Open, for a ruling: dim. xterm measures dim text in its full colour against 2.25 and then draws a class colour at half, so a dim cell that passes the measure can be drawn under 2.25. The rule draws the ruled half of the ink, and 216 of the 784 dim pairs are drawn under 2.25:1 (233 with the panel's colour), the lowest 1.27:1. The five rows of the last line are the same arithmetic for ordinary dim text. The round asks for the dim form as it is built; drawing dim inverse text in the full ink would clear 2.25 for every pair and leave it not dim.
+
+### The round's checks
+
+`npm run diagrams` ran right before check 1 and changed no file further (six diagram files, 8 lines, as after the first run).
+
+1. `npm run test:quick` (TMPDIR unset, one run): prettier, the ASCII gate, svelte-kit sync, eslint, svelte-check (`593 FILES 0 ERRORS 0 WARNINGS`), vitest checks and vitest slow `ok`; `FAILED  vitest (51.2 s)`, `Test Files  1 failed | 19 passed | 16 skipped (36)`, `Tests  1 failed | 206 passed | 148 skipped (355)`; `test:quick: 84.1 s; failed: vitest`. The one failure is `tests/server/machine/runs/schedules/commands.test.ts > reads a hand change of the commands file into the payload`, `Test timed out in 5000ms`: it waits for a file watcher to see a written file. The same test failed the same way in the first of the two runs before this round. `npx vitest run` of that file alone: `Test Files  1 passed (1)`, `Tests  3 passed (3)`. It reaches the step's files only through `sessions.ts` in its fixture, starts no terminal and no file this round changed is in its imports (`grid.css`, `grid-look.ts`, `tokens.css`, `vscode-map.ts`, `tokyo.css`).
+2. `node utils/migrations/convert-vscode-themes.ts --check`, exit 1:
+
+```
+block vscode-light-modern differs
+block vscode-light-plus differs
+block vscode-light-visual-studio differs
+block vscode-quiet-light differs
+block vscode-dark-plus differs
+block vscode-dark-visual-studio differs
+block vscode-red differs
+```
+
+3. `ASCII_GATE`: `gate output bytes: 0 exit 0`; `LC_ALL=C grep -n '[^ -~]'` over the five source files prints nothing.
+4. `sh utils/unused-exports.sh` against the base's list: no difference.
+
+`git status --short` is the same before and after the checks. No test is added. The round's programs are `floor.mjs` (rewritten with the rows above) and `pairs.mjs`, at the end of this report.
 
 ## Open items of the state file
 
@@ -187,7 +270,7 @@ Case 16, `--check` is in the verify list below. `diff` of the committed `vscode.
 
 Case 17: `gridOptions` sets `minimumContrastRatio: CONTRAST_FLOOR` (4.5); `applyLook` is not in the diff.
 
-Case 18: `floor.mjs 4.5` prints the right column quoted under the first run, so xterm's part is as read: black text and `#303030` are lightened, black on red is measured against the red. The two rules of `grid.css` match each `xterm-bg-257` span with no `xterm-fg-*` class and no `xterm-cursor-block`, which in that output are the inverse lines of default foreground. Look at landing.
+Case 18: `floor.mjs 4.5` prints the right column quoted under the first run, so xterm's part is as read: black text and `#303030` are lightened, black on red is measured against the red. The `xterm-bg-257` rules of `grid.css` match each `xterm-bg-257` span with no `xterm-fg-*` class and no `xterm-cursor-block`, which in that output are the inverse lines of default foreground. An inverse cell with a colour of its own and the default background is measured by xterm with the ink on that colour: where the ink fails xterm writes a colour inline (inverse red), and where it clears, the `xterm-fg-257` rules of `grid.css` draw the ink (inverse black, `#101010`, 236; "Repair round 1", item 5 and the round's case). Look at landing.
 
 ### The verify list, as printed
 
@@ -251,11 +334,11 @@ From `diff -rq` of `config`, `src`, `tests` and `utils` with the base copy, and 
 | `src/lib/themes/rice/singles.css` | 372 | 479 |
 | `src/lib/themes/rice/tokyo.css` | 240 | 312 |
 | `src/lib/themes/themes.css` | 116 | 134 |
-| `src/lib/themes/tokens.css` | 353 | 374 |
-| `src/lib/themes/vscode-map.ts` | 616 | 655 |
+| `src/lib/themes/tokens.css` | 353 | 376 |
+| `src/lib/themes/vscode-map.ts` | 616 | 656 |
 | `src/lib/themes/vscode.css` | 944 | 1261 |
-| `src/lib/views/sessions/terminal/grid/grid-look.ts` | 217 | 232 |
-| `src/lib/views/sessions/terminal/grid/grid.css` | 8 | 22 |
+| `src/lib/views/sessions/terminal/grid/grid-look.ts` | 217 | 235 |
+| `src/lib/views/sessions/terminal/grid/grid.css` | 8 | 37 |
 | `utils/migrations/convert-vscode-themes.ts` | 500 | 501 |
 | `docs/diagrams/layers.dot`, `layers.svg` | two counts in each: server to data 676 to 677, views to state 1603 to 1602 | |
 | `docs/diagrams/layer-server.dot`, `layer-server.svg` | one count in each: server/machine to data 217 to 218 | |
@@ -269,18 +352,18 @@ Outside the brief's write list: the four files `layer-server` and `layer-views`,
 | Place | State |
 |---|---|
 | `sessions.ts` head and `startTerminal`'s comment | rewritten |
-| `grid-look.ts` head | still true; `ANSI`, `gridLook` and `gridOptions` rewritten |
+| `grid-look.ts` head | still true; `ANSI`, `CONTRAST_FLOOR`, `gridLook` and `gridOptions` written or rewritten |
 | `terminal-marks.ts` head, `colorToken` | still true; `COLOR_TOKENS` rewritten |
 | `vscode-map.ts` head, `WORKBENCH` | rewritten; `mapTheme`'s comment still true |
 | `tokens.css`, `themes.css`, the nine rice heads, `vscode.css`, the converter's head and `headOf` | rewritten |
-| `grid.css` first comment | still true |
+| `grid.css` first comment | still true; the two comments of the inverse rules are written |
 | `docs/HELP.md:258` ("A terminal starts with git's credential settings for the git hosts you signed in to.") | still true, and it does not name the locale; not written, as the brief says |
 | `docs/apps.md:491` ("The page gets every custom property of oculus's `tokens.css`") | still true, now with the sixteen |
 | `README.md` | names neither (`grep -n -i 'ansi\|locale\|LANG\b\|contrast' README.md` prints nothing) |
 
 `grep -rn 'colorToken\|COLOR_TOKENS\|localeEnv\|terminal-locale' src tests utils docs README.md` (docs/diagrams left out): `sessions.ts:12,35,633,682`, `terminal-marks.ts:12,27,28,65,83`, `terminal-locale.ts:28`. No hit names the grid as a reader of `colorToken`.
 
-The words of the history rule over the added lines (`git diff -U0 -- src utils | grep '^+' | grep -n -E -i '\b(before|used to|no longer|still|always|as before|previously|the step|after this|now|earlier|was|were)\b'`): `still read as what they are` (phosphor.css) and `the ones before it in place` (singles.css), both existing text rewrapped, a present state and a layout; `const before`, `registered.length - before`, `registered.splice(before` (code, the length ahead of the sixteen picks); `was picked as the nearest` (vscode.css, existing generated text); `were not picked for` (grid-look.ts, a palette drawn on a theme it was not chosen for); `Before a theme is applied` (grid-look.ts, existing, the order at start). None compares with an earlier state of the code.
+The words of the history rule over the added lines (`git diff -U0 -- src utils | grep '^+' | grep -n -E -i '\b(before|used to|no longer|still|always|as before|previously|the step|after this|now|earlier|was|were)\b'`): `still read as what they are` (phosphor.css) and `the ones before it in place` (singles.css), both existing text rewrapped, a present state and a layout; `const before`, `registered.length - before`, `registered.splice(before` (code, the length ahead of the sixteen picks); `was picked as the nearest` (vscode.css, existing generated text); `were not picked for` (grid-look.ts, a palette drawn on a theme it was not chosen for); `was not measured` (grid.css, what xterm leaves out of its measure); `Before a theme is applied` (grid-look.ts, existing, the order at start). None compares with an earlier state of the code.
 
 ## Judgment calls, each reversible
 
@@ -305,10 +388,15 @@ The words of the history rule over the added lines (`git diff -U0 -- src utils |
 | The sixteen, Oculus Light and Dark | the interface hues | VS Code's light and dark defaults |
 | The sixteen, a rice theme | the interface hues | its published palette; `phosphor`, `phosphoramber`, `tokyoneon`, `oxocarbon` as they were |
 | Copy as HTML | text in the interface hues | text in the theme's terminal colours; the addon reads xterm's ANSI colours and no floor, so a colour the grid lightened is copied as the palette's own (`SerializeAddon.ts:565`, `:625`, by reading) |
-| Text under 4.5:1 | as the program or the palette gave it | lightened or darkened to 4.5:1, dim text to half of it |
+| Text under 4.5:1 | as the program or the palette gave it | lightened or darkened to 4.5:1, dim text to half of it, measured in its full colour; a powerline, box or block glyph is never measured |
 | Inverse text, default colours | the panel's colour on the ink | the same, by `grid.css` |
 | Inverse text, background of its own, default text colour | in that background's colour on the ink | in the panel's colour on the ink where the floor recolours it, and always for a truecolor background (ruling 2) |
-| Inverse text with its own foreground (`ESC[7;31m`) | the panel's colour on red | measured by xterm as the ink on red, `#f0f0f0` on `#cd3131` in Dark Modern |
+| Inverse glyph with a truecolor background (powerline U+E0B0, block U+2588 and the like under `ESC[7;48;2;200;0;0m`) | `#c80000` on the ink | the panel's colour on the ink (ruling 2; CSS cannot tell it from a cell the floor recoloured) |
+| Dim inverse text with a truecolor background (`ESC[2;7;48;2;0;0;0m`) | `#000000` on the ink, undimmed | half the panel's colour on the ink (rulings 2 and 3) |
+| Inverse text with its own foreground and the default background, where the ink fails the floor on that colour (`ESC[7;31m` in Dark Modern) | the panel's colour on red | the colour xterm writes, `#f0f0f0` on `#cd3131` |
+| The same, where the ink clears the floor (`ESC[7;30m` in Dark Modern) | the panel's colour on the old black slot, `--muted` | the ink on black; dim, half the ink; a powerline, box or block glyph of such a cell too |
+| An inverse cell on the default background under a find mark | the panel's colour on the mark | the ink on the mark, or the colour xterm writes where the ink fails on it |
+| Bold text in one of the eight names (`ESC[1;34m`) | the same hue as plain, since a name and its bright twin were one | the bright twin's colour, in xterm as in VS Code (`drawBoldTextInBrightColors` on by default in both): bold blue takes `#3b8eea` in Dark Modern where blue text is `#4e8ed3` (after the floor); in Solarized (rice) bold blue is `#839496` and bold green `#586e75`, in One Dark bold red is `#be5046` and bold white `#5c6370`, all ahead of the floor |
 | A terminal over a wallpaper | no floor | the floor is measured against the panel's colour, since the grid's background is that colour with no alpha, and never against the picture |
 | The colours of the built CSS | - | the sheets hold six lower-case digits; vite 8.3.0's minifier (lightningcss, `min.mjs` below over `tokens.css`, `themes.css`, `vscode.css` and five rice sheets) writes 16, 16, 304, 48, 96, 64, 32 and 32 declarations, the same colours, some shortened (`#000000` to `#000`) and one as a name, Dark High Contrast's bright red `#ff0000` to `red`. xterm reads a three-digit hex itself and a name through its canvas (`Color.ts:151-206`, by reading); no build was run |
 | An app's page | every custom property of `tokens.css` | the sixteen too |
@@ -326,6 +414,9 @@ Sharp edges, none inside what the brief lets the step change:
 | 13 | a terminal running `for i in {0..15}; do print -P "%F{$i}colour $i%f"; done`, then the theme changed to Monokai, Phosphor Amber and Oculus Light | the lines already drawn take the new theme's sixteen; in Monokai yellow `#b3b42b`, bright yellow `#e2e22e` |
 | 14 | a terminal's menu, Change Color, yellow; an app's file decoration with `terminal.ansiYellow` | the mark and the menu in the interface's gold, as on the base; the decoration as on the base |
 | 18 | Dark Modern: `printf '\e[30mblack\e[0m \e[38;2;48;48;48mgrey\e[0m \e[30;41mon red\e[0m \e[7minverse\e[0m \e[2;7mdim inverse\e[0m \e[7;48;2;32;64;128mown\e[0m\n'`, then a wallpaper on | black and grey readable, text on red light, the three inverse words in the panel's colour on the ink, the dim one at half; the block cursor still blinks with its own colours; the terminal over the wallpaper is drawn |
+| 18, inverse colours | Dark Modern, then Dark High Contrast: `printf '\e[7;30mblack\e[0m \e[7;31mred\e[0m \e[7;38;2;16;16;16mtruecolor\e[0m \e[7;38;5;236m236\e[0m \e[2;7;30mdim black\e[0m \e[2;7;31mdim red\e[0m \e[7;30m\342\226\210\342\226\210\e[0m\n'` | Dark Modern: black, truecolor, 236 and the block in the ink on their colour, dim black and dim red at half the ink, red in `#f0f0f0`; Dark High Contrast: black readable in the ink on black |
+| 18, glyphs and dim on a truecolor background | Dark Modern: `printf '\e[7;48;2;200;0;0m\342\226\210 text\e[0m \e[2;7;48;2;0;0;0mdim\e[0m\n'` | the block and the text in the panel's colour on the ink, the dim word at half the panel's colour on the ink |
+| 18, bold | Dark Modern, Solarized (rice) and One Dark: `printf '\e[34mblue\e[0m \e[1;34mbold blue\e[0m \e[31mred\e[0m \e[1;31mbold red\e[0m \e[32mgreen\e[0m \e[1;32mbold green\e[0m\n'` | each bold word in the bright twin's colour, as VS Code draws it; in Solarized bold blue and bold green grey, at 4.5:1 |
 | 8, the built CSS | a built page in Dark High Contrast: `print -P '%F{9}bright red%f'` | bright red `#ff0000`, whose token the build writes as `red` |
 
 ## Anything in the brief that was wrong or impossible
@@ -648,6 +739,95 @@ for (const f of ['tokens.css', 'themes.css', 'vscode.css', 'rice/kanagawa.css', 
     const off = new Set(a.map((x, i) => (x === b[i] ? null : `${x} -> ${b[i]}`)).filter(Boolean));
     console.log(f, a.length, b.length, 'changed:', [...off].join(' | ') || 'none');
 }
+```
+
+`floor.mjs <ratio>` of repair round 1: the program above with 20 rows in place of 14, the theme `{ background: '#1f1f1f00', foreground: '#cccccc', ...ansi }` and these two lists (`<U+2588>` and `<U+E0B0>` stand for the escapes of those characters in the program):
+
+```js
+const ansi = { black: '#000000', red: '#cd3131', green: '#0dbc79', yellow: '#e5e510', blue: '#2472c8', magenta: '#bc3fbc', cyan: '#11a8cd', white: '#e5e5e5', brightBlack: '#666666', brightRed: '#f14c4c', brightGreen: '#23d18b', brightYellow: '#f5f543', brightBlue: '#3b8eea', brightMagenta: '#d670d6', brightCyan: '#29b8db', brightWhite: '#e5e5e5' };
+const lines = [
+    ['inverse black', '\x1b[7;30mX'], ['inverse red', '\x1b[7;31mX'],
+    ['inverse truecolor foreground #101010', '\x1b[7;38;2;16;16;16mX'],
+    ['inverse 256-colour 236', '\x1b[7;38;5;236mX'],
+    ['dim inverse black', '\x1b[2;7;30mX'], ['dim inverse red', '\x1b[2;7;31mX'],
+    ['block glyph, inverse black', '\x1b[7;30m<U+2588>'],
+    ['powerline glyph, inverse, truecolor background #c80000', '\x1b[7;48;2;200;0;0m<U+E0B0>'],
+    ['block glyph, inverse, truecolor background #c80000', '\x1b[7;48;2;200;0;0m<U+2588>'],
+    ['dim inverse, truecolor background #000000', '\x1b[2;7;48;2;0;0;0mX'],
+    ['inverse, default colours', '\x1b[7mX'], ['inverse dim, default colours', '\x1b[2;7mX'],
+    ['blue', '\x1b[34mX'], ['bold blue', '\x1b[1;34mX'], ['bold red', '\x1b[1;31mX']
+];
+```
+
+`pairs.mjs <root>` of repair round 1:
+
+```js
+import { readFileSync, readdirSync } from 'node:fs';
+import { transformWithOxc } from 'vite';
+import { parse } from 'yaml';
+const root = process.argv[2];
+const path = `${root}/node_modules/@xterm/xterm/src/common/Color.ts`;
+const { code } = await transformWithOxc(readFileSync(path, 'utf8'), path);
+const { rgba, rgb, contrastRatio } = await import(`data:text/javascript,${encodeURIComponent(code)}`);
+const { parseBlocks, resolveTheme } = await import(`${root}/src/lib/themes/parse.ts`);
+const dir = `${root}/src/lib/themes`;
+const sheet = (name) => readFileSync(`${dir}/${name}`, 'utf8');
+const blocks = parseBlocks(['tokens.css', 'themes.css', ...readdirSync(`${dir}/rice`).sort().map((n) => `rice/${n}`), 'vscode.css'].map(sheet).join('\n'));
+const N = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];
+const names = [...N, ...N.map((n) => `bright-${n}`)];
+const read = (theme, value) => {
+    const inner = /^var\((--[a-z-]+)\)$/.exec(value)?.[1];
+    if (inner) return read(theme, theme[inner]);
+    const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value)[1];
+    return (parseInt(hex.length === 3 ? hex.replace(/./g, '$&$&') : hex, 16) * 256 + 255) >>> 0;
+};
+const lum = (n) => rgb.relativeLuminance(n >> 8);
+const on = (a, b) => contrastRatio(lum(a), lum(b));
+const hex = (n) => `#${(n >>> 8).toString(16).padStart(6, '0')}`;
+const half = (bg, fg) => rgba.blend(bg, (((fg >>> 8) << 8) | 0x80) >>> 0);
+function survey(floor, dim) {
+    const out = { pairs: 0, inline: 0, class257: 0, panel: [], ink: [], inlineLow: [], changed: 0, panelReadable: 0 };
+    for (const row of parse(readFileSync(`${root}/config/defaults/appearance.yml`, 'utf8')).themes) {
+        const theme = resolveTheme(blocks, row.class);
+        const [ink, panel] = [read(theme, theme['--ink']), read(theme, theme['--panel'])];
+        for (const name of names) {
+            const colour = read(theme, theme[`--ansi-${name}`]);
+            out.pairs += 1;
+            const adjusted = rgba.ensureContrastRatio(colour, ink, floor);
+            const tag = { row: row.name, name, colour: hex(colour) };
+            if (adjusted !== undefined) {
+                out.inline += 1;
+                const ratio = on(adjusted, colour);
+                out.panel.push({ ...tag, ratio });
+                out.ink.push({ ...tag, ratio });
+                if (ratio < floor) out.inlineLow.push({ ...tag, ratio });
+                continue;
+            }
+            out.class257 += 1;
+            const [p, i] = dim ? [half(colour, panel), half(colour, ink)] : [panel, ink];
+            out.panel.push({ ...tag, ratio: on(p, colour), panel: true });
+            out.ink.push({ ...tag, ratio: on(i, colour) });
+            if (on(panel, colour) >= floor) out.panelReadable += 1;
+        }
+    }
+    return out;
+}
+const plainDim = parse(readFileSync(`${root}/config/defaults/appearance.yml`, 'utf8')).themes.map((row) => {
+    const theme = resolveTheme(blocks, row.class);
+    const [ink, panel] = [read(theme, theme['--ink']), read(theme, theme['--panel'])];
+    return { row: row.name, name: 'ink on panel', colour: hex(panel), ratio: on(half(panel, ink), panel) };
+});
+const low = (list) => list.reduce((a, b) => (b.ratio < a.ratio ? b : a));
+const say = (one) => `${one.ratio.toFixed(2)} ${one.row} ${one.name} ${one.colour}`;
+for (const [label, floor, dim] of [['plain', 4.5, false], ['dim, drawn at half', 2.25, true]]) {
+    const s = survey(floor, dim);
+    const under = (list) => list.filter((one) => one.ratio < floor);
+    console.log(`${label}: ${s.pairs} pairs, ${s.inline} recoloured inline by xterm, ${s.class257} given xterm-fg-257 (${s.panelReadable} of them readable in the panel's colour)`);
+    console.log(`  panel's colour: ${under(s.panel).length} under ${floor} in ${new Set(under(s.panel).map((o) => o.row)).size} rows, ${s.panel.filter((o) => o.ratio < 2).length} under 2, lowest ${say(low(s.panel))}`);
+    console.log(`  the rule: ${under(s.ink).length} under ${floor}, lowest ${say(low(s.ink))}`);
+    console.log(`  pairs no colour lifts to ${floor}: ${s.inlineLow.map(say).join('; ') || 'none'}`);
+}
+console.log(`dim default text on the panel, half the ink: ${plainDim.filter((o) => o.ratio < 2.25).length} of ${plainDim.length} rows under 2.25, lowest ${say(low(plainDim))}`);
 ```
 
 `shiki.mjs`:

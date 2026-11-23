@@ -8,7 +8,7 @@ import { TERMINAL_COLORS, type Terminal, type TerminalColor } from '../../../dat
 import { hasGlyph, t } from '../../shared/words/text.ts';
 import { readTab, TERMINAL_VIEW } from './terminal-tabs.ts';
 
-/** The theme token each colour name is painted from; a missing or extra name is a type error. */
+/** The theme token each colour name's mark is drawn in; a missing or extra name is a type error. */
 const COLOR_TOKENS: Record<TerminalColor, string> = {
     black: '--muted',
     red: '--c-red',
@@ -24,7 +24,7 @@ const COLOR_TOKENS: Record<TerminalColor, string> = {
 export const COLOR_NAMES: readonly TerminalColor[] = TERMINAL_COLORS;
 
 /** The token a colour name is drawn in, or null for a name outside the eight (the default look). */
-export function colorToken(name: string): string | null {
+function colorToken(name: string): string | null {
     return Object.hasOwn(COLOR_TOKENS, name) ? COLOR_TOKENS[name as TerminalColor] : null;
 }
 

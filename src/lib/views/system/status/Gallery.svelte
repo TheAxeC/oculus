@@ -239,6 +239,7 @@
 
 {#snippet folder(row: TickerRow)}
     <FoldControl
+        chevron
         name={rowWords(row)}
         open={row.fold === true}
         ontoggle={() => (unfolded = !unfolded)}

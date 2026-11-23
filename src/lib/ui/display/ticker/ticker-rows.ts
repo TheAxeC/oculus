@@ -39,7 +39,7 @@ export type TickerRow = {
     under?: boolean;
     /**
      * Whether what the row folds is open, for a row that folds the rows after it, which the caller
-     * leaves out of the list while it is closed; the row's fold control is drawn before its glyph.
+     * leaves out of the list while it is closed; the row's fold control is drawn after its words.
      */
     fold?: boolean;
     /**

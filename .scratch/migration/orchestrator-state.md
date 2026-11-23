@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O189
-  base: 7fd63e7a2
-  worktree: .agents/worktrees/migration-O189
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: aeba585072c7eec9c (claude-opus-5-5, served model read from the runner's record)
-  launched: 2026-11-23, on Axel's rulings 770 to 774
-  report: agents/reviews/O189-report.md
-  builder_usage: first run 244583 tokens, 35 tool uses, 355 s; build 226565 tokens, 191 tool uses, 1992 s
-  reviewer_report: agents/reviews/O189-refuter.md (a273156eeab76f27e, claude-opus-5-5, 271716 tokens, 42 tool uses, 526 s)
-  round: 1
-  landing: not-started
-  brief_check: agents/reviews/O189-brief-check.md (a4d05a14db5bd64bf, claude-opus-5-5, 284488 tokens, 60 tool uses, 528 s)
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -192,11 +179,13 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 
 
+
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 
 
 ## Closed items
+- Open item 775 (2026-11-23, O189, text a box or block glyph leads in its run), withdrawn the same day on Axel's question why it asked for a new step: the text is inside ruling 773, so it was fixed at O189's landing (`partFromGlyphs`, `grid-look.ts`), with no step.
 - Open items 773 and 774 (2026-11-23, step O189, the floor of terminal text and the themes 771 does not name), closed by Axel the same day: 773 (a), 774 (a), as `plan.md` Rulings says. The lazy options were 773 (c) and 774 (b).
 - Open items 770, 771 and 772 (2026-11-23, Axel's reports on the terminal: characters left behind by Tab, and a yellow drawn orange): 770 (a), 771 (a), and one step (772); in full in `plan.md` Rulings. Step O189 builds them. The tmux servers 71617 and 80973 of old looks are left alone, on Axel's word the same day.
 - Open items 763, 764, 765 and 766 (2026-11-22, Axel's requests on the terminal, Present and the command center): 763 (a), 764 (a), 765 (a), and one step (766; Axel: "I'm more an advocate of 1 step since they are several smaller items"); in full in `plan.md` Rulings. Step O188 builds them. Correction to what the items told Axel: the server's 67 to 107% is mostly the usage fold, which reads a changed transcript whole (the 5.3 GB of this session's) at every sessions change; a read-only watch of the server's process on 2026-11-22 gave 59 of 68 samples above 60% over 50.7 s, in runs of 16 s, and one fold of the week's 446 transcripts (7.33 GB) took 21.5 s of processor time (ruling O188 usage fold). Leads: no change; the command center lists open leads with an exact deadline from today to `leads_horizon_days` (21) ahead.
@@ -910,6 +899,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-23 (O189 landed). O189 is on main (booked under O189 in `plan.md`, `agents/reviews/O189-landing.md`), with the fixes at landing: text a glyph leads measured (open item 775 withdrawn) and the command center's emails (ruling Command center emails); main's staged diff equalled the gate's; the whole `test:quick` was not run on the final code. In flight (0 of 6): none. Open items: none. Checks run at background priority (`taskpolicy -b nice -n 19`), one at a time, 1 or 2 vitest workers (Axel, 2026-11-23). Next: `~/Applications/oculus.app` built from this commit and replaced, the running app closed only on Axel's word, no release.
 - 2026-11-23 (O189 repair round 1 sent). The review found the inverse text with a colour of its own under the floor of ruling 773 (Behaviour 1), cells and bold text the report did not name, and comment sentences; all go to the round (`agents/briefs/O189-round-1.md`), with two lost spaces of `rice/tokyo.css`. Snapshot `.agents/worktrees/migration-O189-round-1`.
 - 2026-11-23 (O189 building, its cases ruled). The builder's first run handed back two readings of the brief, ruled in `agents/briefs/O189-cases.md`; resumed at round 0. Builder aeba585072c7eec9c (ordo-high, claude-opus-5-5) launched in `.agents/worktrees/migration-O189` from base 7fd63e7a2; the brief check's findings are closed in the brief. Next: its report, the whole diff read, `/refute`, `/land` with the look, then the app built again and replaced. Open items: none.
 - 2026-11-23 (O189 booked). Rulings 770 (a), 771 (a) and 772 are booked; step O189 is next, through `/spec`. After it lands, `~/Applications/oculus.app` is built again and replaced, with no release (ruling App rebuild after O189). In flight (0 of 6): none. Open items: none; 773 and 774, at which `/spec` stopped O189, are ruled (a) and (a), and `/spec` runs again.

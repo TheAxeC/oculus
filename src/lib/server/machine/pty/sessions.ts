@@ -9,13 +9,13 @@
 // A composer's start is an argument vector of at least two words, which tmux runs directly, with
 // the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the default
 // account, `env -u NAME` leading the argument vector; every start also carries `GRID_ENV` as a `-e`
-// pair, and the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>` and `GIT_CONFIG_VALUE_<n>` pairs of the
-// server context's git credentials, which name oculus's credential helper for the git hosts
-// signed in to when it starts (server/core/git/credentials.ts); a shell that sets
-// `GIT_CONFIG_COUNT` itself replaces them.
-// What the page types into a running terminal and the text of a steer go out as their bytes,
-// through `send-keys -H` in pieces (inputArgs), a steer then Enter, and an interrupt is the one
-// Escape key.
+// pair, the pairs of a UTF-8 locale (data/places/terminal-locale.ts), since a tmux session takes no
+// locale from the client that starts it, and the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>` and
+// `GIT_CONFIG_VALUE_<n>` pairs of the server context's git credentials, which name oculus's
+// credential helper for the git hosts signed in to when it starts (server/core/git/credentials.ts);
+// a shell that sets `GIT_CONFIG_COUNT` itself replaces them. What the page types into a running
+// terminal and the text of a steer go out as their bytes, through `send-keys -H` in pieces
+// (inputArgs), a steer then Enter, and an interrupt is the one Escape key.
 //
 // A start sets the session's name, its resume mark and a task's mark in the `new-session`
 // invocation itself, so a command that ends at once leaves a named, marked session.
@@ -32,6 +32,7 @@ import {
     STEER_MAX
 } from '../../../data/model/index.ts';
 import { fallbackShell } from '../../../data/places/platform.ts';
+import { localeEnv } from '../../../data/places/terminal-locale.ts';
 import type {
     Terminal,
     TerminalJob,
@@ -628,8 +629,10 @@ function quietEndArgs(session: string): string[] {
 /**
  * Start a terminal and answer with the record the list then reports for it. Every terminal it
  * starts carries the account folder of the request, `CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1` (so a
- * Claude the terminal runs, or a shell runs later, draws in a grid that keeps its scrollback), and
- * a task's placeholder values.
+ * Claude the terminal runs, or a shell runs later, draws in a grid that keeps its scrollback), the
+ * UTF-8 locale of oculus's own process or the platform's default one (`localeEnv`, so a shell
+ * counts a prompt's characters and not their bytes), git's credential settings, and a task's
+ * placeholder values.
  */
 export async function startTerminal(
     request: StartRequest,
@@ -674,7 +677,11 @@ export async function startTerminal(
         startArgs(id, { kind, cwd, cols, rows, env: request.env }, command, {
             task: options.task,
             taskEnv: options.taskEnv,
-            fixedEnv: [GRID_ENV, ...options.credentials.env()],
+            fixedEnv: [
+                GRID_ENV,
+                ...localeEnv(process.env, process.platform).map(tmuxValue),
+                ...options.credentials.env()
+            ],
             options: labels
         }),
         options

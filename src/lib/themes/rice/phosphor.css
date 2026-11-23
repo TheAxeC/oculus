@@ -1,9 +1,10 @@
 /* Phosphor: the single-colour text of a green and an amber phosphor monitor, made for the CRT
    overlay. The ink, the accent and the muted text are the phosphor's colour; the other hues stay
-   apart from it, so an error, a warning and a change still read as what they are. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+   apart from it, so an error, a warning and a change still read as what they are. The terminal
+   colours (`--ansi-*`) are the palette's own muted text, hues and ink, one for a colour and its
+   bright twin. One block per palette, each a set of overrides on the tokens of tokens.css; the
+   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
+   `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Phosphor: a green phosphor monitor, pairs with the CRT overlay --- */
 body.phosphor {
@@ -63,6 +64,23 @@ body.phosphor {
     --c-graph-ref: #5aa9ff;
     --c-graph-remote: #b48cff;
     --c-graph-base: #ff8c3a;
+    /* The sixteen terminal colours. */
+    --ansi-black: var(--muted);
+    --ansi-red: var(--c-red);
+    --ansi-green: var(--c-green);
+    --ansi-yellow: var(--c-gold);
+    --ansi-blue: var(--c-blue);
+    --ansi-magenta: var(--c-magenta);
+    --ansi-cyan: var(--c-cyan);
+    --ansi-white: var(--ink);
+    --ansi-bright-black: var(--muted);
+    --ansi-bright-red: var(--c-red);
+    --ansi-bright-green: var(--c-green);
+    --ansi-bright-yellow: var(--c-gold);
+    --ansi-bright-blue: var(--c-blue);
+    --ansi-bright-magenta: var(--c-magenta);
+    --ansi-bright-cyan: var(--c-cyan);
+    --ansi-bright-white: var(--ink);
 }
 
 /* --- Phosphor Amber: an amber phosphor monitor, pairs with the CRT overlay --- */
@@ -123,4 +141,21 @@ body.phosphoramber {
     --c-graph-ref: #6aa8ff;
     --c-graph-remote: #c19cff;
     --c-graph-base: #ff8c3a;
+    /* The sixteen terminal colours. */
+    --ansi-black: var(--muted);
+    --ansi-red: var(--c-red);
+    --ansi-green: var(--c-green);
+    --ansi-yellow: var(--c-gold);
+    --ansi-blue: var(--c-blue);
+    --ansi-magenta: var(--c-magenta);
+    --ansi-cyan: var(--c-cyan);
+    --ansi-white: var(--ink);
+    --ansi-bright-black: var(--muted);
+    --ansi-bright-red: var(--c-red);
+    --ansi-bright-green: var(--c-green);
+    --ansi-bright-yellow: var(--c-gold);
+    --ansi-bright-blue: var(--c-blue);
+    --ansi-bright-magenta: var(--c-magenta);
+    --ansi-bright-cyan: var(--c-cyan);
+    --ansi-bright-white: var(--ink);
 }

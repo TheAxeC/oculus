@@ -5,9 +5,9 @@
 // matches in are read the same way, since the search addon draws them as decorations of its own.
 
 import type { ISearchOptions } from '@xterm/addon-search';
-import type { ITerminalOptions, ITheme } from '@xterm/xterm';
+import type { ITerminalOptions, ITheme, Terminal } from '@xterm/xterm';
+import { wcagContrast } from 'culori';
 import type { TerminalOptions } from '$lib/state/shared/words/appearance';
-import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
 import { FIND_LIMIT, linkHandler } from '../terminal-list';
 import { copySelection, type SelectionClipboard } from './grid-actions';
 import { scheduleReflow } from './reflow';
@@ -16,30 +16,43 @@ import './grid.css';
 /** The grid's palette and its font family, as the theme in force gives them. */
 type GridLook = { theme: ITheme; fontFamily: string };
 
-/** The sixteen ANSI slots, in xterm's order: each name and its bright twin from one token. */
-const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
+/**
+ * The sixteen ANSI slots of xterm's theme and the token each is filled from: the eight names and
+ * their bright twins, which every theme's block sets for the terminal alone.
+ */
+const ANSI: [keyof ITheme, string][] = (
+    ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'] as const
+).flatMap((name) => {
     const bright = `bright${name[0].toUpperCase()}${name.slice(1)}` as keyof ITheme;
-    const token = colorToken(name) ?? '';
     return [
-        [name, token],
-        [bright, token]
+        [name, `--ansi-${name}`],
+        [bright, `--ansi-bright-${name}`]
     ] as [keyof ITheme, string][];
 });
 
 /**
+ * The contrast xterm brings text to against its cell's background, VS Code's default and the
+ * contrast WCAG asks of text: a program's own colours and a palette's, drawn on a theme they were
+ * not picked for, are lightened or darkened until they clear it. Dim text is held to half of it,
+ * measured in its full colour. A powerline, box or block glyph is exempt (`partFromGlyphs`). The
+ * inverse text grid.css draws in the panel's colour is drawn at the contrast the theme gives its
+ * panel and its ink, its dim form in half the panel's colour.
+ */
+const CONTRAST_FLOOR = 4.5;
+
+/**
  * The grid's palette and font in force, read off the body, which is where the theme's class sits
  * and where its tokens are set (`body.rice.dracula` and the like in themes/rice/); the root element
- * carries the light defaults only, so a read there would paint a light grid under a dark theme.
- * The grid paints no background: its background is the panel's colour with no alpha, so the
- * Terminal view's box behind it shows (Terminal.svelte), solid in the panel's colour, or over a
- * wallpaper at the terminal's share of it (`--terminal-on-wall`), and xterm takes the panel's
- * colour for what it derives from the background: inverse video and the selection's blend. Every
+ * carries the light defaults only, so a read there would paint a light grid under a dark theme. The
+ * grid paints no background: its background is the panel's colour with no alpha, so the Terminal
+ * view's box behind it shows (Terminal.svelte), solid in the panel's colour, or over a wallpaper at
+ * the terminal's share of it (`--terminal-on-wall`), and xterm takes the panel's colour for what it
+ * derives from the background: inverse video, the selection's blend and the contrast floor. Every
  * theme's `--panel` is a hex colour; one that is not is handed on whole, and the grid then paints
- * it solid.
- * The font is the page's monospace token, and a selection is drawn as the selected row of a tree
- * is, on `--accent-bg` in `--on-accent-bg`, the one selection surface every theme derives. Before
- * a theme is applied the root carries no `--on-accent-bg`, and the selection is then drawn in
- * `--ink`, as every other use of that token falls back.
+ * it solid. The font is the page's monospace token, and a selection is drawn as the selected row of
+ * a tree is, on `--accent-bg` in `--on-accent-bg`, the one selection surface every theme derives.
+ * Before a theme is applied the root carries no `--on-accent-bg`, and the selection is then drawn
+ * in `--ink`, as every other use of that token falls back.
  */
 function gridLook(): GridLook {
     const root = getComputedStyle(document.body);
@@ -59,18 +72,24 @@ function gridLook(): GridLook {
 
 /**
  * The options a new grid is built with: the look, a line feed drawn as the program wrote it
- * (`convertEol` off, so xterm adds no carriage return), the font size when there is one, xterm's
- * own size otherwise, xterm's proposed API, which the search addon's match marks and the
- * wide-character tables (`term.unicode`) need and throw without, and the cursor and Option options
- * the config holds (`terminal`). An option the config leaves out is left out, so xterm's own
- * default stands; the copy key is the grid's to follow (`followTerminalOptions`), not xterm's.
+ * (`convertEol` off, so xterm adds no carriage return), the contrast floor (`CONTRAST_FLOOR`), the
+ * font size when there is one, xterm's own size otherwise, xterm's proposed API, which the search
+ * addon's match marks and the wide-character tables (`term.unicode`) need and throw without, and
+ * the cursor and Option options the config holds (`terminal`). An option the config leaves out is
+ * left out, so xterm's own default stands; the copy key is the grid's to follow
+ * (`followTerminalOptions`), not xterm's.
  */
 function gridOptions(
     look: GridLook,
     size: number | undefined,
     terminal: TerminalOptions = {}
 ): ITerminalOptions {
-    const options: ITerminalOptions = { ...look, convertEol: false, allowProposedApi: true };
+    const options: ITerminalOptions = {
+        ...look,
+        convertEol: false,
+        allowProposedApi: true,
+        minimumContrastRatio: CONTRAST_FLOOR
+    };
     if (size !== undefined) options.fontSize = size;
     if (terminal.cursorStyle !== undefined) options.cursorStyle = terminal.cursorStyle;
     if (terminal.cursorBlink !== undefined) options.cursorBlink = terminal.cursorBlink;
@@ -138,13 +157,50 @@ export function followTerminalOptions(
     return () => listening.dispose();
 }
 
+/** A drawn grid, as its look needs it: its options and, once it is open, its element. */
+type DrawnGrid = { options: ITerminalOptions; element: HTMLElement | undefined };
+
+/**
+ * Write on a drawn grid's element the numbers of the ANSI slots the panel's colour reads better on
+ * than an ink that fails the floor (`data-panel-on`), which grid.css draws inverse text of those
+ * colours by: xterm recolours such text itself, all but dim text and a powerline, box or block
+ * glyph.
+ */
+export function markPanelSlots({ options, element }: DrawnGrid): void {
+    const theme = (options.theme ?? {}) as Record<string, string>;
+    const on = (name: string, slot: string) => wcagContrast(sixDigits(theme[name]), theme[slot]);
+    // A name and its bright twin are neighbours in ANSI, and eight apart as slots.
+    const slots = ANSI.flatMap(([slot], at) => {
+        const ink = on('foreground', slot);
+        const keeps = ink < CONTRAST_FLOOR && on('background', slot) > ink;
+        return keeps ? [Math.floor(at / 2) + (at % 2) * 8] : [];
+    });
+    element?.setAttribute('data-panel-on', slots.join(' '));
+}
+
+/** The character after a powerline, box or block glyph, the ranges xterm exempts from the floor. */
+const AFTER_GLYPH = /(?<=[\u2500-\u259f\ue0a4-\ue0d6])[^\u2500-\u259f\ue0a4-\ue0d6]/g;
+
+/**
+ * Draw the first character after a powerline, box or block glyph apart from it, on an open grid.
+ * xterm measures the contrast floor on the first character of a run of cells in one look and
+ * measures no such glyph, so text a glyph leads would be exempt with it. A joined range is a run of
+ * its own, so the character is measured, and the text after it starts a run that is too.
+ */
+export function partFromGlyphs(term: Pick<Terminal, 'registerCharacterJoiner'>): void {
+    term.registerCharacterJoiner((text) =>
+        [...text.matchAll(AFTER_GLYPH)].map(({ index }) => [index, index + 1])
+    );
+}
+
 /**
  * Put a look on a grid that is already drawn: the palette always, since a theme change moves it,
  * and the font family only when it differs, since setting it makes xterm measure its cells again.
  */
-function applyLook(options: ITerminalOptions, look: GridLook): void {
-    options.theme = look.theme;
-    if (options.fontFamily !== look.fontFamily) options.fontFamily = look.fontFamily;
+function applyLook(grid: DrawnGrid, look: GridLook): void {
+    grid.options.theme = look.theme;
+    markPanelSlots(grid);
+    if (grid.options.fontFamily !== look.fontFamily) grid.options.fontFamily = look.fontFamily;
 }
 
 /**
@@ -156,7 +212,7 @@ function applyLook(options: ITerminalOptions, look: GridLook): void {
  */
 export function reflowLook(
     size: number | undefined,
-    held: () => { options: ITerminalOptions } | null,
+    held: () => DrawnGrid | null,
     restyle: () => void,
     done: () => void
 ): () => void {
@@ -166,7 +222,7 @@ export function reflowLook(
         () => {
             const grid = held();
             if (grid === null) return false;
-            applyLook(grid.options, gridLook());
+            applyLook(grid, gridLook());
             restyle();
             if (size !== undefined && grid.options.fontSize !== size) {
                 grid.options.fontSize = size;
