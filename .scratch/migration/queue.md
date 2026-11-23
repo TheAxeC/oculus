@@ -1,4 +1,4 @@
-In flight (1 of 6 slots in use): O189, building.
+In flight (1 of 6 slots in use): O189, repair round 1.
 
 Queued, in order (0 steps): none. After O189 lands, `~/Applications/oculus.app` is built again and replaced (ruling App rebuild after O189), with no GitHub release.
 
