@@ -1,0 +1,314 @@
+diff --git a/README.md b/README.md
+index 6a7cff0ee..e9ab73f2c 100644
+--- a/README.md
++++ b/README.md
+@@ -8,7 +8,7 @@ Oculus runs on your own machine, in a browser tab or in its own window, on macOS
+ 
+ A researcher's work is spread over many places: manuscripts in LaTeX, code and data in repositories, grant deadlines in a spreadsheet, follow-ups in mail, papers to read in a reference manager. Oculus keeps all of it in one folder of plain text files that you own and can keep in git, and shows it in one window.
+ 
+-![The Projects board in oculus's Light theme, showing the research projects of the made-up demo hub as cards, each with its stage, venue and next action.](docs/images/projects-board.png)
++![The Projects board in oculus's Dark Modern theme, showing the research projects of the made-up demo hub as cards, each with its stage, venue and next action.](docs/images/projects-board.png)
+ 
+ - The Focus page lists what wants attention today: deadlines, the follow-ups that have come due, tasks, and the projects in each lane.
+ - Each project is a card with its stage, venue and next action on the project boards, and it opens a page beside the board with its status, results, subtasks and documents, and the project's folder, manuscript and repository.
+@@ -22,7 +22,7 @@ A researcher's work is spread over many places: manuscripts in LaTeX, code and d
+ 
+ Oculus is an editor in the style of VS Code that also follows the coding agents working on your repositories.
+ 
+-![The Explorer page in oculus's Light theme: Source Control on the left lists one changed file, the demo hub's LaTeX manuscript, which is open in the editor with its built PDF beside it in the PDF viewer, and the Problems view sits below them.](docs/images/explorer.png)
++![The Explorer page in oculus's Dark Modern theme: Source Control on the left lists one changed file, the demo hub's LaTeX manuscript, which is open in the editor with its built PDF beside it in the PDF viewer, and the Problems view sits below them.](docs/images/explorer.png)
+ 
+ - The Explorer page has the file tree, the Monaco editor with language servers, search across the files, and Source Control with every repository and worktree of the workspace.
+ - Terminals run in tmux, so they keep running when the server or the window stops.
+diff --git a/utils/shots/hub.mjs b/utils/shots/hub.mjs
+index 53a2e417c..6b1f48c4c 100644
+--- a/utils/shots/hub.mjs
++++ b/utils/shots/hub.mjs
+@@ -1,9 +1,11 @@
+ // Layer 4, tool. What utils/shots/shots.mjs makes of its copy of the demo hub before a server opens
+ // it, in this order: the copy's `.oculus/config.yml` without its `slurm:` block, so the shots draw
+-// no cluster a poll cannot reach; a short made-up manuscript in place of the fixture's one-line
+-// one, built to `main.pdf` with latexmk and cleaned of what the build left beside it; the workspace
+-// file `.oculus/workspaces/shots.yml`, whose one folder is the copy and whose settings draw the
+-// Light theme and hide the status bar items that would draw this machine or its user; a git
++// no cluster a poll cannot reach; the `.gitignore` the Repositories view asks for, so its Worktrees
++// section draws no warning; a short made-up manuscript in place of the fixture's one-line one,
++// built to `main.pdf` with latexmk and cleaned of what the build left beside it; the workspace file
++// `.oculus/workspaces/shots.yml`, whose one folder is the copy and whose settings draw a dark UI
++// theme and code theme and a narrower left pane of the Explorer, keep notifications quiet and hide
++// the status bar items that would draw this machine, its user or the day of the run; a git
+ // repository of one commit over all of it; one sentence added to the manuscript after that commit,
+ // so Source Control lists one changed file; and the state file `$HOME/.oculus/workspace.json` of
+ // the scratch HOME, which opens that workspace.
+@@ -19,6 +21,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+ import { dirname, join } from 'node:path';
+ import { isDeepStrictEqual } from 'node:util';
+ import { parse, stringify } from 'yaml';
++import { ignoreRule } from '../../src/lib/data/helpers/worktrees.ts';
++import { loadConfig } from '../../src/lib/data/sources/config.ts';
+ import { mustRun, Refusal } from './programs.mjs';
+ 
+ /** The name of the workspace's one folder, which is also the root key the page names it by. */
+@@ -69,16 +73,48 @@ const IDENTITY = [
+ ];
+ 
+ /**
+- * The status bar items the workspace file hides (the option `status_bar.hidden`), each one that
+- * draws this machine or its user rather than the demo copy: `host` the machine's name; `usage` the
+- * state of the agents' usage accounts; `sessions` the count of the agent sessions; and
+- * `language_server`, `interpreter` and `linter` which of this machine's programs a file's
+- * language server, Python interpreter and linters found. Every other item draws the copy: its
+- * repository, branch and sync, its problems and findings, its HPC state without a `slurm:` block,
+- * the page's connection to the server, the LaTeX build, the open file's own items and blame by the
+- * fixed identity, the unsaved tabs and the bell.
++ * The status bar items the workspace file hides (the option `status_bar.hidden`): each one that
++ * draws this machine or its user rather than the demo copy, `host` the machine's name, `usage` the
++ * state of the agents' usage accounts, `sessions` the count of the agent sessions, and
++ * `language_server`, `interpreter` and `linter` which of this machine's programs a file's language
++ * server, Python interpreter and linters found; `blame`, whose words count the months since the
++ * commit's fixed date, so a shot would change from one month to the next; and `bell`, since the
++ * workspace keeps notifications quiet (`QUIET`) and the bell would draw its Do Not Disturb glyph.
++ * Every other item draws the copy: its repository, branch and sync, its problems and findings, its
++ * HPC state without a `slurm:` block, the page's connection to the server, the LaTeX build, the
++ * open file's own items and the unsaved tabs.
+  */
+-const HIDDEN_ITEMS = ['host', 'usage', 'sessions', 'language_server', 'interpreter', 'linter'];
++const HIDDEN_ITEMS = [
++    'host',
++    'usage',
++    'sessions',
++    'language_server',
++    'interpreter',
++    'linter',
++    'blame',
++    'bell'
++];
++
++/**
++ * Whether the workspace keeps notifications quiet (the option `status_bar.quiet`), so a notice
++ * posted while the shots are taken goes into the notification list and no toast, with its time of
++ * day and its text, is drawn on a shot.
++ */
++const QUIET = true;
++
++/**
++ * The UI theme and the code theme the shots are drawn in: `vscode-dark-modern` ("Dark Modern")
++ * with the editors' `vscode-dark-2026` ("Dark 2026"), both rows of config/defaults/appearance.yml.
++ */
++const THEME = 'vscode-dark-modern';
++const CODE_THEME = 'vscode-dark-2026';
++
++/**
++ * The share of the Explorer page's width its left pane (Files, Repositories and the views beside
++ * them) takes in the shots, the rest going to the editors and the panel below them; the default
++ * arrangement of config/defaults/layout.yml gives it 0.4.
++ */
++const EXPLORER_LEFT = 0.3;
+ 
+ /** How long latexmk may take for one build or clean, in milliseconds. */
+ const TEX_LIMIT_MS = 120000;
+@@ -150,6 +186,41 @@ function dropSlurm(hub) {
+     );
+ }
+ 
++/**
++ * Give the copy the `.gitignore` the Repositories view asks a repository to carry, the rule of the
++ * worktrees folder of `git.worktrees_dir`, so its Worktrees section draws no warning on a shot.
++ */
++function ignoreWorktrees(hub, root) {
++    const dir = loadConfig(root).config.git?.worktrees_dir;
++    if (typeof dir !== 'string' || dir === '') {
++        throw new Refusal('The configuration of the checkout names no git.worktrees_dir.');
++    }
++    const text = `${ignoreRule(dir)}\n`;
++    writeChecked(
++        join(hub, '.gitignore'),
++        text,
++        (read) => read === text,
++        "The demo copy's .gitignore does not read back as the rule written."
++    );
++}
++
++/**
++ * The Explorer page's default arrangement with its left pane at `EXPLORER_LEFT` of the width, for
++ * the workspace file's `arrangements:`, which overrides a page's arrangement whole.
++ */
++function narrowExplorer(root) {
++    const explorer = loadConfig(root).config.arrangements?.explorer;
++    const sizes = explorer?.root?.sizes;
++    if (explorer?.root?.kind !== 'split' || !Array.isArray(sizes) || sizes.length !== 2) {
++        throw new Refusal(
++            'The Explorer arrangement of config/defaults/layout.yml is no split of two panes.'
++        );
++    }
++    const narrowed = structuredClone(explorer);
++    narrowed.root.sizes = [EXPLORER_LEFT, 1 - EXPLORER_LEFT];
++    return narrowed;
++}
++
+ /** Write the manuscript, build its PDF and remove what the build left beside it. */
+ async function buildManuscript(hub, env, signal) {
+     const path = join(hub, TEX);
+@@ -226,15 +297,22 @@ async function commitHub(hub, env, signal) {
+  * @param {{ hub: string, home: string }} scratch
+  * @param {NodeJS.ProcessEnv} env the environment of utils/shots/scratch.mjs `scratchEnv`
+  * @param {AbortSignal} signal ends a program still running when the command is interrupted
++ * @param {string} root the repository root, whose configuration names the worktrees folder
+  */
+-export async function prepareHub(scratch, env, signal) {
++export async function prepareHub(scratch, env, signal, root) {
+     dropSlurm(scratch.hub);
++    ignoreWorktrees(scratch.hub, root);
+     await buildManuscript(scratch.hub, env, signal);
+     const workspaceFile = join(scratch.hub, '.oculus', 'workspaces', 'shots.yml');
+     const workspace = {
+         folders: [{ name: FOLDER, path: scratch.hub }],
+         primary: FOLDER,
+-        settings: { theme: 'light', status_bar: { hidden: HIDDEN_ITEMS } }
++        settings: {
++            theme: THEME,
++            code_theme: CODE_THEME,
++            status_bar: { hidden: HIDDEN_ITEMS, quiet: QUIET },
++            arrangements: { explorer: narrowExplorer(root) }
++        }
+     };
+     writeChecked(
+         workspaceFile,
+diff --git a/utils/shots/page.mjs b/utils/shots/page.mjs
+index 3f01e2126..898e94edd 100644
+--- a/utils/shots/page.mjs
++++ b/utils/shots/page.mjs
+@@ -180,8 +180,8 @@ function boardSteps(config) {
+  * The steps to the Explorer state: the rail button; each folder above the manuscript opened in the
+  * Files tree, the workspace's folder first; the manuscript opened as a tab and its text drawn; the
+  * LaTeX tab's View control, which opens the PDF beside the tab, and the PDF's first page drawn;
+- * Source Control with the changed manuscript; and Problems in the lower pane, in place of a
+- * terminal, which would draw this machine's shell prompt.
++ * Source Control with the changed manuscript and its commit graph drawn; and Problems in the lower
++ * pane, in place of a terminal, which would draw this machine's shell prompt.
+  */
+ function explorerSteps(config, t) {
+     const parts = TEX.split('/');
+@@ -234,6 +234,12 @@ function explorerSteps(config, t) {
+             selector: '[role="treeitem"]',
+             holds: 'main.tex'
+         },
++        {
++            ...PLAIN,
++            what: 'the commit graph in Source Control',
++            within: '[data-pane-view="repositories"]',
++            selector: '[data-group="graph"] [data-commit]'
++        },
+         tabStep(t('views.problems')),
+         { ...PLAIN, what: 'the Problems view', selector: '[data-pane-view="problems"]' }
+     ];
+@@ -293,7 +299,10 @@ export async function takeShots({ root, origin, shots, width, height, scale }) {
+             `The page did not load from ${origin} within ${STEP_LIMIT_MS / 1000} s.`
+         );
+         console.log('Taking the Projects board.');
+-        for (const step of boardSteps(config)) await runStep(win, step);
++        const [rail, ...board] = boardSteps(config);
++        // The floats are drawn with the workbench, so they are closed once the rail is drawn.
++        await runStep(win, rail);
++        for (const step of board) await runStep(win, step);
+         await capture(win, taken.board, width * scale, height * scale);
+         console.log('Taking the Explorer.');
+         for (const step of explorerSteps(config, t)) await runStep(win, step);
+diff --git a/utils/shots/shots.mjs b/utils/shots/shots.mjs
+index 814a08e98..dc9f7e1d8 100644
+--- a/utils/shots/shots.mjs
++++ b/utils/shots/shots.mjs
+@@ -2,7 +2,7 @@
+ // them to docs/images/projects-board.png (the Projects board) and docs/images/explorer.png (the
+ // Explorer with the manuscript, its PDF and Source Control), each 2880 by 1800 pixels: a window of
+ // 1440 by 900 CSS pixels at a scale of 2. They are drawn on a copy of the made-up demo hub
+-// (tests/fixtures/hubs/demo) in the Light theme, by an oculus server of this checkout under a
++// (tests/fixtures/hubs/demo) in the Dark Modern theme, by an oculus server of this checkout under a
+ // scratch HOME, so nothing of the reader's own hubs, sessions or git identity is drawn.
+ //
+ // It needs a display (on Linux DISPLAY or WAYLAND_DISPLAY set; `xvfb-run npm run docs:shots` gives
+@@ -26,8 +26,10 @@
+ //   7. On success and on every failure: the program the command is running (the build, latexmk
+ //      or git) ended, the server ended, `tmux kill-server` run under the scratch folder's
+ //      TMUX_TMPDIR, the scratch folder and the userData folder removed, and Electron quit, with
+-//      exit 0 only when both files are in docs/images/. The same ending runs again on the
+-//      process's exit, and an interrupt runs the whole of it.
++//      exit 0 only when both files are in docs/images/. Chromium writes into the userData folder
++//      while Electron shuts down, so a detached shell removes it again once the process is gone.
++//      The process's exit, where Node gives one, runs what the ending has not, and an interrupt
++//      runs the whole of it.
+ //
+ // Its sentences to the terminal are its own literals, as every tool under utils/ prints its own:
+ // no view of oculus shows them, so they are not in oculus's text catalog. Electron's default app
+@@ -35,7 +37,7 @@
+ // level never awaits `app.whenReady()` and the work is chained on it instead.
+ 
+ import { app } from 'electron';
+-import { spawnSync } from 'node:child_process';
++import { spawn, spawnSync } from 'node:child_process';
+ import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
+ import { dirname, join, resolve } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+@@ -50,6 +52,14 @@ const SCALE = 2;
+ /** How long `npm run build` may take, in milliseconds. */
+ const BUILD_LIMIT_MS = 600000;
+ 
++/**
++ * The shell program that removes the userData folder once the command's process is gone: it asks
++ * every fifth of a second whether the process (`$1`) still runs, for at most a minute, then removes
++ * the folder (`$2`).
++ */
++const REMOVE_AFTER_EXIT =
++    'i=0; while kill -0 "$1" 2>/dev/null && [ "$i" -lt 300 ]; do sleep 0.2; i=$((i+1)); done; rm -rf -- "$2"';
++
+ /** How long `tmux kill-server` may take, in milliseconds. */
+ const TMUX_LIMIT_MS = 10000;
+ 
+@@ -171,6 +181,23 @@ async function main() {
+         removeFolder(profile);
+     }
+ 
++    /**
++     * Chromium writes its caches into the userData folder while Electron shuts down, after the
++     * command's own ending and with no exit event of the process after `app.exit`, so a detached
++     * shell removes the folder once this process is gone.
++     */
++    function removeProfileAfterExit() {
++        const after = spawn(
++            '/bin/sh',
++            ['-c', REMOVE_AFTER_EXIT, 'sh', String(process.pid), profile],
++            {
++                detached: true,
++                stdio: 'ignore'
++            }
++        );
++        after.unref();
++    }
++
+     /** End what the command started, remove what it made, and quit Electron with `code`. */
+     async function finish(code) {
+         if (held.finished) return;
+@@ -185,12 +212,12 @@ async function main() {
+             }
+         } finally {
+             removeFolders();
++            removeProfileAfterExit();
+             app.exit(code);
+         }
+     }
+ 
+-    // The process's exit runs what the ending has not run yet, and the removal again, since
+-    // Electron may write into its userData folder while it shuts down.
++    // The process's exit, where Node gives one, runs what the ending has not run yet.
+     process.on('exit', () => {
+         held.server?.kill();
+         if (held.scratch !== null && !held.tmuxEnded) {
+@@ -225,7 +252,7 @@ async function main() {
+         held.env = scratchEnv(held.scratch);
+         console.log(`Preparing the demo copy in ${held.scratch.hub}.`);
+         const { prepareHub } = await import('./hub.mjs');
+-        await prepareHub(held.scratch, held.env, signal);
++        await prepareHub(held.scratch, held.env, signal, ROOT);
+         const { freePort, serverOrigin, startServer } = await import('./server.mjs');
+         const port = await freePort();
+         console.log(`Starting the server on port ${port}.`);

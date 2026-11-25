@@ -154,3 +154,127 @@ Unverified until the look, since none of it can be checked without running the c
 - The workspace file as the brief gives it (one folder and `settings: theme: light`) would draw an empty board: `reads.ts:73` needs a primary hub. The command adds `primary: demo`.
 - Item 2.1 asks for the lack of a need to end the command "before any other folder is made"; the `userData` folder must exist before `app.setPath` (it throws on a missing folder) and is made first, then removed by the ending.
 - The brief's line numbers for `size.test.ts` (10, 14, 26, 134, 135, 147, 148, 162) were right on the base; after the comment rewrap the lines below line 13 sit one lower.
+
+## Repair round 1
+
+Every finding of `agents/briefs/O193-round-1.md` is done as its ruling says. Nothing was run of the capture, Electron, a server or a page; each change is checked by reading and by the Verify list below, and its behaviour is seen only at the look.
+
+### B1, the status bar items that draw this machine or its user
+
+Changed: `utils/shots/hub.mjs:72-81`, the constant `HIDDEN_ITEMS = ['host', 'usage', 'sessions', 'language_server', 'interpreter', 'linter']` with its comment; `utils/shots/hub.mjs:237`, the workspace file's settings are now `{ theme: 'light', status_bar: { hidden: HIDDEN_ITEMS } }`; the head comment (lines 4-9) says so. The workspace file is still read back and compared deep-equal (`writeChecked`), so the hidden list is checked as written.
+
+How a workspace's `settings:` reaches the bar's `shown()`, read line by line:
+
+- `src/lib/server/files/workspace/paths.ts:73`: the open workspace file is passed to the config reader as `workspace: { file: open.file }`.
+- `src/lib/data/sources/config/merge/merge.ts:270`: `if (opts.workspace !== undefined) mergeWorkspace(opts.workspace, config, from, pending);`.
+- `src/lib/data/sources/config/merge/workspace-layer.ts:293-347`: `walk` descends `status_bar` (a prefix of the option `status_bar.hidden`, line 327-328), finds the option entry (`config/options/behavior.yml:1927`, `control: list`) and takes the value through `appliedValue` (316-326), whose `listProblem` (`catalog/value-rule.ts:242-255`) accepts a list of strings; `setAt(config, path, taken.value)` at line 351 lays it over the default `hidden: []` of `config/defaults/behavior.yml:1042`.
+- `src/lib/state/shared/words/appearance.ts:398-410`: `setAppearance` installs the merged config as `look = readLook(config)`; `lookShape` at 346-358 maps `status_bar.hidden` to `statusHidden`.
+- `src/lib/state/workbench/ui.svelte.ts:391-392`: `statusHidden()` answers `held('status_bar.hidden', configuredLook()?.statusHidden)`.
+- `src/lib/shell/status/StatusBar.svelte:102-107` and `138-140`: `hidden = statusHidden()`, `isHidden(key)` is `hidden.includes(key)`, and `shown(item)` is `!isHidden(item)`; `SourceItems` and `LanguageItems` get the same `shown` (StatusBar.svelte:344, SourceItems.svelte line 192 `<LanguageItems {instance} {status} {shown} ...>`).
+
+The `theme: light` setting rides the same path, through `lookShape`'s `theme`.
+
+Every item of the bar (`src/lib/shell/status/status-items.ts:39-69`, the components `StatusBar.svelte`, `RepoItems.svelte`, `SourceItems.svelte`, `LanguageItems.svelte`, `LatexItem.svelte`, `notices/Bell.svelte`, `AppItems.svelte`):
+
+| Item | Hidden or kept | Reason |
+| --- | --- | --- |
+| `host` | hidden | `status.host.name`, the machine's `os.hostname()` (StatusBar.svelte:230-240) |
+| `repository` | kept | the copy's repository by its name (RepoItems.svelte:197-202) |
+| `branch` | kept | the copy's branch `main` |
+| `sync` | kept | the copy's branch, which has no upstream, so Publish Branch |
+| `problems` | kept | the counts of the Problems view over the copy |
+| `findings` | kept | the count of the copy's findings |
+| `debug` | kept | drawn only once a debug session has run (StatusBar.svelte:285); none runs |
+| `hpc` | kept | the copy's HPC state; the copy has no `slurm:` block, so its unconfigured words (`status.ts:223`) |
+| `usage` | hidden | the state of the agents' usage accounts (`status.ts:181-188`) |
+| `server` | kept | the page's connection to the server (`socketWords`) |
+| `latex` | kept | the build state of the copy's manuscript |
+| `blame` | kept | the copy's commit by the fixed identity `oculus` |
+| `caret` | kept | the open file's caret |
+| `indent` | kept | the open file's indentation |
+| `encoding` | kept | the open file's encoding |
+| `line_ending` | kept | the open file's line ending |
+| `language_server` | hidden | whether this machine has the language server of the file's language and its state (LanguageItems.svelte:292-297) |
+| `interpreter` | hidden | this machine's Python interpreter and environment (LanguageItems.svelte:306-309); not drawn for a `.tex` file, hidden so no machine path can be drawn |
+| `compile_database` | kept | the copy repository's C or C++ configuration; not drawn for a `.tex` file |
+| `svelte_config` | kept | the copy repository's Svelte configuration approval; not drawn for a `.tex` file |
+| `linter` | hidden | which of this machine's linter programs ran or were not found (LanguageItems.svelte:345-349) |
+| `language` | kept | the open file's language |
+| `sessions` | hidden | the count of live agent sessions, the user's agents rather than the copy (`status.ts:245-246`) |
+| `unsaved` | kept | the count of the page's unsaved tabs |
+| `bell` | kept | the notification bell of the page |
+| the apps' items (`AppItems.svelte`) | kept | none: the scratch HOME holds no app |
+
+No item of the bar draws the user name, an account name, a clock or a path: the repository item's path is only in its `data-repo` attribute and tooltip, neither of which a capture draws.
+
+### B2, `makeScratch` removes its own folder on a throw
+
+Changed: `utils/shots/scratch.mjs:99-120`. Everything after `freshFolder` (the folders, the copy of the fixture, the stand-ins and their mode) runs in a `try`; its `catch` runs `removeFolder(dir)` and rethrows, so the caller, which holds no scratch folder until `makeScratch` answers (`utils/shots/shots.mjs:224`), never leaves one behind.
+
+### B3, every wait of the page bounded by the step limit
+
+Changed: `utils/shots/page.mjs:105-119`, the new `withinLimit(work, sentence)`, which races `work` against a timer of `STEP_LIMIT_MS` (60 s), refuses with `sentence` when the timer wins and clears the timer either way. It bounds:
+
+- `win.loadURL(origin)` at lines 291-294: `The page did not load from <origin> within 60 s.`
+- each step's `executeJavaScript` at lines 121-130: `The page did not show <what> within 60 s.`, the same sentence the in-page limit already gave, now also when the page never answers (`document.fonts.ready` or a frame that never comes).
+- each `capturePage()` at lines 244-247: `The capture for <file> did not finish within 60 s.`
+
+A lost race is a `Refusal`, so `takeShots`'s `finally` destroys the window and the entry's ending (`finish(1)`) ends the server and tmux and removes the folders. The head comment (lines 19-25) says so.
+
+### T1, an empty capture is a worded refusal
+
+Changed: `utils/shots/page.mjs:248-253`. `image.isEmpty()` gives an empty buffer in place of `toPNG()`, and a PNG shorter than 24 bytes is refused with `The hidden window drew nothing: the capture for <file> is empty.` before the size is read at bytes 16 and 20.
+
+### T2, a server that cannot be spawned keeps its reason
+
+Changed: `utils/shots/server.mjs:86-92`. `answered()` first awaits `once(child, 'spawn')`; when node cannot be started the child emits `error` in place of `spawn`, the `error` listener registered at spawn time (lines 82-84, registered first, so it runs first) appends `error.message` (for example `spawn node ENOENT`) to the output, the `once` is rejected and caught, and the first check then finds `child.pid === undefined` and refuses with `The server stopped before it answered; its output follows.` and that output.
+
+### Verify, after the round's last change
+
+The round's last check list ran once, from the worktree root, with `taskpolicy -b nice -n 19`, `--maxWorkers 2`, `TMPDIR` and `GIT_CEILING_DIRECTORIES` set to `.agents/scratch/tmp`. The formatter ran once before it (`npx prettier --write utils/shots`, which rewrapped the folder list in `scratch.mjs`). Output as printed:
+
+```
+== 1
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+== 2
+exit=0
+== 3
+exit=0
+== 4
+exit=0
+== 5
+size exit=0
+folder exit=0
+== 6
+ Test Files  3 passed (3)
+      Tests  18 passed (18)
+== 7
+1795646711844 COMPLETED 4689 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+== 8
+exit=0
+== 9
+exit=0
+diff exit=0
+Unused exports (226)
+== 10
+exit=1
+```
+
+Item 9's `diff` is against `/Users/axelfaes/workspace/oculus/.agents/worktrees/O193-unused-base.txt`; item 10's exit 1 is grep finding nothing.
+
+### Files of the round, with their new line counts (`wc -l`)
+
+| File | Lines |
+| --- | --- |
+| `utils/shots/hub.mjs` | 253 |
+| `utils/shots/page.mjs` | 305 |
+| `utils/shots/scratch.mjs` | 141 |
+| `utils/shots/server.mjs` | 128 |
+| `utils/shots/programs.mjs` | 84 (unchanged) |
+| `utils/shots/shots.mjs` | 272 (unchanged) |
+
+### Unverified until the look, added by the round
+
+That the bar draws none of the six hidden items; that a notification toast of the page (not part of the bar) draws nothing of this machine; that the 60 s races never cut short a load, a step or a capture that would have finished.

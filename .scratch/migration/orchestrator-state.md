@@ -32,10 +32,11 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a204168451b37a205
   launched: 2026-11-25, on rulings README screenshots, 785, 786 and 787
   report: agents/reviews/O193-report.md
-  builder_usage: 167790 tokens, 195 tool uses, 2391 s
-  reviewer_report: agents/reviews/O193-refuter.md (af103e2f15603e431, claude-opus-5-5, 268285 tokens, 110 tool uses, 1128 s)
-  round: 1
+  builder_usage: 167790 tokens, 195 tool uses, 2391 s; round 1: 226845 tokens, 43 tool uses, 525 s
+  reviewer_report: agents/reviews/O193-refuter.md (af103e2f15603e431, claude-opus-5-5, 268285 tokens, 110 tool uses, 1128 s); over round 1: ab8a03aa7a028303f, claude-opus-5-5, 193688 tokens, 61 tool uses, 623 s
+  round: 2
   landing: not-started
+  landing_fixes: agents/reviews/O193-landing-fixes.patch (the look of 2026-11-26, carried into the worktree for round 2; the gate returned to main's head)
   brief_check: agents/reviews/O193-brief-check.md (ac32c8c7d99fe4d01, claude-opus-5-5, 209538 tokens, 57 tool uses, 627 s)
 ```
 
