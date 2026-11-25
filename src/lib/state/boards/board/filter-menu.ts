@@ -54,7 +54,10 @@ export type FilterChoice = {
     active: boolean;
     /** The hue of its dot, and of its fill while picked: the value's own, else its facet's. */
     tone: string;
-    /** The count against the largest count of the list, from 0 to 1, for the Venue list's bars. */
+    /**
+     * The count against the largest count of the list's named venues, from 0 to 1, for the Venue
+     * list's bars; No venue, the value for none, carries none.
+     */
     share?: number;
 };
 
@@ -117,11 +120,29 @@ function sessionsLabel(value: string): string {
     return t('board.sessions_none');
 }
 
+/**
+ * The words of a facet's value for none, for the facets whose words are the board's own; Code's are
+ * `codeLabel`'s. The keys are literal so tests/checks/source/keys.test.ts can see every one of
+ * them.
+ */
+function noneWords(facet: string): string | undefined {
+    if (facet === 'form') return t('board.no_form');
+    if (facet === 'status') return t('board.no_situation');
+    if (facet === 'year') return t('board.no_year');
+    if (facet === 'domain') return t('board.no_domain');
+    if (facet === 'venue') return t('board.no_venue');
+    if (facet === 'waiting') return t('board.no_waiting');
+    if (facet === 'pillar') return t('board.no_pillar');
+    if (facet === 'funding') return t('board.no_funding');
+    if (facet === 'dataset') return t('board.no_dataset');
+    if (facet === 'compute') return t('board.compute_none');
+    return undefined;
+}
+
 /** The words of a facet value that is vocabulary rather than data. */
 export function valueLabel(facet: string, value: FacetValue): string {
-    if (facet === 'year' && value.value === NONE) return t('board.no_year');
-    if (facet === 'funding' && value.value === NONE) return t('board.no_funding');
-    if (facet === 'compute' && value.value === NONE) return t('board.compute_none');
+    const none = value.value === NONE ? noneWords(facet) : undefined;
+    if (none !== undefined) return none;
     if (facet === 'code') return codeLabel(value.value);
     if (facet === 'reproduced') {
         return value.value === '1' ? t('board.repro_yes') : t('board.repro_no');
@@ -130,14 +151,19 @@ export function valueLabel(facet: string, value: FacetValue): string {
     return value.label;
 }
 
-/** The choices of a list of values, each with its share of the list's largest count. */
+/**
+ * The choices of a list of values. A Venue choice carries its share of the largest count of the
+ * named venues, so the bars compare the named venues with each other; the value for none, No venue,
+ * carries no share and draws no bar.
+ */
 function choicesOf(
     facet: string,
     values: FacetValue[],
     picked: string[],
     tone: string
 ): FilterChoice[] {
-    const most = Math.max(1, ...values.map((one) => one.count));
+    const named = values.filter((one) => one.value !== NONE);
+    const most = Math.max(1, ...named.map((one) => one.count));
     return values.map((value) => {
         const choice: FilterChoice = {
             id: value.value,
@@ -146,7 +172,7 @@ function choicesOf(
             active: picked.includes(value.value),
             tone: value.tone ?? tone
         };
-        if (facet === 'venue') choice.share = value.count / most;
+        if (facet === 'venue' && value.value !== NONE) choice.share = value.count / most;
         return choice;
     });
 }
@@ -159,7 +185,10 @@ function choicesOf(
  * values they hold, by the words its facet gives it, which is the value itself where the config
  * names none, so every value that narrows the board can be taken out in its group's list; a facet
  * with such a value and no other draws its group with that value alone. A facet with no values
- * draws no group.
+ * draws no group, and neither does a facet whose only value, offered or picked, is the value for
+ * none (`NONE`), since its one choice would keep every project whose values the facet lists; while
+ * the value for none is picked, its group is drawn with that one row, so the pick can be taken
+ * out.
  */
 export function filterGroups(
     counted: Facet[],
@@ -177,7 +206,8 @@ export function filterGroups(
             .filter((value) => !offered.some((one) => one.value === value))
             .map((value) => ({ value, label: facetLabel(facet, value, preset), count: 0 }));
         const values = [...offered, ...gone];
-        if (values.length === 0) return [];
+        // No value, or the value for none alone and not picked: the facet draws no group.
+        if (values.every((one) => one.value === NONE) && !picked.includes(NONE)) return [];
         const tone = facetTone(facet, preset);
         return [
             {

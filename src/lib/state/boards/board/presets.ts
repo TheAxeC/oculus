@@ -41,7 +41,11 @@ import { noJif } from '../../sources/registries/venues.ts';
 import type { TierMark } from '../structure/lines.ts';
 import type { WaitedOn } from '../waiting.ts';
 
-/** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
+/**
+ * The value a facet gives what has none: no form, no chip, no year, no domain, no venue, nothing
+ * waited on, no pillar, no funding, no dataset, no compute, no code deposit; and the Category group
+ * of a collection page's Projects section gives it a project in no row of `categories:`.
+ */
 export const NONE = '__none__';
 
 /** Cards or a table. */

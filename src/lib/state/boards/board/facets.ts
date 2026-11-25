@@ -148,8 +148,11 @@ function orderValues(
     const has = (value: string): boolean => (counts.get(value) ?? 0) > 0;
     // Every role is listed, with none at it too, so the facet names each role a project may hold.
     if (facet === 'role') return preset.roles.map((one) => one.key);
-    if (facet === 'status') return chipKeys().filter(has);
-    if (facet === 'form') return formOrder().filter(has);
+    // The chips and the forms in the order of their lists, and the value for none last.
+    const listedThenNone = (listed: string[]): string[] =>
+        has(NONE) ? [...listed.filter(has), NONE] : listed.filter(has);
+    if (facet === 'status') return listedThenNone(chipKeys());
+    if (facet === 'form') return listedThenNone(formOrder());
     if (facet === 'tier') {
         // The tiers in the order of `tiers:`, then a word no row of `tiers:` names, by its key.
         const listed = tierWords(vocabOf()).map((one) => one.key);
@@ -265,12 +268,13 @@ function without(filters: Record<string, string[]>, facet: string): Record<strin
  * every other facet's values leave carry it, 0 where they leave none, so a facet's own pick does
  * not narrow its counts; given none, it is how many of the board's projects carry it. A facet with
  * one value is offered as that one value: a filter that selects everything is still the board
- * saying what its one value is, and the reader can read it. The role facet is offered only while
- * a person is marked as the user (`named`), since without one no project has a role. The hub facet
- * is offered only while the workspace has more than one hub, and lists the hubs of `hubs` (their
- * names, in the workspace's order, empty with one hub) whether or not a project of the board is of
- * it, each named by itself. A value with a hue of its own carries it: a slice its slice's, a
- * domain its domain's and a pillar its pillar's.
+ * saying what its one value is, and the reader can read it, except where that value is the value
+ * for none, whose group filter-menu.ts `filterGroups` draws only while it is picked. The role facet
+ * is offered only while a person is marked as the user (`named`), since without one no project has
+ * a role. The hub facet is offered only while the workspace has more than one hub, and lists the
+ * hubs of `hubs` (their names, in the workspace's order, empty with one hub) whether or not a
+ * project of the board is of it, each named by itself. A value with a hue of its own carries it: a
+ * slice its slice's, a domain its domain's and a pillar its pillar's.
  */
 export function facets(
     items: BoardItem[],

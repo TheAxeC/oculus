@@ -27,45 +27,53 @@ import { waitingValue } from '../waiting.ts';
 import { toggled } from '../../shared/lists/lists.ts';
 
 /**
- * The values one item carries for one facet. A project with no stage is in no slice, so it is under
- * no value of the slice facet; the Situation facet (`status`) reads the project's own chips and the
- * Form facet its form, apart; the Tier facet reads the project's `tier`, a project with none under
- * no value; a venue is its key, so a venue two hubs catalogue is one value; and the Waiting on
- * facet (`waiting`) holds each value of the item's `waiting` once, by state/boards/waiting.ts
- * `waitingValue`, a person or a project by its key and a value that names neither as it is
- * written.
+ * The values one item carries for one facet. Eleven facets give a project with nothing there the
+ * value for none (`NONE`), so a pick of it finds such a project: Form (a project with no form),
+ * Situation (`status`, no chip), Year (no year), Domain (no domain), Venue (no venue), Waiting on
+ * (`waiting`, nothing waited on), Pillar (no pillar), Funding (no funding scheme), Datasets
+ * (`dataset`, no dataset), Compute (no resource) and Code (no code deposit); a domain, a venue, a
+ * pillar, a funding scheme, a dataset or a resource no registry holds is dropped before the board
+ * reads it, so a project naming only such a key carries the value for none too. The other facets
+ * leave a project with nothing there under no value: the slice facet a project with no stage, the
+ * Role facet a project on which the user has no role, the Hub facet a project that carries no hub
+ * name (`root`) and the Tier facet a project with no `tier`; the Reproduced and Sessions facets
+ * give every project one value. The Situation facet reads the project's own chips and the Form
+ * facet its form, apart; a venue is its key, so a venue two hubs catalogue is one value; and the
+ * Waiting on facet holds each value of the item's `waiting` once, by state/boards/waiting.ts
+ * `waitingValue`, a person or a project by its key and a value that names neither as it is written.
  */
 export function facetValues(item: BoardItem, facet: string): string[] {
     const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
+    const orNone = (values: string[]): string[] => (values.length === 0 ? [NONE] : values);
     switch (facet) {
         case 'slice':
             return item.slice === '' ? [] : [item.slice];
         case 'form':
-            return item.project.form === undefined ? [] : [item.project.form];
+            return [item.project.form ?? NONE];
         case 'role':
             return item.role === '' ? [] : [item.role];
         case 'year':
             return [item.year === '' ? NONE : item.year];
         case 'domain':
-            return item.domain === null ? [] : [keyOf(item.domain.id)];
+            return [item.domain === null ? NONE : keyOf(item.domain.id)];
         case 'venue':
-            return item.venue === null ? [] : [keyOf(item.venue.id)];
+            return [item.venue === null ? NONE : keyOf(item.venue.id)];
         case 'waiting':
-            return [...new Set(item.waiting.map(waitingValue))];
+            return orNone([...new Set(item.waiting.map(waitingValue))]);
         case 'hub':
             return rootOf(item.project) === '' ? [] : [rootOf(item.project)];
         case 'tier':
             return (item.project.tier ?? '') === '' ? [] : [item.project.tier ?? ''];
         case 'pillar':
-            return ids(item.pillars);
+            return orNone(ids(item.pillars));
         case 'funding':
-            return item.funding.length === 0 ? [NONE] : ids(item.funding);
+            return orNone(ids(item.funding));
         case 'dataset':
-            return ids(item.datasets);
+            return orNone(ids(item.datasets));
         case 'status':
-            return item.project.chips;
+            return orNone(item.project.chips);
         case 'compute':
-            return item.compute.length === 0 ? [NONE] : ids(item.compute);
+            return orNone(ids(item.compute));
         case 'reproduced':
             return [item.reproduced ? '1' : '0'];
         case 'code':

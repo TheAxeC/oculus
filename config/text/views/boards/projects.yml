@@ -61,7 +61,14 @@ text:
         new_idea_short: short handle
         new_idea_tip: scaffold a new idea manifest
         new_idea_title: title
+        no_dataset: No dataset
+        no_domain: No domain
+        no_form: No form
         no_funding: No funding
+        no_pillar: No pillar
+        no_situation: No situation
+        no_venue: No venue
+        no_waiting: Not waiting
         no_year: No year
         pick_search: Search
         quick_deadline: deadline {0}
