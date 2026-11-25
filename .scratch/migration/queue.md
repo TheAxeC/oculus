@@ -5,6 +5,12 @@ Queued, in order (0 steps): none. Owed: none; the app was built from O192 and re
 Owed looks: none.
 
 Landed, newest first:
+- `~/Applications/oculus.app` replaced by the build of O192 (a2bc3c287), 2026-11-25, no release.
+- O192 (exclude in the board filters), 2026-11-25, a2bc3c287.
+- `~/Applications/oculus.app` replaced by the build of O191 (152af2547), 2026-11-25, no release.
+- O191 (a value for none in the board filters), 2026-11-25, 152af2547.
+- `~/Applications/oculus.app` replaced by the build of O190 (e2825abac), 2026-11-25, no release.
+- O190 (the date a paper was submitted, on its cards), 2026-11-25, e2825abac.
 - O189 (the terminal's locale and its colours; the command center's emails), 2026-11-23.
 - `~/Applications/oculus.app` replaced by the build of O189 (e7df73f49), 2026-11-23, no release.
 - `~/Applications/oculus.app` replaced by the build of O188 (dce9afce7), 2026-11-22, no release.
