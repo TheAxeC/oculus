@@ -6,16 +6,25 @@
     // name), the "+<n>" button at the end of line 2 (the slices folded off the line, each category
     // headed by its name) and the Map's Show button (the kinds of node it draws). The list has a
     // search field at its top, then the values, each with a dot in its hue, its words and its
-    // count; a picked value is ticked and its words are drawn filled in its hue, and the Venue list
-    // draws behind each count a bar as long as the count is against the largest count of the list.
-    // A list handed a `section` draws one heading over the run of its groups the section names (a
-    // collection's Projects section in More), above the first of them, each group of the run
-    // keeping its own heading under it.
+    // count; an included value is ticked and its words are drawn filled in its hue, and the Venue
+    // list draws behind each count a bar as long as the count is against the largest count of the
+    // list. A list handed a `section` draws one heading over the run of its groups the section
+    // names (a collection's Projects section in More), above the first of them, each group of the
+    // run keeping its own heading under it.
+    //
     // Typing filters the values by their words, over every heading; the arrows move; a press or
-    // Enter picks or unpicks a value, and the list stays open, so several are picked in one go.
-    // Escape closes it and gives the focus back to the button without opening its tip, as a menu
-    // does (ui/menu/menu-items.ts `menuClosing`); a press outside or Tab closes it and leaves the
-    // focus where it went.
+    // Enter on a row is the row press, which includes an off value, turns an included one off and
+    // includes an excluded one, and the list stays open, so several are picked in one go. Given
+    // `onexclude`, each row carries at its end a minus button, drawn while the pointer is over the
+    // row, on the row the keyboard is on and always on an excluded row, whose press is the "not"
+    // press (excludes an off or an included value, turns an excluded one off), as Shift+Enter on
+    // the keyboard's row is; its click never reaches the row's own press, and Shift+Enter is kept
+    // from bits-ui's Enter, so the row press does not also run. A list given none (the Map's Show
+    // button) draws no minus button, and Shift+Enter there is the row press, as Enter is. An
+    // excluded row draws its words struck through on a red chip with the minus glyph in place of
+    // the tick, and a screen reader hears its words then "excluded". Escape closes it and gives the
+    // focus back to the button without opening its tip, as a menu does (ui/menu/menu-items.ts
+    // `menuClosing`); a press outside or Tab closes it and leaves the focus where it went.
     //
     // It is bits-ui's Popover holding bits-ui's Command, as the toolbar's popover and the palette
     // are: the opening, the closing, the focus going back, the keys and the selection are theirs,
@@ -29,6 +38,8 @@
 
     import { Command, Popover } from 'bits-ui';
     import Chip from '$lib/ui/controls/Chip.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Unseen from '$lib/ui/display/text/Unseen.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FloatingList from '$lib/ui/frame/FloatingList.svelte';
@@ -44,8 +55,13 @@
         groups: FilterGroup[];
         /** Whether each group is headed by its name, for a list of several. */
         headed?: boolean;
-        /** Picks or unpicks one value of one group. */
+        /** The row press on one value of one group. */
         onpick: (group: string, value: string) => void;
+        /**
+         * The "not" press on one value of one group; with none the rows draw no minus button and
+         * Shift+Enter is the row press.
+         */
+        onexclude?: (group: string, value: string) => void;
         /** A red badge beside the button ("2 blocked"), or the empty string for none. */
         badge?: string;
         /** The words of an amber mark beside the button, its tip, or the empty string for none. */
@@ -59,6 +75,7 @@
         groups,
         headed = false,
         onpick,
+        onexclude,
         badge = '',
         warning = '',
         section
@@ -81,6 +98,46 @@
 
     /** The id of the first group shown of the section's run, which the section heading is over. */
     const sectionStart = $derived(shown.find((group) => section?.ids.includes(group.id))?.id);
+
+    /** The value of a row in the list, which bits-ui's Command names the selected row by. */
+    function rowValue(group: FilterGroup, choice: FilterChoice): string {
+        return `${group.id}\n${choice.id}`;
+    }
+
+    /** The row the keyboard is on, by its value, kept by bits-ui's Command. */
+    let selected = $state('');
+
+    /** Each row shown by its value, as the group and the value its presses hand back. */
+    const rows = $derived(
+        new Map(
+            shown.flatMap((group) =>
+                group.items.map((choice): [string, [string, string]] => [
+                    rowValue(group, choice),
+                    [group.id, choice.id]
+                ])
+            )
+        )
+    );
+
+    /**
+     * Shift+Enter is the "not" press on the keyboard's row where the list has one, and cancels
+     * bits-ui's Enter, which runs after this handler only while the event is not cancelled, so the
+     * row press does not run too. In a list with none it cancels nothing, and bits-ui's Enter makes
+     * it the row press.
+     */
+    function shiftEnter(event: KeyboardEvent): void {
+        if (onexclude === undefined) return;
+        if (event.key !== 'Enter' || !event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        const row = rows.get(selected);
+        if (row !== undefined) onexclude(row[0], row[1]);
+    }
+
+    /** The minus button's press: the "not" press alone, its click kept from the row. */
+    function notPress(event: MouseEvent, group: FilterGroup, choice: FilterChoice): void {
+        event.stopPropagation();
+        onexclude?.(group.id, choice.id);
+    }
 
     /** The element around the button, which holds the button the focus goes back to. */
     let pick = $state<HTMLElement | null>(null);
@@ -110,18 +167,24 @@
 </script>
 
 {#snippet row(group: FilterGroup, choice: FilterChoice)}
-    <Command.Item value={`${group.id}\n${choice.id}`} onSelect={() => onpick(group.id, choice.id)}>
+    <Command.Item value={rowValue(group, choice)} onSelect={() => onpick(group.id, choice.id)}>
         {#snippet child({ props })}
             <div
                 {...props}
                 class="item"
                 class:current={choice.active}
+                class:excluded={choice.excluded}
                 title={choice.title}
                 style={toneStyle(choice)}
             >
                 <span class="label">{choice.label}</span>
+                {#if choice.excluded}
+                    <Unseen>{t('board.excluded_state')}</Unseen>
+                {/if}
                 <span class="check" aria-hidden="true">
-                    {#if choice.active}
+                    {#if choice.excluded}
+                        <Glyph name="exclude" />
+                    {:else if choice.active}
                         <Glyph name="check" />
                     {/if}
                 </span>
@@ -129,6 +192,20 @@
                 <span class="count">{choice.count}</span>
                 {#if choice.share !== undefined}
                     <span class="bar" style={`--share: ${choice.share}`}></span>
+                {/if}
+                {#if onexclude !== undefined}
+                    <span class="not">
+                        <ToolButton
+                            small
+                            bare
+                            glyph="exclude"
+                            label={choice.excluded
+                                ? t('board.exclude_stop', choice.label)
+                                : t('board.exclude', choice.label)}
+                            tabindex={-1}
+                            onclick={(event: MouseEvent) => notPress(event, group, choice)}
+                        />
+                    </span>
                 {/if}
             </div>
         {/snippet}
@@ -160,7 +237,14 @@
                 {#snippet child({ wrapperProps, props })}
                     <div {...wrapperProps}>
                         <FloatingList {label} list={props} shape="grouped">
-                            <Command.Root shouldFilter={false} loop vimBindings={false} {label}>
+                            <Command.Root
+                                shouldFilter={false}
+                                loop
+                                vimBindings={false}
+                                {label}
+                                bind:value={selected}
+                                onkeydown={shiftEnter}
+                            >
                                 <Command.Input>
                                     {#snippet child({ props: input })}
                                         <Search
@@ -295,6 +379,31 @@
         border-radius: var(--radius-pill);
         background: var(--tone);
         color: var(--on-tone);
+    }
+
+    /* An excluded value's words are struck through on a chip filled in the red, the pair of tokens
+       a filled red Chip.svelte paints, whatever the value's own hue. */
+    .item.excluded .label {
+        padding: 0 6px;
+        border-radius: var(--radius-pill);
+        background: var(--c-red);
+        color: var(--on-c-red);
+        text-decoration: line-through;
+    }
+
+    /* The minus button at the row's end keeps its room on every row, so the counts stay in one
+       column, and is drawn on the row under the pointer, the row the keyboard is on and an
+       excluded row. */
+    .not {
+        display: inline-flex;
+        flex: none;
+        visibility: hidden;
+    }
+
+    .item:hover .not,
+    .item[data-selected] .not,
+    .item.excluded .not {
+        visibility: visible;
     }
 
     .check {

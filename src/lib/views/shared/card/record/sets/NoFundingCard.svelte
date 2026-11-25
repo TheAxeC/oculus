@@ -4,11 +4,13 @@
     // card of its own, drawn as the record card (views/shared/card/record/RecordCard.svelte): the
     // projects no scheme of the file covers, as the project strip at its foot, each opening its
     // project tab, which the collection draws after its cards, or above its list, while its bar
-    // keeps it: no Status slice picked, or the No funding slice among those picked, and, while a
-    // group of the bar's Projects section has a pick, a project of the card the picks leave. The
-    // collection hands it the projects the picks leave, which its strip and its count are of. Its
-    // title opens the set's page (`ontitle`), and on that page, which lists every unfunded project,
-    // the card is drawn with no strip. The card has no action, so no menu of its own.
+    // keeps it: no Status slice included, or the No funding slice among those included, and it not
+    // excluded; and, while a group of the bar's Projects section includes a value, a project of the
+    // card the picks leave, or while the section holds only excluded values, a project of the card
+    // they leave or none drawn at all. The collection hands it the projects the picks leave, which
+    // its strip and its count are of. Its title opens the set's page (`ontitle`), and on that page,
+    // which lists every unfunded project, the card is drawn with no strip. The card has no action,
+    // so no menu of its own.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';

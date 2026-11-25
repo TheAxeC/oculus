@@ -16,9 +16,11 @@
     //
     // Given an `onclick` it is a toggle with `aria-pressed`, toned or untoned (the disclosure pills
     // are untoned), drawn disabled with its tooltip saying why where it would change nothing
-    // (`disabled`). Given an `onremove` instead, it carries a remove control after its label: a
-    // button of its own, which Tab reaches, named and titled by `removeLabel`. A toggle never
-    // carries one, so no button is drawn inside another.
+    // (`disabled`). A toggle that stands for an excluded filter value (`excluded`) draws its words
+    // struck through in `--c-red-txt` and its border in `--c-red`, and reads as not pressed. Given
+    // an `onremove` instead, it carries a remove control after its label: a button of its own,
+    // which Tab reaches, named and titled by `removeLabel`. A toggle never carries one, so no
+    // button is drawn inside another.
 
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
@@ -47,6 +49,11 @@
         onclick?: (event: MouseEvent) => void;
         /** A toggle chip's own state, which is what a reader is told it is pressing. */
         pressed?: boolean;
+        /**
+         * Draws the chip as an excluded filter value, its words struck through and its line in
+         * the red, and reads it as not pressed.
+         */
+        excluded?: boolean;
         /** The tooltip of a toggle chip, when it should say more than the label does. */
         title?: string;
         /**
@@ -71,13 +78,14 @@
         outlined = false,
         onclick,
         pressed,
+        excluded = false,
         title,
         disabled = false,
         onremove,
         removeLabel = ''
     }: Props = $props();
 
-    const solid = $derived(filled || pressed === true);
+    const solid = $derived(filled || (pressed === true && !excluded));
     const style = $derived(
         tone === undefined
             ? undefined
@@ -122,7 +130,8 @@
             class:filled={solid}
             class:outlined
             class:bracketed
-            aria-pressed={pressed}
+            class:excluded
+            aria-pressed={excluded ? false : pressed}
             {style}
             {disabled}
             {onclick}
@@ -195,6 +204,19 @@
        hover's accent border below marks the one under the pointer, as on any toggle chip. */
     .chip.toned.outlined:not(.filled) {
         --chip-line: var(--tone);
+    }
+
+    /* An excluded filter value: its words struck through in the red's text token and its line in
+       the red, over the chip's own fill, whatever its hue; the hover's accent line marks the one
+       under the pointer, as on any chip. */
+    .chip.excluded,
+    .chip.toned.outlined.excluded:not(.filled) {
+        --chip-line: var(--c-red);
+        color: var(--c-red-txt);
+    }
+
+    .chip.excluded .label {
+        text-decoration: line-through;
     }
 
     /* The remove control is the chip's own icon box: no border and no fill, the 16 px icon given

@@ -68,6 +68,7 @@ icons:
     open_file: file-symlink
     # status + markers
     check: check
+    exclude: minus
     done: check-circle
     fail: x
     cross: x-circle

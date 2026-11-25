@@ -1,12 +1,13 @@
 // Layer 2, client state. A project board's bar as data: a group per facet, headed by the facet's
 // name and drawn in the facet's hue, a choice per value with its words, its count, its hue and
-// whether it is picked; the words of the button that opens a group, which carry its picks; the
-// slices folded off the bar's second line as groups headed by their category; and the words of the
-// counts the controls carry (the deadline toggle, the waiting toggle, the Situation badge, the
-// Venue mark, the end of the second line); and the cells of the list's Columns menu, with which of
-// them are drawn. A collection view's bar (state/boards/collection/bar.ts) and the Map's
-// (state/boards/structure/map-bar.ts) are made in the same shapes: the collection's reads the
-// facets' hues from here (`facetToneIn`), the Map's its facet groups (`filterGroups`).
+// whether it is included or excluded; the words of the button that opens a group, which carry its
+// included and excluded values; the slices folded off the bar's second line as groups headed by
+// their category; and the words of the counts the controls carry (the deadline toggle, the waiting
+// toggle, the Situation badge, the Venue mark, the end of the second line); and the cells of the
+// list's Columns menu, with which of them are drawn. A collection view's bar
+// (state/boards/collection/bar.ts) and the Map's (state/boards/structure/map-bar.ts) are made in
+// the same shapes: the collection's reads the facets' hues from here (`facetToneIn`), the Map's its
+// facet groups (`filterGroups`).
 //
 // The whole filter of a project board's bar is one function here (`boardFilter`): the saved state
 // read against the board's facets and slices, the quick filters, the counted facets, the groups and
@@ -40,7 +41,15 @@ import {
     type FacetValue,
     type QuickFilters
 } from './presets.ts';
-import { appliedFilters, applyFilters, offersMine, parseBoardState } from './state.ts';
+import {
+    appliedFilters,
+    applyFilters,
+    facetListsOf,
+    offersMine,
+    parseBoardState,
+    type FacetLists,
+    type FilterPicks
+} from './state.ts';
 
 /** One value of one facet as a choice of a group's list. */
 export type FilterChoice = {
@@ -50,8 +59,10 @@ export type FilterChoice = {
     /** The whole words where `label` is cut (a slice's), else nothing. */
     title?: string;
     count: number;
-    /** Whether the value is picked. */
+    /** Whether the value is included, which keeps the projects carrying it. */
     active: boolean;
+    /** Whether the value is excluded, which hides the projects carrying it. */
+    excluded: boolean;
     /** The hue of its dot, and of its fill while picked: the value's own, else its facet's. */
     tone: string;
     /**
@@ -152,14 +163,14 @@ export function valueLabel(facet: string, value: FacetValue): string {
 }
 
 /**
- * The choices of a list of values. A Venue choice carries its share of the largest count of the
- * named venues, so the bars compare the named venues with each other; the value for none, No venue,
- * carries no share and draws no bar.
+ * The choices of a list of values, each included or excluded by `lists`. A Venue choice carries
+ * its share of the largest count of the named venues, so the bars compare the named venues with
+ * each other; the value for none, No venue, carries no share and draws no bar.
  */
 function choicesOf(
     facet: string,
     values: FacetValue[],
-    picked: string[],
+    lists: FacetLists,
     tone: string
 ): FilterChoice[] {
     const named = values.filter((one) => one.value !== NONE);
@@ -169,7 +180,8 @@ function choicesOf(
             id: value.value,
             label: valueLabel(facet, value),
             count: value.count,
-            active: picked.includes(value.value),
+            active: lists.included.includes(value.value),
+            excluded: lists.excluded.includes(value.value),
             tone: value.tone ?? tone
         };
         if (facet === 'venue' && value.value !== NONE) choice.share = value.count / most;
@@ -181,18 +193,18 @@ function choicesOf(
  * Every facet of the bar's groups as a group of choices: the facets of `counted` in the order of
  * `FACETS`, the slices left to line 2, the role facet left out while no person is marked as the
  * user (`named`) and the hub facet while the workspace has one hub (`hubs`, the hubs the group
- * lists, empty then). A picked value the board's projects do not hold is listed at 0 after the
- * values they hold, by the words its facet gives it, which is the value itself where the config
- * names none, so every value that narrows the board can be taken out in its group's list; a facet
- * with such a value and no other draws its group with that value alone. A facet with no values
- * draws no group, and neither does a facet whose only value, offered or picked, is the value for
- * none (`NONE`), since its one choice would keep every project whose values the facet lists; while
- * the value for none is picked, its group is drawn with that one row, so the pick can be taken
- * out.
+ * lists, empty then), each value included or excluded by `picks`. An included or excluded value
+ * the board's projects do not hold is listed at 0 after the values they hold, by the words its
+ * facet gives it, which is the value itself where the config names none, so every value that
+ * narrows the board can be taken out in its group's list; a facet with such a value and no other
+ * draws its group with that value alone. A facet with no values draws no group, and neither does a
+ * facet whose only value, offered or picked, is the value for none (`NONE`), since its one choice
+ * would keep every project whose values the facet lists; while the value for none is included or
+ * excluded, its group is drawn with that one row, so the pick can be taken out.
  */
 export function filterGroups(
     counted: Facet[],
-    filters: Record<string, string[]>,
+    picks: FilterPicks,
     preset: BoardPreset,
     named: boolean,
     hubs: readonly string[] = []
@@ -201,7 +213,8 @@ export function filterGroups(
         facet !== 'slice' && (named || facet !== 'role') && (hubs.length > 0 || facet !== 'hub');
     return FACETS.filter(shown).flatMap((facet) => {
         const offered = counted.find((one) => one.key === facet)?.values ?? [];
-        const picked = byKey(filters, facet) ?? [];
+        const lists = facetListsOf(picks, facet);
+        const picked = [...lists.included, ...lists.excluded];
         const gone = picked
             .filter((value) => !offered.some((one) => one.value === value))
             .map((value) => ({ value, label: facetLabel(facet, value, preset), count: 0 }));
@@ -214,7 +227,7 @@ export function filterGroups(
                 id: facet,
                 heading: facetHeading(facet),
                 tone,
-                items: choicesOf(facet, values, picked, tone)
+                items: choicesOf(facet, values, lists, tone)
             }
         ];
     });
@@ -232,9 +245,12 @@ export type BoardFilter = {
     slices: SliceGroup[];
     /** The facets with each value counted over the projects the other filters leave. */
     counted: Facet[];
-    /** The groups of line 1, a picked value no project holds listed at 0. */
+    /** The groups of line 1, an included or excluded value no project holds listed at 0. */
     groups: FilterGroup[];
-    /** The projects the search, the toggles, Mine only and every pick leave, in their order. */
+    /**
+     * The projects the search, the toggles, Mine only, every included and every excluded value
+     * leave, in their order.
+     */
     shown: BoardItem[];
 };
 
@@ -245,9 +261,10 @@ export type BoardFilter = {
  * stale toggle. The saved state is read against the facets and the slices of `items` before any
  * filter (`parseBoardState`), so a compute value no project offers and a slice no project holds are
  * dropped; Mine only is applied only where one of `items` is one it does not keep (`offersMine`);
- * the role and hub picks narrow only while their groups are drawn (`appliedFilters`); each facet is
- * counted over the projects the search, the toggles and the other facets leave (`facets`); and the
- * projects shown are those every control leaves (`applyFilters`).
+ * the role and hub values, included or excluded, narrow only while their groups are drawn
+ * (`appliedFilters`); each facet is counted over the projects the search, the toggles and the
+ * other facets leave (`facets`); and the projects shown are those every control leaves
+ * (`applyFilters`).
  */
 export function boardFilter(
     items: BoardItem[],
@@ -274,15 +291,17 @@ export function boardFilter(
         staleLag
     };
     const filters = appliedFilters(held.filters, named, hubs);
-    const counted = facets(items, preset, named, { filters, search: held.search, quick }, hubs);
+    const excluded = appliedFilters(held.excluded, named, hubs);
+    const inForce = { filters, excluded, search: held.search, quick };
+    const counted = facets(items, preset, named, inForce, hubs);
     return {
         held,
         named,
         mine,
         slices,
         counted,
-        groups: filterGroups(counted, held.filters, preset, named, hubs),
-        shown: applyFilters(items, filters, held.search, quick)
+        groups: filterGroups(counted, held, preset, named, hubs),
+        shown: applyFilters(items, filters, held.search, quick, excluded)
     };
 }
 
@@ -291,24 +310,35 @@ export function searchWords(preset: BoardPreset): string {
     return preset.search === '' ? t('board.search_default') : preset.search;
 }
 
-/** How many of a group's values are picked. */
+/** How many of a group's values are included or excluded. */
 function picksOf(group: FilterGroup): number {
-    return group.items.filter((one) => one.active).length;
+    return group.items.filter((one) => one.active || one.excluded).length;
 }
 
 /**
- * The words of the button that opens a group: its heading, and while a value is picked the heading
- * with the first picked value's words and how many more are picked ("Form: journal article +1").
+ * The words of the button that opens a group: its heading, and while a value is included or
+ * excluded the heading with the first included value's words, then the first excluded value's as
+ * "not <value>", then how many more of either are picked ("Situation: blocked", "Situation: not
+ * blocked", "Situation: blocked, not paused +2").
  */
 export function groupWords(group: FilterGroup): string {
-    const picked = group.items.filter((one) => one.active);
-    const first = picked.at(0);
+    const included = group.items.find((one) => one.active);
+    const excluded = group.items.find((one) => one.excluded);
+    const not = excluded === undefined ? undefined : t('board.group_not', excluded.label);
+    const first = included?.label ?? not;
     if (first === undefined) return group.heading;
-    const words = t('board.group_picked', group.heading, first.label);
-    return picked.length === 1 ? words : t('board.group_picked_more', words, picked.length - 1);
+    // One value named while only one of the two lists holds a value, else the first of each.
+    const single = included === undefined || not === undefined;
+    const value = single ? first : t('board.group_both', included.label, not);
+    const words = t('board.group_picked', group.heading, value);
+    const more = picksOf(group) - (single ? 1 : 2);
+    return more === 0 ? words : t('board.group_picked_more', words, more);
 }
 
-/** The words of the More button: "More", and the count of the picks of the groups it holds. */
+/**
+ * The words of the More button: "More", and the count of the included and excluded values of the
+ * groups it holds.
+ */
 export function moreWords(groups: FilterGroup[]): string {
     const picks = groups.reduce((sum, group) => sum + picksOf(group), 0);
     return picks === 0 ? t('board.more') : t('board.more_count', picks);
@@ -317,17 +347,18 @@ export function moreWords(groups: FilterGroup[]): string {
 /**
  * The slices folded off line 2 (`folded`, their values) as groups headed by their category, each
  * slice with its count from the facet `facet` of `counted`, the key the slices are stored under
- * (`slice` on a board and the Map, `status` on a collection), and drawn in its own hue.
+ * (`slice` on a board and the Map, `status` on a collection), included or excluded by `picks`, and
+ * drawn in its own hue.
  */
 export function sliceChoices(
     groups: SliceGroup[],
     facet: string,
     counted: Facet[],
-    filters: Record<string, string[]>,
+    picks: FilterPicks,
     folded: ReadonlySet<string>
 ): FilterGroup[] {
     const counts = counted.find((one) => one.key === facet)?.values ?? [];
-    const picked = byKey(filters, facet) ?? [];
+    const lists = facetListsOf(picks, facet);
     return groups.flatMap((group) => {
         const items = group.slices
             .filter((slice) => folded.has(slice.value))
@@ -336,7 +367,8 @@ export function sliceChoices(
                 label: slice.label,
                 title: slice.tip,
                 count: counts.find((one) => one.value === slice.value)?.count ?? 0,
-                active: picked.includes(slice.value),
+                active: lists.included.includes(slice.value),
+                excluded: lists.excluded.includes(slice.value),
                 tone: slice.tone
             }));
         return items.length === 0

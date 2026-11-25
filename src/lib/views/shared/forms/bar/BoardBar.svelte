@@ -24,6 +24,7 @@
         shownWords,
         venueWarning,
         waitingWords,
+        withExclude,
         withPick,
         type BoardFilter,
         type BoardState,
@@ -45,6 +46,11 @@
     let { filter, stats, placeholder, write }: Props = $props();
 
     const held = $derived(filter.held);
+
+    /** The "not" press on one value of one facet, from line 1's lists or line 2's slices. */
+    function exclude(facet: string, value: string): void {
+        write(withExclude(held, facet, value));
+    }
 </script>
 
 {#snippet toggles()}
@@ -87,8 +93,8 @@
         status: { badge: blockedBadge(stats) },
         venue: { warning: venueWarning(stats) }
     }}
-    ontoggle={(facet: string, value: string) =>
-        write({ filters: withPick(held.filters, facet, value) })}
+    ontoggle={(facet: string, value: string) => write(withPick(held, facet, value))}
+    onexclude={exclude}
 />
 <SliceLine
     label={t('board.slices')}
@@ -96,8 +102,10 @@
     facet="slice"
     counted={filter.counted}
     filters={held.filters}
+    excluded={held.excluded}
     shown={filter.shown.length}
     total={stats.projects}
     words={shownWords}
-    onfilters={(next: Record<string, string[]>) => write({ filters: next })}
+    onfilters={write}
+    onexclude={exclude}
 />

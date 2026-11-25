@@ -4,25 +4,32 @@
     // and the Map (views/structure/map/Map.svelte). Line 2 of their bar: for each category of
     // slices the caller hands (a board's and the Map's categories of projects, a collection's
     // status field), its label in small capitals in the category's colour, then its slices as
-    // chips, each with its words and its count ("journal article 9"), outlined in the slice's hue
-    // and filled while picked; a press on a slice picks or unpicks it, and a press on a category's
-    // label picks every slice of it, or takes them all out when all are picked. The slices are
-    // stored under one facet key (`facet`: `slice` on a board and the Map, the collection's
-    // `status`), and their counts are that facet's in `counted`. The line ends with how many are
-    // shown, in the caller's words (`words`: "16 projects", "5 of 16 shown", "12 entries") and,
-    // while any facet value is picked, Clear all, which takes every group's and slice's pick out
-    // and leaves the search and the caller's toggles as they are.
+    // chips, each with its words and its count ("journal article 9"), outlined in the slice's hue,
+    // filled while included and struck through in the red while excluded. A press on a slice is the
+    // row press (includes an off or an excluded slice, turns an included one off), and an Alt-click
+    // on it, or Alt+Enter or Alt+Space while it has the focus, is the "not" press (excludes an off
+    // or an included slice, turns an excluded one off); a press on a category's label includes
+    // every slice of it, or takes them all out when all are included, and an Alt-click on it
+    // excludes every slice of it. The slices are stored under one facet key (`facet`: `slice` on a
+    // board and the Map, the collection's `status`), and their counts are that facet's in
+    // `counted`. The line ends with how many are shown, in the caller's words (`words`: "16
+    // projects", "5 of 16 shown", "12 entries") and, while any facet value is included or excluded,
+    // Clear all, which takes every group's and slice's include and exclude out and leaves the
+    // search and the caller's toggles as they are.
     //
     // The line is one line at any pane width: the slices that do not fit beside the end of the line
     // fold, last in, first out, into a "+<n>" button that opens them in a list headed by category
-    // (PickMenu.svelte), its words carrying how many of them are picked ("+5, 1 picked") as line
-    // 1's More does, so a folded pick still shows on the line; a category whose slices all fold
-    // folds its label with them. The folding is ui/frame/toolbar/FoldRun.svelte's, as line 1's
-    // (FilterBar.svelte) is; a render with no layout draws every slice.
+    // (PickMenu.svelte), its words carrying how many of them are included or excluded ("+5, 1
+    // picked") as line 1's More does, so a folded pick shows on the line too; a category whose
+    // slices all fold folds its label with them. The folding is ui/frame/toolbar/FoldRun.svelte's,
+    // as line 1's (FilterBar.svelte) is; a render with no layout draws every slice.
     //
     // It holds no state of its caller: the slices, their counts and the picks are the caller's,
-    // computed by pure functions of state/boards/, and every press is handed back as the filters it
-    // leaves (`onfilters`, made by state/boards/board/state.ts `withPick` and `withPicks`).
+    // computed by pure functions of state/boards/; a row press, a press on a category's label and
+    // Clear all are handed back as both lists they leave (`onfilters`, made by
+    // state/boards/board/state.ts `withPick`, `withCategory` and `noPicks`), and the "not" press on
+    // a slice, on the line or in the folded list, as the slice it is on (`onexclude`), which the
+    // caller writes as FilterBar.svelte's is.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
@@ -30,10 +37,12 @@
     import FoldRun from '$lib/ui/frame/toolbar/FoldRun.svelte';
     import PickMenu from './PickMenu.svelte';
     import {
+        noPicks,
         sliceChoices,
+        withCategory,
         withPick,
-        withPicks,
         type Facet,
+        type FilterPicks,
         type Slice,
         type SliceGroup
     } from '$lib/state/boards/board';
@@ -48,22 +57,36 @@
         facet: string;
         /** The facets with their counts over what the other filters leave, slices included. */
         counted: Facet[];
-        /** The facet values the caller's saved state holds. */
+        /** The facet values the caller's saved state includes, and those it excludes. */
         filters: Record<string, string[]>;
+        excluded: Record<string, string[]>;
         /** How many items are shown, and how many the caller holds. */
         shown: number;
         total: number;
         /** The words of the shown count, already translated. */
         words: (shown: number, total: number) => string;
         /**
-         * Hands back the filters a press leaves: one slice picked or taken out, a category's slices
-         * set, or every facet value taken out by Clear all.
+         * Hands back both lists a press leaves: the row press on one slice, a category's slices
+         * included, taken out or excluded, or every facet value taken out by Clear all.
          */
-        onfilters: (filters: Record<string, string[]>) => void;
+        onfilters: (picks: FilterPicks) => void;
+        /** The "not" press on one slice of the facet `facet`. */
+        onexclude: (facet: string, value: string) => void;
     };
 
-    let { label, groups, facet, counted, filters, shown, total, words, onfilters }: Props =
-        $props();
+    let {
+        label,
+        groups,
+        facet,
+        counted,
+        filters,
+        excluded,
+        shown,
+        total,
+        words,
+        onfilters,
+        onexclude
+    }: Props = $props();
 
     /** How wide the "+<n>" button is taken to be before it is first drawn. */
     const MORE_GUESS = 40;
@@ -74,7 +97,9 @@
     const places: Place[] = $derived(
         groups.flatMap((group) => [{ group }, ...group.slices.map((slice) => ({ group, slice }))])
     );
+    const picks: FilterPicks = $derived({ filters, excluded });
     const picked = $derived(Object.hasOwn(filters, facet) ? filters[facet] : []);
+    const out = $derived(Object.hasOwn(excluded, facet) ? excluded[facet] : []);
     const counts = $derived(
         new Map(
             (counted.find((one) => one.key === facet)?.values ?? []).map((one) => [
@@ -83,7 +108,9 @@
             ])
         )
     );
-    const picking = $derived(Object.values(filters).some((values) => values.length > 0));
+    const picking = $derived(
+        [...Object.values(filters), ...Object.values(excluded)].some((values) => values.length > 0)
+    );
 
     /** How many places the line draws, and null while it draws all of them. */
     let fits: number | null = $state(null);
@@ -99,9 +126,9 @@
             fits === null ? [] : places.slice(fits).flatMap((place) => place.slice?.value ?? [])
         )
     );
-    const foldedGroups = $derived(sliceChoices(groups, facet, counted, filters, folded));
-    /** How many of the folded slices are picked, which the "+<n>" button's words carry. */
-    const foldedPicks = $derived(picked.filter((value) => folded.has(value)).length);
+    const foldedGroups = $derived(sliceChoices(groups, facet, counted, picks, folded));
+    /** How many of the folded slices are included or excluded, which the "+<n>" button carries. */
+    const foldedPicks = $derived([...picked, ...out].filter((value) => folded.has(value)).length);
 
     /** The room the places have beside the end of the line, and the "+<n>" button after them. */
     function room(gap: number): { room: number; opener: number } | null {
@@ -125,19 +152,22 @@
         return place.slice?.value ?? `group:${place.group.key}`;
     }
 
-    /** Picks every slice of a category, or takes them all out when all are picked. */
-    function pickCategory(group: SliceGroup): void {
+    /**
+     * A press on a category's label: a plain click includes every slice of it, or takes them all
+     * out when all are included; an Alt-click excludes every slice of it.
+     */
+    function pickCategory(group: SliceGroup, event: MouseEvent): void {
         const values = group.slices.map((one) => one.value);
-        const all = values.every((value) => picked.includes(value));
-        onfilters(
-            withPicks(
-                filters,
-                facet,
-                all
-                    ? picked.filter((value) => !values.includes(value))
-                    : [...picked, ...values.filter((value) => !picked.includes(value))]
-            )
-        );
+        onfilters(withCategory(picks, facet, values, event.altKey));
+    }
+
+    /**
+     * A press on a slice: the "not" press with Alt held, which a press of Enter or Space on the
+     * focused chip carries as a click with the key's modifiers, else the row press.
+     */
+    function pressSlice(slice: Slice, event: MouseEvent): void {
+        if (event.altKey) onexclude(facet, slice.value);
+        else onfilters(withPick(picks, facet, slice.value));
     }
 
     /** The hue of a category's label, as an inline custom property, and none for "other". */
@@ -149,7 +179,7 @@
 {#snippet placed(place: Place)}
     {#if place.slice === undefined}
         <span class="category" style={labelStyle(place.group)}>
-            <RowButton onclick={() => pickCategory(place.group)}>
+            <RowButton onclick={(event: MouseEvent) => pickCategory(place.group, event)}>
                 <span class="words">{place.group.label}</span>
             </RowButton>
         </span>
@@ -157,11 +187,12 @@
         {@const slice = place.slice}
         <Chip
             label={t('board.slice_words', slice.label, counts.get(slice.value) ?? 0)}
-            title={slice.tip}
+            title={out.includes(slice.value) ? t('board.exclude_stop', slice.label) : slice.tip}
             tone={slice.tone === '' ? undefined : slice.tone}
             outlined
             pressed={picked.includes(slice.value)}
-            onclick={() => onfilters(withPick(filters, facet, slice.value))}
+            excluded={out.includes(slice.value)}
+            onclick={(event: MouseEvent) => pressSlice(slice, event)}
         />
     {/if}
 {/snippet}
@@ -185,7 +216,8 @@
                 groups={foldedGroups}
                 headed
                 onpick={(_category: string, value: string) =>
-                    onfilters(withPick(filters, facet, value))}
+                    onfilters(withPick(picks, facet, value))}
+                onexclude={(_category: string, value: string) => onexclude(facet, value)}
             />
         </span>
     {/if}
@@ -196,7 +228,7 @@
                 small
                 glyph="clear_all"
                 label={t('board.filter_clear')}
-                onclick={() => onfilters({})}
+                onclick={() => onfilters(noPicks())}
             />
         {/if}
     </span>
@@ -221,7 +253,7 @@
     }
 
     /* A category's label: its words in small capitals in the category's hue, pressable as a whole
-       to pick or take out every slice of it. */
+       to include or take out every slice of it, or with Alt to exclude every slice of it. */
     .category {
         display: inline-flex;
         flex: none;

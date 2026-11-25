@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O192
-  base: 7b57cb7f5
-  worktree: .agents/worktrees/migration-O192
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: a23b27e0e9aa274b9 (claude-opus-5-5, served model read from the runner's record)
-  launched: 2026-11-25, on rulings Exclude in the board filters, 783 and 784
-  report: agents/reviews/O192-report.md
-  builder_usage: 280721 tokens, 306 tool uses, 3523 s
-  round: 1
-  landing: not-started
-  reviewer_report: agents/reviews/O192-refuter.md (a383043f4b1ec814a, claude-opus-5-5, 276208 tokens, 76 tool uses, 1119 s)
-  brief_check: agents/reviews/O192-brief-check.md (acfbfad14ab71fdbb, claude-opus-5-5, 232771 tokens, 71 tool uses, 742 s)
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -918,6 +905,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-25 (O192 landed; app rebuild next). O192 landed on main from base 7b57cb7f5, the whole range (wip commit f66344752, the build and repair round 1), 36 paths, 1504 insertions and 380 deletions, booked and ticked in `plan.md` with its landing report `agents/reviews/O192-landing.md`. The review over round 1 a506384da442b8238 is appended to `agents/reviews/O192-refuter.md` with the Closed heading: R1 Spec 1 under the standing ruling "Unapproved builder scripts"; R1 Spec 2 (G153's Code line), R1 Standards 1 to 3 and R1 Behaviour 1 (the No funding count and strip under excludes alone) fixed at landing; R1 Proof 1 and 2 named in the booking. Gate at 1fbef3f58: `test:quick: 54.0 s; every command passed`; main's staged diff equals the gate's. The look on 8797 in Oculus Light and Dark covered the Research board, Present, the Map with its Show menu, the Funding view's own groups and Projects section, and a person's count button; the server is stopped. Next: the app rebuilt from main and put in `~/Applications`. In flight (0 of 6). Queued: none. Open items: none.
 - 2026-11-25 (O192 reviewed; repair round 1 sent). O192's builder a23b27e0e9aa274b9 reported (`agents/reviews/O192-report.md`, saved in the main ledger, usage under builder_usage); the orchestrator read the whole diff (27 tracked files, `exclude.test.ts` whole). The review a383043f4b1ec814a (claude-opus-5-5) is saved in `agents/reviews/O192-refuter.md` and recorded under reviewer_report: every verify command passes on rerun; items 1 to 14 hold, cases 1 to 22 met, case 23 the look. Dispositions: Spec 1 with Standards 1 (`pressedState` keeps a saved exclude), Proof 1 (the Role and Hub rows bypass `boardFilter` and `mapBar`), Standards 2 (the report's greps), Standards 3 (a third copy of the hidden-text block), Behaviour 1 (an exclude alone hides a card with no project, ruled under item 1's rule) and Behaviour 2 (Shift+Enter in the Show menu) go to repair round 1 (`agents/briefs/O192-round1.md`, seven items; snapshot `.agents/worktrees/migration-O192-round-1` with `files.txt`, 28 paths); Spec 2 (the first build's inline `python3` edit of its case program and its printing `python3 -c` calls) is closed under the standing ruling "Unapproved builder scripts", nothing they produced in the tree. The exclude entry of `agents/guarded.md` is renumbered G153, since G151 was taken. In flight (1 of 6): O192 (round 1). Open items: none.
 - 2026-11-25 (app replaced after O191). `~/Applications/oculus.app` is the build of 152af2547 (`npm run app:release` in the gate, `oculus-1.1.0-darwin-arm64.zip`, 306731498 bytes): the running app quit, the old copy moved to the Trash by Finder, the new one copied with `ditto`, `codesign --verify --deep --strict` ok, `diff -rq` against the build identical, the catalog holding `No situation`, and the app opened. Owed: none. Open items: none.
 - 2026-11-25 (O191 landed). O191 is on main (booked under O191 in `plan.md`, `agents/reviews/O191-landing.md`) with two comment fixes at landing from its review. The look on a scratch server showed every surface as ruled. In flight (0 of 6): none. Owed: the app quit, rebuilt from main and copied over `~/Applications/oculus.app` (Axel, 2026-11-25). Open items: none.

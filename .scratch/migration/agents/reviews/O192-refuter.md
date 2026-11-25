@@ -175,3 +175,277 @@ Cases of the brief's "Cases":
 - That the diagram files after the rerun are byte-identical to the builder's: `git diff --stat` and `git status --short` are unchanged; a byte comparison would need the builder's copies, which `git show` does not hold for uncommitted work.
 
 Reviewer usage: a383043f4b1ec814a, claude-opus-5-5, 276208 tokens, 76 tool uses, 1119 s.
+
+## Repair round 1, refuted
+
+```
+All commands were run from the worktree root (/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O192) at background priority. Vitest and `npm run check` ran with TMPDIR and GIT_CEILING_DIRECTORIES set to .agents/scratch/tmp, which was removed afterwards: `ls -A .agents/scratch` prints nothing, and `git status --short | wc -l` prints 38, as before the runs.
+
+$ npm run diagrams
+NOT RERUN: the permission classifier refused it ("Destructive or Unwanted Actions"), since it rewrites tracked files and this review changes nothing.
+$ git diff 7b57cb7f5 --stat -- docs/diagrams
+ docs/diagrams/layer-state.dot | 2 +-
+ docs/diagrams/layer-state.svg | 2 +-
+ docs/diagrams/layer-ui.dot    | 2 +-
+ docs/diagrams/layer-ui.svg    | 2 +-
+ docs/diagrams/layer-views.dot | 4 ++--
+ docs/diagrams/layer-views.svg | 4 ++--
+ docs/diagrams/layers.dot      | 4 ++--
+ docs/diagrams/layers.svg      | 4 ++--
+ 8 files changed, 12 insertions(+), 12 deletions(-)
+(Read against the delta: "folder ui/forms to folder ui/display" 5 -> 6 is FieldSelect's import of Unseen; "views/academic to layer ui" 66 -> 67 is Facts'; "views/shared to layer ui" 262 -> 263 is PickMenu's; "views to ui" 1108 -> 1110 is the two view imports.)
+
+$ npx vitest run tests/state/boards/board/exclude.test.ts tests/state/boards/board/hub-facets.test.ts tests/state/boards/board/board-rules.test.ts tests/state/boards/board/board-views.test.ts tests/checks/source/keys.test.ts tests/checks/source/history.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/size.test.ts tests/checks/tree/boundaries.test.ts --maxWorkers 2 --testTimeout 0 --reporter dot
+ Test Files  9 passed (9)
+      Tests  188 passed (188)
+
+$ npx vitest run tests/state/boards/board/exclude.test.ts tests/state/boards/board/hub-facets.test.ts --maxWorkers 2 --testTimeout 0 --reporter verbose
+(the reporter's tick is written v, its ellipsis <horizontal ellipsis>)
+ v |unit| tests/state/boards/board/hub-facets.test.ts > the group lists on a workspace of two hubs > lists a value both hubs name once, counted over both 10ms
+ v |unit| tests/state/boards/board/hub-facets.test.ts > the group lists on a workspace of two hubs > keeps both hubs' projects under a filter on that value 1ms
+ v |unit| tests/state/boards/board/hub-facets.test.ts > the group lists on a workspace of two hubs > counts that value over both hubs' projects another facet's value leaves 57ms
+ v ... > the board's filter with excluded values > 'an include and an exclude of one face<horizontal ellipsis>' 7ms
+ v ... > the board's filter with excluded values > 'an exclude alone keeps every project <horizontal ellipsis>' 1ms
+ v ... > the board's filter with excluded values > 'an exclude of the value for none keep<horizontal ellipsis>' 0ms
+ v ... > the board's filter with excluded values > 'an exclude of one of several values h<horizontal ellipsis>' 1ms
+ v ... > the board's filter with excluded values > 'a value saved in both lists of a face<horizontal ellipsis>' 0ms
+ v ... > the board's filter with excluded values > 'an exclude of a value both hubs share<horizontal ellipsis>' 0ms
+ v ... > a saved Role or Hub exclude through the bars > 'a Role exclude with no user marked hi<horizontal ellipsis>' 12ms
+ v ... > a saved Role or Hub exclude through the bars > 'a Role exclude with a user marked hid<horizontal ellipsis>' 4ms
+ v ... > a saved Role or Hub exclude through the bars > 'a Hub exclude on a workspace of one h<horizontal ellipsis>' 3ms
+ v ... > a saved board state with excluded values > (4 rows)
+ v ... > the presses on a filter value > (10 rows)
+ v ... > a collection's rule with excluded values > 'a field exclude hides the entries car<horizontal ellipsis>' ... 'a Projects-section exclude narrows ea<horizontal ellipsis>'
+ v ... > a collection's rule with excluded values > 'a Projects-section exclude alone keep<horizontal ellipsis>' 2ms
+ v ... > a collection's rule with excluded values > 'a Projects-section include hides a ca<horizontal ellipsis>' 2ms
+ v ... > a collection's rule with excluded values > 'a Projects-section exclude alone keep<horizontal ellipsis>' 2ms
+ v ... > a collection's rule with excluded values > 'a Projects-section include hides the <horizontal ellipsis>' 2ms
+ v ... > a collection's rule with excluded values > 'a Hub exclude hides the entries of th<horizontal ellipsis>', 'excluded values of the wrong type are<horizontal ellipsis>', 'a value saved in both lists is read a<horizontal ellipsis>'
+ v ... > the Map's stage rule with excluded stages > (3 rows)
+ v ... > the Map's graph with excluded pillars > (2 rows)
+ v ... > a press on a record page's count button > 'takes out every excluded value and in<horizontal ellipsis>' 1ms
+ Test Files  2 passed (2)
+      Tests  44 passed (44)
+(The "..." and "(n rows)" above shorten the reviewer's own quote of passing rows. Every row printed v. 44 = 41 rows of exclude.test.ts + 3 of hub-facets.test.ts.)
+
+$ git diff 7b57cb7f5 --stat -- tests/state/boards/board/hub-facets.test.ts
+(no output)
+
+$ npx prettier --check <27 files: the three YAML files, docs/HELP.md, the 22 changed .ts/.svelte files under src including Unseen.svelte, exclude.test.ts>
+Checking formatting...
+All matched files use Prettier code style!
+prettier exit=0
+$ npx eslint <the 23 changed .ts and .svelte files>
+eslint exit=0   (no output)
+
+$ npm run check
+1795639530936 COMPLETED 4689 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+
+$ printf '%s\0' <36 paths: git status --short without the round brief and the first review> | xargs -0 env LC_ALL=C perl -ne 'print "$ARGV:$.\n" if /[^\x20-\x7E\n]/; close ARGV if eof'
+ascii exit=0   (no output)
+
+$ python3 -c "import yaml,sys;[yaml.safe_load(open(f)) for f in sys.argv[1:]]" config/catalogs/glyphs.yml config/catalogs/icons.yml config/text/views/boards/projects.yml
+yaml exit=0
+
+$ npx svelte-kit sync; sh utils/unused-exports.sh | diff /Users/axelfaes/workspace/oculus/.agents/worktrees/O192-unused-base.txt -
+sync exit=0
+diff exit=0   (no output; 336 lines each)
+
+$ wc -l <changed src and tests files>
+ 386 facets.ts | 477 filter-menu.ts | 90 board/index.ts | 734 presets.ts | 392 state.ts | 606 collection/bar.ts | 787 collection/index.ts | 280 record-board.ts | 430 graph.ts | 273 map-bar.ts | 804 present.ts | 320 Chip.svelte | 114 FieldSelect.svelte | 242 Facts.svelte | 469 Collection.svelte | 88 RecordCounts.svelte | 111 BoardBar.svelte | 238 FilterBar.svelte | 452 PickMenu.svelte | 285 SliceLine.svelte | 288 Map.svelte | 32 Unseen.svelte | 598 exclude.test.ts
+(all under 880 for a source file and 520 for a component)
+
+$ history words over the round's added lines (snapshot diffs, git diff of the four files outside files.txt, Unseen.svelte whole): grep -iE "\bbefore\b|used to|no longer|\bstill\b|always has been|always had|as before|previously|the step adds|after this package|\bO[0-9]+|G15[13]"
+history exit=1   (no output)
+$ the same added lines, awk 'length > 101' (the diff's + counted)
+(no output)
+
+Commands the round's report quotes as evidence, rerun:
+
+$ grep -rn "clip-path: inset(50%)" src
+src/lib/ui/display/text/Unseen.svelte:29:        clip-path: inset(50%);
+$ grep -rnE "(function|const|let|type|interface|class) <name>\b|^\s+<name>\??:" src tests, per name
+facetKeeps: state.ts:105 | facetListsOf: state.ts:300 | noPicks: state.ts:379 | withCategory: state.ts:357 | withExclude: state.ts:343 | withoutExcluded: state.ts:238 | FilterPicks: state.ts:291 plus four import lines | FacetLists: state.ts:297 plus three import lines | excludedPillars: map-bar.ts:202, graph.ts:71, Map.svelte:129 | Unseen: no line (a component file)
+(the same lines the report quotes)
+$ the same grep for listsOf
+src/lib/state/system/config/editors/sources.ts:157:export function listsOf(inputs: ListInputs): Lists {
+src/lib/data/snapshot/schema/lists.ts:128:export function listsOf(
+src/lib/data/sources/config/settings/reader.ts:77:function listsOf(entry: CatalogEntry, config: Record<string, unknown>): RuleLists {
+$ grep -rn "\blistsOf\b" src/lib/state/boards tests/state/boards src/lib/views/shared/forms
+listsOf exit=1   (no output; the report says it "prints only lines of this report's first part")
+$ grep -rn facetListsOf src tests docs README.md | wc -l
+      12
+$ grep -rn "Shift+Enter does nothing\|does nothing there" src docs
+src/desktop/windows/bridge.ts:236:    // size to change, so the press does nothing there.
+$ find src tests -name "Unseen*"; grep -rnw Unseen src tests
+src/lib/ui/display/text/Unseen.svelte
+(three imports and three uses: FieldSelect.svelte:21,70, PickMenu.svelte:42,182, Facts.svelte:33,132)
+$ ls src/lib/ui/display
+file-icons.ts FileIcon.svelte Glyph.svelte hues.ts icon-theme meters table text ThumbGrid.svelte ticker   (10 items)
+$ grep -c "a press on a record page's count button" tests/state/boards/board/exclude.test.ts
+1
+$ grep -n "G153" -A2 .scratch/migration/agents/guarded.md   (main checkout)
+451:- G153. An excluded filter value hides every project that carries it, ...
+452:  Code: `applyFilters`, `parseBoardState` and the press helpers in `src/lib/state/boards/board/state.ts`; `meets` in `src/lib/state/boards/collection/bar.ts`; `stageKeeps` in `src/lib/state/boards/structure/map-bar.ts`; `filterGraph` in `src/lib/state/boards/structure/graph.ts`.
+$ grep -n "archival: true" config/catalogs/vocab.yml   (with --exclude=local.yml over config)
+282:  - { key: dead-ends, ..., stages: { flags: [dead] }, color: "#9ca3af", archival: true }
+```
+
+The round's delta was read in full: `diff -u` of the snapshot against the worktree for the 13 files of files.txt that changed (HELP.md, layer-views and layers diagrams, filter-menu.ts, board/index.ts, state.ts, collection/bar.ts, map-bar.ts, Collection.svelte, PickMenu.svelte, exclude.test.ts), `git diff 7b57cb7f5` for record-board.ts, RecordCounts.svelte, FieldSelect.svelte, Facts.svelte and layer-ui.dot, and Unseen.svelte whole.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `facetKeeps` (state.ts:105-112) is the one rule; the round's `stripKeeps` (collection/bar.ts:499-500) applies item 1's "a record with no value is never hidden by an exclude" to a card with no project.
+- 2: holds; hub-facets.test.ts is unchanged and passes.
+- 3: holds (state.ts:204, :282-283; collection/index.ts:165, :182; graph.ts:387, :425-426; present.ts:143, each read).
+- 4: holds. The record board's count press, which the brief's writer list did not name, now writes `excluded: {}` (record-board.ts:272).
+- 5: holds.
+- 6: holds.
+- 7: holds.
+- 8: holds, with the round's ruling. Item 8 said Shift+Enter "does nothing" in a list without `onexclude`; round item 4 makes it the row press there (PickMenu.svelte:129, `if (onexclude === undefined) return;` before `preventDefault`), and the head comment and the prop doc say so.
+- 9: holds by reading; the keyboard half is the look's (see "Declined to judge").
+- 10: holds. The record board's count buttons are reached through `pressedState`. A Projects-section exclude alone keeps a card with no project (bar.ts:499-504, :592).
+- 11: holds.
+- 12: holds; keys.test.ts passes.
+- 13: holds. record-board.ts:21-24 and :261-266 and RecordCounts.svelte:10-17 are rewritten and true. The HELP.md:374 sentence keeps the rewritten line 372 true under round item 3. Two head comments are not true: Unseen.svelte:4-5 (Standards 1) and NoFundingCard.svelte:7-8 (Standards 2).
+- 14: holds. The Role and Hub rows now go through `boardFilter` and `mapBar`. The ledger's Code line does not name the units the round's tables test: Spec 2.
+
+Cases of the brief's "Cases":
+
+- 1, 2, 3, 4: met. The board table's rows pass on rerun.
+- 5: met. Rows "a Role exclude with no user marked hides no project", "a Role exclude with a user marked hides the projects at that role" and "a Hub exclude on a workspace of one hub hides no project" run through `boardFilter(...).shown` and `mapBar(...).kept` and pass. Read: c1 carries `lead` (the named-true row hides it) and the hub `lab` (`rootOf` reads `root`, hub-names.ts:38-39). Without the drop at filter-menu.ts:294 or map-bar.ts:177, each of these rows would fail.
+- 6: met, by reading `facets` (unchanged by the round).
+- 7: met, the parseBoardState rows.
+- 8: met, the press rows.
+- 9: met, by reading `groupWords` (unchanged by the round).
+- 10: met, by reading. The rename to `facetListsOf` is the only change to these units.
+- 11: met, by reading.
+- 12: met. The five rows pass, and the article-only card row still hides its card.
+- 13: met, the Map stage table.
+- 14: met, by reading `showGroup` and Map.svelte. The Show menu still passes no `onexclude`.
+- 15: met, the graph table.
+- 16: met.
+- 17: met. hub-facets.test.ts is unchanged and passing, and the shared-hub row passes.
+- 18: met, the three category rows.
+- 19: met.
+- 20: met, by reading. In a list given `onexclude`, `shiftEnter` cancels the event before bits-ui's Enter (command.svelte.js:928-940, `item?.click()` on any Enter), and the key itself is the look's.
+- 21: met.
+- 22: met, the collection rows, and graph.ts:420-429 by reading.
+- 23: not verifiable here; it is the look at landing.
+
+Items of the round brief:
+
+- 1: holds. record-board.ts:272 writes `excluded: {}`. The three comments are rewritten, whole paragraphs at 100 columns. The table "a press on a record page's count button" (exclude.test.ts:580-598) has one row and passes. Read against the snapshot's `pressedState`, which spread the saved state and kept `excluded`, the quoted start-tree failure (`expected { <horizontal ellipsis>(2) } to deeply equal {}`) is the one that code gives.
+- 2: holds. The three rows that called `appliedFilters` are gone, and the test no longer imports `appliedFilters`. The new rows run through both bars, and each passes.
+  - The Hub row's start-tree failure, `expected [ 'c1', 'c8' ] to deeply equal [ 'c8', 'lab:c1' ]`, came from its fixture. `project('lab:c1', { ...project('c1'), root: 'lab' })` spreads `id: 'c1'` over the id, as `project` puts `over` last (board-fixture.ts:44-46).
+  - The new fixture (exclude.test.ts:156) keeps id `c1` with `root: 'lab'`, and the expectation `['c1', 'c8']` is "every project", which the round brief asks for.
+  - The fix is right: the start tree already gave `c1` kept, which shows the drop held there, and the row still fails if the drop is removed, since `c1` carries `lab`.
+  - The third, named-true Role row is a row with a different outcome. It keeps the table from passing with no exclude in force, and stays within G153's "one row per input".
+- 3: holds.
+  - The rule: `including` (bar.ts:493) and `stripKeeps` (:499-500) hide an empty strip only while a project group includes a value. A strip with projects is kept while one of them passes. The No funding card gets the same rule through `stripKeeps(unfunded)` (:592). For a non-empty strip, `!picking || strip.some(narrows)` equals the snapshot's `!picking || unfundedLeft > 0`.
+  - The counts: the entry groups and the status slices of entries count over `leftBy`, that is `passes`, that is `stripKeeps` (:502-504), so they count over what the card rule keeps. The Projects section's groups count projects of the cards `entryPasses` keeps (:567), and a card with no project adds none, so they are unchanged. The No funding slice counts projects (`unfundedLeft`, :550), which differs from the card rule only in the state of Behaviour 1.
+  - The doc text: the head comments of bar.ts (:26-33) and Collection.svelte (:48-52), and HELP.md:374, say the rule. The four rows pass. The two exclude rows' quoted start-tree failures agree with the snapshot's `passes` and `card` expressions.
+- 4: holds by reading. In the Show menu, an uncancelled Shift+Enter reaches bits-ui's Enter, which clicks the selected item, so the row press runs, as on the base. The report gives the before and after.
+- 5: holds, at another path than the round brief's, and the departure is right.
+  - `src/lib/ui/display` holds 10 items (the `ls` above), so an eleventh fails size.test.ts, as the report says.
+  - `display/text/` holds the primitives that draw text (CodeText, LinkedText), so the file sits where its concern lives, as spec.md asks. Its imports point downward (ui/forms to ui/display), and boundaries.test.ts passes.
+  - The three copies are gone: the clip-path grep prints one hit, and no `.unseen` or `.read` selector is left in Facts, PickMenu or FieldSelect.
+  - The optional `id` prop is needed for FieldSelect's `aria-labelledby`, so it does not reach beyond the finding.
+  - The head comment has one false clause: Standards 1.
+- 6: holds. The definition greps are quoted and reproduce. The saved key `excluded` is stated for the four states with the lines that handle it, and every cited line was read and says what the report says.
+  - The rename `listsOf` to `facetListsOf` is right. The grep finds three other definitions of `listsOf` in unrelated modules with other signatures (`ListInputs`, a schema list reader, a settings reader's local function), so there is nothing to reuse, and keeping the name would leave a reader four meanings. The rename is mechanical, and every call site, import and re-export moved.
+  - No `listsOf` is left in docs/, src comments or tests; the only remaining hits are lines of the report's first part (Proof 1).
+- 7: violated. The round ran one shell heredoc that appended to exclude.test.ts: Spec 1.
+
+### Findings
+
+#### 1. Spec
+
+- `tests/state/boards/board/exclude.test.ts:580-598` and the round report's opening paragraph: "the `pressedState` describe block of `tests/state/boards/board/exclude.test.ts` was first appended with a shell heredoc (`cat >> ... <<'EOF'`); that block was removed with Edit and written again with Edit"; under Spec. What is wrong:
+  - The round brief says "No script is written for this round: every change is made with Edit or Write", and spec.md's "What every package obeys" counts "a shell redirect that changes a file" as a script.
+  - What reached the tree: the file holds one copy of the block (`grep -c` prints 1), at its end, prettier-clean and ASCII. Whether the Edit's text differs from what the heredoc wrote cannot be checked, since the heredoc's text is in no file.
+  - The report's "Item 7" then says "This round ran no program of its own: no `python3`, no `node -e`, no script written", which contradicts its own first paragraph.
+
+  Failure scenario: a reader of Item 7 alone takes the round to be script-free. Verdict: round item 7 violated. It is the orchestrator's to close under the standing ruling "Unapproved builder scripts".
+- `.scratch/migration/agents/guarded.md:452` (main checkout): "Code: `applyFilters`, `parseBoardState` and the press helpers ...; `meets` ...; `stageKeeps` ...; `filterGraph` ..."; under Spec. What is wrong:
+  - exclude.test.ts now holds a table for the Role and Hub drop through `boardFilter` (filter-menu.ts) and `mapBar` (map-bar.ts), and a table for `pressedState` (record-board.ts), as the round brief ruled.
+  - spec.md's "What every package obeys" keeps a test as the test of an entry, with one test per unit its text and Code line name. G153's Code line names none of these three units.
+  - The builder never edits the ledger, so the fix is the orchestrator's, at landing.
+
+  Failure scenario: a later step changes `pressedState` or `boardFilter`, finds no guarded entry naming them, and treats the table as unguarded or obsolete. Verdict: none.
+
+#### 2. Proof
+
+- `.scratch/migration/agents/reviews/O192-report.md:874`: "`grep -rn "\blistsOf\b" src/lib/state/boards tests/state/boards src/lib/views/shared/forms` prints only lines of this report's first part"; under Proof. What is wrong:
+  - The rerun prints nothing (exit 1). The report sits under `.scratch/`, outside the grep's paths, so the sentence misdescribes the output.
+  - The substance holds: the old name has no use left in the step's code.
+  - The report's first part still names `listsOf` as an export the step adds (O192-report.md:662, :681, :712), which is no longer true. No decision rests on either line.
+
+  Failure scenario: a reader checking the exports against the first part looks for `listsOf` and does not find it. Verdict: none.
+- O192-report.md:898, the round's verify table: "`npx prettier --check` over the changed non-Markdown files"; under Proof. What is wrong:
+  - The brief's verify item 1 runs prettier over the files the step changes, and the round changed docs/HELP.md, which this run left out.
+  - The YAML check was not run in the round. The three YAML files show no difference from the snapshot, so the round did not touch them.
+  - The reviewer's rerun covers both: prettier over the 27 files including HELP.md prints "All matched files use Prettier code style!", and the YAML check exits 0.
+
+  Failure scenario: none at run time, since both pass. Verdict: none.
+
+#### 3. Standards
+
+- `src/lib/ui/display/text/Unseen.svelte:4-5`: "and the state of a filter value a list marks by colour alone (views/shared/forms/bar/PickMenu.svelte)"; under Standards. What is wrong:
+  - PickMenu marks an excluded row by struck-through words, a red chip and the minus glyph in place of the tick (PickMenu.svelte:23-25, :184-188). The mark is not colour alone.
+  - The span exists because every one of those marks is drawn only to the eye (`.check` is `aria-hidden`). The clause is false, and a false sentence in a head comment is a defect under spec.md's "What every package obeys".
+  - The fix is one clause at landing, for example "a filter value's state a list draws only to the eye".
+
+  Failure scenario: a maintainer takes the span for a colour-blind fallback and drops it once a non-colour mark is added, leaving a screen reader with no word for the state. Verdict: none.
+- `src/lib/views/shared/card/record/sets/NoFundingCard.svelte:7-8`: "and, while a group of the bar's Projects section has a pick, a project of the card the picks leave"; under Standards. What is wrong:
+  - Under round item 3's rule, a No funding card with no project in its strip is kept while the section holds only excluded values (collection/bar.ts:499-500, :592). bar.ts's head comment (:28-30) now says so, and this comment states the earlier rule.
+  - The file is outside the round's paths, but spec.md's "What every package obeys" makes a head comment the change makes false a defect of the change.
+  - The state is narrow. It needs `noFunding > 0` with `strips.unfunded` empty, and the shipped vocab cannot produce it: the unfunded projects are live, and the one archival row, `dead-ends`, holds the dead stages (vocab.yml:282). Only a hub's words that put a live stage under an archival row reach it.
+
+  Failure scenario: a reader compares the two head comments and finds two rules for one card. Verdict: none.
+- `tests/state/boards/board/exclude.test.ts:156`: "project('c1', { tier: 'research', lead: [SELF], stage: 'revision', root: 'lab' })"; under Standards. What is wrong: the line copies `CASES.c1` (board-fixture.ts:21) field by field. `{ ...CASES.c1, root: 'lab' }` would reuse it, which spec.md's principle that a rule exists once and is reused asks for in a fixture too. Failure scenario: `CASES.c1` changes (its stage or lead), the Hub row's `c1` silently stops being the Role rows' `c1`, and the table's rows no longer run over one project. Verdict: none.
+
+#### 4. Behaviour
+
+- `src/lib/state/boards/collection/bar.ts:592` with `:550` and `:582`, and `src/lib/views/boards/collection/Collection.svelte:230`: "card: sliceKeepsCard && stripKeeps(unfunded)", "const unfundedLeft = picking ? unfunded.filter(narrows).length : input.noFunding", "if (!picking) return true;"; under Behaviour. What is wrong:
+  - In the state of Standards 2, with `noFunding > 0` and `strips.unfunded` empty, an exclude alone in the Projects section keeps the No funding card.
+  - The card is then drawn with `unfundedShown = unfunded.filter(filtered.strip)`, which is empty, since `strip` returns false under any pick for a project not in `items`.
+  - Its Tag and the No funding slice therefore read 0, where they read n with no pick. On the first build the card was hidden in this state.
+  - The report's before and after for item 3 does not state the case.
+
+  Failure scenario: a hub whose words put a live stage under an archival row has three live unfunded projects all in that row. The reader excludes Form `article` in the Projects section, and the No funding card stays with the count 0 and the slice at 0, though none of its projects is an article. With the shipped config it is not reached. Verdict: none (round item 3 met as written).
+
+### Declined to judge
+
+- `npm run diagrams`, rerun: refused by the permission classifier. The committed diagram changes agree, by reading, with the three new imports of Unseen, but that they match a fresh run is not verified. The landing gate's run settles it.
+- The start-tree runs of the round's new rows (verify item 5): not rerun, since a run on the start tree would need a copy of it with the new test, which this review does not write. Each quoted failure was read against the snapshot's code (`pressedState`, `passes`, `card`, and the Hub fixture's id spread) and is the failure that code gives.
+- Alt+Enter and Alt+Space on a slice chip, and case 23 with every drawn property (the red row and chip, the minus button's hover and keyboard-row visibility, focus after its click, what a screen reader announces for the Unseen span inside an option, Shift+Enter in the Show menu toggling the row): the look at landing settles them.
+- Whether the HELP.md:374 sentence needed a ruling beyond the brief: the brief's item 13 has line 372 rewritten so it stays true, and without the sentence it would be false for a card with no project under an exclude alone. spec.md bars a reviewer from raising a missing or unchanged line of HELP.md, and the added line was read and is true against bar.ts:499-500.
+
+Reviewer usage: a506384da442b8238, claude-opus-5-5, 221555 tokens, 54 tool uses, 984 s.
+
+## Closed
+
+First run:
+
+- Spec 1 (`pressedState` keeps a saved exclude): sent in repair round 1, item 1; closed, `pressedState` writes `excluded: {}` and its row in `exclude.test.ts` passes (the gate's vitest run).
+- Spec 2 (the first build's inline `python3` edit and printing `python3 -c` calls): closed by the orchestrator under the standing ruling "Unapproved builder scripts"; nothing they produced reached the tree, and the booking names them.
+- Proof 1 (the Role and Hub rows through `appliedFilters`): sent in round 1, item 2; closed, the rows go through `boardFilter` and `mapBar`.
+- Standards 1 (the press comments): sent in round 1, item 1; closed.
+- Standards 2 (the report's missing greps and key checks): sent in round 1, item 6; closed in the round report.
+- Standards 3 (three copies of the visually hidden block): sent in round 1, item 5; closed, one `Unseen.svelte` primitive.
+- Behaviour 1 (a card with no project under an exclude alone): sent in round 1, item 3; closed.
+- Behaviour 2 (Shift+Enter in the Map's Show menu): sent in round 1, item 4; closed, and seen at the look (Shift+Enter toggles the Team row there).
+
+Repair round 1:
+
+- R1 Spec 1 (the heredoc into `exclude.test.ts`): closed under the standing ruling "Unapproved builder scripts"; the block in the tree was read whole at landing and kept, and the booking names the breach.
+- R1 Spec 2 (G153's Code line): fixed at landing in `agents/guarded.md`; the line names `boardFilter`, `mapBar` and `pressedState`.
+- R1 Proof 1 (the `listsOf` grep line, and the first part naming `listsOf`): a report line with no decision on it; the booking names the rename to `facetListsOf`.
+- R1 Proof 2 (prettier left HELP.md out, the YAML check not run in the round): the reviewer's rerun and the landing gate ran both green; the booking names it.
+- R1 Standards 1 (Unseen's "by colour alone"): fixed at landing, "draws only to the eye".
+- R1 Standards 2 (NoFundingCard's head comment): fixed at landing, the comment states the included, excluded and exclude-only rule.
+- R1 Standards 3 (the Hub fixture copied field by field): fixed at landing, `project('c1', { ...CASES.c1, root: 'lab' })`.
+- R1 Behaviour 1 (the No funding card at 0 under an exclude alone with an empty strip): fixed at landing in `collection/bar.ts`, the count under excludes alone is `noFunding` less the read projects the excludes drop, and a project the section does not read is kept by excludes alone in the strip; two rows of `exclude.test.ts` hold it.

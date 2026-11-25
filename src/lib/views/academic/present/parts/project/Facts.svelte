@@ -30,6 +30,7 @@
 
     import Dot from '../Dot.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import Unseen from '$lib/ui/display/text/Unseen.svelte';
     import { isBlocked } from '$lib/state/boards/focus';
     import { domainTone, stageTone, statusMarkTone, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -128,7 +129,7 @@
     <ul class="list">
         {#each drawn as one (one.field)}
             <li class="fact" data-fact={one.field}>
-                <span class="read">{one.whole}</span>
+                <Unseen>{one.whole}</Unseen>
                 <Tooltip text={shown ? one.whole : ''}>
                     <span class="drawn" aria-hidden="true">
                         <span class="label">{one.label}</span>
@@ -190,16 +191,6 @@
     .fact > :global(*) {
         min-width: 0;
         max-width: 100%;
-    }
-
-    /* The fact as a screen reader reads it, drawn nowhere. */
-    .read {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
     }
 
     /* Label, dot and value on one line, the label and the value on one baseline and the dot

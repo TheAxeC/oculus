@@ -252,10 +252,18 @@ export function sliceGroups(items: BoardItem[], preset: BoardPreset): SliceGroup
     return groups;
 }
 
-/** The filters in force on a board: its facet values, its search and its quick filters. */
-type InForce = { filters: Record<string, string[]>; search: string; quick?: QuickFilters };
+/**
+ * The filters in force on a board: its included facet values, its excluded ones (none where
+ * `excluded` is absent), its search and its quick filters.
+ */
+type InForce = {
+    filters: Record<string, string[]>;
+    excluded?: Record<string, string[]>;
+    search: string;
+    quick?: QuickFilters;
+};
 
-/** The facet values in force without those of one facet. */
+/** The facet values of one list in force without those of one facet. */
 function without(filters: Record<string, string[]>, facet: string): Record<string, string[]> {
     return Object.fromEntries(Object.entries(filters).filter(([key]) => key !== facet));
 }
@@ -265,16 +273,17 @@ function without(filters: Record<string, string[]>, facet: string): Record<strin
  * projects hold, in an order read from all of them, so a list keeps its rows while the reader
  * picks; the slice facet lists the board's slices in `sliceGroups`' order. Given the filters in
  * force (`inForce`), a value's count is how many of the projects the search, the quick filters and
- * every other facet's values leave carry it, 0 where they leave none, so a facet's own pick does
- * not narrow its counts; given none, it is how many of the board's projects carry it. A facet with
+ * every other facet's included and excluded values leave carry it, 0 where they leave none, so a
+ * facet's own include and exclude do not narrow its counts and an excluded value's row shows how
+ * many projects carry it; given none, it is how many of the board's projects carry it. A facet with
  * one value is offered as that one value: a filter that selects everything is still the board
  * saying what its one value is, and the reader can read it, except where that value is the value
- * for none, whose group filter-menu.ts `filterGroups` draws only while it is picked. The role facet
- * is offered only while a person is marked as the user (`named`), since without one no project has
- * a role. The hub facet is offered only while the workspace has more than one hub, and lists the
- * hubs of `hubs` (their names, in the workspace's order, empty with one hub) whether or not a
- * project of the board is of it, each named by itself. A value with a hue of its own carries it: a
- * slice its slice's, a domain its domain's and a pillar its pillar's.
+ * for none, whose group filter-menu.ts `filterGroups` draws only while it is included or excluded.
+ * The role facet is offered only while a person is marked as the user (`named`), since without one
+ * no project has a role. The hub facet is offered only while the workspace has more than one hub,
+ * and lists the hubs of `hubs` (their names, in the workspace's order, empty with one hub) whether
+ * or not a project of the board is of it, each named by itself. A value with a hue of its own
+ * carries it: a slice its slice's, a domain its domain's and a pillar its pillar's.
  */
 export function facets(
     items: BoardItem[],
@@ -284,15 +293,26 @@ export function facets(
     hubs: readonly string[] = []
 ): Facet[] {
     const found: Facet[] = [];
+    const excluded = inForce?.excluded ?? {};
     const kept =
         inForce === undefined
             ? items
-            : applyFilters(items, inForce.filters, inForce.search, inForce.quick);
-    // The projects one facet counts over: every filter in force but that facet's own values.
+            : applyFilters(items, inForce.filters, inForce.search, inForce.quick, excluded);
+    // The projects one facet counts over: every filter in force but that facet's own included and
+    // excluded values.
+    const owns = (facet: string): boolean =>
+        (byKey(inForce?.filters ?? {}, facet) ?? []).length > 0 ||
+        (byKey(excluded, facet) ?? []).length > 0;
     const left = (facet: string): BoardItem[] =>
-        inForce === undefined || (byKey(inForce.filters, facet) ?? []).length === 0
+        inForce === undefined || !owns(facet)
             ? kept
-            : applyFilters(items, without(inForce.filters, facet), inForce.search, inForce.quick);
+            : applyFilters(
+                  items,
+                  without(inForce.filters, facet),
+                  inForce.search,
+                  inForce.quick,
+                  without(excluded, facet)
+              );
     const slices = sliceGroups(items, preset).flatMap((group) => group.slices);
     for (const facet of FACETS) {
         if (facet === 'role' && !named) continue;

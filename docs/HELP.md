@@ -122,6 +122,8 @@ The projects a board's rule takes, as cards or as a list: Projects, Supervision,
   - Collaborator: `collaborators:`;
   - Other: any other project that names people.
 - A board draws one section per row of `categories` that holds a project, the first row holding it, in that order, then "other". Inside a section the pinned projects come first, then each follows the row's `sort`.
+- A click on a value in a filter group's list includes it; the minus button at the row's end, or Shift+Enter, excludes it, and Alt-click excludes a slice of the second line.
+- Within a group a project is kept when it carries an included value and hidden when it carries an excluded one, an exclude winning; the groups combine, and the Present view, the Map and a collection page filter the same way.
 - New project writes the project's manifest, `<folder>/<id>/project.yml`, with a README, the board's tier and you in the field of the board's role, in the folder `new_project_dir` gives for the tier. It is on the boards whose rule takes the project it writes.
 - A project card's title opens the project page beside the board as a preview tab, which the next project opened from the board replaces.
 - A project no board takes, a manifest without `lead:` and a `tier` that is no word of `tiers` are findings.
@@ -369,7 +371,7 @@ The entries of one data file as cards or as a table: Funding, Talks & Events, Ed
 - The cards go pinned first, then by the `sort:` of the collection's entry.
 - Add asks for the new entry's primary key and the fields its schema marks required, writes the entry to the file of the hub whose `collections:` lists the collection, and opens its page. With more than one such hub it asks which.
 - The entries of a file with no primary key are read-only, and the Findings view offers Set as primary key on it.
-- More, in the view's bar, holds a Projects section on a collection whose cards draw a strip of projects at their foot: Category, Stage, Form, Tier, Role and Pillar. A pick narrows each card's strip to the projects it picks and hides a card whose strip it leaves empty.
+- More, in the view's bar, holds a Projects section on a collection whose cards draw a strip of projects at their foot: Category, Stage, Form, Tier, Role and Pillar. An include narrows each card's strip to the projects it includes, an exclude takes the projects it excludes out of each strip, and a card whose strip is left empty is hidden. A card that draws no project is hidden by an include and stays under an exclude alone.
 
 Literature has its own rules for adding a paper:
 
@@ -414,7 +416,7 @@ The pillars and the projects as a graph, linked by pillar membership and by `rel
 
 - The layout is Graphviz's neato from a seed the tab keeps, so a page saved with a map draws the same picture again.
 - A link drawn in link mode writes a `related:` edge into the manifest.
-- With no stage picked the map draws the projects at stages without the `terminal` flag.
+- While no stage is included the map draws the projects at stages without the `terminal` flag, and an excluded stage is not drawn.
 
 ### Listing
 

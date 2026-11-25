@@ -16,7 +16,7 @@ import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../dat
 import { hasWord, recordWords, vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
 import { selfIds, shownTeam } from '../board/team.ts';
-import { freshPicks } from '../board/state.ts';
+import { freshPicks, withoutExcluded } from '../board/state.ts';
 
 /**
  * What a node stands for: the Map's projects, pillar lines and people (the people of a project's
@@ -60,13 +60,15 @@ function showDefault(): GraphShow {
 }
 
 /**
- * Which part of a built graph is drawn: the kinds of node shown, the pillars picked by their key
- * (none picked draws every pillar), and Connected only.
+ * Which part of a built graph is drawn: the kinds of node shown, the pillars included by their key
+ * (none included draws every pillar), the pillars excluded by their key, and Connected only.
  */
 type GraphFilter = {
     show?: GraphShow;
     /** The pillars drawn, by their key, every hub's pillar of a key among them; empty is all. */
     pillars?: readonly string[];
+    /** The pillars not drawn, by their key, every hub's pillar of a key among them. */
+    excludedPillars?: readonly string[];
     /** While pillars are shown, drop a project with no membership edge to a pillar drawn. */
     connected?: boolean;
 };
@@ -265,19 +267,20 @@ function joining(edges: GraphEdge[], kept: Set<string>): GraphEdge[] {
 
 /**
  * The part of a graph one Map instance draws, as a pure function over the whole of it. The rules
- * run in order: the pillars picked keep their own pillar nodes (by key, so every hub's pillar of a
- * picked key stays); Connected only, while pillars are shown, takes out a project left with no
- * membership edge to a pillar drawn; with projects shown, a pillar or a person of a team whose
- * projects have all gone leaves with them, since such a node is in the graph only to carry a
- * project's edge; with projects not shown, every project node goes, and the pillars and the team
- * the drawn projects reach stay without edges, so the view is not empty.
+ * run in order: the pillars included keep their own pillar nodes and the pillars excluded lose
+ * theirs (by key, so every hub's pillar of such a key stays or goes); Connected only, while pillars
+ * are shown, takes out a project left with no membership edge to a pillar drawn; with projects
+ * shown, a pillar or a person of a team whose projects have all gone leaves with them, since such a
+ * node is in the graph only to carry a project's edge; with projects not shown, every project node
+ * goes, and the pillars and the team the drawn projects reach stay without edges, so the view is
+ * not empty.
  */
 function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
     const show = filter.show ?? showDefault();
     const picked = new Set(filter.pillars ?? []);
-    let nodes = graph.nodes.filter(
-        (node) => node.kind !== 'line' || picked.size === 0 || picked.has(keyOf(node.entityId))
-    );
+    const out = new Set(filter.excludedPillars ?? []);
+    const drawn = (key: string): boolean => !out.has(key) && (picked.size === 0 || picked.has(key));
+    let nodes = graph.nodes.filter((node) => node.kind !== 'line' || drawn(keyOf(node.entityId)));
     let edges = joining(graph.edges, idsOf(nodes));
     if (filter.connected === true && show.pillars) {
         const joined = new Set(
@@ -352,11 +355,13 @@ export type MapState = {
     /** What is typed in the bar's search box. */
     search: string;
     /**
-     * The picked values of the bar's groups by facet, a project board's facets
+     * The included values of the bar's groups by facet, a project board's facets
      * (state/boards/board/presets.ts `FACETS`), the slices under `slice`, and the Stage group's
      * under `stage`, which the Map applies itself (state/boards/structure/map-bar.ts).
      */
     filters: Record<string, string[]>;
+    /** The excluded values by facet, under the same keys; a value is in at most one list. */
+    excluded: Record<string, string[]>;
     /** Mine only, off at first, since the Map draws every project. */
     mine: boolean;
     /** The kinds of node the Show menu draws. */
@@ -379,6 +384,7 @@ const startShape = z.object({
 const mapStateShape = z.object({
     search: z.string().catch(''),
     filters: z.record(z.string(), fieldItemsShape).catch({}),
+    excluded: z.record(z.string(), fieldItemsShape).catch({}),
     mine: z.boolean().catch(false),
     show: z
         .object({
@@ -408,14 +414,16 @@ export function nextStart(state: MapState, nodes: GraphNode[]): { key: string; s
 }
 
 /**
- * The saved state of one Map instance, with anything that is not the shape above replaced by it.
+ * The saved state of one Map instance, with anything that is not the shape above replaced by it, a
+ * value saved in both the included and the excluded list of a facet read as excluded.
  */
 export function parseMapState(raw: unknown): MapState {
     const held = readAs(mapStateShape, raw) ?? mapStateShape.parse({});
-    const { start, filters, show, ...fields } = held;
+    const { start, filters, excluded, show, ...fields } = held;
     return {
         ...fields,
-        filters: freshPicks(filters),
+        filters: withoutExcluded(freshPicks(filters), excluded),
+        excluded: freshPicks(excluded),
         show,
         ...(start === undefined ? {} : { start })
     };

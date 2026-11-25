@@ -39,13 +39,17 @@
     // group, the Hub group while the workspace has more than one hub, then one group per schema
     // field marked `filter: true`. Line 2 is the status field's slices with their counts, the No
     // funding slice after them for the files whose entry names the `funding` registry while
-    // projects have no scheme, how many entries are shown, and Clear all. A pick keeps the entries
-    // that hold it, none picked keeps every entry, and each count is taken over what the other
-    // filters leave, as on a project board; the rules are state/boards/collection/bar.ts's, the
-    // picks the tab's instance state beside the search. A view whose cards draw a project strip
-    // holds in More a Projects section (Category, Stage, Form, Tier, Role and Pillar, the projects
-    // read as the Map reads them, as items of its preset): a pick narrows each card's strip, the
-    // No funding card's too, and hides a card it leaves with no project, in list mode the row.
+    // projects have no scheme, how many entries are shown, and Clear all. An included value keeps
+    // the entries that hold it, none included keeps every entry, and an excluded value hides the
+    // entries that hold it, an exclude winning, and each count is taken over what the other filters
+    // leave, as on a project board; an excluded No funding slice hides the No funding card. The
+    // rules are state/boards/collection/bar.ts's, the included and the excluded values the tab's
+    // instance state beside the search. A view whose cards draw a project strip holds in More a
+    // Projects section (Category, Stage, Form, Tier, Role and Pillar, the projects read as the Map
+    // reads them, as items of its preset): an include or an exclude there narrows each card's
+    // strip, the No funding card's too, and hides a card it leaves with no project, in list mode
+    // the row; a card that draws no project is hidden by an include there and kept by an exclude
+    // alone.
     //
     // A collection whose `schema:` declares a field a row of `roles:` is read from (`lead`,
     // `collaborators`, `supervisors`) draws, while a person is marked as the user, the Mine only
@@ -98,7 +102,7 @@
         type Strips
     } from '$lib/state/boards/collection/bar';
     import { cardOrder } from '$lib/state/boards/collection/card-order';
-    import { mapPreset, withPick, type BoardItem } from '$lib/state/boards/board';
+    import { mapPreset, withExclude, withPick, type BoardItem } from '$lib/state/boards/board';
     import {
         drawnProjects,
         stripProjects,
@@ -212,6 +216,7 @@
             entries,
             schemas,
             filters: held.filters,
+            excluded: held.excluded,
             search: held.search,
             mine: held.mine,
             config: configMap(),
@@ -265,9 +270,14 @@
         ontitle: () => openListing(openBeside, 'no_funding', t('collection.no_funding'))
     });
 
-    /** Add or remove one value of one group, which is what a pick in a group's list means. */
+    /** The row press on one value of one group, in a group's list. */
     function toggleFilter(group: string, value: string): void {
-        write({ filters: withPick(held.filters, group, value) });
+        write(withPick(held, group, value));
+    }
+
+    /** The "not" press on one value of one group, in a group's list or on a slice. */
+    function excludeFilter(group: string, value: string): void {
+        write(withExclude(held, group, value));
     }
 
     /** Draw the cards or the list; a press on the mode in force changes nothing. */
@@ -369,6 +379,7 @@
         line={filtered.line}
         section={filtered.section}
         ontoggle={toggleFilter}
+        onexclude={excludeFilter}
     />
     <SliceLine
         label={t('collection.slices')}
@@ -376,10 +387,12 @@
         facet={STATUS_FACET}
         counted={filtered.counted}
         filters={held.filters}
+        excluded={held.excluded}
         shown={filtered.shown}
         total={filtered.total}
         words={entryCountWords}
-        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
+        onfilters={write}
+        onexclude={excludeFilter}
     />
 {/snippet}
 

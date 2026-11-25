@@ -224,8 +224,13 @@ export type Facet = { key: string; values: FacetValue[] };
 export type BoardState = {
     mode: BoardMode;
     search: string;
-    /** Selected values by facet key. Empty, or absent, is no filter on that facet. */
+    /** Included values by facet key. Empty, or absent, is no include on that facet. */
     filters: Record<string, string[]>;
+    /**
+     * Excluded values by facet key, which hide the projects carrying them; a value is in at most
+     * one of the two lists of its facet.
+     */
+    excluded: Record<string, string[]>;
     /** The ids of the cards whose long description is drawn whole rather than cut to its clamp. */
     more: Id[];
     labels: LabelMode;

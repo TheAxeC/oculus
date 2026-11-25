@@ -6,23 +6,26 @@
 // of node the graph draws (graph.ts beside this file).
 //
 // The Stage group lists every stage a project is at, terminal stages included, in the order of
-// `stages` of every hub's words. With none picked the Map keeps the projects at a stage that does
+// `stages` of every hub's words. With none included the Map keeps the projects at a stage that does
 // not carry `terminal` and the projects with no stage, so a Map opened fresh shows the live work;
-// with stages picked it keeps the projects at those stages. Its picks are stored under
-// `filters.stage`, which `applyFilters` does not read, so the stage rule is applied here. Every
-// count is taken over what the other filters leave, the Stage group's under every filter but its
-// own, the other groups' over the projects the stage rule keeps. The Stage group's listing
-// (`stageGroup`) is also the Stage group of a collection's Projects section in More
-// (state/boards/collection/bar.ts), which applies no stage rule of its own.
+// with stages included it keeps the projects at those stages; an excluded stage hides its projects
+// either way, by the rule every filter group keeps by (state/boards/board/state.ts `facetKeeps`).
+// Its picks are stored under `filters.stage` and `excluded.stage`, which `applyFilters` does not
+// read, so the stage rule is applied here. Every count is taken over what the other filters leave,
+// the Stage group's under every filter but its own, the other groups' over the projects the stage
+// rule keeps. The Stage group's listing (`stageGroup`) is also the Stage group of a collection's
+// Projects section in More (state/boards/collection/bar.ts), which applies no stage rule of its
+// own.
 
 import type { Snapshot } from '../../../data/model/index.ts';
-import { byKey } from '../../../data/helpers/guards.ts';
 import { hasWord, recordWords, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { t } from '../../shared/words/text.ts';
 import { namedTone, stageLabel, stageTone } from '../../shared/words/tones.ts';
 import {
     appliedFilters,
     applyFilters,
+    facetKeeps,
+    facetListsOf,
     facets,
     filterGroups,
     shortWords,
@@ -30,6 +33,7 @@ import {
     type BoardItem,
     type BoardPreset,
     type Facet,
+    type FacetLists,
     type FilterChoice,
     type FilterGroup,
     type SliceGroup
@@ -70,8 +74,10 @@ export type MapBarInput = {
     /** The items of the Map's preset, every project. */
     items: BoardItem[];
     preset: BoardPreset;
-    /** The picked values by facet, the Stage group's under `stage`. */
+    /** The included values by facet, the Stage group's under `stage`. */
     filters: Record<string, string[]>;
+    /** The excluded values by facet, under the same keys. */
+    excluded: Record<string, string[]>;
     search: string;
     /** Whether Mine only is on. */
     mine: boolean;
@@ -105,33 +111,38 @@ function terminal(item: BoardItem, config: Record<string, unknown>, wordsOf?: Wo
 }
 
 /**
- * Whether the stage rule keeps an item: with no stage picked, a project at a stage that does not
- * carry `terminal` or with no stage; with stages picked, a project at one of them.
+ * Whether the stage rule keeps an item: a project at an excluded stage never; with no stage
+ * included, a project at a stage that does not carry `terminal` or with no stage; with stages
+ * included, a project at one of them. The include and the exclude are the rule every filter group
+ * keeps by (`facetKeeps`).
  */
 function stageKeeps(
     item: BoardItem,
-    picked: readonly string[],
+    lists: FacetLists,
     config: Record<string, unknown>,
     wordsOf?: WordsOf
 ): boolean {
     const stage = item.project.stage;
-    if (picked.length === 0) return stage === undefined || !terminal(item, config, wordsOf);
-    return stage !== undefined && picked.includes(stage);
+    if (!facetKeeps(stage === undefined ? [] : [stage], lists.included, lists.excluded)) {
+        return false;
+    }
+    return lists.included.length > 0 || stage === undefined || !terminal(item, config, wordsOf);
 }
 
 /**
  * The Stage group: every stage a project of `items` is at, in the order of `order` (the stages of
- * every hub's words), then the rest by name, a stage picked that no project is at listed at 0 after
- * them; each counted over `counted`, drawn in its stage's hue, its words cut at the first " (" with
- * its whole words in its tip.
+ * every hub's words), then the rest by name, an included or excluded stage (`lists`) that no
+ * project is at listed at 0 after them; each counted over `counted`, drawn in its stage's hue, its
+ * words cut at the first " (" with its whole words in its tip.
  */
 export function stageGroup(
     items: BoardItem[],
     counted: BoardItem[],
     order: readonly string[],
-    picked: readonly string[]
+    lists: FacetLists
 ): FilterGroup {
     const at = new Set(items.flatMap((item) => item.project.stage ?? []));
+    const picked = [...lists.included, ...lists.excluded];
     const listed = [
         ...order.filter((stage) => at.has(stage)),
         ...[...at].filter((stage) => !order.includes(stage)).sort(),
@@ -149,7 +160,8 @@ export function stageGroup(
             label: shortWords(whole),
             title: whole,
             count: counts.get(stage) ?? 0,
-            active: picked.includes(stage),
+            active: lists.included.includes(stage),
+            excluded: lists.excluded.includes(stage),
             tone: stageTone(stage)
         };
     });
@@ -159,21 +171,23 @@ export function stageGroup(
 /** The Map's bar for its items and its state. */
 export function mapBar(input: MapBarInput): MapBar {
     const { items, preset, config, wordsOf } = input;
-    const picked = byKey(input.filters, STAGE_FACET) ?? [];
+    const picks = { filters: input.filters, excluded: input.excluded };
+    const stages = facetListsOf(picks, STAGE_FACET);
     const filters = appliedFilters(input.filters, input.named, input.hubs);
+    const excluded = appliedFilters(input.excluded, input.named, input.hubs);
     const quick = { mine: input.named && input.mine };
-    const staged = items.filter((item) => stageKeeps(item, picked, config, wordsOf));
-    const inForce = { filters, search: input.search, quick };
+    const staged = items.filter((item) => stageKeeps(item, stages, config, wordsOf));
+    const inForce = { filters, excluded, search: input.search, quick };
     const counted = facets(staged, preset, input.named, inForce, input.hubs);
-    const others = applyFilters(items, filters, input.search, quick);
+    const others = applyFilters(items, filters, input.search, quick, excluded);
     return {
         groups: [
-            stageGroup(items, others, preset.stageOrder, picked),
-            ...filterGroups(counted, input.filters, preset, input.named, input.hubs)
+            stageGroup(items, others, preset.stageOrder, stages),
+            ...filterGroups(counted, picks, preset, input.named, input.hubs)
         ],
         slices: sliceGroups(items, preset),
         counted,
-        kept: applyFilters(staged, filters, input.search, quick),
+        kept: applyFilters(staged, filters, input.search, quick, excluded),
         total: items.length
     };
 }
@@ -182,8 +196,10 @@ export function mapBar(input: MapBarInput): MapBar {
 export type ShowContext = {
     /** The ids of the projects the bar keeps. */
     projects: ReadonlySet<string>;
-    /** The pillars picked by key, which narrow the pillar nodes. */
+    /** The pillars included by key, which narrow the pillar nodes. */
     pillars?: readonly string[];
+    /** The pillars excluded by key, whose nodes the graph leaves out. */
+    excludedPillars?: readonly string[];
     wordsOf?: WordsOf;
 };
 
@@ -203,8 +219,10 @@ function drawnOf(
 /**
  * The Show group of the Map's toggles: Projects, Pillars and Team, each ticked while its kind of
  * node is drawn and counted by the nodes of its kind the graph draws with it on, and Connected
- * only, ticked while on and counted by the projects it keeps. Its items are untoned, drawn in the
- * unknown tone; its button reads "Show" whatever is ticked.
+ * only, ticked while on and counted by the projects it keeps, the graph built over `context`, so
+ * the Pillars count leaves out an excluded pillar's nodes. Its items are kinds of node rather than
+ * filter values, so none is ever excluded. They are untoned, drawn in the unknown tone; its button
+ * reads "Show" whatever is ticked.
  */
 export function showGroup(
     snapshot: Snapshot,
@@ -222,6 +240,7 @@ export function showGroup(
             label: t('map.show_projects'),
             count: count('project', { ...show, projects: true }, connected),
             active: show.projects,
+            excluded: false,
             tone
         },
         {
@@ -229,6 +248,7 @@ export function showGroup(
             label: t('map.show_pillars'),
             count: count('line', { ...show, pillars: true }, connected),
             active: show.pillars,
+            excluded: false,
             tone
         },
         {
@@ -236,6 +256,7 @@ export function showGroup(
             label: t('map.show_team'),
             count: count('collaborator', { ...show, team: true }, connected),
             active: show.team,
+            excluded: false,
             tone
         },
         {
@@ -244,6 +265,7 @@ export function showGroup(
             title: t('map.connected_tip'),
             count: count('project', { ...show, projects: true }, true),
             active: connected,
+            excluded: false,
             tone
         }
     ];

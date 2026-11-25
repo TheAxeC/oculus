@@ -18,10 +18,10 @@
 // time the board is drawn: a project that stops naming the record leaves it, and a record that is
 // gone, an entry whose key changed since the tab was saved among them, gives no ids.
 //
-// A press sets the tab's whole board state (`pressedState`): the slices it picks, no search, no
-// other facet or toggle, no folded section and Mine only off, so the board shows exactly the
-// projects the button counts; the record the tab names, the mode, the label mode and the columns
-// the reader chose are kept.
+// A press sets the tab's whole board state (`pressedState`): the slices it includes, no search, no
+// other include, no exclude, no toggle, no folded section and Mine only off, so the board shows
+// exactly the projects the button counts; the record the tab names, the mode, the label mode and
+// the columns the reader chose are kept.
 // Pure over the snapshot it is given, so it is read without a browser.
 
 import { z } from 'zod';
@@ -260,15 +260,16 @@ export function recordRow(
 
 /**
  * The state a press on a count button gives the tab, over the state it held (`saved`): the slices
- * `slices` picked, none for the total and a waiting board, and every other filter, the search, the
- * folds and Mine only off. The keys that name the record and the tab are kept, and so are the
- * mode, the label mode and the columns the reader chose.
+ * `slices` included, none for the total and a waiting board, every other include and every exclude
+ * taken out, and the search, the folds and Mine only off. The keys that name the record and the tab
+ * are kept, and so are the mode, the label mode and the columns the reader chose.
  */
 export function pressedState(saved: unknown, slices: readonly string[]): Record<string, unknown> {
     return {
         ...(isMap(saved) ? saved : {}),
         search: '',
         filters: slices.length === 0 ? {} : { slice: [...slices] },
+        excluded: {},
         stale: false,
         dated: false,
         waiting: false,

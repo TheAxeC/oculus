@@ -8,13 +8,13 @@
     // state/boards/record-board.ts (`recordRow`), which the record's board reads too.
     //
     // A press opens the record's board, one tab per record and kind of board, a second press
-    // bringing that tab forward: a category's button with every slice of its projects picked on
+    // bringing that tab forward: a category's button with every slice of its projects included on
     // the board's second line, the total and the waiting button with none, each press setting the
-    // tab's whole board state so the board shows exactly the projects the button counts
-    // (`pressedState`). Each button is the bordered pill of ui/tree/Disclosure.svelte, the count in
-    // bold beside its words, as the groups of a record card's project strip are
-    // (views/shared/links/CrossLinks.svelte); handed no open state, it draws no marker, since a
-    // press opens a board and discloses nothing.
+    // tab's whole board state, every other include and every exclude taken out, so the board shows
+    // exactly the projects the button counts (`pressedState`). Each button is the bordered pill of
+    // ui/tree/Disclosure.svelte, the count in bold beside its words, as the groups of a record
+    // card's project strip are (views/shared/links/CrossLinks.svelte); handed no open state, it
+    // draws no marker, since a press opens a board and discloses nothing.
 
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import { RECORD_VIEW } from '$lib/state/boards/board';

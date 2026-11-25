@@ -85,11 +85,12 @@ const RECENT_LIMIT = 10;
 
 /**
  * The controls of a pane's filter, under the board's own keys of its saved state: the search, the
- * stale, deadline and waiting toggles, Mine only and the picks by facet, the slices under `slice`.
+ * stale, deadline and waiting toggles, Mine only, and the included and the excluded values by
+ * facet, the slices under `slice`.
  */
 export type PresentBar = Pick<
     BoardState,
-    'search' | 'stale' | 'dated' | 'waiting' | 'mine' | 'filters'
+    'search' | 'stale' | 'dated' | 'waiting' | 'mine' | 'filters' | 'excluded'
 >;
 
 /**
@@ -121,12 +122,13 @@ const presentStateShape = z.object({
 });
 
 /**
- * The controls of a pane's filter out of a board's state, the card fields (`mode`, `more`,
- * `labels`, `folded`, `columns`) left out, since the Present view draws no cards.
+ * The controls of a pane's filter out of a board's state, its included and its excluded values
+ * among them, the card fields (`mode`, `more`, `labels`, `folded`, `columns`) left out, since the
+ * Present view draws no cards.
  */
 export function barFields(state: BoardState): PresentBar {
-    const { search, stale, dated, waiting, mine, filters } = state;
-    return { search, stale, dated, waiting, mine, filters };
+    const { search, stale, dated, waiting, mine, filters, excluded } = state;
+    return { search, stale, dated, waiting, mine, filters, excluded };
 }
 
 /**

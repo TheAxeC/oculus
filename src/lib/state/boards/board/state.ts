@@ -95,14 +95,34 @@ export function isStale(item: BoardItem, lag: number | null): boolean {
 }
 
 /**
- * Apply facet, text, stale, dated, waiting and Mine only controls to board items. The waiting
- * control keeps the items whose `waiting` is not empty.
+ * Whether one facet keeps a record that carries `values` for it: none of them is excluded and,
+ * while any value is included, one of them is included, so an exclude wins over an include of the
+ * same value. A record with no value for the facet is never hidden by its exclude. It is the rule
+ * of every filter group: a board's facets (`applyFilters`), a collection's groups
+ * (state/boards/collection/bar.ts `meets`) and the Map's Stage group
+ * (state/boards/structure/map-bar.ts `stageKeeps`).
+ */
+export function facetKeeps(
+    values: readonly string[],
+    included: readonly string[],
+    excluded: readonly string[]
+): boolean {
+    if (values.some((value) => excluded.includes(value))) return false;
+    return included.length === 0 || values.some((value) => included.includes(value));
+}
+
+/**
+ * Apply facet, text, stale, dated, waiting and Mine only controls to board items. Each facet with
+ * an included value (`filters`) or an excluded one (`excluded`) keeps an item by `facetKeeps`, and
+ * the facets combine, an item kept only when every facet keeps it. The waiting control keeps the
+ * items whose `waiting` is not empty.
  */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
     search: string,
-    quick: QuickFilters = {}
+    quick: QuickFilters = {},
+    excluded: Record<string, string[]> = {}
 ): BoardItem[] {
     const needle = search.trim().toLowerCase();
     const lag = quick.staleLag ?? null;
@@ -112,23 +132,23 @@ export function applyFilters(
         if (quick.waiting === true && item.waiting.length === 0) return false;
         if (quick.mine === true && !item.mine) return false;
         for (const facet of FACETS) {
-            const selected = byKey(filters, facet);
-            if (selected === undefined || selected.length === 0) continue;
-            const values = facetValues(item, facet);
-            if (!selected.some((value) => values.includes(value))) return false;
+            const included = byKey(filters, facet) ?? [];
+            const out = byKey(excluded, facet) ?? [];
+            if (included.length === 0 && out.length === 0) continue;
+            if (!facetKeeps(facetValues(item, facet), included, out)) return false;
         }
         return needle === '' || item.haystack.includes(needle);
     });
 }
 
 /**
- * The facet values that narrow the board: every value in force, and the role values only while the
- * user is marked (`named`), which is while the bar offers the Role group. A role saved with no user
- * marked is kept in the saved state and narrows nothing, since without a `self` no project has a
- * role and no control could take the value out. The hub values narrow the board only while the bar
- * draws the Hub group, which is while the workspace has more than one hub (`hubs`, the hubs the
- * group lists, empty while it is not drawn), so a workspace that drops to one hub is not narrowed
- * by a pick made while it had two.
+ * The facet values that narrow the board, of the included values or of the excluded ones: every
+ * value in force, and the role values only while the user is marked (`named`), which is while the
+ * bar offers the Role group. A role saved with no user marked is kept in the saved state and
+ * narrows nothing, since without a `self` no project has a role and no control could take the
+ * value out. The hub values narrow the board only while the bar draws the Hub group, which is while
+ * the workspace has more than one hub (`hubs`, the hubs the group lists, empty while it is not
+ * drawn), so a workspace that drops to one hub is not narrowed by a pick made while it had two.
  */
 export function appliedFilters(
     filters: Record<string, string[]>,
@@ -157,6 +177,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         mode: 'cards',
         search: '',
         filters: {},
+        excluded: {},
         more: [],
         labels,
         stale: false,
@@ -179,16 +200,64 @@ const boardStateShape = z.object({
     more: recordItemsShape,
     folded: fieldItemsShape,
     columns: fieldItemsShape,
-    filters: mapShape.optional().catch(undefined)
+    filters: mapShape.optional().catch(undefined),
+    excluded: mapShape.optional().catch(undefined)
 });
 
 /**
- * Read a saved board state, falling back one field at a time when a value is invalid. Given the
- * facets the board offers, a compute value that none of them offers is dropped: it names a resource
- * the registry does not hold, such as `hpc`. Given the values of the board's slices (`slices`), a
- * slice value that names none of them is dropped, so the board shows unfiltered on that facet. The
- * folded sections are read as words, the empty key of the "other" section kept; the columns are
- * read as the cells of `LIST_CELLS`, and a list that names none of them stands for the board's own.
+ * One saved map of values by facet as the board reads it: a key that is no facet of `FACETS` is
+ * dropped, and so is a compute value no facet of `offered` offers and a slice value `slices` does
+ * not hold, where they are given; a facet left with no value is left out.
+ */
+function readPicks(
+    saved: Record<string, unknown>,
+    offered?: Facet[],
+    slices?: readonly string[]
+): Record<string, string[]> {
+    const picks: Record<string, string[]> = {};
+    for (const [facet, selected] of Object.entries(saved)) {
+        if (!FACETS.includes(facet)) continue;
+        const read = readAs(stringItemsShape, selected) ?? [];
+        const known = offered?.find((one) => one.key === facet)?.values.map((one) => one.value);
+        const values =
+            facet === 'compute' && offered !== undefined
+                ? read.filter((one) => known?.includes(one) === true)
+                : facet === 'slice' && slices !== undefined
+                  ? read.filter((one) => slices.includes(one))
+                  : read;
+        if (values.length > 0) picks[facet] = values;
+    }
+    return picks;
+}
+
+/**
+ * The included values of a saved state without the values its excluded list of the same facet
+ * holds, a facet left with none taken out, so a value saved in both lists is read as excluded. The
+ * board's, the collection's and the Map's saved states are read through it.
+ */
+export function withoutExcluded(
+    filters: Record<string, string[]>,
+    excluded: Record<string, readonly string[]>
+): Record<string, string[]> {
+    return Object.fromEntries(
+        Object.entries(filters)
+            .map(([facet, values]): [string, string[]] => {
+                const out = byKey(excluded, facet) ?? [];
+                return [facet, values.filter((value) => !out.includes(value))];
+            })
+            .filter(([, values]) => values.length > 0)
+    );
+}
+
+/**
+ * Read a saved board state, falling back one field at a time when a value is invalid. The included
+ * values (`filters`) and the excluded values (`excluded`) are read by the same rules, and a value
+ * saved in both lists of a facet is read as excluded. Given the facets the board offers, a compute
+ * value that none of them offers is dropped: it names a resource the registry does not hold, such
+ * as `hpc`. Given the values of the board's slices (`slices`), a slice value that names none of
+ * them is dropped, so the board shows unfiltered on that facet. The folded sections are read as
+ * words, the empty key of the "other" section kept; the columns are read as the cells of
+ * `LIST_CELLS`, and a list that names none of them stands for the board's own.
  */
 export function parseBoardState(
     value: unknown,
@@ -210,45 +279,105 @@ export function parseBoardState(
     state.folded = held.folded;
     const columns = held.columns.filter((cell) => LIST_CELLS.includes(cell));
     if (columns.length > 0) state.columns = columns;
-    for (const [facet, selected] of Object.entries(held.filters ?? {})) {
-        if (!FACETS.includes(facet)) continue;
-        const read = readAs(stringItemsShape, selected) ?? [];
-        const known = offered?.find((one) => one.key === facet)?.values.map((one) => one.value);
-        const values =
-            facet === 'compute' && offered !== undefined
-                ? read.filter((one) => known?.includes(one) === true)
-                : facet === 'slice' && slices !== undefined
-                  ? read.filter((one) => slices.includes(one))
-                  : read;
-        if (values.length > 0) state.filters[facet] = values;
-    }
+    state.excluded = readPicks(held.excluded ?? {}, offered, slices);
+    state.filters = withoutExcluded(readPicks(held.filters ?? {}, offered, slices), state.excluded);
     return state;
 }
 
 /**
- * A bar's filters with one facet's picks set to `values`, the facet taken out when none is left,
- * which is what Clear on one group and a pick of slices write. The bars of a project board, a
- * collection and the Map write their filters through it.
+ * The values a bar includes (`filters`) and the values it excludes (`excluded`), each by facet. A
+ * press writes both, and a value is in at most one of the two lists of its facet.
  */
-export function withPicks(
-    filters: Record<string, string[]>,
+export type FilterPicks = {
+    filters: Record<string, string[]>;
+    excluded: Record<string, string[]>;
+};
+
+/** One facet's included values and its excluded values. */
+export type FacetLists = { included: readonly string[]; excluded: readonly string[] };
+
+/** One facet's two lists out of a bar's picks, each empty where the facet has none. */
+export function facetListsOf(picks: FilterPicks, facet: string): FacetLists {
+    return {
+        included: byKey(picks.filters, facet) ?? [],
+        excluded: byKey(picks.excluded, facet) ?? []
+    };
+}
+
+/** A map of values by facet with one facet's list set to `values`, taken out when it is empty. */
+function withList(
+    map: Record<string, string[]>,
     facet: string,
     values: string[]
 ): Record<string, string[]> {
     return Object.fromEntries(
-        Object.entries({ ...filters, [facet]: values }).filter(
+        Object.entries({ ...map, [facet]: values }).filter(
             ([key]) => key !== facet || values.length > 0
         )
     );
 }
 
-/** A bar's filters with one value of one facet picked, or taken out when it was picked. */
-export function withPick(
-    filters: Record<string, string[]>,
+/** The values of a list that are not among `values`. */
+function outside(list: readonly string[], values: readonly string[]): string[] {
+    return list.filter((one) => !values.includes(one));
+}
+
+/**
+ * The row press on one value of one facet, a click or Enter on its row: an off value is included,
+ * an included value is turned off and an excluded value is included. The bars of a project board,
+ * the Present view, a collection and the Map write their picks through it.
+ */
+export function withPick(picks: FilterPicks, facet: string, value: string): FilterPicks {
+    const { included, excluded } = facetListsOf(picks, facet);
+    return {
+        filters: withList(picks.filters, facet, toggled(included, value)),
+        excluded: withList(picks.excluded, facet, outside(excluded, [value]))
+    };
+}
+
+/**
+ * The "not" press on one value of one facet, the minus button at its row's end, Shift+Enter on its
+ * row or an Alt-click on its slice: an off value is excluded, an excluded value is turned off and
+ * an included value is excluded.
+ */
+export function withExclude(picks: FilterPicks, facet: string, value: string): FilterPicks {
+    const { included, excluded } = facetListsOf(picks, facet);
+    return {
+        filters: withList(picks.filters, facet, outside(included, [value])),
+        excluded: withList(picks.excluded, facet, toggled(excluded, value))
+    };
+}
+
+/**
+ * A press on the head of a category of slices, whose slices are `values` of the facet `facet`. A
+ * plain click includes every slice of it, or takes them all out of the include list when all are
+ * included, and takes them, and only them, out of the exclude list; an Alt-click (`exclude`)
+ * excludes every slice of it and takes them out of the include list.
+ */
+export function withCategory(
+    picks: FilterPicks,
     facet: string,
-    value: string
-): Record<string, string[]> {
-    return withPicks(filters, facet, toggled(byKey(filters, facet) ?? [], value));
+    values: readonly string[],
+    exclude: boolean
+): FilterPicks {
+    const { included, excluded } = facetListsOf(picks, facet);
+    const joined = (list: readonly string[]): string[] => [...list, ...outside(values, list)];
+    if (exclude) {
+        return {
+            filters: withList(picks.filters, facet, outside(included, values)),
+            excluded: withList(picks.excluded, facet, joined(excluded))
+        };
+    }
+    const all = values.every((value) => included.includes(value));
+    return {
+        filters: withList(picks.filters, facet, all ? outside(included, values) : joined(included)),
+        excluded: withList(picks.excluded, facet, outside(excluded, values))
+    };
+}
+
+/** Clear all: no value included and none excluded, the search and the toggles left as they are. */
+export function noPicks(): FilterPicks {
+    return { filters: {}, excluded: {} };
 }
 
 /**

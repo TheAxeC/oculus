@@ -18,6 +18,7 @@
     import type { Snippet } from 'svelte';
     import { Select } from 'bits-ui';
     import Glyph from '../../../display/Glyph.svelte';
+    import Unseen from '../../../display/text/Unseen.svelte';
     import { triggerKeys } from './trigger-keys';
     import '../../../theme/field.css';
 
@@ -66,7 +67,7 @@
                     (props as { onkeydown?: (event: KeyboardEvent) => void }).onkeydown
                 )}
             >
-                <span id={labelId} class="unseen">{label}</span>
+                <Unseen id={labelId}>{label}</Unseen>
                 {@render lead?.()}
                 <span id={nameId} class="name">{chosen}</span>
                 <span class="caret">
@@ -95,16 +96,6 @@
         gap: 6px;
         max-width: 100%;
         cursor: pointer;
-    }
-
-    /* Read by a screen reader as the trigger's name and drawn nowhere. */
-    .unseen {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
     }
 
     .name {

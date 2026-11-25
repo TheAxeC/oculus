@@ -75,11 +75,16 @@ export {
     appliedFilters,
     applyFilters,
     emptyBoardState,
+    facetKeeps,
+    facetListsOf,
     facetValues,
     isStale,
+    noPicks,
     offersMine,
     parseBoardState,
-    withPick,
-    withPicks
+    withCategory,
+    withExclude,
+    withPick
 } from './state.ts';
+export type { FacetLists, FilterPicks } from './state.ts';
 export { newProjectTier } from './new-project.ts';

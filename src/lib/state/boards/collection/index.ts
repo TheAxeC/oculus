@@ -54,7 +54,7 @@ import { entryPageState } from '../../forms/page-entry.ts';
 import { t } from '../../shared/words/text.ts';
 import { wordOf } from '../../shared/words/key-titles.ts';
 import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
-import { freshPicks } from '../board/state.ts';
+import { freshPicks, withoutExcluded } from '../board/state.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -141,10 +141,13 @@ export type CollectionMode = 'cards' | 'list';
 export type CollectionState = {
     search: string;
     /**
-     * The picked values by group id: `role`, `hub`, `field:<field>`, and the status slices under
-     * `status` (`NO_FUNDING` among them for the No funding card).
+     * The included values by group id: `role`, `hub`, `field:<field>`, the Projects section's
+     * `project_<group>`, and the status slices under `status` (`NO_FUNDING` among them for the No
+     * funding card).
      */
     filters: Record<string, string[]>;
+    /** The excluded values by group id, under the same keys; a value is in at most one list. */
+    excluded: Record<string, string[]>;
     /** Mine only, on by default; read only where the collection declares a field of a role. */
     mine: boolean;
     mode: CollectionMode;
@@ -159,6 +162,7 @@ export type CollectionState = {
 /** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
 const collectionStateShape = searchRevealShape.extend({
     filters: z.record(z.string(), fieldItemsShape).catch({}),
+    excluded: z.record(z.string(), fieldItemsShape).catch({}),
     mine: z.boolean().catch(true),
     mode: z.enum(['cards', 'list']).catch('cards'),
     columns: fieldItemsShape.optional(),
@@ -167,14 +171,16 @@ const collectionStateShape = searchRevealShape.extend({
 
 /**
  * The saved state of one instance, with anything that is not the shape above replaced by it, its
- * records and lists built for this call (`freshPicks`).
+ * records and lists built for this call (`freshPicks`), a value saved in both the included and
+ * the excluded list of a group read as excluded.
  */
 export function parseCollectionState(raw: unknown): CollectionState {
     const held = readAs(collectionStateShape, raw) ?? collectionStateShape.parse({});
-    const { reveal, columns, filters, more, ...state } = held;
+    const { reveal, columns, filters, excluded, more, ...state } = held;
     return {
         ...state,
-        filters: freshPicks(filters),
+        filters: withoutExcluded(freshPicks(filters), excluded),
+        excluded: freshPicks(excluded),
         more: [...more],
         ...(columns === undefined ? {} : { columns: [...columns] }),
         ...(reveal === undefined ? {} : { reveal })

@@ -69,6 +69,7 @@ glyphs:
   open_file: "[f]"
   # status + markers
   check: "+"
+  exclude: "-"
   done: "[+]"
   fail: "x"
   cross: "[x]"

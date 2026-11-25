@@ -6,12 +6,13 @@
     // waiting toggles, the Map's Show button and nothing on a collection); Mine only, drawn when
     // the caller gives `onmine` while a person is marked as the user (`named`) and drawn disabled,
     // its tip saying every project here is the user's, where it would change nothing (`mine`); then
-    // one group button per group `line` names, in that order, each reading its picks ("Form:
-    // journal article +1") and opening its values (PickMenu.svelte); then More, which holds the
-    // groups `line` does not name as headed sections. A group button carries the red badge and the
-    // amber mark the caller gives it by its id (`badges`: a board's Situation and Venue). A
-    // caller's `section` names a run of the groups More holds, which More lists last under one
-    // heading over their own (a collection's Projects section).
+    // one group button per group `line` names, in that order, each reading its included and
+    // excluded values ("Situation: blocked, not paused +2") and opening its values
+    // (PickMenu.svelte); then More, which holds the groups `line` does not name as headed sections.
+    // A group button carries the red badge and the amber mark the caller gives it by its id
+    // (`badges`: a board's Situation and Venue). A caller's `section` names a run of the groups
+    // More holds, which More lists last under one heading over their own (a collection's Projects
+    // section).
     //
     // The line is one line wherever the controls that never fold fit in it: the group buttons that
     // do not fit beside the controls before them go into More, last in, first out, the search
@@ -24,7 +25,10 @@
     //
     // It holds no state of its caller and works nothing out: the search, the groups and the counts
     // are the caller's, computed by pure functions of state/boards/, and every press is handed back
-    // through `onsearch`, `onmine` or `ontoggle`, which write the caller's instance state.
+    // through `onsearch`, `onmine`, `ontoggle` (the row press on a value) or `onexclude` (the "not"
+    // press on a value: the minus button at its row's end, or Shift+Enter on its row), which write
+    // the caller's instance state. `onexclude` is required, so every bar that draws this line
+    // excludes.
 
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -61,8 +65,10 @@
         line: readonly string[];
         /** The badge and the mark of a group button, by its group's id. */
         badges?: Partial<Record<string, Badge>>;
-        /** Adds or takes out one value of one group, as a pick in a group's list does. */
+        /** The row press on one value of one group, a click or Enter on its row. */
         ontoggle: (group: string, value: string) => void;
+        /** The "not" press on one value of one group: it excludes it or turns its exclude off. */
+        onexclude: (group: string, value: string) => void;
         /** One heading More draws over the groups `ids` names, which it lists last. */
         section?: { heading: string; ids: readonly string[] };
     };
@@ -81,6 +87,7 @@
         line: lineIds,
         badges = {},
         ontoggle,
+        onexclude,
         section
     }: Props = $props();
 
@@ -145,6 +152,7 @@
         label={groupWords(group)}
         groups={[group]}
         onpick={ontoggle}
+        {onexclude}
         badge={badges[group.id]?.badge ?? ''}
         warning={badges[group.id]?.warning ?? ''}
     />
@@ -184,6 +192,7 @@
                 headed
                 {section}
                 onpick={ontoggle}
+                {onexclude}
                 badge={foldedMark('badge')}
                 warning={foldedMark('warning')}
             />

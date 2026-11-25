@@ -26,6 +26,9 @@ text:
         count_shown: '{0} of {1} shown'
         empty: No entries match.
         empty_glyph: circle_empty
+        exclude: 'Exclude {0}'
+        exclude_stop: 'Stop excluding {0}'
+        excluded_state: excluded
         facet_code: Code
         facet_compute: Compute
         facet_dataset: Datasets
@@ -44,6 +47,8 @@ text:
         filter_clear: Clear all
         filters: Board filters
         full_titles: Full titles
+        group_both: '{0}, {1}'
+        group_not: 'not {0}'
         group_picked: '{0}: {1}'
         group_picked_more: '{0} +{1}'
         mine_all: Every project here is yours

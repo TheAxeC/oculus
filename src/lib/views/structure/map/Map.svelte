@@ -20,13 +20,15 @@
     // The header holds the two icon actions, link mode and re-tune. The bar is a project board's
     // two lines (views/shared/forms/bar/FilterBar.svelte and SliceLine.svelte): line 1 the search;
     // the Show button (views/shared/forms/bar/PickMenu.svelte), which lists Projects, Pillars and
-    // Team, each ticked while its kind of node is drawn, and Connected only; Mine only while a
-    // person is marked as the user, off at first; then the group buttons Stage, Form, Situation,
-    // Role, Year, Domain, Venue, Pillar, Tier and Hub (Hub while the workspace has more than one
-    // hub), folding into More, which holds a board's other facets. Line 2 is the slices, how many
-    // projects the filters keep and Clear all. The Stage group draws the stages that do not carry
-    // `terminal` while none is picked, and the stages picked otherwise; a Pillar pick keeps its
-    // projects and only its pillars' nodes. The groups, their counts and what they keep are
+    // Team, each ticked while its kind of node is drawn, and Connected only, kinds of node rather
+    // than filter values, so its rows draw no minus button; Mine only while a person is marked as
+    // the user, off at first; then the group buttons Stage, Form, Situation, Role, Year, Domain,
+    // Venue, Pillar, Tier and Hub (Hub while the workspace has more than one hub), folding into
+    // More, which holds a board's other facets. Line 2 is the slices, how many projects the filters
+    // keep and Clear all. The Stage group draws the stages that do not carry `terminal` while none
+    // is included, and the stages included otherwise, an excluded stage hidden either way; a Pillar
+    // include keeps its projects and only its pillars' nodes, and a Pillar exclude hides its
+    // projects and its pillars' nodes. The groups, their counts and what they keep are
     // state/boards/structure/map-bar.ts's, the graph state/boards/structure/graph.ts's.
     //
     // The body holds the legend (Legend.svelte), the stages of the projects drawn, and the graph,
@@ -67,7 +69,13 @@
         mapBar,
         showGroup
     } from '$lib/state/boards/structure/map-bar';
-    import { mapPreset, offersMine, shownWords, withPick } from '$lib/state/boards/board';
+    import {
+        mapPreset,
+        offersMine,
+        shownWords,
+        withExclude,
+        withPick
+    } from '$lib/state/boards/board';
     import { hubList } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -105,6 +113,7 @@
             items,
             preset,
             filters: held.filters,
+            excluded: held.excluded,
             search: held.search,
             mine: held.mine,
             named,
@@ -117,6 +126,7 @@
     const context = $derived({
         projects: new Set(made.kept.map((item) => item.project.id)),
         pillars: held.filters[PILLAR_FACET] ?? [],
+        excludedPillars: held.excluded[PILLAR_FACET] ?? [],
         wordsOf: vocabOf
     });
     const graph = $derived.by(() => {
@@ -137,9 +147,14 @@
     const seed = $derived(startFor(held, graph.nodes));
     const hasRelationships = $derived(relationshipsOf(snapshot));
 
-    /** Add or remove one value of one facet, which is what a pick in a group's list means. */
+    /** The row press on one value of one facet, in a group's list. */
     function toggleFilter(facet: string, value: string): void {
-        write({ filters: withPick(held.filters, facet, value) });
+        write(withPick(held, facet, value));
+    }
+
+    /** The "not" press on one value of one facet, in a group's list or on a slice. */
+    function excludeFilter(facet: string, value: string): void {
+        write(withExclude(held, facet, value));
     }
 
     /** Tick or untick one item of the Show group: a kind of node, or Connected only. */
@@ -220,6 +235,7 @@
         groups={made.groups}
         line={MAP_LINE}
         ontoggle={toggleFilter}
+        onexclude={excludeFilter}
     />
     <SliceLine
         label={t('map.slices')}
@@ -227,10 +243,12 @@
         facet="slice"
         counted={made.counted}
         filters={held.filters}
+        excluded={held.excluded}
         shown={made.kept.length}
         total={made.total}
         words={shownWords}
-        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
+        onfilters={write}
+        onexclude={excludeFilter}
     />
 {/snippet}
 
