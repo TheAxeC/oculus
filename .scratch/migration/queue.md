@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none. O191 (a value for none in the board filters) landed 2026-11-25.
 
-Queued, in order (0 steps): none. Owed: after O191 lands, the app is quit, rebuilt from main with `npm run app:release` and copied over ~/Applications/oculus.app (Axel, 2026-11-25).
+Queued, in order (0 steps): none. Owed: none; the app was built from O191 and replaced on 2026-11-25.
 
 Owed looks: none.
 
