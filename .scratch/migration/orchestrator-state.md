@@ -39,8 +39,16 @@ dispatch:           # steps in flight, up to six (Z632)
   landing_fixes: agents/reviews/O193-landing-fixes.patch (the look of 2026-11-26, carried into the worktree for round 2; the gate returned to main's head)
   brief_check: agents/reviews/O193-brief-check.md (ac32c8c7d99fe4d01, claude-opus-5-5, 209538 tokens, 57 tool uses, 627 s)
 - step: O194
-  landing: preparing
-  brief_check: "running: accc28dffde18681b"
+  base: 55fa909a3
+  worktree: .agents/worktrees/migration-O194
+  executor: agent
+  worker: ordo-high on opus (claude-opus-5-5)
+  session_id: a33a0018ecd3c3bfd
+  launched: 2026-11-26, on ruling 788
+  report: agents/reviews/O194-report.md
+  round: 0
+  landing: not-started
+  brief_check: agents/reviews/O194-brief-check.md (accc28dffde18681b, claude-opus-5-5, 206106 tokens, 62 tool uses, 604 s)
 ```
 
 ## The standing demands (from Axel, in force)
