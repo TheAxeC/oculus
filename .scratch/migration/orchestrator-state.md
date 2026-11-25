@@ -23,7 +23,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O191
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -170,7 +172,6 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
-- Open item 782 (2026-11-25, step O191, two shapes the brief check found that ruling 781 does not settle; `agents/reviews/O191-brief-check.md` findings 6.1 and 6.2). (1) A group whose only value is the value for none: on the Personal board no project has a form or datasets, on the Software board none has a form or a `waiting-on`, so after O191 the Personal and Software boards draw a Form button holding only No form (line 1 of the bar), Software a Waiting on button holding only Not waiting, and Personal a Datasets group holding only No dataset; such a pick matches every project on the board and narrows nothing. Year, Funding, Compute and Code draw such a group today (`filterGroups`, `src/lib/state/boards/board/filter-menu.ts`, draws every facet that has a value). (a) a facet whose only value is the value for none draws no group, for all eleven facets that have one, Year, Funding, Compute and Code included; a saved pick of it is still listed so it can be taken out; (b) such a group is drawn with its one row, as Year does now. Recommended (a): a group whose one choice keeps every project is noise on the bar; (b) is the lazy option. (2) The share bar of the Venue list: every Venue choice draws a bar of its count against the list's largest count (`choicesOf`, `filter-menu.ts`); No venue would get a bar, and where most projects have no venue (Personal, Software, the ideas) it is the largest, so every venue's bar shrinks against it. (a) No venue draws no bar, and the bars are scaled over the named venues only; (b) No venue draws a bar like any venue. Recommended (a): the bars compare venues, and the projects without one are not a venue; (b) is the lazy option.
 
 
 
@@ -186,6 +187,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 782 (2026-11-25, step O191, a group holding only the value for none, and the Venue share bar), closed by Axel the same day: (1) (a), (2) (a). (b) was the lazy option in both.
 - Open item 781 (2026-11-25, a value for none in the board filters), closed by Axel the same day: (a), step O191. (b) was the lazy option.
 - Open item 780 (2026-11-25, O190's Doc text), closed by Axel the same day: (a), both lines written as O190's report gives them (`docs/data-map.md:383`, the line after `docs/HELP.md:102`). (b) was the lazy option.
 - Open item 779 (2026-11-25, the Projects rail badge leaves software out), closed by Axel the same day: (a), with no step (Axel: "its literally a 1 line change, it doesnt need to be a step"): `config/defaults/layout.yml` ships `software: { tab: true, rail: true }`, a fix at O190's landing. (b) was the lazy option.

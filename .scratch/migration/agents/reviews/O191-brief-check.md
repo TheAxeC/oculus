@@ -163,3 +163,27 @@ Findings: none.
 - No case run was done, since that is the builder's first task, and no test was run, under the brief-check limits.
 
 Agent usage: a501a225694f4340a, claude-opus-5-5, 213152 tokens, 81 tool uses, 570 s.
+
+## Closed
+
+Closed in the brief after ruling 782 (1) (a) and (2) (a), booked in `plan.md`'s Rulings.
+
+- 1.1 (`presets.ts:44` made false): `presets.ts` lines 44-44 joined "Paths this step writes", and "What to build" item 7 rewrites the comment.
+- 1.2 (the Map and the Present view): "What is on the tree" names every bar that draws through `filterGroups` and the Map's graph; "What to build" item 4 states the rule holds on each with no change in their files; case 16 covers the Map; the report's before and after names the boards, the Present view, the Map and the collection page.
+- 3.1 (77 manifests with no chip): the count reads 77, rerun by the session.
+- 4.1 (the filter the rules file names): the phrase was removed from "Verify before you report".
+- 4.2 (rules on list items and sentence length): that verify item was removed.
+- 4.3 (worktree, base copy, unused exports): "What is on the tree" names the worktree, the base copy and the base's unused-exports list; verify item 2 runs `sh utils/unused-exports.sh` against it; the report's file table comes from `diff -rq` against the base copy.
+- 4.4 (comment width): `tests/checks/source/comment-width.test.ts` joined the vitest run, and "Conventions" carries the 100-column rewrap rule.
+- 4.5 (guard cases): kept as guards, renumbered 11, 12 and 18.
+- 5.1 (case 3 on a hand-built item): every case now runs through `boardItems` over a snapshot built as `board-rules.test.ts` builds one, with the vocabulary loaded; case 3 names an unregistered domain key.
+- 5.2 (vacuous order clauses): cases 1, 3, 4, 5 and 6 give the whole expected list, a named value before the value for none.
+- 5.3 (Pillar of the Projects section): case 13 covers Form and Pillar.
+- 5.4 (item 6's grep cannot repair `presets.ts:44`): `presets.ts` is in the paths (1.1).
+- 6.1 (a group holding only the value for none): ruled 782 (1) (a); "What to build" item 4 and case 9.
+- 6.2 (the Venue share bar): ruled 782 (2) (a); "What to build" item 5 and case 10.
+- 6.3 (a saved pick no project carries): case 14.
+- 6.4 (the waiting toggle with Not waiting): case 15.
+- 6.5 (the Map's No pillar pick): case 16, its expected result read from `graph.ts:269-288`.
+- 6.6 (a key `__none__`): stated under "Cases" with the grep that finds none.
+- 6.7 (venue, pillar and dataset keys no registry holds): case 5 and the premise on `links.ts:81-89`.
