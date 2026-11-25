@@ -288,6 +288,7 @@ export function manifestProject(
         results: strings(manifest.results),
         ideas: strings(manifest.ideas),
         deadline: str(manifest.deadline),
+        submitted: str(manifest.submitted),
         waitingOn: strings(manifest['waiting-on']),
         followups: followups(manifest.followup),
         snooze: str(manifest.snooze),

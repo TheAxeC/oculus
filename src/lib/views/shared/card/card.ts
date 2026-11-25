@@ -1,10 +1,11 @@
-// Layer 3, view helpers. Project-card path, label and deadline calculations, the glyph each fact
-// of the card's top row is drawn with, what a session press on the card opens, the page a press on
-// a tag or a fact that names an entry opens, and the shape of a card's control, live here because
-// pure display rules change independently of Svelte markup.
+// Layer 3, view helpers. Project-card path, label and deadline calculations, the words of the day a
+// paper was submitted, the glyph each fact of the card's top row is drawn with, what a session
+// press on the card opens, the page a press on a tag or a fact that names an entry opens, and the
+// shape of a card's control, live here because pure display rules change independently of Svelte
+// markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
-import { pausesCountdown } from '$lib/state/boards/focus';
+import { pausesCountdown, type Submitted } from '$lib/state/boards/focus';
 import type { ClientState } from '$lib/state/client/context';
 import {
     isInstanceOf,
@@ -237,6 +238,26 @@ export function dueBadge(
         return { label: translate('project.card.due_days', days), tone: 'amber' };
     }
     return { label: date };
+}
+
+/**
+ * The words a card draws for the day a paper was submitted (state/boards/focus.ts
+ * `cardSubmitted`), alike on a project board card and a Focus lane card: the tag's label, the day
+ * and its days in the `{0}d` form of a card's other day counts, and the tip naming its kind with
+ * the days in words in their plural form. A day with no days, one after today, gives the day alone
+ * in both.
+ */
+export function submittedWords(fact: Submitted): { label: string; tip: string } {
+    if (fact.days === undefined) {
+        return {
+            label: t('project.card.submitted', fact.date),
+            tip: t('project.card.submitted_tip', fact.date)
+        };
+    }
+    return {
+        label: t('project.card.submitted_days', fact.date, fact.days),
+        tip: plural('project.card.submitted_ago', fact.days, fact.date, fact.days)
+    };
 }
 
 /**

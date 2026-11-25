@@ -483,6 +483,11 @@ export type Project = Rooted & {
     ideas: string[];
     deadline?: string;
     /**
+     * The manifest's `submitted:`, the day the paper was last submitted to the venue that holds it
+     * now, as written; a card reads it as a day only when it is written `YYYY-MM-DD`.
+     */
+    submitted?: string;
+    /**
      * What the project waits for before it moves, the manifest's `waiting-on:`, each value read
      * trimmed and once, an empty one left out. An entry is the internal id of the person or the
      * project it names, or its words as written when it names neither, which validate reports;

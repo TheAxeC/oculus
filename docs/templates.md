@@ -1236,6 +1236,7 @@ stage: nascent          # nascent, scoping, umbrella, de-risking, exploring, in-
 
 # --- Dates
 # deadline: YYYY-MM-DD
+# submitted: YYYY-MM-DD # the day last submitted to the venue that holds the paper now
 # followup: []          # written by the card: { do, after, done, lead, supervisors, collaborators }, hidden until after
 # snooze: YYYY-MM-DD    # off the ticker until this date
 # subtasks: {}          # written by the card: { do, deadline, done, snooze, lead, supervisors, collaborators }

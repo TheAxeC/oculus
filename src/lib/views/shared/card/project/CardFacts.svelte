@@ -3,10 +3,12 @@
     // each a glyph and its words, in this order: the Lead badge while the project's `lead:` names
     // the user (the person marked `self: true`), the Focus lane it sits on among its own hub's
     // lanes, its form and its chips with their words and glyphs of `forms` and `chips` of its hub's
-    // words, the year the paper appeared at a stage that carries both `terminal` and `public` in
-    // its hub's `stages` (state/boards/focus.ts `cardYear`), its code status, whether it is
-    // reproduced, its compute resources, and last the name of its folder with the folder glyph. The
-    // stage is the card's filled chip, drawn by ProjectCard.svelte in its heading.
+    // words, the day the paper was submitted with the days since it at a stage that carries
+    // `pauses_countdown` in its hub's `stages` (state/boards/focus.ts `cardSubmitted`, its words
+    // card.ts `submittedWords`), the year the paper appeared at a stage that carries both
+    // `terminal` and `public` in its hub's `stages` (focus.ts `cardYear`), its code status, whether
+    // it is reproduced, its compute resources, and last the name of its folder with the folder
+    // glyph. The stage is the card's filled chip, drawn by ProjectCard.svelte in its heading.
     //
     // The folder is the workspace folder the project is read from, else the last part of its
     // `folder:`; its tip is the whole path, the workspace folder's directory or the hub-relative
@@ -37,11 +39,11 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { computeGlyph, entryOpener, laneGlyph, wordGlyph } from '../card';
+    import { computeGlyph, entryOpener, laneGlyph, submittedWords, wordGlyph } from '../card';
     import { useState } from '$lib/state/client/use';
     import PressBox from './PressBox.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { cardYear, isBlocked, projectLane } from '$lib/state/boards/focus';
+    import { cardSubmitted, cardYear, isBlocked, projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import {
         chipGlyphName,
@@ -59,14 +61,16 @@
         item: BoardItem;
         /** Open the project's folder, as the card's Folder action does. */
         onfolder: () => void;
+        /** The moment the days since the paper was submitted are counted to. */
+        now: number;
     };
-    let { item, onfolder }: Props = $props();
+    let { item, onfolder, now }: Props = $props();
 
     const hub = $derived(rootOf(item.project));
 
     /**
      * The words of the project's own hub, which say which chip blocks it and at which stages its
-     * year is drawn.
+     * submitted day and its year are drawn.
      */
     const words = $derived(vocabOf(hub));
 
@@ -80,6 +84,15 @@
 
     /** The Focus board lane the project sits on, among its own hub's lanes. */
     const lane = $derived(projectLane(item.project, vocabOf));
+
+    /**
+     * The words of the day the paper was submitted, with the days since, read in the words of the
+     * project's own hub, or none.
+     */
+    const submitted = $derived.by(() => {
+        const fact = cardSubmitted(item.project, words, now);
+        return fact === undefined ? undefined : submittedWords(fact);
+    });
 
     /** The year the paper appeared, read in the words of the project's own hub, or none. */
     const year = $derived(cardYear(item.project, words));
@@ -115,6 +128,11 @@
         />
     </Tooltip>
 {/each}
+{#if submitted !== undefined}
+    <Tooltip text={submitted.tip}>
+        <Tag label={submitted.label} glyph={t('project.card.submitted_glyph')} />
+    </Tooltip>
+{/if}
 {#if year !== undefined}
     <Tooltip text={t('project.card.year_tip', year)}>
         <Tag label={String(year)} glyph={t('project.card.year_glyph')} />

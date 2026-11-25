@@ -129,6 +129,13 @@ text:
             results: Results
             status: Status
             storage_glyph: data
+            submitted: submitted {0}
+            submitted_ago:
+                one: 'Submitted: {0}, {1} day ago'
+                other: 'Submitted: {0}, {1} days ago'
+            submitted_days: submitted {0} | {1}d
+            submitted_glyph: stale
+            submitted_tip: 'Submitted: {0}'
             team: Team
             team_glyph: collab
             tier_glyph: cards

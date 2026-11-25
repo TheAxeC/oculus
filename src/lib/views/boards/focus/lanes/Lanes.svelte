@@ -233,7 +233,7 @@
                 <LaneCard
                     {project}
                     marks={laneMarks(project, one)}
-                    facts={laneFacts(project, wordsAt(project), known.self, known.venues)}
+                    facts={laneFacts(project, wordsAt(project), known.self, known.venues, now)}
                     label={focusLabel(project, config.focus_label_mode)}
                     current={cursor === project.id}
                     due={deadline(project)}

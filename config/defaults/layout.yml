@@ -307,7 +307,7 @@ counts:
   coauthor:     { tab: true, rail: true }
   personal:     { tab: true, rail: true }
   archive:      { tab: true, rail: false }
-  software:     { tab: true, rail: false }
+  software:     { tab: true, rail: true }
   inbox:        { tab: true, rail: true }
   leads:        { days: 14, tab: true, rail: false }
   calendar:     { tab: true, rail: false }

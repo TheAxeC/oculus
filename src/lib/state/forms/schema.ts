@@ -478,6 +478,7 @@ export function fieldValues(
         related: project.relatedIds.map(keyOf),
         datasets: project.datasetIds.map(keyOf),
         deadline: project.deadline,
+        submitted: project.submitted,
         'code_availability.status': code.status,
         'code_availability.date': code.date,
         'code_availability.url': code.url,

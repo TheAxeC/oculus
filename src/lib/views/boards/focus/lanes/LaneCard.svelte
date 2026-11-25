@@ -11,10 +11,12 @@
     // ui/menu/Tooltip.svelte with the words of its kind ("Stage: Submitted", "Venue: Neural
     // Networks"). They are, in order, the status marks the lanes give (the stage, the form and the
     // chips each in its word's hue, tones.ts `statusMarkTone`, a chip whose word carries `blocked`
-    // in red), then the facts (the year the paper appeared, at a stage that carries both `terminal`
-    // and `public`, with "Year: 2025" in its tip, the user's role, the tier, the venue by its short
-    // name with its whole name in the tip). The venue is a press that opens the venue's page in the
-    // current pane, the press the lanes hand the card as `onvenue`, drawn in the box
+    // in red), then the facts (the day the paper was submitted with the days since it, at a stage
+    // that carries `pauses_countdown`, in the words card.ts `submittedWords` gives a project board
+    // card too; the year the paper appeared, at a stage that carries both `terminal` and `public`,
+    // with "Year: 2025" in its tip; the user's role; the tier; the venue by its short name with its
+    // whole name in the tip). The venue is a press that opens the venue's page in the current pane,
+    // the press the lanes hand the card as `onvenue`, drawn in the box
     // views/shared/card/project/PressBox.svelte draws, as a project card's presses are, and its tip
     // is its button's own; a venue whose page is not found is drawn as the other facts are, with no
     // press. Every tag is drawn: the tags a line has no room for wrap onto a further line under it,
@@ -38,7 +40,7 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import PressBox from '$lib/views/shared/card/project/PressBox.svelte';
-    import { wordGlyph } from '$lib/views/shared/card/card';
+    import { submittedWords, wordGlyph } from '$lib/views/shared/card/card';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -61,8 +63,9 @@
          */
         marks: string[];
         /**
-         * The facts drawn after the marks: the year the paper appeared, the user's role, the tier
-         * and the venue where each says something (state/boards/focus.ts `laneFacts`).
+         * The facts drawn after the marks: the day the paper was submitted, the year the paper
+         * appeared, the user's role, the tier and the venue where each says something
+         * (state/boards/focus.ts `laneFacts`).
          */
         facts: LaneFact[];
         /** The name the card draws, which the lanes work out from `focus_label_mode`. */
@@ -128,14 +131,24 @@
 
     /** The glyph of each kind of fact. */
     const FACT_GLYPHS: Record<LaneFact['kind'], string> = {
+        submitted: t('project.card.submitted_glyph'),
         year: t('project.card.year_glyph'),
         role: t('project.card.role_glyph'),
         tier: t('project.card.tier_glyph'),
         venue: t('project.card.venue_glyph')
     };
 
-    /** The words of a fact's tip, which name its kind: "Year: 2025", "Role: Supervisor". */
+    /** The words a fact's tag shows: a submitted day's from card.ts, every other kind's its own. */
+    function factLabel(fact: LaneFact): string {
+        return fact.kind === 'submitted' ? submittedWords(fact.submitted).label : fact.label;
+    }
+
+    /**
+     * The words of a fact's tip, which name its kind: "Year: 2025", "Role: Supervisor", and for a
+     * submitted day those of card.ts `submittedWords`, the day and the days since it in words.
+     */
     function factTip(fact: LaneFact): string {
+        if (fact.kind === 'submitted') return submittedWords(fact.submitted).tip;
         if (fact.kind === 'year') return t('project.card.year_tip', fact.whole);
         if (fact.kind === 'role') return t('project.card.lead_tip', fact.whole);
         if (fact.kind === 'tier') return t('project.card.tier_tip', fact.whole);
@@ -179,7 +192,7 @@
         }),
         ...facts.map((fact): Tagged => ({
             key: `fact:${fact.kind}`,
-            label: fact.label,
+            label: factLabel(fact),
             glyph: FACT_GLYPHS[fact.kind],
             tone: undefined,
             tip: factTip(fact),

@@ -1,7 +1,8 @@
 // Layer 2, client state. Focus lanes and waiting arithmetic live here because changes to the board
 // do not change deadline ticker calculations. It also holds the facts a lane card draws after its
-// status marks (`laneFacts`), and the year a card draws for a paper that appeared (`cardYear`),
-// which a project board card draws as well.
+// status marks (`laneFacts`), the year a card draws for a paper that appeared (`cardYear`) and the
+// day a card draws for a paper under review with the days since (`cardSubmitted`), which a project
+// board card draws as well.
 //
 // No words live here. An item carries what it is (`kind`), the glyph it is drawn with and the
 // number of days, and the view turns that into a sentence through the text catalogs; a colour is a
@@ -46,6 +47,7 @@ import {
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
+import { ISO_DATE } from '../../data/helpers/dates.ts';
 // The words of `tiers:` are data/shapes/boards/tiers.ts's, which the board's Tier facet reads too;
 // the Focus view reaches them from here, as it reaches the model types.
 import { tierWords } from '../../data/shapes/boards/tiers.ts';
@@ -83,8 +85,8 @@ type ClusterLayout = ClusterRow['layout'];
  * One row of `focus_clusters`, the clusters the board groups its lanes into, in drawing order: its
  * key, the catalog keys of its heading's words and glyph (each empty when the row names none or a
  * key the catalog lacks), whether it is drawn muted, how it lays its lanes out, whether its lanes'
- * cards sort by title rather than by deadline then title, and whether the awaiting box counts the
- * projects on its lanes.
+ * cards sort by title rather than by deadline, then by the day submitted, the oldest first, then
+ * title, and whether the awaiting box counts the projects on its lanes.
  */
 export type Cluster = {
     key: string;
@@ -310,14 +312,26 @@ export function lanes(config: Record<string, unknown>): Lane[] {
     return readAs(lanesShape, config.focus_lanes) ?? [];
 }
 
-/** A project sorts inside its lane by its deadline, and by its title when it has none. */
+/**
+ * A project sorts inside its lane by its deadline, a project with one first; two of the same
+ * deadline, or with none, by the day it was submitted (`submittedDay`, at any stage), the older
+ * first and a project with a day before one without; and two of the same day, or with none, by
+ * title.
+ */
 function laneOrder(a: Project, b: Project): number {
-    const one = a.deadline ?? '';
-    const two = b.deadline ?? '';
+    return (
+        presentFirst(a.deadline ?? '', b.deadline ?? '') ||
+        presentFirst(submittedDay(a) ?? '', submittedDay(b) ?? '') ||
+        titleOrder(a, b)
+    );
+}
+
+/** Two values of one key, the empty string for none: the smaller first, a value before none. */
+function presentFirst(one: string, two: string): number {
     if (one !== '' && two !== '') return one < two ? -1 : one > two ? 1 : 0;
     if (one !== '') return -1;
     if (two !== '') return 1;
-    return titleOrder(a, b);
+    return 0;
 }
 
 /** A project of a lane whose cluster sorts by title sorts by its title alone. */
@@ -418,9 +432,10 @@ function clusterKeys(config: Record<string, unknown>, flag: 'byTitle' | 'awaitin
 /**
  * What sits on each lane of `all`, by lane key: each project on the lane of its own hub's lanes
  * `laneOf` gives it, put in the lane of `all` of the same key, and on none when it gives none. A
- * lane of a cluster whose `sort` is `title` is sorted by title, every other lane by deadline first
- * and then title; the clusters are those of the union of every hub's words with `wordsOf`, the
- * words the board's lanes are read from, and of `config` without it.
+ * lane of a cluster whose `sort` is `title` is sorted by title, every other lane by deadline first,
+ * then by the day submitted, the oldest first, and then title (`laneOrder`); the clusters are those
+ * of the union of every hub's words with `wordsOf`, the words the board's lanes are read from, and
+ * of `config` without it.
  */
 export function laneItems(
     projects: Project[],
@@ -587,9 +602,50 @@ export function venueLabel(venue: Venue | undefined): string {
 
 /**
  * One fact a lane card draws in its row of tags: which kind it is, the words the tag shows, and
- * the whole words its tip names, which differ only for a venue drawn by its short name.
+ * the whole words its tip names, which differ only for a venue drawn by its short name; or the day
+ * the paper was submitted (`cardSubmitted`), whose words the view makes from the day itself.
  */
-export type LaneFact = { kind: 'year' | 'role' | 'tier' | 'venue'; label: string; whole: string };
+export type LaneFact =
+    | { kind: 'year' | 'role' | 'tier' | 'venue'; label: string; whole: string }
+    | { kind: 'submitted'; submitted: Submitted };
+
+/**
+ * The day a paper was submitted as a card draws it: the manifest's `submitted` as written, and the
+ * whole days from that day to today, none when the day is after today or names no calendar day.
+ */
+export type Submitted = { date: string; days?: number };
+
+/**
+ * The manifest's `submitted` where it is a day written `YYYY-MM-DD` and nothing else, the form the
+ * manifest check holds a date field to, and none for any other value.
+ */
+function submittedDay(project: Pick<Project, 'submitted'>): string | undefined {
+    const date = project.submitted;
+    return date !== undefined && ISO_DATE.test(date) ? date : undefined;
+}
+
+/**
+ * The day a project's card draws as submitted, with the days since (`daysUntil` negated, so a card
+ * counts from the same local midnight as its deadline badge): given where the project's stage
+ * carries `pauses_countdown` in `stages` and its `submitted` is a day written `YYYY-MM-DD`
+ * (`submittedDay`), and none with no `submitted`, with any other value or at another stage. A day
+ * after today gives the day with no days, and today gives 0. The flag is read with `hasWord` in
+ * `words`, the words of the project's own hub, never by a stage's name, as `cardYear` reads its
+ * flags.
+ */
+export function cardSubmitted(
+    project: Pick<Project, 'stage' | 'submitted'>,
+    words: Record<string, unknown>,
+    now: number
+): Submitted | undefined {
+    const date = submittedDay(project);
+    if (date === undefined || !hasWord(words, 'stages', 'pauses_countdown', project.stage)) {
+        return undefined;
+    }
+    const until = daysUntil(date, now);
+    // `until` is 0 or less here, so its size is the days since, and today is 0 rather than -0.
+    return until === null || until > 0 ? { date } : { date, days: Math.abs(until) };
+}
 
 /**
  * The year a project's card draws among its facts: the manifest's `year` where the project's stage
@@ -611,7 +667,8 @@ export function cardYear(
 }
 
 /**
- * The facts a lane card draws after its status marks, in this order: the year the paper appeared
+ * The facts a lane card draws after its status marks, in this order: the day the paper was
+ * submitted with the days since it to `now` (`cardSubmitted`); the year the paper appeared
  * (`cardYear`), with the year as its label and its whole words; the user's role on the project
  * unless its row of `roles:` carries `unmarked: true`, read only while a person is marked as the
  * user (`self` not empty); the project's tier unless its word of `tiers:` carries `unmarked: true`;
@@ -622,9 +679,12 @@ export function laneFacts(
     project: Project,
     words: Record<string, unknown>,
     self: ReadonlySet<Id>,
-    venues: Record<Id, Venue>
+    venues: Record<Id, Venue>,
+    now: number
 ): LaneFact[] {
     const facts: LaneFact[] = [];
+    const submitted = cardSubmitted(project, words, now);
+    if (submitted !== undefined) facts.push({ kind: 'submitted', submitted });
     const year = cardYear(project, words);
     if (year !== undefined) {
         const label = String(year);

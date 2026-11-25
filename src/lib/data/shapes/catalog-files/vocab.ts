@@ -123,7 +123,7 @@ const clusterRow = z.strictObject({
         .enum(['title'])
         .optional()
         .describe(
-            "title orders a lane's cards by title; with none they go by deadline, then title."
+            "title orders a lane's cards by title; with none they go by deadline, then by the day the manifest's `submitted` gives, the oldest first, then title."
         ),
     awaiting: z
         .boolean()
@@ -175,7 +175,7 @@ const stageWord = z.strictObject({
         'A dead end: a manifest at the stage that carries `publication:` gives no website entry and a finding of the audit, to be given another stage or to lose its record.'
     ),
     pauses_countdown: flag(
-        "A stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue."
+        "A stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue. A project card and a Focus lane card at such a stage draw the manifest's `submitted` day with the days since it."
     ),
     deadline_met: flag(
         "A stage that ends a project's own deadline, which then leaves the deadline radar."

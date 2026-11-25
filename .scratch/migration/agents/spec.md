@@ -75,7 +75,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## Verify before you report
 
-Run every command the brief lists, from the root of the worktree, and fix until each passes. At minimum: `npm run test:quick`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
+Run every command the brief lists, from the root of the worktree, and fix until each passes: the brief's test files, prettier, eslint and the ASCII gate over the files you touched, and `npm run check`; never `npm run test:quick`, which runs once, at landing.
 
 The tests that count are the ones the step can influence: the test files it adds, changes or deletes, and the tests that exercise the files it changes. A failure or timeout in any other test file (`tests/server/core/git.test.ts` is the usual one) is not the step's: the report names it in one line, and nobody reruns it, investigates it, or changes code, a test, a timeout or any configuration because of it, since several suites run on this machine at once. A reviewer does not count such a failure as a finding.
 

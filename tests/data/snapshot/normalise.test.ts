@@ -82,6 +82,7 @@ function portfolio(): RawPortfolio {
                     results: ['one'],
                     ideas: ['two'],
                     deadline: '2026-11-17',
+                    submitted: '2026-10-24',
                     doi: '10.0/alpha',
                     outcome: 'in review',
                     venue: 'bspc',
@@ -322,6 +323,7 @@ describe('normalise, the field mapping', () => {
             results: ['one'],
             ideas: ['two'],
             deadline: '2026-11-17',
+            submitted: '2026-10-24',
             waitingOn: ['someone', 'A Free Name'],
             followups: [
                 {

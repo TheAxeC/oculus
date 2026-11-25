@@ -55,7 +55,7 @@ options:
                 help: a dead end; the website audit reports its project when the site shows it
                 control: toggle
             pauses_countdown:
-                help: a stage that stops a card's and a lane's countdown, counted as submitted work held at its venue
+                help: a stage that stops a card's and a lane's countdown, counted as submitted work held at its venue; a card at it draws the manifest's submitted day with the days since
                 control: toggle
             deadline_met:
                 help: a stage that ends a project's own deadline, which then leaves the deadline radar
@@ -160,7 +160,7 @@ options:
                 control: choice
                 options: [columns, full_width]
             sort:
-                help: title orders a lane's cards by title; with none they go by deadline, then title
+                help: title orders a lane's cards by title; with none they go by deadline, then by the day submitted, oldest first, then title
                 control: choice
                 options: [title]
                 empty: true

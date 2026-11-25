@@ -57,7 +57,7 @@ palette:
 # - `on_map`: a stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.
 # - `placed`: a stage that has a venue, so the audit asks for one.
 # - `public`, `negative`, `dead_end`: whether the website lists the paper of a project at the stage. A manifest that carries `publication:` at a stage that carries `public` and neither of the other two is written into the website's publications in the section the rows of `website.kinds` in the hub's .oculus/config.yml give it; at any other stage it gives no entry and a finding of the audit. A stage that carries `public` together with `terminal` is one whose paper appeared, where a card draws the manifest's `year`.
-# - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue.
+# - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue. A project card and a Focus lane card at such a stage draw the manifest's `submitted` day with the days since it.
 # - `deadline_met`: a stage that ends a project's own deadline, which then leaves the deadline radar.
 # - `new_idea`: the stage a new idea is made with, carried by one stage at most; with none the new manifest names no stage, and two stages carrying it are a finding naming both, under which the new manifest names no stage either.
 stages:
@@ -173,7 +173,7 @@ lead_statuses:
   open:      { default_lead: true }
 
 
-# The clusters the Focus board groups its lanes into, in drawing order. `label` names the text-catalog word of the cluster's heading and `glyph` the word holding the glyph name drawn before it, each by its dotted key; a row may name neither, and a key the catalog lacks is a finding and reads as absent. `muted: true` draws the cluster in muted colours. `layout` is `columns`, the cluster's lanes side by side under its heading, or `full_width`, each of its lanes a full-width section headed by the lane's own label. `sort: title` orders a lane's cards by title; with no `sort` they go by deadline, then title. `awaiting: true` counts the projects on the cluster's lanes in the awaiting box. A key held by two rows, a `layout` or `sort` that is no word of these, and a field of the wrong kind are findings naming the row.
+# The clusters the Focus board groups its lanes into, in drawing order. `label` names the text-catalog word of the cluster's heading and `glyph` the word holding the glyph name drawn before it, each by its dotted key; a row may name neither, and a key the catalog lacks is a finding and reads as absent. `muted: true` draws the cluster in muted colours. `layout` is `columns`, the cluster's lanes side by side under its heading, or `full_width`, each of its lanes a full-width section headed by the lane's own label. `sort: title` orders a lane's cards by title; with no `sort` they go by deadline, then by the day the manifest's `submitted` gives, the oldest first, then title. `awaiting: true` counts the projects on the cluster's lanes in the awaiting box. A key held by two rows, a `layout` or `sort` that is no word of these, and a field of the wrong kind are findings naming the row.
 focus_clusters:
   - { key: now,      label: focus.cluster_now,      glyph: focus.now_glyph,   muted: false, layout: columns,    awaiting: true }
   - { key: parked,   label: focus.cluster_parked,                             muted: true,  layout: columns,    awaiting: true }

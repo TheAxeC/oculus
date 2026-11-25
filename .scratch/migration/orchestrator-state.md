@@ -23,18 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O190
-  base: e2fbf2161
-  worktree: .agents/worktrees/migration-O190
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: ad8dd68930c3d6154 (claude-opus-5-5, served model read from the runner's record)
-  launched: 2026-11-25, on the ruling Submission date and open item 776
-  report: agents/reviews/O190-report.md
-  round: 0
-  landing: not-started
-  brief_check: agents/reviews/O190-brief-check.md (aabe2d223f6b3f8cf, claude-opus-5-5, 219777 tokens, 80 tool uses, 662 s)
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -181,6 +170,7 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
+- Open item 780 (2026-11-25, O190's Doc text): the rules file has no step write `docs/HELP.md` or `docs/data-map.md` without a ruled line. (a) write both lines as O190's report gives them: `docs/data-map.md:383` becomes "| `deadline`, `submitted`, `snooze` | the next deadline, the day the paper was last submitted to the venue that holds it now (drawn with the days since on its cards while the stage carries `pauses_countdown`), and the day before which the project stays off the ticker |", and after `docs/HELP.md:102` comes "- A lane's cards go by deadline, then by the manifest's `submitted` day, the oldest first, then by title; a cluster with `sort: title` orders them by title alone. A card at a stage that carries `pauses_countdown` (submitted) draws its `submitted` day with the days since it."; (b) leave both pages as they are, so the data map and the help say nothing of the key. Recommended (a); (b) is the lazy option.
 
 
 
@@ -196,6 +186,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 779 (2026-11-25, the Projects rail badge leaves software out), closed by Axel the same day: (a), with no step (Axel: "its literally a 1 line change, it doesnt need to be a step"): `config/defaults/layout.yml` ships `software: { tab: true, rail: true }`, a fix at O190's landing. (b) was the lazy option.
 - Open item 775 (2026-11-23, O189, text a box or block glyph leads in its run), withdrawn the same day on Axel's question why it asked for a new step: the text is inside ruling 773, so it was fixed at O189's landing (`partFromGlyphs`, `grid-look.ts`), with no step.
 - Open items 773 and 774 (2026-11-23, step O189, the floor of terminal text and the themes 771 does not name), closed by Axel the same day: 773 (a), 774 (a), as `plan.md` Rulings says. The lazy options were 773 (c) and 774 (b).
 - Open items 770, 771 and 772 (2026-11-23, Axel's reports on the terminal: characters left behind by Tab, and a yellow drawn orange): 770 (a), 771 (a), and one step (772); in full in `plan.md` Rulings. Step O189 builds them. The tmux servers 71617 and 80973 of old looks are left alone, on Axel's word the same day.
@@ -910,6 +901,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-25 (O190 landed). O190 is on main (booked under O190 in `plan.md`, `agents/reviews/O190-landing.md`) with the fix at landing of ruling 779 (the Software view's count on the rail). The landing suite ran at normal priority; at background priority it took 53 minutes and timed out. Next: the twelve `submitted:` dates in the hub's manifests (commit on Axel's word), then the app rebuilt and replaced (ruling App rebuild after O190). In flight (0 of 6): none. Open items: 780.
 - 2026-11-23 (app replaced after O189). `~/Applications/oculus.app` is the build of e7df73f49 (`npm run app:release` in the gate at background priority, `oculus-1.1.0-darwin-arm64.zip`, 306726023 bytes), installed on Axel's word: the running app quit, the old one in the Trash, `codesign --verify --deep --strict` ok, `diff -rq` against the extracted build empty, started again and listening on 8790. No release, tag or push. The whole `test:quick` and a review of the fixes at landing are not owed (ruling O189 left undone). In flight (0 of 6): none. Open items: none. Next: none queued.
 - 2026-11-23 (O189 landed). O189 is on main (booked under O189 in `plan.md`, `agents/reviews/O189-landing.md`), with the fixes at landing: text a glyph leads measured (open item 775 withdrawn) and the command center's emails (ruling Command center emails); main's staged diff equalled the gate's; the whole `test:quick` was not run on the final code. In flight (0 of 6): none. Open items: none. Checks run at background priority (`taskpolicy -b nice -n 19`), one at a time, 1 or 2 vitest workers (Axel, 2026-11-23). Next: `~/Applications/oculus.app` built from this commit and replaced, the running app closed only on Axel's word, no release.
 - 2026-11-23 (O189 repair round 1 sent). The review found the inverse text with a colour of its own under the floor of ruling 773 (Behaviour 1), cells and bold text the report did not name, and comment sentences; all go to the round (`agents/briefs/O189-round-1.md`), with two lost spaces of `rice/tokyo.css`. Snapshot `.agents/worktrees/migration-O189-round-1`.
