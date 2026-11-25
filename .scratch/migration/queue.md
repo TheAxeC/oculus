@@ -1,6 +1,6 @@
-In flight (0 of 6 slots in use): none; O192 (exclude in the board filters) landed on 2026-11-25.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none. Owed: none; the app was built from O192 and replaced on 2026-11-25.
+Queued, in order (0 steps): none. Owed: none.
 
 Owed looks: none.
 
