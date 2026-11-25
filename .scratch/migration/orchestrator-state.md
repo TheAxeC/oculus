@@ -23,7 +23,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O193
+  landing: preparing
+  brief_check: "running: ac32c8c7d99fe4d01"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -185,6 +188,9 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 787 (2026-11-25, step O193, its brief check, Question: what the Explorer shot holds): the demo manuscript `projects/active/streaming-anomaly/manuscript/main.tex` is five lines whose one sentence is about the demo hub, its `\maketitle` prints the day of the run, and a copy committed whole leaves Source Control with nothing to list. (a) in the scratch copy only, the command replaces `main.tex` with a short made-up manuscript the brief dictates (an abstract and three short sections, an empty date), commits it, and then leaves one dictated sentence added and uncommitted, so the editor shows a manuscript, the PDF has no date, and Source Control lists one change; the fixture keeps its five lines; (b) the shot of the fixture as it is, the lazy option; (c) the fixture's `main.tex` enlarged, which changes a file the tests copy and build. Recommended (a): the shot shows what the Explorer is for, and nothing the tests read changes. Closed by the orchestrator, automode, the same day: (a).
+- Open item 786 (2026-11-25, step O193, /spec, where the capture command lives): `utils/` holds ten items, the folder check's limit (`utils/folder-check.sh`). (a) the three files of the tree's size and folder checks, `utils/folder-check.sh`, `utils/size-check.sh` and `utils/size-allow.txt`, move to a new folder `utils/tree/`, after `tests/checks/tree/` whose `size.test.ts` is their one caller, and the capture goes in a new folder `utils/shots/`, leaving `utils/` at nine items; (b) `utils/diagrams/` and the capture move under a new `utils/docs/`, which renames a path that 18 files name; (c) the capture goes into the full `utils/diagrams/` or `src/desktop/`, which the folder check refuses. Recommended (a): it is the split the folder check prescribes, named for what each folder holds, and it touches one caller. (c) was the lazy option, and it fails the check. Closed by the orchestrator, automode, the same day: (a).
+- Open item 785 (2026-11-25, step O193, /spec, the library for the capture): (a) Electron 44.5.1, already a dependency, a hidden `BrowserWindow` at a fixed size and scale and `webContents.capturePage()`, no new dependency; (b) Playwright 1.65.1 (Apache-2.0, Microsoft, released 2026-11-25), whose page API would replace the hand-written driving of the page, at the cost of a dev dependency and a browser download for one command; (c) Puppeteer 25.19.0 (Apache-2.0, Google, released 2026-11-25), the same trade as (b). Recommended (a): the tree already ships the browser the app runs in, so the shots are drawn by the same engine as the desktop app, and the driving code is a few page presses. (b) and (c) each add a dependency for one command. Closed by the orchestrator, automode, the same day: (a).
 - Open item 784 (2026-11-25, step O192, from its brief check), closed by Axel the same day: (1) (a), (2) (a), (3) (a), (4) (a), (5) (a). (b) was the lazy option in (1), (2) and (5).
 - Open item 783 (2026-11-25, step O192, how exclude is shown), closed by Axel the same day: (1) (a), (2) (a), (3) (a). (b) was the lazy option in all three.
 - Open item 782 (2026-11-25, step O191, a group holding only the value for none, and the Venue share bar), closed by Axel the same day: (1) (a), (2) (a). (b) was the lazy option in both.

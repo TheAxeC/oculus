@@ -6073,3 +6073,9 @@ Builds on it: O170
 Builds on it: O172
 - 2026-11-11, O186's brief check: the read-only open of a Settings file row (Catalogs, Schemas, Texts) is a button of its own, `Show File`, tip `Open oculus's {0} in a tab that only reads it`, with Show Defaults' glyph and route, since Show Defaults' words "the values in force where you set none" are false of `schemas/cpp-schema.yml` and `schemas/deck-schema.yml`; the heading lines keep Show Defaults. Show Defaults' words on every row, false on two, was the lazy option. Named in the next report.
 Builds on it: O186
+- 2026-11-25, O193's /spec (open item 785): the README screenshots are taken with Electron, already a dependency, through a hidden window and `capturePage()`; Playwright or Puppeteer would each add a dependency for one command. Named in the next report.
+Builds on it: O193
+- 2026-11-25, O193's /spec (open item 786): `utils/folder-check.sh`, `utils/size-check.sh` and `utils/size-allow.txt` move into `utils/tree/`, and the capture command goes in `utils/shots/`, since `utils/` is at its limit of ten items; nothing a user sees changes. Named in the next report.
+Builds on it: O193
+- 2026-11-25, O193's brief check (open item 787): the Explorer screenshot shows a short made-up manuscript the capture command writes into its scratch copy, with one uncommitted sentence for Source Control to list; the demo fixture's five-line `main.tex` is unchanged. Named in the next report.
+Builds on it: O193
