@@ -1,4 +1,4 @@
-In flight (0 of 6 slots in use): none. O192 (exclude in the board filters) stopped at its /spec on open item 784.
+In flight (1 of 6 slots in use): O192 (exclude in the board filters), its builder running.
 
 Queued, in order (0 steps): none. Owed: none; the app was built from O191 and replaced on 2026-11-25.
 
