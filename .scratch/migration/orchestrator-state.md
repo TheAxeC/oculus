@@ -23,7 +23,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O192
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -170,7 +172,6 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
-- Open item 784 (2026-11-25, step O192, from its brief check `agents/reviews/O192-brief-check.md`). (1) The tests. spec.md's test rule says a test exists only as the test of an entry of `agents/guarded.md`, and a step that needs a new entry asks for it; O192's filter rule silently hides or shows projects when wrong, and no entry covers it (G92 covers only the two-hub guarantee). (a) a new entry G151, "An excluded filter value hides every project that carries it, exclude winning over include within a facet, on the project boards, the Present view, the Map (its Stage group and its pillar nodes included) and a collection page", its Code line `applyFilters`, `parseBoardState` and the press helpers in `state.ts`, `meets` in `collection/bar.ts`, `stageKeeps` in `map-bar.ts`, `filterGraph` in `graph.ts`, its test `tests/state/boards/board/exclude.test.ts`, one table per unit. Pros: the rule that decides what each board shows is held by a test. Cons: one more entry and file. (b) no test, the cases checked by quoted runs and the look. Cons: a later change can break exclude with the suite green. Recommended (a); (b) is the lazy option. (2) The help text. spec.md:72 adds a line to `docs/HELP.md` only where you rule it in, and the Project boards section says nothing about the filter bar today, so without a new line no page tells a reader that exclude exists. (a) two bullets under Project boards: "- A click on a value in a filter group's list includes it; the minus button at the row's end, or Shift+Enter, excludes it, and Alt-click excludes a slice of the second line." and "- Within a group a project is kept when it carries an included value and hidden when it carries an excluded one, an exclude winning; the groups combine, and the Present view, the Map and a collection page filter the same way."; lines 372 and 417 rewritten to stay true. (b) only lines 372 and 417 rewritten. Cons: exclude is undocumented. Recommended (a); (b) is the lazy option. (3) The "not" button's face and words: (a) it draws the minus glyph, with the tip and accessible name "Exclude <value>", and "Stop excluding <value>" on an excluded row. (b) it draws the word "not". Cons: a word per row widens every list. Recommended (a). (4) The Map's Show menu (Projects, Pillars, Team, Connected only) is drawn by the same `PickMenu.svelte`, but its rows are kinds of node, not filter values. (a) no "not" button there. (b) a "not" button there too. Cons: "exclude Pillars" is the same as unticking it, so the button adds a second way to say one thing. Recommended (a). (5) Line 2's slice chips from the keyboard, and a category head. (a) Alt+Enter or Alt+Space on a focused chip excludes it as Alt-click does; Alt-click on a category head excludes every slice of that category; a click on the head includes them as today. (b) chips excluded by the mouse only, and the keyboard reaches only the folded ones through the "+n" menu. Cons: an unfolded chip cannot be excluded from the keyboard. Recommended (a); (b) is the lazy option.
 
 
 
@@ -186,6 +187,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 784 (2026-11-25, step O192, from its brief check), closed by Axel the same day: (1) (a), (2) (a), (3) (a), (4) (a), (5) (a). (b) was the lazy option in (1), (2) and (5).
 - Open item 783 (2026-11-25, step O192, how exclude is shown), closed by Axel the same day: (1) (a), (2) (a), (3) (a). (b) was the lazy option in all three.
 - Open item 782 (2026-11-25, step O191, a group holding only the value for none, and the Venue share bar), closed by Axel the same day: (1) (a), (2) (a). (b) was the lazy option in both.
 - Open item 781 (2026-11-25, a value for none in the board filters), closed by Axel the same day: (a), step O191. (b) was the lazy option.
