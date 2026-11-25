@@ -278,3 +278,117 @@ Item 9's `diff` is against `/Users/axelfaes/workspace/oculus/.agents/worktrees/O
 ### Unverified until the look, added by the round
 
 That the bar draws none of the six hidden items; that a notification toast of the page (not part of the bar) draws nothing of this machine; that the 60 s races never cut short a load, a step or a capture that would have finished.
+
+## Repair round 2
+
+Every item of `agents/briefs/O193-round-2.md` is done. `docs/images/focus.png` does not exist yet (`ls -la docs/images` lists `explorer.png` and `projects-board.png` only): the capture command is written and not run, so the README's new image is a broken link until the look writes it. I read the landing-fixes patch and the four files it changed (`utils/shots/hub.mjs`, `page.mjs`, `shots.mjs`, `README.md`) whole before changing them. Nothing closes the right-hand floats: no step presses a float's control, so Live HPC and Usage stay drawn on all three shots.
+
+### What changed
+
+- `utils/shots/page.mjs:1-3`: the head comment names the three shots in the rail's order: the Focus page, the Projects board, the Explorer.
+- `utils/shots/page.mjs:43-47`: `SHOT_NAMES` is `{ focus: 'focus.png', board: 'projects-board.png', explorer: 'explorer.png' }`, in that order.
+- `utils/shots/page.mjs:171-188`: the new `focusSteps(config)`. It presses the rail's Focus button, whose label `railLabel(config, 'focus')` reads from `loadConfig` (`config/defaults/layout.yml:10`, `page: focus`). It then waits for a lane card in `[data-pane-view="focus"]`. The page is left in its default arrangement (`layout.yml:35-39`, one pane holding the pinned `focus` tab), and nothing opens a menu.
+- `utils/shots/page.mjs:296-301` and `317-334`: `takeShots` returns and fills `taken.focus`. It takes the Focus page first (`Taking the Focus page.`, `focusSteps`, `capture`), then the Projects board, then the Explorer. Each capture goes through the same `capture()`, so the empty-image check and the 2880 by 1800 size check cover all three.
+- The landing fix in `takeShots` split the board steps into `[rail, ...board]` and carried the comment "The floats are drawn with the workbench, so they are closed once the rail is drawn." No code there closes a float, so the comment was wrong. It is gone, and the board's steps are one loop again (`page.mjs:331`). The floats stay drawn, as ruled.
+- `utils/shots/shots.mjs:1-13` and `24-33`: the head comment names the three files. It now says the captures are moved only once all three are written, so a failed run never leaves a mixed set, and that exit 0 needs all three files. Item 7 is rewrapped at 100 columns.
+- `utils/shots/shots.mjs:114-117`: the doc comment of `placeShots` speaks of the set. `placeShots` already copies every entry of `SHOT_NAMES` under a name of its own and renames them all only after every copy is written, so it covers the third file with no code change.
+- `utils/shots/shots.mjs:242` and `278`: the comment of `run` says three files, and the closing line is `Wrote <a>, <b>, <c>.`.
+- `utils/shots/scratch.mjs:9`: "the three captures".
+- `README.md:38`: under "What it shows", after "Each button on the rail at the left opens a page:" and before its list:
+
+  `![The Focus page in oculus's Dark Modern theme, listing what wants attention in the made-up demo hub: its command center of deadlines and dates, its tasks, the work awaiting a response, and its projects as cards on the lanes of their stages.](docs/images/focus.png)`
+- `README.md:85`: "`npm run docs:shots` takes the three screenshots of this README again ...". Nothing else in the README changed.
+
+### The Focus element waited on, and why it shows the drawn state
+
+The command waits for `[data-pane-view="focus"] [data-card]`, a card on a lane, which `lanes/LaneCard.svelte:207-215` draws with `data-card={project.id}`.
+
+`views/boards/focus/Focus.svelte:143-152` works out the whole board as `page` only once the portfolio snapshot is in hand; until then `page` is null. Until then the lanes get `items={page?.sections.lanes ?? {}}` (line 391) and draw no card, and the board draws the message of a board with no project (`Empty`, lines 385-387). Every other section (command center, tasks, awaiting box, band) reads the same `page`. So a lane card is the first element that exists only once the board is drawn with the copy's records rather than the empty or loading board.
+
+The demo copy has projects at stages the lanes take (`in-prep`, `revision`, `submit-ready`, `submitted`, `scoping`, `nascent`, from `grep -n "stage:" tests/fixtures/hubs/demo/projects/*/*/project.yml`), so the card does come.
+
+Not verified until the look: whether the lanes sit inside the first 900 CSS pixels of the page. The card is waited on in the page, not on screen, and the alt text names the lanes; if the capture shows only the upper sections, the alt text needs that change.
+
+### Item 2: what the Focus page draws that is not the copy's
+
+What would draw this machine or its user. Each draws nothing on the copy, because its source is empty under the scratch HOME or the copy lacks it, so no workspace setting is needed for it:
+
+| What | Drawn by | Why it draws nothing |
+| --- | --- | --- |
+| Mail: the inbox count of Needs attention and its line of email threads | `CommandCenter.svelte:86-88` (`attention(..., actionable(), ...)`), threads at `175-190`; `state/feeds/feeds.ts:88` | The mail accounts are the machine's: the `mail` key of the primary hub's `.oculus/local.yml` (default no accounts, `server/root/process/context/machine-defaults.ts:49`) and the notes under `~/.oculus/mail` (`server/accounts/connect/store.ts:75-76`, `homedir()`). The copy has no `local.yml` (`ls tests/fixtures/hubs/demo/.oculus` lists `config.yml` and `data` only), and HOME is the scratch HOME. |
+| The Inbox refresh line, with its days since the triage notes ran | `CommandCenter.svelte:90-93`, `feeds.ts:145-150` | It needs the machine's triage-notes date (null under the scratch HOME) and an offered update task. `update_tasks` is `[]` in `config/defaults/sources.yml:64`, and the copy's config sets none. |
+| The live HPC pill on the command center's heading row | `CommandCenterView.svelte:136-138` (`pillText()`) | It is drawn only while a cluster's running and pending sum is not empty; the copy's `slurm:` block is removed, so nothing is polled. |
+| "Mine only" and the Role checklist of the Filter | `Focus.svelte:132` and `293` (`selfPeople()`), `FocusFilter.svelte:77-93` | `self` is a key of the primary hub's `local.yml`, which the copy lacks. The list is a menu, and no menu is open on the shot. |
+| The LinkedIn cadence line | `CommandCenter.svelte:226-232`, `feeds.ts:90-94` | The copy has no LinkedIn feed (`feeds.linkedin` is absent), so `daysSince` is null. |
+| The rail's badges for Inbox and the Session list | `config/defaults/layout.yml:311` and `318` (`rail: true`) | Under the scratch HOME both count 0, so no badge is drawn. |
+| The Usage float on the right | the float the user ruled stays drawn | It reads the agents' usage accounts. Under the scratch HOME there are none. It is kept by the ruling, not hidden. |
+
+No clock and no calendar are drawn on the Focus page: no element of `views/boards/focus/` reads a calendar, and `clock.minuteNow()` (`Focus.svelte:102`, `116`) is used only as today's date for the countdowns below.
+
+What draws the day of the run, because `now` is today (`Focus.svelte:116`) and changes from day to day:
+
+| What it draws | Drawn by |
+| --- | --- |
+| Which dated rows the command center lists, and which of them are Overdue. A row is listed when its date falls inside `deadline_horizon_days: 90`, `leads_horizon_days: 21` or `conf_horizon_months: 1` (`config/defaults/behavior.yml:119-121`) counted from today. | `Focus.svelte:143-152` (`focusPage(snapshot, config, now, ...)`) |
+| The tail of each command-center row: "N days overdue" for a project, funding or other entry, and "in N days" for a submission, funding deadline, conference call or other entry | `CommandCenter.svelte:113-137` (`overdueTail`, and the line after it that words a date ahead) |
+| A task row's tail, "in 3d" or "3d ago", and its tone | `Tasks.svelte:6` and the shared row maker in `rows.ts` |
+| A lane card's deadline badge: overdue by N days (red), due in N days (amber, within `DEADLINE_SOON`), else the date itself | `lanes/Lanes.svelte:117-127`, and the card's facts `laneFacts(..., now)` at line 236, which give the days since `submitted` at a stage that pauses the countdown |
+| A band card's countdown (Funding, Jobs, Teaching) | `Band.svelte:94-96` (`daysUntil(item.deadline, now)`) |
+
+The demo fixture's dates are fixed, so these words and the set of rows change with the day the command runs. No workspace option fixes today's date, so they cannot be held still by a setting.
+
+### Verify, after the round's last change
+
+The round's last check list ran once, from the worktree root, with `taskpolicy -b nice -n 19`, `--maxWorkers 2`, and `TMPDIR` and `GIT_CEILING_DIRECTORIES` set to `.agents/scratch/tmp`. The ASCII check and the size and folder checks include `utils/shots/*`. Before the list, `npx prettier --write utils/shots` ran once and changed nothing. Output as printed:
+
+```
+== 1
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+== 2
+exit=0
+== 3
+exit=0
+== 4
+exit=0
+== 5
+size exit=0
+folder exit=0
+== 6
+ Test Files  3 passed (3)
+      Tests  18 passed (18)
+== 7
+1795649318963 COMPLETED 4689 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+== 8
+exit=0
+== 9
+exit=0
+diff exit=0
+Unused exports (226)
+== 10
+exit=1
+```
+
+`.agents/scratch` is removed (`ls .agents/scratch`: no such file). No process of mine runs: `ps -ef | grep -E "[v]itest|[k]nip|[s]velte-check" | wc -l` prints 0.
+
+### Files with their new line counts (`wc -l`)
+
+| File | Lines |
+| --- | --- |
+| `utils/shots/page.mjs` | 340 |
+| `utils/shots/shots.mjs` | 300 |
+| `utils/shots/scratch.mjs` | 141 |
+| `utils/shots/hub.mjs` | 331 (unchanged by this round) |
+| `utils/shots/server.mjs` | 128 (unchanged) |
+| `utils/shots/programs.mjs` | 84 (unchanged) |
+| `README.md` | 127 |
+
+### For the look
+
+The command now prints `Taking the Focus page.` before `Taking the Projects board.` and `Taking the Explorer.`, and ends with `Wrote <root>/docs/images/focus.png, <root>/docs/images/projects-board.png, <root>/docs/images/explorer.png.`.
+
+`focus.png`, 2880 by 1800, should show the Focus page in Dark Modern, with the right-hand floats drawn and no menu open. Not verified until the look:
+- that no section shows anything of this machine;
+- what part of the board fits the window;
+- that the alt text matches the picture.
