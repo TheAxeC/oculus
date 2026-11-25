@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O193
-  landing: preparing
-  brief_check: "running: ac32c8c7d99fe4d01"
+  base: b4c4dd9d9
+  worktree: .agents/worktrees/migration-O193
+  executor: agent
+  worker: ordo-high on opus (claude-opus-5-5)
+  session_id: a204168451b37a205
+  launched: 2026-11-25, on rulings README screenshots, 785, 786 and 787
+  report: agents/reviews/O193-report.md
+  round: 0
+  landing: not-started
+  brief_check: agents/reviews/O193-brief-check.md (ac32c8c7d99fe4d01, claude-opus-5-5, 209538 tokens, 57 tool uses, 627 s)
 ```
 
 ## The standing demands (from Axel, in force)
