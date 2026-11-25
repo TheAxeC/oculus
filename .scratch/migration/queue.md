@@ -1,4 +1,4 @@
-In flight (1 of 6 slots in use): O190 (the date a paper was submitted, on its cards), prepared, its builder next.
+In flight (1 of 6 slots in use): O190 (the date a paper was submitted, on its cards), building.
 
 Queued, in order (0 steps): none. Owed: `~/Applications/oculus.app` built again from O190 and replaced (ruling App rebuild after O190), with no GitHub release.
 
