@@ -1,4 +1,4 @@
-In flight (1 of 6 slots in use): O192 (exclude in the board filters), its builder running.
+In flight (1 of 6 slots in use): O192 (exclude in the board filters), its repair round 1 running.
 
 Queued, in order (0 steps): none. Owed: none; the app was built from O191 and replaced on 2026-11-25.
 
