@@ -380,7 +380,7 @@ The keys of `project.yml` are the fields of `config/schemas/manifest-schema.yml`
 | `domain`, `pillars`, `funding`, `datasets`, `compute` | the domain, research lines, grants, datasets and resources the project names |
 | `lead`, `collaborators`, `supervisors` | people keys; a project naming no lead is a finding |
 | `waiting-on`, `related` | people or projects it waits on, and the projects it builds on or feeds |
-| `deadline`, `snooze` | the next deadline, and the day before which the project stays off the ticker |
+| `deadline`, `submitted`, `snooze` | the next deadline, the day the paper was last submitted to the venue that holds it now (drawn with the days since on its cards while the stage carries `pauses_countdown`), and the day before which the project stays off the ticker |
 | `followup`, `subtasks` | the follow-up notes and the checklist, written from the project's card |
 | `code_availability.*` | the code deposit: `status`, `date`, `url`, `doi`, `repo`, `description`, `homepage`, `topics`, `visibility`, `anonymize`, `review_link`, `zenodo_status`, `zenodo_date` |
 | `repository.*` | the repository on its remote: `url`, `visibility`, `description`, `homepage`, `topics`, `date` |
