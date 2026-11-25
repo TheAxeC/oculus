@@ -1,4 +1,4 @@
-In flight (0 of 6 slots in use): none. O191 (a value for none in the board filters) landed 2026-11-25.
+In flight (0 of 6 slots in use): none. O192 (exclude in the board filters) stopped at its /spec on open item 784.
 
 Queued, in order (0 steps): none. Owed: none; the app was built from O191 and replaced on 2026-11-25.
 
