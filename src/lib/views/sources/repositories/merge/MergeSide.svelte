@@ -16,7 +16,7 @@
     // would sit and tints none. A conflict already settled says how, and one still open has its
     // line marked in the conflict colour, so the reader sees at a glance which are left.
     import Editor from '$lib/ui/controls/editor/Editor.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

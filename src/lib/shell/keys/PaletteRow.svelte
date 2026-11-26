@@ -36,7 +36,7 @@
     // and does nothing more.
 
     import { Command } from 'bits-ui';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FileIcon from '$lib/ui/display/FileIcon.svelte';
 
     let { row }: { row: ResultRow } = $props();

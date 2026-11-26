@@ -53,7 +53,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';
     import FrameSlot from '$lib/ui/tabs/FrameSlot.svelte';
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';

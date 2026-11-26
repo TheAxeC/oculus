@@ -34,7 +34,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { CommitHow } from '$lib/state/sources/repositories/repositories.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import {

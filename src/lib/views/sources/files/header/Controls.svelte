@@ -8,7 +8,7 @@
     // are none.
 
     import { followsSession, withFollow, withFollowPin } from '$lib/state/sources/fs';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

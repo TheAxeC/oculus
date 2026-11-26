@@ -68,7 +68,7 @@
 </script>
 
 {#snippet meta()}
-    <Tag label={projectCount(projects.length)} />
+    <Tag label={projectCount(projects.length)} titled />
 {/snippet}
 
 {#snippet text()}

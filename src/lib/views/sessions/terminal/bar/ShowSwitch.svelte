@@ -6,7 +6,7 @@
     // in force is drawn pressed. Each is a ToolButton of its own rather than a Segment, since Live
     // is disabled while the session has no terminal and a Segment has no disabled item.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
 

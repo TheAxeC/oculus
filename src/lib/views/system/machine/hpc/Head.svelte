@@ -12,7 +12,7 @@
     // drawn in its place while the poll fails, reads the same wait, and a head drawn again while a
     // press waits turns until the answer.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
     import {

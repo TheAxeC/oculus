@@ -22,7 +22,7 @@
     // this section's own, and the log's tail turns while it runs: the answer of a read that a later
     // one replaced, or whose box was closed while it ran, is dropped, a press while that log is
     // read sends nothing, and a read that fails leaves the box saying so.
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Head from './Head.svelte';
     import Capacity from './Capacity.svelte';

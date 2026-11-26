@@ -13,7 +13,7 @@
     // A row has the height of a session row: the kind's glyph, the title, its stamp at the right
     // and Stop, with the terminal's folder as its hover words.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';

@@ -13,7 +13,7 @@
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { keyTip, sortWords, stateWords, typeWords } from './words';
     import {
         DOC_TYPES,

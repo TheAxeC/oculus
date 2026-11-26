@@ -28,7 +28,7 @@
     import SuggestInput from '$lib/ui/forms/choice/SuggestInput.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FieldControl from './FieldControl.svelte';
     import LabelRows from './LabelRows.svelte';
     import {

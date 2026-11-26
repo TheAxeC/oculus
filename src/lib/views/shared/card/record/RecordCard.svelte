@@ -100,7 +100,7 @@
         ontitle?: () => void;
         /** The record whose hub the meta row names. */
         record?: { root?: string };
-        /** The hover words of the whole card, where its title is cut from a longer one. */
+        /** The hover words of the card's title, where it is cut from a longer one. */
         tip?: string;
         /** The menu's accessible name. */
         label?: string;
@@ -316,8 +316,20 @@
 {/snippet}
 
 {#snippet face()}
-    <div class="slot" title={tip}>
-        <Card {id} {cursor} {title} {titleHtml} {heading} {tone} {pinned} {ring} {ontitle} fill>
+    <div class="slot">
+        <Card
+            {id}
+            {cursor}
+            {title}
+            {titleHtml}
+            {heading}
+            {tone}
+            {pinned}
+            {ring}
+            {ontitle}
+            {tip}
+            fill
+        >
             {#snippet meta()}
                 <RootChip {record} />
                 {@render kindMeta?.()}

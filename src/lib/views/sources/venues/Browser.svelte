@@ -32,7 +32,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import AddAsk from '$lib/views/shared/forms/entry/AddAsk.svelte';
     import { browserHitAsk, type Ask } from '$lib/views/shared/forms/entry/entry-add';
     import { routeBody } from '$lib/state/feeds/literature/answers';

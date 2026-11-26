@@ -6,7 +6,7 @@
     // words and its refresh are in the pane's bar (ConnectorHead.svelte).
 
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

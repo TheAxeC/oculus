@@ -36,7 +36,7 @@
     // no line and mounts no card in it, and it draws when a scroll brings it near. An empty query
     // ends a row's picks wherever it stands.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { plural, t } from '$lib/state/shared/words/text';
     import {
         applyEdit,

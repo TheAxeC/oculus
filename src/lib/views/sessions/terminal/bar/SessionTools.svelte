@@ -3,7 +3,7 @@
     // TerminalActions.svelte: Lock, drawn while a terminal with a session shows, which leaves the
     // box and every grid of the tab read-only, and Jump to the last turn while Transcript shows.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

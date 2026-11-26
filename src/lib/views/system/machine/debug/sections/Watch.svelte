@@ -6,7 +6,7 @@
     // itself, Enter or leaving the box keeps it, Escape drops it, and an edit left empty removes
     // the expression.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import NameField from '$lib/ui/tree/row/NameField.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';

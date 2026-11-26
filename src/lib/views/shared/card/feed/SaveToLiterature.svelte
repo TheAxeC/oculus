@@ -13,7 +13,7 @@
 
     import { untrack } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { focusIsFree, focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import type { LiteratureSave } from './literature-save.svelte';

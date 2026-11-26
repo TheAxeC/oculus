@@ -26,7 +26,7 @@
     // end-of-deck line and the notes are read off a `Surface`.
 
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import {
         clockText,
         timerElapsed,

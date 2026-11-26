@@ -32,7 +32,7 @@
     import SubHead from '$lib/ui/controls/heads/SubHead.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
     import { openTarget } from '$lib/state/system/config/config-files';
     import { sourceTabState } from '$lib/state/sessions/source/draft';

@@ -12,7 +12,7 @@
     // (ui/controls/heads/GroupHead.svelte), headed with their count and folded under the key
     // `hosts` in the pane's state (views/shared/card/pane-fold.ts).
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';

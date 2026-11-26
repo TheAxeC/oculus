@@ -41,7 +41,7 @@
     // several buttons of the linter item share its width, each ending in an ellipsis.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

@@ -33,7 +33,7 @@
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FoldRun from '$lib/ui/frame/toolbar/FoldRun.svelte';
     import PickMenu from './PickMenu.svelte';
     import {

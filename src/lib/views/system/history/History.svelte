@@ -49,7 +49,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import { hasText, plural, t } from '$lib/state/shared/words/text';
     import { instanceText } from '$lib/state/workbench/layout';

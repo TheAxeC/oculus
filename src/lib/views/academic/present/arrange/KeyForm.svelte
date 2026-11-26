@@ -13,7 +13,7 @@
     // (MultiSelect.svelte) takes every Escape.
 
     import type { Snippet } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { KeyEdit } from '$lib/state/life/arrange';
     import type { KeyWorkOf } from './arrange.svelte';

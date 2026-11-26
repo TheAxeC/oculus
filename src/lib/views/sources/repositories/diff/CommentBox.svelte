@@ -9,7 +9,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { commentKey } from '$lib/state/sources/repositories/review-comment';
     import { t } from '$lib/state/shared/words/text';
 

@@ -14,7 +14,7 @@
     // answer, the section shows Live HPC's reason.
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';

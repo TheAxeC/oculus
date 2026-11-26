@@ -16,7 +16,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import {
         groupKey,
         membersByStage,
@@ -102,7 +102,7 @@
                     {#each membersByStage(group) as kind (kind.stage)}
                         <div class="kind" data-project-kind={kind.stage}>
                             {#if group.stage === undefined && kind.stage !== ''}
-                                <Tag label={kind.stage} />
+                                <Tag label={kind.stage} titled />
                             {/if}
                             {#each kind.members as member (member.id)}
                                 <span class="member">

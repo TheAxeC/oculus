@@ -37,7 +37,7 @@
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import Branches from '../refs/Branches.svelte';
     import Changes from '../changes/Changes.svelte';

@@ -31,7 +31,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';

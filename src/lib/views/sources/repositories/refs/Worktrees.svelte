@@ -40,7 +40,7 @@
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { DiffSubject } from '$lib/state/sources/repositories/diff/subject';
     import {
         ignoreRule,

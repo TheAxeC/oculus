@@ -12,7 +12,7 @@
 
     import { onMount } from 'svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
     import { createHtmlMemo, provideHtmlMemo } from '$lib/ui/html/html';

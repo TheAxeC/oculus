@@ -20,7 +20,7 @@
     // The items are written in the order they are drawn, left to right, the blame first and the
     // language mode last, so the Tab key walks them as they are read.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import LanguageItems from './LanguageItems.svelte';

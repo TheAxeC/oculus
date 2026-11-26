@@ -5,7 +5,7 @@
     // and within the matched rows, the groups keeping their place. The table primitive draws one
     // sorted body, so this draws its own bodies and takes its ordering from the primitive's
     // `order`.
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { order } from '$lib/ui/display/table/table-rows';
     import { humanSize } from '$lib/state/boards/board';
     import { stamp } from '$lib/state/shared/words/format';

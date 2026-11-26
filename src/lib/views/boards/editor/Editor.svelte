@@ -57,7 +57,7 @@
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import EntryForm from '../../shared/forms/entry/edit/EntryForm.svelte';
     import { usePaneFold } from '../../shared/card/pane-fold';
     import { editorRecord, editorTarget, recordWords } from './editor-target';

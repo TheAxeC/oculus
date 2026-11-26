@@ -6,7 +6,7 @@
     // name shows the Repository scope of that folder, where its languages are set; no line opens
     // the file.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { repoOrigins } from '$lib/state/system/config/editors/origins';

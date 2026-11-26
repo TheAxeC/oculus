@@ -11,7 +11,7 @@
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

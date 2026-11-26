@@ -88,9 +88,9 @@
 </script>
 
 {#snippet meta()}
-    <Tag label={posted ? number : t('linkedin.idea_tag')} />
+    <Tag label={posted ? number : t('linkedin.idea_tag')} titled />
     {#if entry.category !== ''}
-        <Tag label={entry.category} />
+        <Tag label={entry.category} titled />
     {/if}
     {#if entry.date !== ''}
         <span class="date">{entry.date}</span>

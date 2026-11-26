@@ -7,7 +7,7 @@
     // and the other way around, and every grid shares its size as every transcript body shares its
     // own.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { gridFontSize, transcriptFontSize } from '../terminal-list';

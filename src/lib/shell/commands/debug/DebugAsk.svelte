@@ -7,7 +7,7 @@
     // holds the one question; a yes or a no is handed back to it.
 
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

@@ -7,7 +7,7 @@
     // arrow keys, Home and End move the choice and the focus together (`segmentMove`).
 
     import { segmentMove, segmentStop, type SegmentItem } from './segment-items';
-    import ToolButton from '../ToolButton.svelte';
+    import ToolButton from '../tool-button/ToolButton.svelte';
 
     type Props = {
         items: SegmentItem[];

@@ -22,7 +22,7 @@
     import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Progress from '$lib/ui/display/meters/Progress.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { Chord, TreeNav } from '$lib/ui/tree/tree-keys';

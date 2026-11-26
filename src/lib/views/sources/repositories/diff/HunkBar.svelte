@@ -18,7 +18,7 @@
 
     import type { Attachment } from 'svelte/attachments';
     import { untrack } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ActionStrip, { type StripAction } from '$lib/ui/tabs/ActionStrip.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import {

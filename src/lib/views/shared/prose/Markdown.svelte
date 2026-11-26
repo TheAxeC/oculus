@@ -41,7 +41,7 @@
     // with the contexts of this component, and taken away when the document is drawn again.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { sanitise, type MathSlots } from '$lib/ui/html/html';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

@@ -9,7 +9,7 @@
 
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { plural, t } from '$lib/state/shared/words/text';
     import { tickedRows, type FixView } from './tree/control/fixing.svelte';
 

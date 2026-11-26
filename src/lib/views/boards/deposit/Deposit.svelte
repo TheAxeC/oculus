@@ -51,7 +51,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { MirrorState, Plan } from '$lib/state/system/deposit.svelte';
     import { plural, t } from '$lib/state/shared/words/text';
     import { stateRecord } from '$lib/state/workbench/layout';

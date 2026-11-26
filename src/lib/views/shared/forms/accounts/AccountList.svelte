@@ -21,7 +21,7 @@
     import RemoveAccount from './RemoveAccount.svelte';
     import RootChip from '../../card/RootChip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
     import {

@@ -7,7 +7,7 @@
     // is drawn in the error box; any other message is one row, the words on the left and the close
     // control on the right, so the line covers one row of the tree.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { t } from '$lib/state/shared/words/text';

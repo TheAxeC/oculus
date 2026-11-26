@@ -4,7 +4,7 @@
     // which opens the box that asks the new entry's name (AddAsk.svelte). The Collection, Venues,
     // Data, Pillars, Domains, Leads and Lit Watch views each carry it in their header toolbar.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

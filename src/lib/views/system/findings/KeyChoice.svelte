@@ -6,7 +6,7 @@
     // finding goes once the hub is read again. A refusal is shown under the pick as its sentence.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { writeKeyChoice, type KeyChoice } from '$lib/state/boards/collection/key-choice';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

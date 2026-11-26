@@ -11,7 +11,7 @@
     // the label is free text and every keystroke goes out.
 
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { blankRow, type Row } from '$lib/state/forms/record-values';
     import { t } from '$lib/state/shared/words/text';
 

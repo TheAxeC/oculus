@@ -10,7 +10,7 @@
     // missing one ticked. Escape and a press on the ground cancel.
 
     import Modal from '$lib/ui/frame/Modal.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { MakeGroup as Group, MakeView } from '../control/making.svelte';
     import MakeGroup from './MakeGroup.svelte';

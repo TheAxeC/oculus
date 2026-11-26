@@ -14,7 +14,7 @@
     // the three actions of a refused Save. It is drawn inside the row of save/SourceNote.svelte.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { diffState } from '$lib/state/sources/repositories/diff/subject';
     import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
     import { t } from '$lib/state/shared/words/text';

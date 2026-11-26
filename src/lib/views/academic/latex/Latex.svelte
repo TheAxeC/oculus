@@ -30,7 +30,7 @@
     import { onMount } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
     import { instanceMap } from '$lib/state/workbench/layout/instance';
     import { fileTabState, openInBrowserTab } from '$lib/state/workbench/navigation/pages';

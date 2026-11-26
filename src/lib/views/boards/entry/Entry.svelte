@@ -52,7 +52,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import EntryFolder from './EntryFolder.svelte';
     import LeadCard from '../../shared/card/feed/LeadCard.svelte';
     import RadarCard from '../../shared/card/feed/RadarCard.svelte';

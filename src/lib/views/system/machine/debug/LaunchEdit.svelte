@@ -9,7 +9,7 @@
     // keeps the form open and says which.
 
     import Prompt from '$lib/ui/forms/Prompt.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { PromptField, PromptRequest } from '$lib/ui/forms/prompt';
     import {
         launchChanges,

@@ -75,7 +75,7 @@
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Controls from './header/Controls.svelte';
     import Filters from './header/Filters.svelte';

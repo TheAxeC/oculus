@@ -5,9 +5,13 @@
     // `checked` is what makes an exclusive group possible without a second component: given it, the
     // button reports itself as a radio and says whether it is the chosen one, which is what
     // Segment.svelte needs and a lone button does not.
+    //
+    // What the button shows inside its box, the glyph or the picture and then the words, is
+    // ToolFace.svelte beside it; this file holds the button, its tooltip and the rules each variant
+    // draws its box by.
 
-    import Glyph from '../display/Glyph.svelte';
-    import Tooltip from '../menu/Tooltip.svelte';
+    import Tooltip from '../../menu/Tooltip.svelte';
+    import ToolFace from './ToolFace.svelte';
     import type { ToolButtonProps as Props } from './tool-button';
 
     let {
@@ -105,34 +109,11 @@
         {onkeydown}
         {...attributes}
     >
-        {#if glyph !== undefined}
-            <Glyph name={glyph} {turning} />
-        {:else if picture !== undefined}
-            <img class="picture" src={picture} alt="" />
-        {/if}
-        {#if cell}
-            {#if children !== undefined}
-                {@render children()}
-            {/if}
-        {:else if !iconOnly}
-            {#if children !== undefined}
-                <span class="label">{@render children()}</span>
-            {:else}
-                <span class="label">{label}</span>
-            {/if}
-        {/if}
+        <ToolFace {label} {glyph} {picture} {turning} words={!iconOnly} {cell} {children} />
     </button>
 </Tooltip>
 
 <style>
-    /* A picture takes the glyph's box. */
-    .picture {
-        flex: none;
-        width: calc(var(--icon-box) * var(--text-scale, 1));
-        height: calc(var(--icon-box) * var(--text-scale, 1));
-        object-fit: contain;
-    }
-
     /* A text button, VS Code's: 12px words on a 16px line, 4px above and below and 8px beside
        them, a 1px border and the input radius, which make it 26 px high. */
     .tool {
@@ -355,6 +336,15 @@
         white-space: inherit;
     }
 
+    /* A plain button's label gives way to the room its button has, as the button gives way to its
+       parent, so what the label holds is held to the button's width: a tag inside it ends its words
+       in its own ellipsis at the button's edge. The label's words are neither cut nor kept on one
+       line by this rule, so a plain button that wraps its words wraps them, and one in running text
+       keeps the line's baseline. */
+    .tool.plain > :global(.label) {
+        min-width: 0;
+    }
+
     /* The action button of a form (VS Code's button): the width of its box, 4px above and below and
        8px beside its line, the input radius, and the accent fill. */
     .tool.primary {
@@ -407,13 +397,15 @@
     }
 
     /* Words cut to the room: the button is capped at its parent's width, and the label, the one
-       box that gives way, is one line ended with an ellipsis where the room ends. */
+       box that gives way, is one line ended with an ellipsis where the room ends. A plain button's
+       label gives way without it (the plain label's rule above), for a tag that cuts its own
+       words; `cut` is for the words the button draws itself. */
     .tool.cut {
         max-width: 100%;
     }
 
-    /* The label is named through :global so the compiler stamps no scoping class on it: every
-       button draws its label as the plain `label` class, cut or not. */
+    /* The label is named through :global, here as in the plain and the status rules, because
+       ToolFace.svelte draws it: a scoped name would match no element of this component. */
     .tool.cut > :global(.label) {
         min-width: 0;
         overflow: hidden;

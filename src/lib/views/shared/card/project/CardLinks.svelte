@@ -6,7 +6,11 @@
     // Funding, Pillar, Datasets, Team, Related and Venue, so a card with many tags is read by kind
     // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
     // draws the rest in place. A tag that is a press is a plain ToolButton in the box
-    // PressBox.svelte draws.
+    // PressBox.svelte draws. A tag longer than the room on its line goes onto a line of its own
+    // under its kind's label, where its words are cut with an ellipsis at the card's edge, and its
+    // whole words are given on hover: a press's tip has them on its first line and what the press
+    // opens on its second, and a tag with no press has them as its native title. The venue's words
+    // wrap rather than being cut, so its tip is what the press opens alone.
     //
     // The waiting kind is the project's `waiting-on:`, each value named by state/boards/waiting.ts
     // as the Focus board's strip and lane cards name it, in red with the waiting glyph on every
@@ -43,7 +47,7 @@
     // each tab stop.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import PressBox from './PressBox.svelte';
     import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
     import type { WaitedOn } from '$lib/state/boards/waiting';
@@ -194,6 +198,16 @@
     function marked(kind: Kind): boolean {
         return kind.glyphTip !== undefined && kind.glyphTip !== '';
     }
+
+    /**
+     * The tip of a pressed entry: its whole words, which its tag may cut, and under them what the
+     * press opens. An entry whose words wrap is never cut, so its tip is what the press opens
+     * alone.
+     */
+    function tipOf(kind: Kind, tag: BoardTag): string {
+        const opens = t('project.card.open_in', kind.label);
+        return kind.wrap === true ? opens : t('project.card.tag_tip', tag.label, opens);
+    }
 </script>
 
 {#if tagged}
@@ -213,6 +227,7 @@
                                 wrap={kind.wrap === true}
                                 glyphTone={kind.glyphTone}
                                 glyphTip={kind.glyphTip}
+                                titled
                             />
                         {:else if marked(kind)}
                             <span class="marked">
@@ -226,7 +241,7 @@
                                     <ToolButton
                                         plain
                                         label={tag.label}
-                                        title={t('project.card.open_in', kind.label)}
+                                        title={tipOf(kind, tag)}
                                         onclick={onpress}
                                     >
                                         <Tag
@@ -242,7 +257,7 @@
                                 <ToolButton
                                     plain
                                     label={tag.label}
-                                    title={t('project.card.open_in', kind.label)}
+                                    title={tipOf(kind, tag)}
                                     onclick={onpress}
                                 >
                                     <Tag

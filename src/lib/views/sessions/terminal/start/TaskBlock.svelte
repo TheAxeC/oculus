@@ -4,7 +4,7 @@
     // plain one. What the reader types in the prompt box below is added to the seed; the text here
     // is the server's, shown as it will be sent.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

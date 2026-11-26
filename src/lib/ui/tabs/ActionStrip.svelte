@@ -7,7 +7,7 @@
 
     import Menu from '../menu/Menu.svelte';
     import type { MenuItem } from '../menu/menu-items';
-    import ToolButton from '../controls/ToolButton.svelte';
+    import ToolButton from '../controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     /**

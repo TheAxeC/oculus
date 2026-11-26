@@ -8,7 +8,7 @@
     // it holds and a panel laid out inside it would be cut to the bar's own box.
 
     import NoticeEntry from './NoticeEntry.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { Portal } from 'bits-ui';
     import { focusIsFree } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';

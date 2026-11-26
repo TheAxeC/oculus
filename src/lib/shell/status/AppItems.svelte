@@ -6,7 +6,7 @@
     // reader hides an item from the bar's right-click menu as the bar's own items are hidden. On
     // the left the progress the apps run in the window comes first, a spinner and its words.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

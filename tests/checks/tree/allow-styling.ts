@@ -13,11 +13,11 @@ export const DELIBERATE: Styling[] = [];
 
 export const HELD: Styling[] = [
     {
-        line: 'shell/keys/PaletteRow.svelte styles .tool of ui/controls/ToolButton.svelte through .result :global(.tool)',
+        line: 'shell/keys/PaletteRow.svelte styles .tool of ui/controls/tool-button/ToolButton.svelte through .result :global(.tool)',
         why: 'the rule at src/lib/shell/keys/PaletteRow.svelte:128 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/card/CardDocs.svelte styles .tool of ui/controls/ToolButton.svelte through .doc.human :global(.tool)',
+        line: 'views/shared/card/CardDocs.svelte styles .tool of ui/controls/tool-button/ToolButton.svelte through .doc.human :global(.tool)',
         why: 'the rule at src/lib/views/shared/card/CardDocs.svelte:199 reaches into the primitive rather than asking it for the difference'
     },
     {
@@ -29,7 +29,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/links/CrossLinks.svelte:163 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/links/CrossLinks.svelte styles .tool of ui/controls/ToolButton.svelte through .member :global(.tip), .member :global(.tool)',
+        line: 'views/shared/links/CrossLinks.svelte styles .tool of ui/controls/tool-button/ToolButton.svelte through .member :global(.tip), .member :global(.tool)',
         why: 'the rule at src/lib/views/shared/links/CrossLinks.svelte:163 reaches into the primitive rather than asking it for the difference'
     },
     {

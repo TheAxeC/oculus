@@ -15,7 +15,7 @@
 
     import Modal from '../../frame/Modal.svelte';
     import TextInput from '../TextInput.svelte';
-    import ToolButton from '../../controls/ToolButton.svelte';
+    import ToolButton from '../../controls/tool-button/ToolButton.svelte';
 
     import type { Choice } from './quick-pick';
 

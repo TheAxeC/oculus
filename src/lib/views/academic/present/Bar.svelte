@@ -13,7 +13,7 @@
     // action is handed in.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import BoardBar from '$lib/views/shared/forms/bar/BoardBar.svelte';

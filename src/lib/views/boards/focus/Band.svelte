@@ -26,7 +26,7 @@
     import LaneHead from './lanes/LaneHead.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
     import { groupFold, type FoldKey } from '$lib/state/boards/focus';

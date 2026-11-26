@@ -54,7 +54,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
     import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';

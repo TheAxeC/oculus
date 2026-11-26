@@ -19,7 +19,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { draftOf, entryPath } from '$lib/state/sessions/terminal/commands.svelte';
     import type { ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
     import { t } from '$lib/state/shared/words/text';

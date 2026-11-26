@@ -32,7 +32,7 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LineForm from './LineForm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
     import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';
@@ -181,7 +181,7 @@
                         <span class="people">{names(note)}</span>
                     {/if}
                     {#if note.after !== undefined && waiting(note)}
-                        <Tag label={t('project.card.not_until', note.after)} />
+                        <Tag label={t('project.card.not_until', note.after)} titled />
                     {/if}
                     <span class="acts">
                         {#if note.done}

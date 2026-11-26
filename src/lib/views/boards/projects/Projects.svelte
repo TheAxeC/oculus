@@ -116,7 +116,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
     import CardGrid from '../../shared/card/record/CardGrid.svelte';

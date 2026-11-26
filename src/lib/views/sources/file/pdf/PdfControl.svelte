@@ -7,7 +7,7 @@
     // page's tooltip group and tooltip counter from, so this draws the group and provides the
     // counter it was given.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import TooltipGroup from '$lib/ui/menu/TooltipGroup.svelte';
     import { provideTipIds, type TipIds } from '$lib/ui/menu/tip-ids';
 

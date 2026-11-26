@@ -5,7 +5,7 @@
     // with the words of its own catalogue, so the line reads the same and the control says what it
     // widens to.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
 
     type Props = {
         /** The line: which folder the tab is limited to. */

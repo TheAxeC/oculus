@@ -5,7 +5,7 @@
     // The totals above the rows are the files, their bytes, the bytes a Fetch still needs and the
     // free space of the target's disk.
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';

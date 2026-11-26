@@ -12,7 +12,7 @@
     // dropped to land beside the whole leaf in the host's tree. The edge is measured against the
     // header's own box, so its four sides are the leaf's four sides and its middle is the top.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FoldedPane from './FoldedPane.svelte';
     import PaneView from '../PaneView.svelte';
     import SplitView from '../SplitView.svelte';

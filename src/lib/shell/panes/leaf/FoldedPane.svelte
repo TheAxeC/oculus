@@ -8,7 +8,7 @@
     // along the strip's top edge, so folding a pane never leaves the window with nothing saying
     // where a view will land.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { activeLabel } from '$lib/shell/panes/workbench-title';
     import { pageNameOf } from '$lib/state/workbench/navigation/pages';
     import { t } from '$lib/state/shared/words/text';

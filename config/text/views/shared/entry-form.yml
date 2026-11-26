@@ -17,6 +17,7 @@ text:
         label_empty: a label needs words
         label_taken: 'the label {0} is already in use'
         named_by: Named by
+        open_setting: Open this setting in Settings
         record_add: 'Add to {0}'
         record_name: '{0} name'
         record_remove: Remove

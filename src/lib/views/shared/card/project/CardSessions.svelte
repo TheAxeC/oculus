@@ -55,13 +55,20 @@
 {#if working.length > 0}
     {@const live = liveCount(working)}
     <div class="sessions">
-        <Tag label={plural('sessions.card', working.length, working.length)} />
+        <Tag label={plural('sessions.card', working.length, working.length)} titled />
         {#if live > 0}
-            <Tag label={t('sessions.card_live', live)} tone="green" />
+            <Tag label={t('sessions.card_live', live)} tone="green" titled />
         {/if}
         {#each working as entry (entry.id)}
             <span class="session">
-                <RowButton title={t('sessions.select_tip')} onclick={() => pick(entry)}>
+                <RowButton
+                    title={t(
+                        'project.card.tag_tip',
+                        entry.tool,
+                        t('project.card.tag_tip', entry.title, t('sessions.select_tip'))
+                    )}
+                    onclick={() => pick(entry)}
+                >
                     <span class="line">
                         <span class="dot" style={dotStyle(entry)}></span>
                         <Tag label={entry.tool} />

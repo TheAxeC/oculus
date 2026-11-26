@@ -58,3 +58,42 @@ None. The move into ToolFace.svelte changes no variant's look: ToolFace renders 
 - The brief's check 7 as `git grep` (outside the reviewer's three git commands; run as plain grep).
 
 Usage: a40f5b361cc792a2f, claude-opus-5-5, 215535 tokens, 67 tool uses, 1294 s
+
+## Repair round 1, refuted
+
+Reviewer over round 1, read-only, worktree `.agents/worktrees/migration-O194`, base 55fa909a3, snapshot `migration-O194-round-1/`. The delta: 11 files of `files.txt` changed (Chip, Tag, LaneCard, InboxCard, LiteratureCard, CardDocs, CardFacts, ProjectCard, Followups, Subtasks, CrossLinks), and 17 paths not listed there read as their change since the base (the four diagram files, CareerCard, LeadCard, PostCard, RadarCard, CardSessions, DatasetCard, DomainCard, LineCard, VenueCard, ArchivalCard, NoFundingCard, OrphansCard, EntryCard).
+
+Verification lines, over the 255 files the step changes (251 outside docs/): prettier "All matched files use Prettier code style!"; eslint printed nothing, exit 0; ASCII gate printed nothing; `npm run check` COMPLETED 4690 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS; size, boundaries, comment-width, history Tests 29 passed (29); folder-check exit 0; contrast Tests 56 passed (56); old-path grep exit 1; unused-exports 336 lines, diff exit 0; history-word grep exit 1; the round's extra run Tests 137 passed | 2 skipped (139); `git diff 55fa909a3 --stat -- docs` 4 files, "views to ui" 1110 -> 1112, "folder views/shared to layer ui" 263 -> 265; the report's line counts as given.
+
+The reviewer's own `grep -rn "<Tag" src/lib/views` lists 52 files; every Tag in every card file read against the builder's table matches row by row. No `titled` Tag sits inside a press or a caller's Tooltip.
+
+### Verdicts
+
+- Brief items 1 to 6: hold (2 by reading; the Literature card's second cause is for the look).
+- Round items 1 and 2: hold.
+- Cases: PILLAR containment, the narrow column and the terminal brackets not verifiable (the look); the Literature card partial (tip met, containment for the look); every other case met by reading.
+
+### Findings
+
+- Spec 1, `src/lib/views/shared/card/project/CardSessions.svelte:64-71`: the RowButton's tip has the tool ("claude") on its first line, while the cut text of the row is the session's title (`.nm`, CardSessions.svelte:116-120); a long session title cannot be read on hover. Fix: the first line is the session's title. No verdict.
+- Standards 1, `src/lib/ui/controls/Tag.svelte:13-19`: the third sentence reads as a rule for every caller, false for the Present slides, `system/machine/usage/Usage.svelte:196-208`, `sources/venues/Ribbon.svelte` and `boards/focus/Band.svelte`. Fix: open it with the card scope. No verdict.
+- Standards 2, the round's report: the builder ran `git ls-files`, which spec.md's "Where you work" forbids; the reviewer rebuilt the list from `git diff` and `find` and got the same 251 files, so no result is wrong. No verdict.
+- Behaviour 1, `src/lib/views/shared/card/project/ProjectCard.svelte:358-366` with `:440`: the new Tooltip around the stage chip sits inside RecordCard's `<div class="slot" title={tip}>` (RecordCard.svelte:319), so on a card whose label is the short title the chip shows two tips at once, the bubble and the native full title; new in the diff, and not stated in the report's visible changes. EntryCard's status chip has no double tip. No verdict.
+- The other additions (EntryCard's status chip tip, LineCard's counts tip and `tierWords`, VenueCard's "concentrated" tip, Followups, Subtasks, CrossLinks, the four diagram files, LaneCard's deadline) hold by reading.
+
+### Declined to judge
+
+- Every on-screen result (containment, the brackets, the Literature card's 4 px, the stage chip's two tips, the cut tag on its own line).
+- Whether the Usage view's account cards count as record cards.
+- Other non-Tag cut rows on the record cards beyond CardSessions's `.nm`.
+- Check 7 as `git grep` and the builder's `git ls-files` list (outside the reviewer's git commands).
+
+Usage: a10e599f9abb66762, claude-opus-5-5, 221987 tokens, 77 tool uses, 1386 s
+
+### Closed, over round 1
+
+- R1 Spec 1 (CardSessions's tip names the tool, the row cuts the title): fixed at landing, the tip is the tool, the session's title, then the hint (`CardSessions.svelte`), seen on the look with a made-up session.
+- R1 Standards 1 (Tag's third head-comment sentence reads as a rule for every caller): fixed at landing, the sentence opens with "On those cards" (`Tag.svelte`).
+- R1 Standards 2 (the builder's `git ls-files`): recorded in the booking; the reviewer's own list gave the same 251 files, so no result rests on it.
+- R1 Behaviour 1 (the stage chip's Tooltip under the card's native title): fixed at landing at its cause, together with the same double tip under the pressed tags the first run left open: the card's hover words for a cut title moved from the whole card to its title (`Card.svelte` `tip`, `RecordCard.svelte`), and LaneCard's full title from the card to its name; the look saw one tip on the stage chip and the title's words on the heading.
+- Declined points: the Usage view's account cards are no project or record card of the step; the non-Tag rows were swept on the look by a walk of every element of every card against its box, none past the card.

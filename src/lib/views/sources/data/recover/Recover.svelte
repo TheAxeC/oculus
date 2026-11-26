@@ -30,7 +30,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RecoverAccess from './RecoverAccess.svelte';
     import RecoverLog from './RecoverLog.svelte';
     import RecoverPlan from './RecoverPlan.svelte';

@@ -51,7 +51,7 @@
     import { focusIsFree } from '$lib/ui/frame/quiet-focus';
     import { type Snippet, untrack } from 'svelte';
     import TabFace from './TabFace.svelte';
-    import ToolButton from '../controls/ToolButton.svelte';
+    import ToolButton from '../controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

@@ -8,7 +8,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ConnectProvider } from '$lib/state/life/accounts';
     import { useState } from '$lib/state/client/use';

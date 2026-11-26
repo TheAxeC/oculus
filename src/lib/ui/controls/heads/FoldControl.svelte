@@ -6,7 +6,7 @@
     // draws it alike: the fold glyph of a heading, or a chevron that points right closed and down
     // open.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

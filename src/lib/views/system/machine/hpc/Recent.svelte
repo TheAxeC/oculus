@@ -10,7 +10,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import {
         efficiencyTone,
         type HpcRecent,

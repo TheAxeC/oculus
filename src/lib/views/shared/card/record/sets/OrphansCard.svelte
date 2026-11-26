@@ -38,7 +38,7 @@
 {#snippet meta()}
     <Glyph name={projects.length > 0 ? 'warn' : 'check'} />
     {#if projects.length > 0}
-        <Tag label={t('pillars.on_no_line', projects.length)} />
+        <Tag label={t('pillars.on_no_line', projects.length)} titled />
     {/if}
 {/snippet}
 

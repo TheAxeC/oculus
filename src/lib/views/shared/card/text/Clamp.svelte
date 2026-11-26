@@ -18,7 +18,7 @@
     // control; the browser draws one once it has measured a text that does not fit.
 
     import type { Snippet } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
         CLAMP_LINES,

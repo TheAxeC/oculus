@@ -8,7 +8,7 @@
     // (views/shared/card/pane-fold.ts).
 
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { hooksSnippet } from '$lib/state/sessions/hooks';
     import { t } from '$lib/state/shared/words/text';

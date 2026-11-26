@@ -29,6 +29,11 @@
     // menu and the entry's editor change them. A card draws the same fields by the same rules, its
     // labels inline before their values.
     //
+    // A tag, a chip or a press whose words can be longer than the room is cut with an ellipsis and
+    // gives its whole words on hover: a press or a chip on the first line of its tip, over what
+    // pressing it opens, and a tag with no press as its native title. A key no record has breaks
+    // onto further lines rather than being cut.
+    //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/defaults/behavior.yml names an
     // application for (a `.docx`, an `.xlsx`) is `shared/links/ProgramButton.svelte`, which hands
@@ -43,7 +48,7 @@
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Clamp from '../../../card/text/Clamp.svelte';
     import FieldMarkdown from '../../../card/text/FieldMarkdown.svelte';
@@ -179,10 +184,11 @@
 
 <!-- The control that opens one person, by their name. -->
 {#snippet personChip(key: string)}
+    {@const name = personName(portfolio(), personId(key))}
     <Chip
-        label={personName(portfolio(), personId(key))}
+        label={name}
         glyph={t('collection.person_glyph')}
-        title={t('collection.open_person')}
+        title={t('project.card.tag_tip', name, t('collection.open_person'))}
         onclick={() => openPerson(key)}
     />
 {/snippet}
@@ -197,7 +203,7 @@
                 <ToolButton
                     plain
                     label={one.label}
-                    title={t('collection.open_record')}
+                    title={t('project.card.tag_tip', one.label, t('collection.open_record'))}
                     onclick={one.open}
                 >
                     <Tag label={one.label} />
@@ -239,13 +245,13 @@
         <div class="row">
             <span class="label">{drawn.label}</span>
             {#each drawn.values as one, at (`${at}:${one}`)}
-                <Tag label={one} />
+                <Tag label={one} titled />
             {/each}
         </div>
     {:else if drawn.kind === 'chips'}
         <div class="row">
             {#each drawn.values as one, at (`${at}:${one}`)}
-                <Tag label={one} />
+                <Tag label={one} titled />
             {/each}
         </div>
     {:else if drawn.kind === 'records'}
@@ -286,7 +292,7 @@
             <Chip
                 label={drawn.values[0]}
                 glyph="goto"
-                title={t('collection.open_venue')}
+                title={t('project.card.tag_tip', drawn.values[0], t('collection.open_venue'))}
                 onclick={() => openView(venuePage.view, venuePage.state)}
             />
         </div>
@@ -300,6 +306,7 @@
                 label={due?.label ?? drawn.values[0]}
                 glyph={t('project.card.deadline_glyph')}
                 tone={due?.tone}
+                titled
             />
         </div>
     {:else}
@@ -329,7 +336,7 @@
             {:else if drawn.kind === 'pairs' || drawn.kind === 'chips'}
                 <div class="row">
                     {#each drawn.values as one, at (`${at}:${one}`)}
-                        <Tag label={one} />
+                        <Tag label={one} titled />
                     {/each}
                 </div>
             {:else if drawn.kind === 'records'}
@@ -363,7 +370,11 @@
                     <Chip
                         label={drawn.values[0]}
                         glyph="goto"
-                        title={t('collection.open_venue')}
+                        title={t(
+                            'project.card.tag_tip',
+                            drawn.values[0],
+                            t('collection.open_venue')
+                        )}
                         onclick={() => openView(venuePage.view, venuePage.state)}
                     />
                 </div>
@@ -376,6 +387,7 @@
                         label={due?.label ?? drawn.values[0]}
                         glyph={t('project.card.deadline_glyph')}
                         tone={due?.tone}
+                        titled
                     />
                 </div>
             {:else}
@@ -462,9 +474,13 @@
         min-width: 0;
     }
 
-    /* A key no record has: drawn as written, in the muted colour, and pressing it does nothing. */
+    /* A key no record has: drawn as written, in the muted colour, and pressing it does nothing. A
+       key longer than the row breaks onto further lines anywhere in it, so it stays inside the
+       card, as a field's value does; its title gives it whole. */
     .unknown {
+        min-width: 0;
         font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
+        overflow-wrap: anywhere;
     }
 </style>

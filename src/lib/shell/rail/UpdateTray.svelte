@@ -38,7 +38,7 @@
     import Modal from '$lib/ui/frame/Modal.svelte';
     import ScheduleDialog from './ScheduleDialog.svelte';
     import ScheduleList from './ScheduleList.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { LastRun, UpdateTask } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

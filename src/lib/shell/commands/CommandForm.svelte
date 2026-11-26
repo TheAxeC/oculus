@@ -14,7 +14,7 @@
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { ClientState } from '$lib/state/client/context';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

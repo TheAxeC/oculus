@@ -54,7 +54,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { allFindings, pageFindings } from '$lib/state/workbench/navigation/status';
     import { auditSearch, fileSearch } from '$lib/state/system/audit';

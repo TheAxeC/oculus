@@ -8,7 +8,7 @@
     // replace is in flight, so a second press while one is out sends nothing.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { t } from '$lib/state/shared/words/text';

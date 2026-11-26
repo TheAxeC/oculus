@@ -9,7 +9,7 @@
     // its key handler.
 
     import WorkbenchMenu from './WorkbenchMenu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

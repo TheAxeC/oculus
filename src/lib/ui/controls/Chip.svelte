@@ -185,9 +185,10 @@
     }
 
     /* A long value is cut at the chip's own edge rather than at the card's, so a column of chips
-       keeps its column and the caller's tooltip carries the whole value. The cut box is a line of
-       15px, tall enough for the letters below the line (g, p, y), and its margin gives the 4px it
-       takes over the chip's 11px line back, so the chip stays as high. */
+       keeps its column; a card gives the whole value on hover, as the first line of a toggle's
+       `title` or in a tooltip of its own around the chip. The cut box is a line of 15px, tall
+       enough for the letters below the line (g, p, y), and its margin gives the 4px it takes over
+       the chip's 11px line back, so the chip stays as high. */
     .chip .label {
         min-width: 0;
         overflow: hidden;

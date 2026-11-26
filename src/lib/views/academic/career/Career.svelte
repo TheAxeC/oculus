@@ -35,7 +35,7 @@
     // about first, naming its line, and runs once approved.
 
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';

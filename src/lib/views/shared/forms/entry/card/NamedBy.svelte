@@ -7,10 +7,12 @@
     // under the card). Each tag is a plain press in the box PressBox.svelte draws: a person opens
     // their page, a funding scheme its entry's page, and the setting opens Settings at its row
     // (`reveal`, views/system/workbench/reveal.svelte.ts). A funding scheme with no key has no page
-    // and is drawn as its words.
+    // and is drawn as its words. A name longer than the page's column is cut with an ellipsis and
+    // its whole words are given on hover: a press's tip has them on its first line and what it
+    // opens on its second, and a tag with no press has them as its native title.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import PressBox from '../../../card/project/PressBox.svelte';
     import RecordField from '../../../card/record/RecordField.svelte';
     import { pageView } from '$lib/state/forms/page-entry';
@@ -50,6 +52,20 @@
         return pageOf(fundingKey(one), one.id) === null;
     }
 
+    /**
+     * The tip of a pressed tag: its whole words, which the tag may cut, and under them what the
+     * press opens, a person's tab, the setting's row of Settings or a funding scheme's page.
+     */
+    function tipOf(one: Referrer): string {
+        const opens =
+            one.kind === 'person'
+                ? t('collection.open_person')
+                : one.kind === 'setting'
+                  ? t('entry_form.open_setting')
+                  : t('collection.open_record');
+        return t('project.card.tag_tip', words(one), opens);
+    }
+
     /** Open what a tag names, as the tab its kind has. */
     function open(one: Referrer): void {
         if (one.kind === 'person') openView('person', recordState(one.id, one.label));
@@ -68,10 +84,15 @@
         <div class="tags">
             {#each named as one (`${one.kind}:${one.id}`)}
                 {#if inert(one)}
-                    <Tag label={words(one)} />
+                    <Tag label={words(one)} titled />
                 {:else}
                     <PressBox>
-                        <ToolButton plain label={words(one)} onclick={() => open(one)}>
+                        <ToolButton
+                            plain
+                            label={words(one)}
+                            title={tipOf(one)}
+                            onclick={() => open(one)}
+                        >
                             <Tag label={words(one)} />
                         </ToolButton>
                     </PressBox>

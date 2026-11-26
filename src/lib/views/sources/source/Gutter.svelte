@@ -15,7 +15,7 @@
     // The gutter is one column of rows at the text's own line height, moved by the scroll the text
     // reports, so it stays beside its lines without scrolling itself.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { GitBlameLine } from '$lib/state/sources/repositories/repositories';
     import {
         blameStarts,

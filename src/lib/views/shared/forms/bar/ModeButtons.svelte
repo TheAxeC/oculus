@@ -4,7 +4,7 @@
     // header's toolbar. The Cards and List buttons: each is pressed while its mode is drawn, and a
     // press hands the caller that mode, which the caller keeps in its own state.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

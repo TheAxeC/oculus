@@ -10,7 +10,7 @@
     // no selection, shows the view's session again (state/workbench/selection.svelte.ts).
 
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { MenuGroup } from '$lib/ui/menu/menu-items';
     import { keepShown, pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';

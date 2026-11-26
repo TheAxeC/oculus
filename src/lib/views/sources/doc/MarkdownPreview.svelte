@@ -46,7 +46,7 @@
     import { handUp, useTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
     import { openSourceFile } from '../../shared/links/source-file';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RenderedMarkdown from '../../shared/prose/RenderedMarkdown.svelte';
     import { shareHeadings } from '../../shared/prose/rendered-headings.svelte';
     import type { RenderedHeading } from '$lib/state/system/docs.svelte';

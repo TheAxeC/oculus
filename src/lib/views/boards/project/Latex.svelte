@@ -12,7 +12,7 @@
     //
     // Over a wallpaper the panel is read off a `Surface`.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

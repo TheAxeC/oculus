@@ -4,7 +4,7 @@
     // opening the file is the reader's way out of the view rather than one of its actions, and its
     // tooltip names the path so the reader knows which file the view draws before pressing it.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { openSourceFile, type SourceFile } from './source-file';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

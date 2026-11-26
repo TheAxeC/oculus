@@ -13,7 +13,7 @@
     // the view's bar.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TerminalKind } from '$lib/state/sessions/terminals.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';

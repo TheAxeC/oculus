@@ -23,7 +23,7 @@
     // what the system's title bar does, which on macOS is its own setting: zoom, minimise or
     // nothing. In a browser the strip moves nothing and a double press does nothing.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import type { DockEdge } from '$lib/state/workbench/layout';
     import { t } from '$lib/state/shared/words/text';

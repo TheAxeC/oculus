@@ -18,7 +18,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { ALL_ROOTS } from '$lib/state/sources/search/search';
     import { t } from '$lib/state/shared/words/text';
 

@@ -5,7 +5,7 @@
     // Regions as a toggle, then a `...` menu holding Inline View, a checked item, and Refresh. It
     // draws what it is told and asks the pane to act.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

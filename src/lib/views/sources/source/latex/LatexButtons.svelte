@@ -6,7 +6,7 @@
     // binds none (editor-keys.ts `LATEX_SCOPES`). The tab hands them up with the bar's other
     // actions (actions/BarActions.svelte).
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { chordHint } from '$lib/ui/controls/editor/chords';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { t } from '$lib/state/shared/words/text';

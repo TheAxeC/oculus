@@ -10,7 +10,7 @@
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { plural, t } from '$lib/state/shared/words/text';
     import { hasModifiedFilter, withModifiedFilter } from '$lib/state/system/config/search';
 

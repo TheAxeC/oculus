@@ -3,7 +3,7 @@
     // controls repeat or close the selected tail. The tail carries the refresh glyph, which turns
     // while the log is read (`status` is `loading`), from the press until the read answers; a read
     // in flight when the cluster stops answering turns until its answer, the control disabled.
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     let {
         id,

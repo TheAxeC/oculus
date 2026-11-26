@@ -38,7 +38,7 @@
 
     import { Command, Popover } from 'bits-ui';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Unseen from '$lib/ui/display/text/Unseen.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';

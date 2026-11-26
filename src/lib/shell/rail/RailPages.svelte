@@ -19,7 +19,7 @@
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { railBadge, railInsertAt, railMenu, type RailBadge } from '$lib/shell/rail/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { railPageViews } from '$lib/state/workbench/navigation/pages';

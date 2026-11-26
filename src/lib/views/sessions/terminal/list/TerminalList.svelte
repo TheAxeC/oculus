@@ -56,7 +56,7 @@
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { reordered, showingRow } from '$lib/state/sessions/terminal/terminal-tabs';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';

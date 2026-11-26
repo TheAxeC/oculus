@@ -8,7 +8,9 @@
     // `categories:`. The collection view draws one per entry, its strip narrowed to the projects
     // the picks of its bar's Projects section keep (`keeps`), and the entry's page and a person's
     // page draw one open, so the card lives here and not under any of those views. The fields are
-    // EntryFields.svelte, which says how each field is drawn.
+    // EntryFields.svelte, which says how each field is drawn. The status chip gives its whole words
+    // in its tooltip (`project.card.chip_tip`), and the Lead badge and the not-in-list tag as their
+    // native title, since the meta row cuts a chip or a tag longer than the card.
     //
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
@@ -45,6 +47,7 @@
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RecordCard from '../../../card/record/RecordCard.svelte';
     import type { CardAction } from '../../../card/card';
     import {
@@ -287,13 +290,15 @@
 
 {#snippet meta()}
     {#if lead}
-        <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} />
+        <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} titled />
     {/if}
     {#if status !== undefined}
-        <Chip label={status} tone={statusTone(status, root)} filled />
+        <Tooltip text={t('project.card.chip_tip', status)}>
+            <Chip label={status} tone={statusTone(status, root)} filled />
+        </Tooltip>
     {/if}
     {#if stray}
-        <Tag label={t('settings.not_in_list')} tone="amber" />
+        <Tag label={t('settings.not_in_list')} tone="amber" titled />
     {/if}
 {/snippet}
 

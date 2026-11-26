@@ -4,7 +4,7 @@
     // upstream or Publish Branch for one that can be published, each write behind the question the
     // `...` menu's item asks and none offered while a write runs.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import {
         canPublish,
         noCommitYet,

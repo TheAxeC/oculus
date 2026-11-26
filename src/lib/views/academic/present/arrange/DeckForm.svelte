@@ -12,7 +12,7 @@
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import HueSelect from '$lib/ui/forms/choice/select/HueSelect.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import KeyForm from './KeyForm.svelte';
     import { createKeyWork } from './arrange.svelte';
     import { t } from '$lib/state/shared/words/text';

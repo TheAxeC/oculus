@@ -21,7 +21,7 @@
     // has ended. While no such tab has been active, the item is drawn for the build this page
     // started last while it runs, or for the step that has waited on an approval longest.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { isLatexFile } from '$lib/data/prose/latex';
     import { stamp } from '$lib/state/shared/words/format';
     import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';

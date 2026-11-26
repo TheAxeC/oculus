@@ -30,7 +30,7 @@
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
     import { workspaceCount } from '$lib/state/sources/repositories/repositories';
     import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';

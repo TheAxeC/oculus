@@ -2,7 +2,7 @@
     // Layer 3, view partial. One value the reader enters at a provider's console, drawn as code
     // with a Copy control beside it that puts it on the clipboard.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     let { value }: { value: string } = $props();

@@ -28,7 +28,7 @@
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
     import Chip from '../../controls/Chip.svelte';
     import Tag from '../../controls/Tag.svelte';
-    import ToolButton from '../../controls/ToolButton.svelte';
+    import ToolButton from '../../controls/tool-button/ToolButton.svelte';
 
     type Choice = { id: string; label: string; glyph?: string; hub?: string };
 

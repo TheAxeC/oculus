@@ -1,15 +1,20 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The box a plain press of a card sits in: a ui/ ToolButton drawn
-    // `plain` draws nothing of its own, so this box draws its look, no frame until the pointer is
-    // over it, then the chip surface. Every plain press of a project card is drawn in it: the
-    // cross-link tags of CardLinks.svelte, the DISSEMINATED IN tags of CardDetails.svelte, the
-    // compute resources and the folder of CardFacts.svelte, the domain tag of ProjectCard.svelte,
-    // and the venue of a Focus lane card (views/boards/focus/lanes/LaneCard.svelte), so the look is
-    // one rule.
+    // Layer 3, shared view partial. The box a plain press of a card or of a record's page sits in:
+    // a ui/ ToolButton drawn `plain` draws nothing of its own, so this box draws its look, no frame
+    // until the pointer is over it, then the chip surface. Every plain press of a project card is
+    // drawn in it, and the record presses of a record card and of a record's page: the cross-link
+    // tags of CardLinks.svelte, the DISSEMINATED IN tags of CardDetails.svelte, the compute
+    // resources and the folder of CardFacts.svelte, the domain tag of ProjectCard.svelte, the venue
+    // of a Focus lane card (views/boards/focus/lanes/LaneCard.svelte), the records a field names
+    // (views/shared/forms/entry/card/EntryFields.svelte) and the records that name an entry
+    // (NamedBy.svelte beside it), so the look is one rule.
     //
     // The box is as wide as what it holds, up to the line it sits on, or up to `width` where the
-    // caller gives one, as the lane card's venue is cut at its own width. `mono` sets its words in
-    // the monospace face, for the folder, the one fact of a card that names a place on disk.
+    // caller gives one, as the lane card's venue is cut at its own width. What it holds gives way
+    // to it: a plain button's label is never wider than the button
+    // (ui/controls/tool-button/ToolButton.svelte), so a tag in the press ends its words in its own
+    // ellipsis at the box's edge. `mono` sets its words in the monospace face, for the folder, the
+    // one fact of a card that names a place on disk.
 
     import type { Snippet } from 'svelte';
 

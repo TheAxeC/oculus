@@ -7,7 +7,7 @@
     // stands at the palette's level, as the name box does, so none dims the page.
 
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import { t } from '$lib/state/shared/words/text';

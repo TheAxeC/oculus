@@ -13,7 +13,7 @@
     import { SvelteSet } from 'svelte/reactivity';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import type { ClientState } from '$lib/state/client/context';
     import { t } from '$lib/state/shared/words/text';

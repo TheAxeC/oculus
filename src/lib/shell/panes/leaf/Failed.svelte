@@ -4,7 +4,7 @@
     // and a control that draws it again, as VS Code says an editor could not be opened.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

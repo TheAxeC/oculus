@@ -59,6 +59,8 @@
          * heading; a card with none draws the words as text, which is what every other card does.
          */
         ontitle?: () => void;
+        /** The hover words of the title, where the title is cut from a longer one. */
+        tip?: string;
         /** The row under the title, where chips go. */
         meta?: Snippet;
         /** The body. */
@@ -79,6 +81,7 @@
         fill = false,
         level = 3,
         ontitle,
+        tip,
         meta,
         children,
         footer
@@ -118,7 +121,7 @@
         <span class="bar"></span>
     {/if}
     <div class="face">
-        <svelte:element this={element} class="title">
+        <svelte:element this={element} class="title" title={tip}>
             {#if drawnHeading !== undefined}
                 {@render drawnHeading()}
             {:else if ontitle !== undefined && titleHtml !== undefined}

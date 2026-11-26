@@ -31,7 +31,7 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import LineForm from './LineForm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
     import type { LinePeopleFields, SubtaskTextAction } from '$lib/state/shared/stores/shapes';
@@ -193,7 +193,11 @@
                         <span class="people">{names(line)}</span>
                     {/if}
                     {#if line.deadline}
-                        <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
+                        <Tag
+                            label={line.deadline}
+                            glyph={t('project.card.deadline_glyph')}
+                            titled
+                        />
                     {/if}
                     <span class="acts">
                         {#if line.done}

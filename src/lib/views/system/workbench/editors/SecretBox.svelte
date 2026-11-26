@@ -13,7 +13,7 @@
     // set or not set and holds nothing.
 
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { scopesHere } from '../settings/scopes/context';
 

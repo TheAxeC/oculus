@@ -54,7 +54,7 @@
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import { rowWords, type TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {

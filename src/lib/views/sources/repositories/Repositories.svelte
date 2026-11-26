@@ -80,7 +80,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import Repo from './repo/Repo.svelte';
     import RepoList from './RepoList.svelte';

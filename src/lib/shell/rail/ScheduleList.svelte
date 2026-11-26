@@ -20,7 +20,7 @@
     // unsaved.
 
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

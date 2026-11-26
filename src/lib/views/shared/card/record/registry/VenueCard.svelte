@@ -262,18 +262,21 @@
 
 {#snippet meta()}
     {#if venue.quartile}
-        <Tag label={venue.quartile} tone={venueTone(venue.quartile, 'venue_ranks', words)} />
+        <Tag label={venue.quartile} tone={venueTone(venue.quartile, 'venue_ranks', words)} titled />
     {/if}
     {#if concentrated !== null}
-        <Tooltip text={t('venues.conc_tip', concentrated)} focusable>
+        <Tooltip
+            text={t('project.card.tag_tip', t('venues.conc'), t('venues.conc_tip', concentrated))}
+            focusable
+        >
             <Tag label={t('venues.conc')} tone="violet" />
         </Tooltip>
     {/if}
     {#if venue.free}
-        <Tag label={venue.free} tone={venueTone(venue.free, 'venue_costs', words)} />
+        <Tag label={venue.free} tone={venueTone(venue.free, 'venue_costs', words)} titled />
     {/if}
     {#if due}
-        <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
+        <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} titled />
     {/if}
 {/snippet}
 
@@ -319,7 +322,7 @@
 {#snippet themes()}
     <div class="themes">
         {#each venue.themes as theme (theme)}
-            <Tag label={themeWordLabel(labels, theme)} />
+            <Tag label={themeWordLabel(labels, theme)} titled />
         {/each}
     </div>
 {/snippet}

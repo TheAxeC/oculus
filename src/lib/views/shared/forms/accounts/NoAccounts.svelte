@@ -4,7 +4,7 @@
     // header's control opens.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     let { message, glyph, onadd }: { message: string; glyph: string; onadd: () => void } = $props();

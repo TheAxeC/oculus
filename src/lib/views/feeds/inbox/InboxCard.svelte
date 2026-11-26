@@ -28,7 +28,7 @@
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import FieldMarkdown from '$lib/views/shared/card/text/FieldMarkdown.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -212,10 +212,10 @@
 
 {#snippet meta()}
     {#if note.triaged}
-        <Tag label={kindLabel()} tone={kindTone(kind)} />
+        <Tag label={kindLabel()} tone={kindTone(kind)} titled />
     {/if}
     {#if accountTag}
-        <Tag label={account} />
+        <Tag label={account} titled />
     {/if}
     {#if age !== ''}
         <span class="age">{age}</span>

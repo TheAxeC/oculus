@@ -12,7 +12,7 @@
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { CodeAvailability } from '$lib/state/system/deposit.svelte';
     import { t } from '$lib/state/shared/words/text';
 

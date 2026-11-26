@@ -37,7 +37,7 @@
 
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { Portal } from 'bits-ui';

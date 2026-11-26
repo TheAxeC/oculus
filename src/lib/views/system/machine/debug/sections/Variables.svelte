@@ -9,7 +9,7 @@
     // command takes `{ sessionId, container, variable }` as VS Code's does, the container being the
     // scope and the variable carrying `variablesReference` 0 since the lists are flat.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import NameField from '$lib/ui/tree/row/NameField.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';

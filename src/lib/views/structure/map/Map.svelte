@@ -42,7 +42,7 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FilterBar from '$lib/views/shared/forms/bar/FilterBar.svelte';
     import PickMenu from '$lib/views/shared/forms/bar/PickMenu.svelte';
     import SliceLine from '$lib/views/shared/forms/bar/SliceLine.svelte';

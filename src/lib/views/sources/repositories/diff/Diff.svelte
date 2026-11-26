@@ -58,7 +58,7 @@
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { DiffCommand, EditorAction } from '$lib/ui/controls/editor/types';
     import DiffBar from './DiffBar.svelte';
     import DiffSection from './DiffSection.svelte';

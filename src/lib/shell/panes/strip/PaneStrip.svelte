@@ -53,7 +53,7 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Tabs from '$lib/ui/tabs/Tabs.svelte';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { StripShape } from './strip-shape';
     import { useStripActions } from '$lib/shell/titlebar/strip-actions.svelte';
     import { stripWraps } from '$lib/ui/tabs/tab-strip';

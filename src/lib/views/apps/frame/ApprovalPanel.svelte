@@ -23,7 +23,7 @@
 
     import type { AppRow } from '$lib/state/system/apps/apps.svelte';
     import type { AppChoice } from '$lib/state/system/apps/flows';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { plural, t } from '$lib/state/shared/words/text';
     import { addsWords, readWords, writeWords } from '$lib/state/system/apps/words';
 

@@ -15,7 +15,7 @@
     import interactjs from 'interactjs';
     import type { Attachment } from 'svelte/attachments';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

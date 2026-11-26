@@ -8,7 +8,7 @@
     // card's view shows every write's answer on.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ProgramButton from '../../../links/ProgramButton.svelte';
     import { hrefOf, hubPathsOf, isHubPath } from '$lib/state/boards/collection';
     import { opensInProgram } from '$lib/state/sources/fs';

@@ -13,7 +13,7 @@
     // files scroll under it in the pane, so it is one of the strips of `tokens.css` that paint the
     // panel solid, and the lines under it never read through its words.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FileIcon from '$lib/ui/display/FileIcon.svelte';
     import { nameOf } from '$lib/state/sources/fs';
     import { RENAMED, statusStyle } from '$lib/state/sources/repositories/repositories';

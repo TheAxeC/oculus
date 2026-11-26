@@ -14,7 +14,7 @@
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
     import { rowWords, type TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { plural, t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

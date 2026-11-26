@@ -43,7 +43,7 @@
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RootChip from '../../shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';

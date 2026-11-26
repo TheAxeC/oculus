@@ -24,7 +24,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ProjectTree from '../explorer/ProjectTree.svelte';
     import { openPage } from '../explorer/opening';
     import { humanSize, type BoardItem } from '$lib/state/boards/board';
@@ -110,7 +110,7 @@
                         />
                     </span>
                 {:else}
-                    <Tag label={doc.label} />
+                    <Tag label={doc.label} titled />
                 {/if}
             {/each}
         </div>

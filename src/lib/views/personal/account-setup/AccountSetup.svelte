@@ -37,7 +37,7 @@
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import GoogleSteps from './GoogleSteps.svelte';
     import HalfForm from './HalfForm.svelte';

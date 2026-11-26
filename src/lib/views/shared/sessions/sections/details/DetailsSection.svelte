@@ -24,7 +24,7 @@
     // keep them.
 
     import { tick } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';

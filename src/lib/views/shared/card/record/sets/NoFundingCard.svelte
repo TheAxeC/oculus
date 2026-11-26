@@ -32,7 +32,7 @@
 </script>
 
 {#snippet meta()}
-    <Tag label={String(unfunded.length)} />
+    <Tag label={String(unfunded.length)} titled />
 {/snippet}
 
 {#snippet text()}

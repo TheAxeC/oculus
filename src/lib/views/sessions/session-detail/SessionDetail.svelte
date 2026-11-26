@@ -23,7 +23,7 @@
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import SessionSections from '$lib/views/shared/sessions/sections/SessionSections.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';

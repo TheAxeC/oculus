@@ -46,7 +46,7 @@
     // card while it holds one, and its box otherwise.
 
     import { tick } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import { focusFirstQuietly } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';

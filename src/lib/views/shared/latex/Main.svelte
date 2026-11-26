@@ -10,7 +10,7 @@
     // whoever asked for it. The words of a count are held in the state until the main is built
     // again, and a refusal of a press is said as a notice.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import type { LatexMain } from '$lib/state/sessions/latex/latex-state';
     import type { LatexTarget } from '$lib/state/sessions/terminal/latex-target';

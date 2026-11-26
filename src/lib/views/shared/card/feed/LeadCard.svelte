@@ -320,9 +320,9 @@
 </script>
 
 {#snippet meta()}
-    <Tag label={key ?? t('leads.fit_none')} {tone} />
+    <Tag label={key ?? t('leads.fit_none')} {tone} titled />
     {#if expired}
-        <Tag label={status || t('leads.expired')} tone="grey" />
+        <Tag label={status || t('leads.expired')} tone="grey" titled />
     {/if}
     {#if deadline !== '' || expired}
         <span class="deadline">
@@ -341,7 +341,7 @@
     {#if country !== '' || type !== ''}
         <div class="chips">
             {#if country !== ''}
-                <Tag label={country} />
+                <Tag label={country} titled />
             {/if}
             {#if type !== ''}
                 <Tag label={type} wrap />

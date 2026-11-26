@@ -5,7 +5,7 @@
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Progress from '$lib/ui/display/meters/Progress.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { Notice } from '$lib/state/workbench/navigation/notices.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clockOf } from '../status-items';

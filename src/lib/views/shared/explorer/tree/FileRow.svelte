@@ -22,7 +22,7 @@
 
     import type { Snippet } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import {
         namePartsOf,

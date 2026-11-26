@@ -11,7 +11,7 @@
     // reset does is the layout store's resetPages over state/workbench/navigation/pages.ts's plan,
     // so the confirm names the pages the store then acts on.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import CloseQuestions from '$lib/ui/tabs/CloseQuestions.svelte';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { railPages } from '$lib/state/workbench/navigation/rail';

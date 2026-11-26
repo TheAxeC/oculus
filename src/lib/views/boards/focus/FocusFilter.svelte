@@ -20,7 +20,7 @@
     // is ui/frame/FloatingList.svelte, so the list looks as a menu's list does.
 
     import { Command, Popover } from 'bits-ui';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import FloatingList from '$lib/ui/frame/FloatingList.svelte';
     import { menuClosing } from '$lib/ui/menu/menu-items';

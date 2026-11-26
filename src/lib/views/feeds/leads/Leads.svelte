@@ -39,7 +39,7 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FeedFile from '../../shared/card/feed/FeedFile.svelte';
     import LeadCard from '../../shared/card/feed/LeadCard.svelte';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';

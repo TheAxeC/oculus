@@ -48,7 +48,7 @@
 
 {#snippet meta()}
     <Glyph name="archived" />
-    <Tag label={t('pillars.not_active', count)} />
+    <Tag label={t('pillars.not_active', count)} titled />
 {/snippet}
 
 {#snippet text()}

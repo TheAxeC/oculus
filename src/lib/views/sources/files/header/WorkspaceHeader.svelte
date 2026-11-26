@@ -10,7 +10,7 @@
     // it into the roots, and a press on it opens or closes them.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { ItemDrag } from '$lib/ui/tree/item-props';

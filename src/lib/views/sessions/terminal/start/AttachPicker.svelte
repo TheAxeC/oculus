@@ -5,7 +5,7 @@
     // workspace no root of the workspace in force holds says so and lists nothing.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import { childPath, rootHolding } from '$lib/state/sources/fs';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';

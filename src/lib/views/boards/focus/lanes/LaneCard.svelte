@@ -36,7 +36,7 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import PressBox from '$lib/views/shared/card/project/PressBox.svelte';
@@ -209,18 +209,22 @@
     data-card={project.id}
     data-cursor={current || undefined}
     draggable="true"
-    title={project.title}
     {ondragstart}
     {ondragend}
 >
     <div class="card-h">
-        <span class="name">
+        <span class="name" title={project.title}>
             <ToolButton plain cut dataCardToggle {label} onclick={onopen} />
         </span>
         <RootChip record={project} />
         {#if due}
             <span class="due">
-                <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
+                <Tag
+                    label={due.label}
+                    glyph={t('project.card.deadline_glyph')}
+                    tone={due.tone}
+                    titled
+                />
             </span>
         {/if}
         <span class="move">

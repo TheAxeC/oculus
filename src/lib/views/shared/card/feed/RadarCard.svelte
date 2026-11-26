@@ -274,10 +274,10 @@
 
 {#snippet meta()}
     {#if isNew(entry, lastRun)}
-        <Tag label={t('radar.new')} tone="violet" />
+        <Tag label={t('radar.new')} tone="violet" titled />
     {/if}
     {#if relevance !== ''}
-        <Tag label={relevance} tone={relevanceHue} />
+        <Tag label={relevance} tone={relevanceHue} titled />
     {/if}
     {#if found !== ''}
         <span class="date">{found}</span>
@@ -292,7 +292,7 @@
     {/if}
     {#if motif !== ''}
         <div class="row">
-            <Tag label={motif} />
+            <Tag label={motif} titled />
         </div>
     {/if}
     {#if note !== ''}
@@ -334,7 +334,7 @@
 {#snippet foot()}
     {#if candidate}
         <div class="row">
-            <Tag label={t('radar.new_idea_candidate')} glyph="spark" />
+            <Tag label={t('radar.new_idea_candidate')} glyph="spark" titled />
         </div>
     {/if}
 {/snippet}

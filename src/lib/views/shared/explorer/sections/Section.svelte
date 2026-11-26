@@ -14,7 +14,7 @@
     // control is shown the way every row's controls are, under the pointer or the focus.
 
     import type { Snippet } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import type { ItemDrag } from '$lib/ui/tree/item-props';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';

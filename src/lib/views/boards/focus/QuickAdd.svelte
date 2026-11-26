@@ -13,7 +13,7 @@
     // Over a wallpaper the label and the controls are read off a `Surface`.
 
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RecordPick from '$lib/views/shared/forms/dated/RecordPick.svelte';
     import type { DatedKind } from '$lib/views/shared/card/record/record-menu';
     import type { Project } from '$lib/state/boards/focus';

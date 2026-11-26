@@ -30,7 +30,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import AgentFindings from './AgentFindings.svelte';
     import AgentPickers from './AgentPickers.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';

@@ -4,7 +4,7 @@
     // approval is of the seed, the folder and the agent together, so a changed seed or another
     // folder asks again; the words the reader typed are outside it.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

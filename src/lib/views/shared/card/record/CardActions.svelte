@@ -58,7 +58,7 @@
 
     import { tick, type Snippet } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { cardRoom } from '$lib/ui/frame/card/card-room';
     import { t } from '$lib/state/shared/words/text';
     import { actionPlace, fitActions, measureGate, stripWidth } from '../card-layout';

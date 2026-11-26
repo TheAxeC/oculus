@@ -3,7 +3,7 @@
     // its file offers, which reads the file again (read-again.ts).
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { readAgain, type ReadAgain } from './read-again';
 
     let { tab }: { tab: ReadAgain } = $props();

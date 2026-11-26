@@ -12,7 +12,7 @@
     import { untrack } from 'svelte';
     import NoticeCentre from './NoticeCentre.svelte';
     import Toast from './Toast.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { Portal } from 'bits-ui';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
     import { plural, t } from '$lib/state/shared/words/text';

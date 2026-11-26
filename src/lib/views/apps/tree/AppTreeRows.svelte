@@ -5,7 +5,7 @@
     // that holds the keys hands `nav`, which the parent keeps to put the cursor on a row.
 
     import type { Attachment } from 'svelte/attachments';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import VirtualRows from '$lib/ui/tree/list/VirtualRows.svelte';

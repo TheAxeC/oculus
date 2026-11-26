@@ -1,7 +1,9 @@
-// Layer 3, primitive types. The props of ui/controls/ToolButton.svelte, kept apart from the
-// component so its file holds the markup and the styles of the variants. Every flag but `label`
-// and `onclick` is optional; the variants (`rail`, `bare`, `status`, `cell`, `plain`, `primary`,
-// `wide`) are looks of one button, each drawn by its own rules in the component.
+// Layer 3, primitive types. The props of ToolButton.svelte beside this file, kept apart from the
+// component so its file holds the markup and the styles of the variants, and ToolFace.svelte what
+// a button shows inside its box. Every flag but `label` and `onclick` is optional; the variants
+// (`compact`, `small`, `rail`, `bare`, `status`, `cell`, `plain`, `primary`, `wide`) are looks of
+// one button, and `joined` and `cut` change the look of one, each drawn by its own rules in the
+// component.
 
 import type { Snippet } from 'svelte';
 
@@ -98,7 +100,9 @@ export type ToolButtonProps = {
      * draws, as a cell's is drawn by its grid: no border, fill, padding or brackets of its own,
      * and the font, colour, case, decoration and alignment of that box. A project's name drawn
      * as a link and a tag that opens its view are each one of these inside the box that gives
-     * them their look.
+     * them their look. Its label gives way to the room the button has, so a tag it holds is held
+     * to the button's width and cuts its own words with an ellipsis; the caller's `title` then
+     * gives the tag's whole words.
      */
     plain?: boolean;
     /**
@@ -120,7 +124,8 @@ export type ToolButtonProps = {
     /**
      * Words that may be longer than the room: the button is never wider than its parent, and a
      * label that does not fit is cut with an ellipsis, so the caller gives the whole words as
-     * `title` for the tooltip. The parent is what sets the room, a flex box its width capped.
+     * `title` for the tooltip. The parent is what sets the room, a flex box its width capped. It
+     * is for the words the button draws itself: a `plain` button's label gives way without it.
      */
     cut?: boolean;
     /** A rail view id, rendered on the button for browser navigation. */

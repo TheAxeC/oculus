@@ -12,7 +12,7 @@
 
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import PeoplePicks from './PeoplePicks.svelte';
     import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';
     import { t } from '$lib/state/shared/words/text';

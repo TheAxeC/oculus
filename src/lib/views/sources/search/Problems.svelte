@@ -52,7 +52,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import type { Column } from '$lib/ui/display/table/table-rows';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import { servesRoot } from '$lib/state/sources/fs-transport';

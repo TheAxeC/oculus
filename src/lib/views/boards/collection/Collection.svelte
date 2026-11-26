@@ -62,7 +62,7 @@
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';

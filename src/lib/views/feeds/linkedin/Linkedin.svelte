@@ -41,7 +41,7 @@
     import FeedFile from '../../shared/card/feed/FeedFile.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
     import PostCard from '../../shared/card/feed/PostCard.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';

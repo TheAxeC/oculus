@@ -12,8 +12,10 @@
     // strip holds Edit, the goal, the funding and the blurb are the left of the two columns of a
     // record's page, each under its small label (views/shared/card/record/RecordDetails.svelte),
     // and the card draws no strip of projects, which the row under the page's card counts. The
-    // metrics row is one Tooltip that says what its counts count, in the tab order so the keyboard
-    // reaches the words as the pointer does.
+    // metrics row is one Tooltip that says what its counts count and then gives each venue tier's
+    // tag in whole words, one to a line, since a tag longer than the card is cut; it is in the tab
+    // order so the keyboard reaches the words as the pointer does. The tag counting the projects
+    // gives its whole words as its native title.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -34,6 +36,7 @@
         isDormant,
         tierStrip,
         type Pillar,
+        type TierCount,
         type TierRow,
         type Venue
     } from '$lib/state/boards/structure/lines';
@@ -76,6 +79,8 @@
     const real = $derived(realProjects(projects, configMap(), vocabOf));
     const flight = $derived(inFlight(real, configMap(), vocabOf));
     const strip = $derived(tierStrip(real, venues, tiers, configMap(), vocabOf));
+    /** The metrics row's tip: what its counts count, then each venue tier's tag in whole words. */
+    const countsTip = $derived([t('pillars.counts_tip'), ...strip.map(tierWords)].join('\n'));
     const funding = $derived(optionalText(entry?.fields.funding));
     const tone = $derived(
         line.color === undefined ? undefined : paletteTone(line.color, rootOf(line))
@@ -94,21 +99,26 @@
         title: line.title,
         page
     }));
+
+    /** The words of one venue tier's tag: its count and its label. */
+    function tierWords(tier: TierCount): string {
+        return `${String(tier.count)} ${tier.label}`;
+    }
 </script>
 
 {#snippet meta()}
-    <Tag label={projectCount(projects.length)} />
+    <Tag label={projectCount(projects.length)} titled />
 {/snippet}
 
 {#snippet facts()}
     {#if !muted}
-        <Tooltip text={t('pillars.counts_tip')} focusable>
+        <Tooltip text={countsTip} focusable>
             <div class="metrics">
                 <strong>{flight.length} {t('pillars.in_flight')}</strong>
                 <span class="total">{projects.length} {t('pillars.total')}</span>
                 {#each strip as tier (tier.key)}
                     <Tag
-                        label={`${tier.count} ${tier.label}`}
+                        label={tierWords(tier)}
                         tone={tier.color === undefined ? undefined : toneOf(tier.color)}
                     />
                 {/each}

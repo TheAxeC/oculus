@@ -9,7 +9,7 @@
     // the card's own action.
 
     import DatedForm from './DatedForm.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
     import { addressOfId } from '$lib/state/shared/page/hubs';
     import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';

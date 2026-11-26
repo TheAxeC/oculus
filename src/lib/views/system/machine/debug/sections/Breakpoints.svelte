@@ -14,7 +14,7 @@
     // function breakpoint takes a condition and a hit condition when the adapter declared them,
     // and an exception filter that takes a condition has its own Edit Condition.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import NameField from '$lib/ui/tree/row/NameField.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';

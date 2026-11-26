@@ -10,7 +10,7 @@
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { answerWords } from '../../shared/forms/answer-words';
     import { radarFields, type RadarChoice } from '$lib/state/feeds/literature/radar';
     import type { MergedHit } from '$lib/state/feeds/literature/merge';

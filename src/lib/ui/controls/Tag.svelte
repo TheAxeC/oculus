@@ -10,12 +10,16 @@
     // the tag sits on, which is a pair tests/checks/look/contrast.test.ts measures under every
     // theme.
     //
-    // A tag that is pressed is this inside the caller's own button: the click, the title and the
-    // hover belong to the control, and what it holds is the same tag as the ones beside it. A
-    // surface that sets its tags' words in a size of its own gives that size as `--tag-text`, and
-    // one that sets its own gap and padding, as a slide does in fractions of its frame
-    // (themes/slide.css), gives them as `--tag-gap` and `--tag-pad`; else they are 4 px and 1 px
-    // above and below.
+    // A long label is cut with an ellipsis at the tag's own edge, and on a project card or a record
+    // card its whole words are given on hover by the caller. A tag that is pressed is this inside
+    // the caller's own button: the click, the title and the hover belong to the control, whose tip
+    // is where the caller gives the whole words, and what it holds is the same tag as the ones
+    // beside it. On those cards, a tag that is no press and sits in no caller's tooltip is given
+    // `titled` by its caller, so its whole words are its native title, as a card's other long rows
+    // give theirs; a tag that wraps, or has no words, takes none. A surface that sets its tags'
+    // words in a size of its own gives that size as `--tag-text`, and one that sets its own gap and
+    // padding, as a slide does in fractions of its frame (themes/slide.css), gives them as
+    // `--tag-gap` and `--tag-pad`; else they are 4 px and 1 px above and below.
     //
     // The glyph may carry a hue and words of its own, for a mark that says something the words
     // beside it do not, as a project card's Venue tag draws the venue's tier: the hue paints the
@@ -44,11 +48,28 @@
         glyphTone?: string;
         /** The words the glyph carries as its tip, already translated. Empty gives it none. */
         glyphTip?: string;
+        /**
+         * Whether the label is the tag's native title, for a tag with no press and no tooltip of
+         * its caller's around it, whose words may be cut. A pressed tag's words are its button's
+         * tip, so the default gives none, and a tag that wraps or has no words never takes one.
+         */
+        titled?: boolean;
     };
 
-    let { label, glyph, tone, wrap = false, glyphTone, glyphTip = '' }: Props = $props();
+    let {
+        label,
+        glyph,
+        tone,
+        wrap = false,
+        glyphTone,
+        glyphTip = '',
+        titled = false
+    }: Props = $props();
 
     const style = $derived(tone === undefined ? undefined : `--tone-txt: var(--c-${tone}-txt)`);
+
+    /** The native title: the whole label of a titled tag whose words can be cut, else none. */
+    const whole = $derived(titled && !wrap && label !== '' ? label : undefined);
 
     /** The custom property the glyph's own hue reaches the CSS by, as the tag's tone does. */
     const markStyle = $derived(
@@ -63,7 +84,7 @@
     const bracketed = $derived(glyph !== undefined && glyph !== '' && bracketedGlyph(glyph));
 </script>
 
-<span class="tag" class:toned={tone !== undefined} class:bracketed class:wrap {style}>
+<span class="tag" class:toned={tone !== undefined} class:bracketed class:wrap {style} title={whole}>
     {#if glyph !== undefined && glyph !== ''}
         {#if glyphTip !== ''}
             <Tooltip text={glyphTip} presentational>
@@ -106,7 +127,8 @@
     }
 
     /* A long value is cut at the tag's own edge rather than at the card's, so a run of tags keeps
-       its line and the caller's tooltip carries the whole value. */
+       its line, and on a card the whole value is given on hover: by the tip of the caller's button
+       or tooltip around the tag, or by the tag's own title where the caller gives it `titled`. */
     .tag .label {
         min-width: 0;
         overflow: hidden;

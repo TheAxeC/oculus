@@ -43,7 +43,7 @@
 
 {#snippet meta()}
     {#if hidden}
-        <Tag label={t('career.hidden')} />
+        <Tag label={t('career.hidden')} titled />
     {/if}
 {/snippet}
 

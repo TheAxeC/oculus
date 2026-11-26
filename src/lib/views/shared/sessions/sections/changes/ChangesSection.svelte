@@ -15,7 +15,7 @@
     // tracked row opens its diff as the session's, beside the pane, and on an untracked row its
     // file beside the pane.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';

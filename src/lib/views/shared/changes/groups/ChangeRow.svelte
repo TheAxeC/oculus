@@ -28,7 +28,7 @@
 
     import type { Snippet } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { Attachment } from 'svelte/attachments';

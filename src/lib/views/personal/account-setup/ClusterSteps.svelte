@@ -20,7 +20,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { ClusterSetupCluster, StepAnswer } from '$lib/state/system/machine/hpc/setup';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

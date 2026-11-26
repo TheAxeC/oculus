@@ -19,7 +19,7 @@
     //
     // The star and Open in Program are the shared row's, for a file under a served root.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { chordHint, SAVE_KEY } from '$lib/ui/controls/editor/chords';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';

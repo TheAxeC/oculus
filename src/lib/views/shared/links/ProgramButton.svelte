@@ -12,7 +12,7 @@
     // `onsaid` and the words go there; any other shows them beside the control. The caller decides
     // whether to draw it, from `opensInProgram` over the configuration the page holds.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

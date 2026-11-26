@@ -40,7 +40,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
     import { encoded } from '$lib/ui/forms/file/file-data';
     import { t } from '$lib/state/shared/words/text';

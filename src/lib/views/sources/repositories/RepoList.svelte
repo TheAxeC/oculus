@@ -44,7 +44,7 @@
     // (apps/AppSourceItem.svelte); pressing one shows it in place of a repository.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';

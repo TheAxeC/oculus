@@ -12,7 +12,7 @@
     // message line of its own. `bare` draws the star as a header icon, its words the tooltip and
     // the accessible name, and the star is filled while the bookmark is set.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { nameOf } from '$lib/state/sources/fs';
     import { bookmarkAt, markRefusal } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';

@@ -22,7 +22,7 @@
 
     import { tick, untrack } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';

@@ -6,7 +6,7 @@
     // control that clears the answer, and the next write replaces it. It takes no room of its own,
     // so no row moves under the pointer when it shows or clears.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

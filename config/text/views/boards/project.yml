@@ -143,6 +143,7 @@ text:
             stale_behind: '{0}d behind'
             stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
             stage_tip: 'Stage: {0}'
+            tag_tip: "{0}\n{1}"
             unpin: Unpin
             venue: Venue
             venue_glyph: venue

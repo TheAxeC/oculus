@@ -12,11 +12,13 @@
     //
     // DISSEMINATED IN lists the entries of the collections flagged `dissemination` that name the
     // project, each a press that opens that entry's page in the current pane
-    // (state/forms/page-entry.ts `pageView`), drawn in the box PressBox.svelte draws.
+    // (state/forms/page-entry.ts `pageView`), drawn in the box PressBox.svelte draws. A title
+    // longer than the column is cut with an ellipsis, and the press's tip gives the whole title on
+    // its first line and the collection it opens in on its second.
 
     import type { Snippet } from 'svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import type { BoardItem, Dissemination } from '$lib/state/boards/board';
     import { pageView } from '$lib/state/forms/page-entry';
@@ -132,7 +134,11 @@
                         <ToolButton
                             plain
                             label={entry.title}
-                            title={t('project.card.open_in', entry.collection)}
+                            title={t(
+                                'project.card.tag_tip',
+                                entry.title,
+                                t('project.card.open_in', entry.collection)
+                            )}
                             onclick={() => openShown(entry)}
                         >
                             <Tag label={entry.title} />

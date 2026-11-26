@@ -14,7 +14,7 @@
 
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { plural, t } from '$lib/state/shared/words/text';
     import type { ScopeFile } from '$lib/state/system/config/scopes/rows';

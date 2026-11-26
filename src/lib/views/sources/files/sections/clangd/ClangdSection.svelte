@@ -7,7 +7,7 @@
     import type { Snippet } from 'svelte';
     import Section from '$lib/views/shared/explorer/sections/Section.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { KeyRow, TreeNav } from '$lib/ui/tree/tree-keys';
     import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
     import {

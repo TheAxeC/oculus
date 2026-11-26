@@ -48,7 +48,7 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Editor from '$lib/ui/controls/editor/Editor.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import MergeSide, { type SideConflict } from './MergeSide.svelte';
     import { MergeReads } from './merge-reads.svelte';

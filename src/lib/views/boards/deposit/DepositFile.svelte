@@ -10,7 +10,7 @@
     import DiffEditor from '$lib/ui/controls/editor/diff/DiffEditor.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { CONTEXT } from '$lib/state/sources/repositories/diff/diff-hunks';
     import { languageOf } from '$lib/state/sources/fs';
     import type { FileTexts } from '$lib/state/system/deposit.svelte';

@@ -33,7 +33,7 @@
     // The items are written in the order they are drawn, left to right, the server first and the
     // linters last, so the Tab key walks them as they are read.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { ServerEntry } from '$lib/state/system/machine/lsp/lsp.svelte';

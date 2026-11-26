@@ -21,7 +21,8 @@
     // resource whose entry is not found there is drawn as the other facts are, with no press. The
     // folder and the compute resources are the presses of the row, each one tab stop and each in
     // the box PressBox.svelte draws, the folder's words in the monospace face, the one fact of the
-    // card that names a place on disk.
+    // card that names a place on disk. A press's words longer than the row are cut with an ellipsis
+    // inside its box, and its tip already holds them whole, so no line of words is added to it.
     //
     // Every other fact is wrapped in ui/menu/Tooltip.svelte with the words of its kind ("Focus
     // lane: Review", "Code: deposited"), which the pointer's rest shows. Those wrappers take no tab
@@ -37,7 +38,7 @@
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { computeGlyph, entryOpener, laneGlyph, submittedWords, wordGlyph } from '../card';
     import { useState } from '$lib/state/client/use';

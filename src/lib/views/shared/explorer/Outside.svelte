@@ -3,7 +3,7 @@
     // Folder found is outside every root, with the control that adds it as a root and, when the
     // caller gives one, the control that drops the line.
 
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

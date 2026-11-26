@@ -7,7 +7,7 @@
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
     import type { GitStash } from '$lib/state/sources/repositories/repositories';
     import { t } from '$lib/state/shared/words/text';

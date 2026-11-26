@@ -42,7 +42,7 @@
     import Ahead from '$lib/views/academic/present/screen/Ahead.svelte';
     import Stage from '$lib/views/academic/present/screen/Stage.svelte';
     import { CONTROLS, moveOf } from '$lib/views/academic/present/screen/keys';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import {
         deckLabel,
         movedKey,

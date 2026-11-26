@@ -10,7 +10,7 @@
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import { promptKey } from '$lib/state/sessions/terminal/composer/composer';
     import type { Terminal } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';

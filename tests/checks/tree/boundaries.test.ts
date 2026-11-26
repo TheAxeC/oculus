@@ -488,7 +488,7 @@ describe('layer boundaries', () => {
         };
 
         write(
-            'ui/controls/ToolButton.svelte',
+            'ui/controls/tool-button/ToolButton.svelte',
             '<button class="tool"></button>\n<style>\n    .tool {\n        color: red;\n    }\n    :global(body.wall) .tool {\n        color: blue;\n    }\n</style>'
         );
         write(
@@ -505,9 +505,9 @@ describe('layer boundaries', () => {
         );
 
         const alsoBad =
-            'shell/AlsoBad.svelte styles .tool of ui/controls/ToolButton.svelte through .strip :global(.tool:hover)';
+            'shell/AlsoBad.svelte styles .tool of ui/controls/tool-button/ToolButton.svelte through .strip :global(.tool:hover)';
         const bad =
-            'views/Bad.svelte styles .tool of ui/controls/ToolButton.svelte through .row :global(.tool)';
+            'views/Bad.svelte styles .tool of ui/controls/tool-button/ToolButton.svelte through .row :global(.tool)';
         expect(findPrimitiveStyling(dir)).toEqual([alsoBad, bad]);
         expect(findPrimitiveStyling(dir, [bad])).toEqual([alsoBad]);
     });

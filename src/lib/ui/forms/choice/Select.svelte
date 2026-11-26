@@ -19,7 +19,7 @@
 
     import { choiceGroups, isStray, type SelectChoice } from './choices';
     import Glyph from '../../display/Glyph.svelte';
-    import ToolButton from '../../controls/ToolButton.svelte';
+    import ToolButton from '../../controls/tool-button/ToolButton.svelte';
     import TextInput from '../TextInput.svelte';
     import '../../theme/field.css';
 

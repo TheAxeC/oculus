@@ -143,7 +143,7 @@
 
 {#snippet meta()}
     {#if dataset.access}
-        <Tag label={dataset.access} tone={accessTone(dataset.access, rootOf(dataset))} />
+        <Tag label={dataset.access} tone={accessTone(dataset.access, rootOf(dataset))} titled />
     {/if}
 {/snippet}
 
@@ -178,7 +178,7 @@
 
 {#snippet modality(words: string)}
     <div class="tags">
-        <Tag label={words} />
+        <Tag label={words} titled />
     </div>
 {/snippet}
 

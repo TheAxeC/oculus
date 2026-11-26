@@ -16,7 +16,7 @@
 
     import { untrack } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Tree from '$lib/views/shared/explorer/tree/Tree.svelte';
     import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';

@@ -18,7 +18,7 @@
     import { onDestroy } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import AddForm from './AddForm.svelte';
     import { copiedWords, sourceName, typeWords } from './words';
     import { routeBody } from '$lib/state/feeds/literature/answers';
@@ -168,10 +168,10 @@
 
 {#snippet meta()}
     {#each hit.sources as source (source)}
-        <Tag label={sourceName(sources, source)} />
+        <Tag label={sourceName(sources, source)} titled />
     {/each}
     {#if hit.oa}
-        <Tag label={t('literature.open')} tone="green" />
+        <Tag label={t('literature.open')} tone="green" titled />
     {/if}
     {#if hit.pdf !== undefined}
         <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is an open PDF on another site -->

@@ -8,7 +8,10 @@
     // BLOCKED and the cross-links down to the venue are the labelled lines of CardLinks.svelte. The
     // domain tag of the meta row opens the domain's page in the current pane (card.ts
     // `entryOpener`), drawn in the box PressBox.svelte draws, and is drawn with no press when the
-    // `domains` collection of the domain's own hub does not hold it.
+    // `domains` collection of the domain's own hub does not hold it. The stage chip, the domain and
+    // the deadline give their whole words on hover, since the meta row cuts a chip or a tag longer
+    // than the card: the chip in its tooltip (`project.card.stage_tip`), a press on the first line
+    // of its tip, a tag with no press as its native title.
     //
     // A board draws every card closed. The card's title, its Open project page action and Enter on
     // the keyboard cursor open the project page beside the board as the preview tab of the pane it
@@ -40,7 +43,8 @@
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import RecordCard from '../record/RecordCard.svelte';
     import CardBrief from './CardBrief.svelte';
     import { answerWords } from '../../forms/answer-words';
@@ -351,23 +355,30 @@
 
 {#snippet meta()}
     {#if item.project.stage}
-        <Chip
-            label={chipLabel(item.project.stage, rootOf(item.project))}
-            glyph={chipGlyphName(item.project.stage, rootOf(item.project))}
-            tone={item.tone}
-            filled
-        />
+        {@const stage = chipLabel(item.project.stage, rootOf(item.project))}
+        <Tooltip text={t('project.card.stage_tip', stage)}>
+            <Chip
+                label={stage}
+                glyph={chipGlyphName(item.project.stage, rootOf(item.project))}
+                tone={item.tone}
+                filled
+            />
+        </Tooltip>
     {/if}
     {#if item.domain}
         {@const ondomain = entryOpener(client, 'domains', item.domain.id)}
         {#if ondomain === null}
-            <Tag label={item.domain.label} tone={item.domain.tone} />
+            <Tag label={item.domain.label} tone={item.domain.tone} titled />
         {:else}
             <PressBox>
                 <ToolButton
                     plain
                     label={item.domain.label}
-                    title={t('project.card.open_in', t('board.facet_domain'))}
+                    title={t(
+                        'project.card.tag_tip',
+                        item.domain.label,
+                        t('project.card.open_in', t('board.facet_domain'))
+                    )}
                     onclick={ondomain}
                 >
                     <Tag label={item.domain.label} tone={item.domain.tone} />
@@ -376,7 +387,7 @@
         {/if}
     {/if}
     {#if due}
-        <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
+        <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} titled />
     {/if}
     {#if stale}
         <span title={t('project.card.stale_tip', newestDoc(), item.project.staleDays ?? 0)}>

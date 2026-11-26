@@ -49,7 +49,7 @@
     // through the session that started it.
 
     import { tick, untrack } from 'svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import { t } from '$lib/state/shared/words/text';

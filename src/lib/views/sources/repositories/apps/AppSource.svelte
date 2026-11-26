@@ -17,7 +17,7 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ToolButton from '$lib/ui/controls/tool-button/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import AppSourceGroup from './AppSourceGroup.svelte';
     import {
