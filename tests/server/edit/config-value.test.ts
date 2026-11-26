@@ -471,7 +471,11 @@ describe('a list or family written into the hub the write names', { tags: ['slow
         const made = labTarget();
         const held = hubValue(made.into.engine, made.lab, 'scan');
         const body = { kind: 'config-value', file: 'sources.yml', key: 'scan', root: LAB };
-        const stale = dispatched(made.into, { ...body, value: [{ dir: 'pictures' }], base: [] });
+        const stale = dispatched(made.into, {
+            ...body,
+            value: [{ dir: 'pictures' }],
+            base: [{ dir: 'gone' }]
+        });
         expect(refusalOf(stale, 'sources.yml:scan')).toBe(why('changed'));
         writeFileSync(join(made.lab, '.oculus', 'config.yml'), 'scan: [\n');
         const broken = dispatched(made.into, { ...body, value: [{ dir: 'pictures' }], base: held });

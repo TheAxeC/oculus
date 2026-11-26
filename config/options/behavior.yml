@@ -104,25 +104,25 @@ options:
     website.files.site:
         heading: sources
         section: Website
-        help: "The website's own file, a path relative to the website's folder, whose map at the key website.site_programs holds the research lines a paper may name. A missing file holds none. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The website's own file, a path relative to the website's folder, whose map at the key website.site_programs holds the research lines a paper may name. A missing file holds none. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit while website.folder is set. oculus names none: this is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
         empty: true
     website.files.cv:
         heading: sources
         section: Website
-        help: "The CV's file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The CV's file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit while website.folder is set. oculus names none: this is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
         empty: true
     website.files.papers:
         heading: sources
         section: Website
-        help: "The publications' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The publications' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit while website.folder is set. oculus names none: this is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
         empty: true
     website.files.industry:
         heading: sources
         section: Website
-        help: "The employer CVs' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The employer CVs' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit while website.folder is set. oculus names none: this is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
         empty: true
     website.kinds:
@@ -232,7 +232,7 @@ options:
     website.file_header:
         heading: sources
         section: Website
-        help: 'The comment line each file written for the website opens with. Empty writes no comment line.'
+        help: 'The comment line each file written for the website opens with. Empty writes no comment line. oculus names none: this is a setting of the primary hub, kept in its .oculus/config.yml.'
         control: text
         empty: true
     website.site_programs:
@@ -587,21 +587,6 @@ options:
         help: The model the hidden usage sessions are started with, passed to the Claude command line as --model.
         control: choice
         from: models
-    focus.refresh_stale_days.litwatch:
-        heading: boards
-        section: Thresholds and horizons
-        help: Days after which the Focus refresh strip prompts to refresh the literature radar, counted from meta.last_run of the radar file. A radar that has never run is prompted for while this key is present. Removing the key stops the prompt for this feed.
-        control: number
-    focus.refresh_stale_days.inbox:
-        heading: boards
-        section: Thresholds and horizons
-        help: Days after which the Focus refresh strip prompts to triage the inbox again, counted from the run date the triage skill writes at the top of triage.json under mail_dir. A note that the page's triage action writes keeps that date, so it does not reset the count, and with no run date there is no prompt. Removing the key stops the prompt for this feed.
-        control: number
-    focus.refresh_stale_days.scout:
-        heading: boards
-        section: Thresholds and horizons
-        help: Days after which the Focus refresh strip prompts to run the position scout again, counted from the newest meta.log date of the leads file. A scout that has never run gives no prompt. Removing the key stops the prompt for this feed.
-        control: number
     focus.deadline_horizon_days:
         heading: boards
         section: Thresholds and horizons
@@ -2157,8 +2142,7 @@ groups:
     website.code_statuses: "The two words of a code deposit's status the website's code links read: the published deposit and the anonymous review copy."
     website.cv_fields: "The word of each field the website's CV and its employer CVs read from the hub's records or write in their files, one word per role."
     website.cv_words: "The words a period of the website's CV prints: the twelve months, the end of a period with no end and the time and zone after an award's day."
-    focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
-    focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
+    focus: The Focus board and its command center, how far ahead each kind of date is listed, when a manifest counts as stale, and which statuses count as open or sent.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.
     slurm: The Live HPC poller, the clusters it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.
     clusters: The key Account setup makes for a cluster, its type and the path it is written to.

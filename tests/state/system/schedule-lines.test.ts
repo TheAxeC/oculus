@@ -262,6 +262,7 @@ describe('the update tasks the page offers', () => {
         note: 'openings',
         view: 'leads',
         lastRun: null,
+        nudgeAfterDays: null,
         file: FILE,
         at: 'update_tasks[0]'
     };

@@ -1,6 +1,6 @@
 # ===========================================================================
 # behavior.yml
-# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, the conventions it holds a hub's projects to (off until the hub sets them), how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, a hub's .oculus/config.yml sets the keys of the hub list (`slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `audit` and `app_settings`), and the options of config/options/behavior.yml describe every key. Nothing writes this file.
+# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, the conventions it holds a hub's projects to (off until the hub sets them), how long before a manifest counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, a hub's .oculus/config.yml sets the keys of the hub list (`slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `audit` and `app_settings`), and the options of config/options/behavior.yml describe every key. Nothing writes this file.
 # ===========================================================================
 
 
@@ -34,7 +34,7 @@ audit:
   provisional_mark: ''
   skip_folders: []
 
-# The website the primary hub's files are written into, a setting of that hub kept in its .oculus/config.yml and off here: its folder relative to the hub (folder), the command run in that folder once the files are written (cv), the sections of its publications with the papers each takes (kinds), the fields an entry of its publications writes (paper_fields) with the key a section holds its entries under (paper_list), the name of the code link (code_link_name), the words of the user's place among the authors (author_places), the two code statuses it links by (code_statuses) and the key of its own file that holds the research lines (site_programs), the CV's sections with the fields each prints (cv_sections), the career lists the CV reads (cv_lists), the fields a collection entry gives it (cv_entry_fields), the word of each field the CV reads and writes (cv_fields) and the words a CV's period prints (cv_words), of which oculus ships none, the address a DOI resolves at (doi_origin), the `section:` word of a collection schema's fields that feed the website, which a card does not draw (schema_section), and its four files, each a path relative to its folder (files): the website's own file (site) and the three the hub's files are written into (cv, papers, industry).
+# The website the primary hub's files are written into, a setting of that hub kept in its .oculus/config.yml and off here: its folder relative to the hub (folder), the command run in that folder once the files are written (cv), the sections of its publications with the papers each takes (kinds), the fields an entry of its publications writes (paper_fields) with the key a section holds its entries under (paper_list), the name of the code link (code_link_name), the words of the user's place among the authors (author_places), the two code statuses it links by (code_statuses) and the key of its own file that holds the research lines (site_programs), the CV's sections with the fields each prints (cv_sections), the career lists the CV reads (cv_lists), the fields a collection entry gives it (cv_entry_fields), the word of each field the CV reads and writes (cv_fields) and the words a CV's period prints (cv_words), the address a DOI resolves at (doi_origin), the `section:` word of a collection schema's fields that feed the website, which a card does not draw (schema_section), the comment line each written file opens with (file_header), and its four files, each a path relative to its folder (files): the website's own file (site) and the three the hub's files are written into (cv, papers, industry). oculus names none of them but doi_origin, the DOI resolver's address: every other key ships empty, so a hub that sets a folder sets its four files too.
 website:
   folder: ''
   schema_section: ''
@@ -46,7 +46,7 @@ website:
   author_places: { lead: '', supervisor: '', collaborator: '' }
   code_statuses: { deposited: '', review_copy: '' }
   doi_origin: https://doi.org/
-  file_header: "Generated by oculus from the research hub. Change the hub's files and write the website again."
+  file_header: ''
   site_programs: ''
   cv_sections: []
   cv_lists: []
@@ -94,10 +94,10 @@ website:
     projects_section: ''
   cv_words: { months: [], open_end: '', award_time: '' }
   files:
-    site: _data/website.yml
-    cv: _data/data.yml
-    papers: _data/publications.yml
-    industry: _data/industry.yml
+    site: ''
+    cv: ''
+    papers: ''
+    industry: ''
 
 
 # === The Focus board =========================================================
@@ -108,12 +108,6 @@ focus:
 
   # A manifest is stale when its `updated` date trails the newest project content by this many days.
   stale_lag_days: 1
-
-  # The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
-  refresh_stale_days:
-    litwatch: 14  # the Lit Watch update task (meta.last_run in the radar file)
-    inbox: 2  # the Inbox update task (the triage notes under `mail_dir`)
-    scout: 7  # the Scout update task (newest meta.log date in the leads file)
 
   # Look-ahead windows for each deadline class on the Focus strip.
   deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)

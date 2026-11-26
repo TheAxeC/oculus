@@ -127,6 +127,7 @@ function sessionFacts(session: GroupedSession, now: number): Fact[] {
     const message = session.hook?.message ?? '';
     return [
         fact(TITLE_FACT, t('sessions.f_title'), session.title),
+        fact('id', t('sessions.f_id'), session.id),
         fact('cwd', t('sessions.f_cwd'), session.cwd ?? ''),
         fact('branch', t('sessions.f_branch'), session.branch ?? ''),
         fact('kind', t('sessions.f_kind'), kind),

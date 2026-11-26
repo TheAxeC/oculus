@@ -9,7 +9,7 @@ import { realpathSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN } from '../../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import type { HubSnapshot } from '../../../../src/lib/data/model/index.ts';
@@ -138,7 +138,12 @@ describe('the clones of a project', () => {
             'projects/ideas/y/project.yml': 'title: Y\ntier: research\nstage: nascent\n'
         });
         plantHub(hub);
-        const { snapshot } = buildOneHub(hub, portfolioConfigFrom(MERGED), 0, []);
+        const { snapshot } = buildOneHub(
+            hub,
+            portfolioConfigFrom({ ...MERGED, scan: HUB_SCAN }),
+            0,
+            []
+        );
         placeClones(snapshot, dirs, textCatalog(MERGED));
         return snapshot;
     }

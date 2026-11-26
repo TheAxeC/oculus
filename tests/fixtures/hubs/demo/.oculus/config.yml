@@ -1,7 +1,17 @@
 # ===========================================================================
 # .oculus/config.yml
-# The demo hub's settings: the files of its records and feeds, and the cluster its jobs run on. Its domains, with their colours and labels, are .oculus/data/pillars/domains.yml's, and the theme words of its venues and datasets are the options of the `themes` field of .oculus/data/research/venues.yml and .oculus/data/research/data.yml.
+# The demo hub's settings: the folders its projects are found in, the files of its records and feeds, and the cluster its jobs run on. Its domains, with their colours and labels, are .oculus/data/pillars/domains.yml's, and the theme words of its venues and datasets are the options of the `themes` field of .oculus/data/research/venues.yml and .oculus/data/research/data.yml.
 # ===========================================================================
+
+
+# The folders its projects are found in, relative to the hub, one for each folder of projects/; the software folder is optional, so a copy without it reports nothing.
+scan:
+  - { dir: projects/ideas }
+  - { dir: projects/active }
+  - { dir: projects/manuscripts }
+  - { dir: projects/software, optional: true }
+  - { dir: projects/coauthor }
+  - { dir: projects/archive }
 
 
 # The hub's data files, one entry each, at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/. Each entry carries the fields oculus's own list gives it (config/defaults/sources.yml): the registry it is, the features that read it, its ticker category, the fields its cards are sorted by (each one the file's own schema names), its place in the view catalogue and the words of its name, glyph and line. The leads and radar files have no schema, so their entries name the field an entry is found by, `primary_key: title`.

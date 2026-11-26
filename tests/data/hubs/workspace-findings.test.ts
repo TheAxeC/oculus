@@ -22,7 +22,7 @@ describe('a folder of the workspace that holds a project manifest', () => {
             'hub/inner/.oculus/project.yml': MANIFEST,
             'hub/side-projects/site/.oculus/project.yml': MANIFEST
         });
-        const hub = plantHub(join(holder, 'hub'));
+        const hub = plantHub(join(holder, 'hub'), 'scan:\n  - { dir: side-projects }\n');
         const away = plantScratch('oculus-workspace-away-', { '.oculus/project.yml': MANIFEST });
         const workspace = workspaceWith(
             [

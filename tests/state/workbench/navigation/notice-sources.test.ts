@@ -18,6 +18,7 @@ const SCOUT: HubTask = {
     note: '',
     view: 'leads',
     lastRun: 'scout',
+    nudgeAfterDays: null,
     file: '/lab/.oculus/config.yml',
     at: 'update_tasks[0]'
 };

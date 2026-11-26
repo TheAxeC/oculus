@@ -23,6 +23,7 @@ import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { noCredentials, pagePost } from '../../fixtures/doubles.ts';
+import { HUB_SCAN, HUB_SCAN_LINES } from '../../fixtures/hubs/hub-build.ts';
 import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
 export const HOST = '127.0.0.1:8791';
@@ -119,7 +120,11 @@ export function makeTaskConfig(): TaskConfig {
     };
 }
 
-export const BASE_CHAT_CONFIG = loadConfig(engineDir()).config;
+/** oculus's defaults with the test hubs' scan rules, the settings a chat case's hub merges to. */
+export const BASE_CHAT_CONFIG: Record<string, unknown> = {
+    ...loadConfig(engineDir()).config,
+    scan: HUB_SCAN
+};
 
 export const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-1' } };
 
@@ -245,10 +250,10 @@ export function worldOf(
 }
 
 /**
- * A folder of a chat case's workspace: its name, the text of its `.oculus/config.yml` when it is a
- * hub (a folder with none is no hub), and the files it holds by their paths relative to it. Each
- * file holds the one line `planted: <name>/<path>`, so an index that holds it says which folder's
- * file it read.
+ * A folder of a chat case's workspace: its name, the settings its `.oculus/config.yml` holds after
+ * the test hubs' scan rules when it is a hub (a folder with none is no hub), and the files it holds
+ * by their paths relative to it. Each file holds the one line `planted: <name>/<path>`, so an index
+ * that holds it says which folder's file it read.
  */
 export type ChatFolder = { name: string; settings?: string; files: readonly string[] };
 
@@ -279,7 +284,7 @@ export function chatWorld(folders: readonly ChatFolder[], primary?: string): Cha
         const dir = join(root, one.name);
         expect(resolve(dir).startsWith(root + sep)).toBe(true);
         mkdirSync(dir, { recursive: true });
-        if (one.settings !== undefined) plantHub(dir, one.settings);
+        if (one.settings !== undefined) plantHub(dir, `${HUB_SCAN_LINES}${one.settings}`);
         for (const file of one.files) plantFile(dir, file, `planted: ${one.name}/${file}\n`);
         dirs.set(one.name, dir);
     }

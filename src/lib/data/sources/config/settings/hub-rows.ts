@@ -43,6 +43,8 @@ export type UpdateTaskRow = {
     view: string;
     /** Where the tray reads the task's last run from; null for a row that names no place. */
     lastRun: LastRun | null;
+    /** The row's `stale_days`, after which the refresh strip nudges; null for a row with none. */
+    nudgeAfterDays: number | null;
     at: string;
 };
 
@@ -148,10 +150,11 @@ function rowsOf(
 
 /**
  * The rows of `update_tasks` the rule takes, in the file's order: a row whose task is not of its
- * form, whose label, note or view is empty or whose last_run is set to none of LAST_RUNS is a
- * problem and is not read, and so is a row whose task an earlier row took. A row with no last_run
- * is read with no place its last run is read from. A view the rule cannot check here, since the
- * views are the page's, is checked where the tray draws the row.
+ * form, whose label, note or view is empty, whose last_run is set to none of LAST_RUNS or whose
+ * stale_days is no whole number from 0 up is a problem and is not read, and so is a row whose task
+ * an earlier row took. A row with no last_run is read with no place its last run is read from, and
+ * one with no stale_days with no threshold, so the refresh strip never nudges for it. A view the
+ * rule cannot check here, since the views are the page's, is checked where the tray draws the row.
  */
 export function updateTasks(
     config: Record<string, unknown>,
@@ -168,6 +171,8 @@ export function updateTasks(
         const task = textAt(row, 'task');
         // The rule has held a last_run that is set to one of LAST_RUNS, the words of its options.
         const lastRun = LAST_RUNS.find((one) => one === row.last_run) ?? null;
+        // The rule has held a stale_days that is set to a whole number from 0 up.
+        const nudgeAfterDays = typeof row.stale_days === 'number' ? row.stale_days : null;
         if (kept.some((one) => one.task === task)) {
             problems.push({ key, where: 'repeat', name: task });
             continue;
@@ -178,6 +183,7 @@ export function updateTasks(
             note: textAt(row, 'note'),
             view: textAt(row, 'view'),
             lastRun,
+            nudgeAfterDays,
             at
         });
     }

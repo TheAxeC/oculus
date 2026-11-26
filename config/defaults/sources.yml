@@ -1,20 +1,13 @@
 # ===========================================================================
 # sources.yml
 # oculus's own configuration of what the portfolio reads: where the projects are, which registry, collection, document and feed file each surface is built from, and where a hub keeps its pictures. The folders files are served from are the folders of the open workspace. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. loadConfig() merges it with the other files of config/defaults/, and every key here is a top-level key of the merged map; the options of config/options/sources.yml describe every key. Nothing writes this file.
-# The keys from scan to apps_dir are the hub list: a hub's own .oculus/config.yml replaces any of them whole, and the values here are oculus's defaults: the scan folders of a research hub's usual layout, and each collection's file and the career file under `.oculus/data/`, in the folder of its kind (research, pillars, literature, people, academic). This file is the one table of those default paths: oculus reads a registry or feed a hub's own list leaves out, and the Literature file, from here (a hub's own folders, its website among them, are set in its own settings file).
+# The keys from scan to apps_dir are the hub list: a hub's own .oculus/config.yml replaces any of them whole, and the values here are oculus's defaults: no scan folder, since oculus names none, and each collection's file and the career file under `.oculus/data/`, in the folder of its kind (research, pillars, literature, people, academic). This file is the one table of those default paths: oculus reads a registry or feed a hub's own list leaves out, and the Literature file, from here (a hub's own folders, its website among them, are set in its own settings file).
 # It also holds the map from a file name to the language the editor colours it in (languages).
 # ===========================================================================
 
 
-# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and stage are the manifest's own `tier` and `stage` lines, and its id is the folder's name.
-scan:
-  - { dir: projects/ideas }
-  - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing
-  - { dir: projects/active }
-  - { dir: projects/manuscripts }
-  - { dir: projects/software, optional: true }   # optional; a hub without the folder reports nothing
-  - { dir: projects/coauthor }
-  - { dir: projects/archive }
+# Where to find projects: each `dir` is relative to the hub root. A project is any folder that holds a `project.yml` at its top or a `.oculus/project.yml`, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and stage are the manifest's own `tier` and `stage` lines, and its id is the folder's name. A rule with `optional: true` names a folder a hub may lack without a finding. oculus names none: a hub sets `scan` in its .oculus/config.yml, and a hub with no rule has no projects.
+scan: []
 
 
 # The folder a new project is made in, for each tier. The engine names none: a hub sets `new_project_dir` in its .oculus/config.yml, a map from a tier (a word of `tiers` in config/catalogs/vocab.yml: research, personal or software) to a folder that is a scan folder or lies under one. A tier with no entry has no folder to offer, and a new project of it needs the folder given.
@@ -60,7 +53,7 @@ feed_registries: []
 # The word a `meta.log` line of the leads feed holds after its leading date when the line records a run of the position scout, matched in any case: the newest such date is the scout's last run, which the update tray and the Focus board read. The engine names none, and empty reads no run, so the Focus board's refresh strip leaves the scout out.
 leads_run_word: ''
 
-# The update tasks the update tray offers for this hub, in the tray's order: each row a `task`, the name of its file `.oculus/tasks/<task>.md` (lowercase letters, digits and dashes, starting with a letter), the `label` and the `note` its tray row shows, the `view` a notice of its run opens, and `last_run`, where the tray reads its last run from: `radar` (the hub's radar feed), `scout` (its leads feed), `linkedin` (the last post of its LinkedIn folder) or `inbox` (the machine's inbox notes), and a row without `last_run` shows no last run. A row is offered while the hub holds its file. The engine names none.
+# The update tasks the update tray offers for this hub, in the tray's order: each row a `task`, the name of its file `.oculus/tasks/<task>.md` (lowercase letters, digits and dashes, starting with a letter), the `label` and the `note` its tray row shows, the `view` a notice of its run opens, and `last_run`, where the tray reads its last run from: `radar` (the hub's radar feed), `scout` (its leads feed), `linkedin` (the last post of its LinkedIn folder) or `inbox` (the machine's inbox notes), and a row without `last_run` shows no last run; and `stale_days`, the whole days from 0 up after that last run at which the Focus board's refresh strip nudges to run the task, which a row without it never gets. A row is offered while the hub holds its file. The engine names none.
 update_tasks: []
 
 # The documents a project card marks a project for, in the card's order: each row the `name` of a file inside the project folder and the short `label` the card shows for it.

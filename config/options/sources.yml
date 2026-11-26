@@ -12,7 +12,7 @@ options:
     scan:
         heading: sources
         section: Project scan
-        help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and stage are the manifest's own tier and stage lines, not the folder's. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
+        help: "Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and stage are the manifest's own tier and stage lines, not the folder's. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional. oculus names none: a hub with no scan rule has no projects, and every folder new_project_dir names is a finding until a rule's dir holds it. This is a setting of the hub, kept in its .oculus/config.yml."
         fields:
             dir:
                 help: the folder scanned, relative to the hub
@@ -155,7 +155,7 @@ options:
     update_tasks:
         heading: sources
         section: Update tasks
-        help: The update tasks the update tray offers for this hub, in the tray's order. A row's task names its file, .oculus/tasks/<task>.md, and the row is offered while the hub holds that file; its label and note are what the tray's row shows, its view is the view a notice of its run opens, and last_run says where the tray reads its last run from. A row with an empty label, note or view, a view no view of oculus's has, a last_run outside the four, or a task that is empty, repeats an earlier row's or is not lowercase letters, digits and dashes starting with a letter, is a finding and is not offered; a value that is no list is a finding and the default, no task, is read in its place. This is a setting of the hub, kept in its .oculus/config.yml; a change reaches the tray at once.
+        help: The update tasks the update tray offers for this hub, in the tray's order. A row's task names its file, .oculus/tasks/<task>.md, and the row is offered while the hub holds that file; its label and note are what the tray's row shows, its view is the view a notice of its run opens, last_run says where the tray reads its last run from, and stale_days how many days after that run the Focus board's refresh strip nudges to run the task again; a row without stale_days is never nudged. A row with an empty label, note or view, a view no view of oculus's has, a last_run outside the four, a stale_days that is no whole number from 0 up, or a task that is empty, repeats an earlier row's or is not lowercase letters, digits and dashes starting with a letter, is a finding and is not offered; a value that is no list is a finding and the default, no task, is read in its place. This is a setting of the hub, kept in its .oculus/config.yml; a change reaches the tray at once.
         fields:
             task:
                 help: the name of the task's file under .oculus/tasks/, without .md
@@ -172,9 +172,15 @@ options:
                 control: choice
                 from: views
             last_run:
-                help: "where the tray reads the task's last run from: radar (the hub's radar feed), scout (its leads feed), linkedin (the last post of its LinkedIn folder) or inbox (the machine's inbox notes); a row without it shows no last run"
+                help: "where the tray reads the task's last run from: radar (the hub's radar feed), scout (its leads feed), linkedin (the last post of its LinkedIn folder) or inbox (the machine's inbox notes); a row without it shows no last run, and stale_days counts from this run"
                 control: choice
                 options: [radar, scout, linkedin, inbox]
+                empty: true
+            stale_days:
+                help: "the days after the task's last run at which the Focus board's refresh strip nudges to run it, 0 on the day of the run; a row without it is never nudged. For radar it counts from meta.last_run of the radar file, and a radar that has never run is nudged. For scout it counts from the newest meta.log date of the leads file, and a scout that has never run is not. For inbox it counts from the run date the triage skill writes at the top of triage.json under mail_dir, which a note of the page's triage action keeps, with no nudge while there is none; the inbox has one line, for the first offered row that sets the key. A linkedin row takes none: focus.linkedin_cadence_days is its cadence."
+                control: number
+                min: 0
+                whole: true
                 empty: true
     project_docs:
         heading: sources

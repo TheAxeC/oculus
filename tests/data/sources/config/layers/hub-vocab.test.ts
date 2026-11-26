@@ -24,7 +24,7 @@ import {
     failuresFor,
     toldFailure
 } from '../../../../../src/lib/data/sources/config/settings/connectors.ts';
-import { buildOneHub } from '../../../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN_LINES } from '../../../../fixtures/hubs/hub-build.ts';
 import { it, plantScratch } from '../../../../fixtures/scratch.ts';
 import {
     HUB,
@@ -75,7 +75,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(said(read)).toEqual([]);
         expect(Object.hasOwn(mapOf(read.config, 'stages'), 'nascent')).toBe(false);
         const hub = plantScratch('oculus-hub-vocab-', {
-            [HUB_FILE]: text,
+            [HUB_FILE]: `${HUB_SCAN_LINES}${text}`,
             'projects/ideas/x/project.yml': 'title: X\ntier: research\nstage: nascent\n'
         });
         const settings = loadConfig(engineDir(), { hub });

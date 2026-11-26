@@ -6,7 +6,7 @@
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -14,7 +14,7 @@ import { it, plantScratch } from '../../fixtures/scratch.ts';
 const ENGINE = engineDir();
 const LOADED = loadConfig(ENGINE).config;
 const CATALOG = textCatalog(LOADED);
-const CONFIG = portfolioConfigFrom(LOADED);
+const CONFIG = portfolioConfigFrom({ ...LOADED, scan: HUB_SCAN });
 
 const ROWS = [
     { row: 'a folder with a space', written: '"~/a b"', shown: '"~/a b"', found: true },

@@ -35,6 +35,9 @@ const FOLDER = 'site';
 /** The three files the hub's files are written into, in the order a write takes them. */
 const GENERATED = ['_data/data.yml', '_data/publications.yml', '_data/industry.yml'];
 
+/** The lines of `website.files` the settings file names the website's own file and the three by. */
+const FILE_LINES = `  files:\n    site: _data/website.yml\n    cv: ${GENERATED[0]}\n    papers: ${GENERATED[1]}\n    industry: ${GENERATED[2]}\n`;
+
 /** The key of the demo's person who is the user here. */
 const SELF = 'rivera-lab';
 
@@ -110,7 +113,7 @@ describe('the portfolio watcher over the website the primary hub names', () => {
         const dir = copyHub(scratchDir('oculus-website-watch-'), 'hub');
         appendFileSync(
             join(dir, HUB_FILE),
-            `\nwebsite:\n  folder: ${FOLDER}\n  cv_sections:\n    - { key: news, fields: [title] }\n  paper_list: papers\n  paper_fields:\n    - { key: title, from: project_title }\n${FIELD_LINES}`
+            `\nwebsite:\n  folder: ${FOLDER}\n  cv_sections:\n    - { key: news, fields: [title] }\n  paper_list: papers\n  paper_fields:\n    - { key: title, from: project_title }\n${FIELD_LINES}${FILE_LINES}`
         );
         const data = join(dir, FOLDER, '_data');
         mkdirSync(data, { recursive: true });

@@ -227,7 +227,7 @@ describe('the groups of an options file', () => {
         expect(optionFindings(ENGINE, config)).toEqual([]);
         const { groups } = readCatalog(config);
         expect(groups['appearance.yml']).toHaveProperty('wallpaper');
-        expect(groups['behavior.yml']).toHaveProperty(['focus.refresh_stale_days']);
+        expect(groups['behavior.yml']).toHaveProperty(['website.files']);
     });
 
     it.each([

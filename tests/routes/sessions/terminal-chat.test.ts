@@ -177,11 +177,11 @@ describe('POST /api/terminal, the chat action', () => {
     const THREE_HUBS: ChatFolder[] = [
         {
             name: 'hub',
-            settings: '{}\n',
+            settings: '',
             files: [manifest('alpha'), VENUES, PILLARS, FUNDING, EVENTS, PEOPLE]
         },
-        { name: 'other', settings: '{}\n', files: [manifest('beta'), VENUES, EVENTS] },
-        { name: 'third', settings: '{}\n', files: [manifest('gamma')] }
+        { name: 'other', settings: '', files: [manifest('beta'), VENUES, EVENTS] },
+        { name: 'third', settings: '', files: [manifest('gamma')] }
     ];
     const threeHubLines = (at: (name: string) => string): string[] => [
         ...venueLines(at),
@@ -229,7 +229,7 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'hub', settings: '{}\n', files: [] },
+                { name: 'hub', settings: '', files: [] },
                 { name: 'other', settings: 'chat_context: [leads]\n', files: [LEADS, EVENTS] }
             ],
             primary: 'hub',
@@ -242,7 +242,7 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] },
+                { name: 'hub', settings: '', files: [manifest('alpha')] },
                 { name: 'tool', files: ['project.yml'] }
             ],
             primary: 'hub',
@@ -257,8 +257,8 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] },
-                { name: 'third', settings: '{}\n', files: [] }
+                { name: 'hub', settings: '', files: [manifest('alpha')] },
+                { name: 'third', settings: '', files: [] }
             ],
             primary: 'hub',
             chat: null,
@@ -271,8 +271,8 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'other', settings: '{}\n', files: [manifest('beta')] },
-                { name: 'hub', settings: '{}\n', files: [manifest('alpha')] }
+                { name: 'other', settings: '', files: [manifest('beta')] },
+                { name: 'hub', settings: '', files: [manifest('alpha')] }
             ],
             primary: 'hub',
             chat: null,
@@ -301,7 +301,7 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'hub', settings: '{}\n', files: [] },
+                { name: 'hub', settings: '', files: [] },
                 { name: 'other', settings: 'chat_context: [funding\n', files: [FUNDING, EVENTS] }
             ],
             primary: 'hub',
@@ -315,8 +315,8 @@ describe('POST /api/terminal, the chat action', () => {
         },
         {
             folders: [
-                { name: 'hub', settings: '{}\n', files: [manifest('alpha'), VENUES] },
-                { name: 'other', settings: '{}\n', files: [manifest('beta'), VENUES] },
+                { name: 'hub', settings: '', files: [manifest('alpha'), VENUES] },
+                { name: 'other', settings: '', files: [manifest('beta'), VENUES] },
                 { name: 'tool', files: ['project.yml'] }
             ],
             chat: 'beta',

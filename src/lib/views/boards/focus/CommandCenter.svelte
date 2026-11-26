@@ -87,9 +87,7 @@
         snapshot === null ? [] : attention(snapshot, config, now, actionable(), vocabOf)
     );
     const nudges = $derived(
-        snapshot === null
-            ? []
-            : refresh(snapshot, config, now, inboxState()?.notesRun ?? null, offered())
+        snapshot === null ? [] : refresh(snapshot, now, inboxState()?.notesRun ?? null, offered())
     );
 
     /** The threshold the venue-load line quotes: `venue_conc_warn` under `focus:`, behavior.yml. */
@@ -154,7 +152,7 @@
     function refreshGlyph(feed: string): string {
         if (feed === 'inbox') return t('focus.command.inbox_glyph');
         if (feed === 'scout') return t('focus.command.scout_glyph');
-        return t('focus.command.litwatch_glyph');
+        return t('focus.command.radar_glyph');
     }
 
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
@@ -260,7 +258,7 @@
                     : one.feed === 'scout'
                       ? t('focus.command.refresh_scout_plain', task, one.days ?? 0)
                       : t(
-                            'focus.command.refresh_litwatch_plain',
+                            'focus.command.refresh_radar_plain',
                             task,
                             one.days === null
                                 ? t('focus.command.never_run')

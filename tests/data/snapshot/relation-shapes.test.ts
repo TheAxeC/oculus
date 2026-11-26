@@ -5,7 +5,7 @@
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN, HUB_SCAN_LINES } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -13,7 +13,7 @@ import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 
 const LOADED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(LOADED);
-const CONFIG = portfolioConfigFrom(LOADED);
+const CONFIG = portfolioConfigFrom({ ...LOADED, scan: HUB_SCAN });
 
 /** The sentence a field of the wrong shape is reported in. */
 function typeSentence(field: string, wanted: 'list' | 'text', got: string): string {
@@ -143,8 +143,7 @@ describe('the relation fields of a manifest', () => {
         const files = { 'projects/active/alpha/project.yml': manifest };
         const added = plantScratch('oculus-relation-shapes-', {
             ...files,
-            [HUB_FILE]:
-                'manifest_fields: [ { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." } ]\n'
+            [HUB_FILE]: `${HUB_SCAN_LINES}manifest_fields: [ { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." } ]\n`
         });
         const read = loadConfig(engineDir(), { hub: added });
         const config = portfolioConfigFrom(read.config, read.from);

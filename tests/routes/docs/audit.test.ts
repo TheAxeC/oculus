@@ -381,14 +381,14 @@ describe('the website of the audit', () => {
     /** The CV's one section, its words empty, since no row here prints a period. */
     const cvSections: CvSection[] = [{ key: 'news', fields: ['title'] }];
     const cvWords: CvWords = { months: [], open_end: '', award_time: '' };
-    /** The four paths of `website.files` as they ship. */
-    const SHIPPED = {
+    /** The four paths of `website.files` the check reads unless a case names its own. */
+    const PATHS = {
         site: '_data/website.yml',
         cv: '_data/data.yml',
         papers: '_data/publications.yml',
         industry: '_data/industry.yml'
     };
-    const { site: SITE_PATH, cv: CV_PATH, papers: PAPERS_PATH } = SHIPPED;
+    const { site: SITE_PATH, cv: CV_PATH, papers: PAPERS_PATH } = PATHS;
     /** A published paper the user leads, of the form given, ranked in its section by `rank`. */
     const paper = (folder: string, form: string, rank: number): Project =>
         projectAt(folder, {
@@ -408,7 +408,7 @@ describe('the website of the audit', () => {
 
     /** The three files the hub's files give, by their path in the website's folder. */
     function generated(
-        paths = SHIPPED,
+        paths = PATHS,
         from: readonly Project[] = projects,
         site = readSite(parse(siteText), paths.site, 'programs')
     ): Record<string, string> {
@@ -440,7 +440,7 @@ describe('the website of the audit', () => {
     }
 
     /** The check of the website in the folder `folder` of the hub, with the paths given. */
-    function checkOf(hub: string, folder = 'site', files = SHIPPED): WebsiteCheck {
+    function checkOf(hub: string, folder = 'site', files = PATHS): WebsiteCheck {
         return {
             setting: { folder, cv: '', kinds, cvSections, cvWords, files, ...paperSettings },
             dir: folder === '' ? '' : join(hub, folder),
@@ -617,8 +617,8 @@ describe('the website of the audit', () => {
         expect(websiteFindings(hub, checkOf(hub))).toEqual([]);
     });
 
-    it('compare the file website.files names, and leave the shipped path alone', () => {
-        const paths = { ...SHIPPED, papers: 'data/papers.yml' };
+    it('compare the file website.files names, and leave the path it replaces alone', () => {
+        const paths = { ...PATHS, papers: 'data/papers.yml' };
         const files = generated(paths);
         const hub = siteHub({ ...files, 'data/papers.yml': 'journal: []\n' });
         expect(websiteFindings(hub, checkOf(hub, 'site', paths)).map((one) => one.where)).toEqual([
@@ -629,7 +629,7 @@ describe('the website of the audit', () => {
     });
 
     it("name the configured path of the website's own file for a research line its programs: lacks", () => {
-        const paths = { ...SHIPPED, site: 'data/own.yml' };
+        const paths = { ...PATHS, site: 'data/own.yml' };
         const lined: Project = projectAt('projects/lined', {
             stage: 'published',
             form: 'journal',
@@ -645,7 +645,7 @@ describe('the website of the audit', () => {
     });
 
     /** The paths of each case of a path that cannot be used, and the key its finding names. */
-    const BAD: { row: string; files: Partial<typeof SHIPPED>; key: string; value: string }[] = [
+    const BAD: { row: string; files: Partial<typeof PATHS>; key: string; value: string }[] = [
         {
             row: 'a path out of the folder',
             files: { cv: '../outside.yml' },
@@ -670,7 +670,7 @@ describe('the website of the audit', () => {
         it(`give one finding naming the key of a path that cannot be used and read no file: ${row}`, () => {
             // A website's own file that does not parse is a finding of its own once it is read.
             const hub = siteHub(generated(), 'programs: [a\n  : :\n');
-            const check = checkOf(hub, 'site', { ...SHIPPED, ...files });
+            const check = checkOf(hub, 'site', { ...PATHS, ...files });
             expect(websiteFindings(hub, check).map((one) => [one.where, one.message])).toEqual([
                 [key, said('audit.msg_site_bad_path', key, value)]
             ]);

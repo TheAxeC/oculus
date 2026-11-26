@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O195
-  base: ff548136a
-  worktree: .agents/worktrees/migration-O195
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: a0db48830a7bff490
-  launched: 2026-11-26, on the rulings Feed staleness on the task row and No hub's settings in oculus's defaults
-  report: agents/reviews/O195-report.md
-  builder_usage: 318996 tokens, 400 tool uses, 7597 s
-  reviewer_report: agents/reviews/O195-refuter.md (afbd02dbc48b6edac, claude-opus-5-5, 267542 tokens, 80 tool uses, 855 s)
-  round: 1
-  builders_before: a0db48830a7bff490 (stopped after its report, on Axel's word)
-  landing: not-started
-  brief_check: agents/reviews/O195-brief-check.md (a9f9d46d8a75327c7, claude-opus-5-5, 268099 tokens, 107 tool uses, 831 s)
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -194,6 +180,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 
 
+
+- Open item 790 (2026-11-26, O195's look, on a copy of the demo hub; the Settings form code `src/lib/state/system/config/` is not changed by O195): two defects of the Settings view's row settings, which no step of the plan covers. (1) After a Save that clears a field of a row (`update_tasks` `stale_days`, and `last_run`, which predates O195), the file is written ('Saved into hub/.oculus/config.yml.', the key taken off or set to ""), but the scope bar keeps '1 unsaved change', the tab stays marked unsaved and Save stays on; a second Save writes nothing and shows nothing; a reload clears it. (2) A task name of the wrong form typed into a row's task box ('Bad Name') stages no change and shows no sentence, though the form holds the sentence `workbench.settings_not_task_name` ('It must be lowercase letters, digits and dashes, starting with a letter.', `src/lib/state/system/config/editors/fields.ts:484`); a `stale_days` box in the same row shows its sentence beside the box. Options: (a) a new step that ends both: a Save that lands drops the change it saved, a cleared row field included, and a row's text field of a form draws its refusal sentence beside the box as a number box does, each with its test. Pro: the count and the refusal tell the truth about the file, on every row setting. Con: one more step before the plan closes. (b) Leave both. Pro: no work. Con: the Settings view keeps showing an unsaved change that is saved and keeps dropping a bad name without a word; this is the lazy option. Recommendation: (a).
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
@@ -924,6 +912,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-26 (O195 landed; app rebuild next). O195 landed on main from base ff548136a, the whole range (wip commit a438700b4, the build and repair round 1) with the fix at landing S5, 52 paths, 438 insertions and 289 deletions, booked and ticked in `plan.md` with its landing report `agents/reviews/O195-landing.md`. The gate's test:quick timed out on 20 tests in 10 files under a load average near 20, each file green alone. The look took every case on scratch servers on 8797; it found open item 790 (two Settings defects outside the step). The research hub's lines are written into its `.oculus/config.yml` and `.oculus/workspaces/research-hub.yml`, uncommitted, waiting for Axel's word on a hub commit. Next: the app rebuilt from main's head in the gate, installed in ~/Applications and booked; then open item 790 waits for Axel. No step is in flight.
 - 2026-11-26 (app replaced after O193). `~/Applications/oculus.app` is the build of 92addae63 (`npm run app:release` in the gate, `oculus-1.1.0-darwin-arm64.zip`, 307812969 bytes): the running app quit, the old copy moved to the Trash by Finder, the new one copied with `ditto`, `codesign --verify --deep --strict` ok, `diff -rq` against the build identical, and the app opened. `queue.md` brought up to O193. Nothing in flight, nothing queued. Open items: none.
 - 2026-11-26 (O193 landed; app rebuild next). O193 landed on main from base b4c4dd9d9, the whole range (wip commits a7f45d5ed and 160b4c93e) with the three screenshots Axel approved ("Yes I approve them"), 18 paths, 1386 insertions and 17 deletions, booked and ticked in `plan.md` with its landing report `agents/reviews/O193-landing.md`; the gate at 071eb592b passed `test:quick` (313.5 s) and main's staged diff equals the gate's. Fixes at landing: `freshManifests` in `utils/shots/hub.mjs` (F1 of the review over round 2) and `agents/spec.md`'s two paths into `utils/tree/`. Next: the app rebuilt from main and copied over `~/Applications/oculus.app`. Open items: none.
 - 2026-11-26 (app replaced after O194). `~/Applications/oculus.app` is the build of 2645453a2 (`npm run app:release` in the gate, `oculus-1.1.0-darwin-arm64.zip`, 306750921 bytes): the running app quit, the old copy moved to the Trash by Finder, the new one copied with `ditto`, `codesign --verify --deep --strict` ok, `diff -rq` against the build identical, the catalog holding `tag_tip`, and the app opened. Next: O193's landing, its three screenshots taken again and shown to Axel for his approval. Open items: none.

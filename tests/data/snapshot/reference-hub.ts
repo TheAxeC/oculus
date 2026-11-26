@@ -25,6 +25,7 @@ import {
 } from '../../../src/lib/data/snapshot/references/lookup.ts';
 import type { FileScan, ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
+import { HUB_SCAN } from '../../fixtures/hubs/hub-build.ts';
 import { join } from 'node:path';
 
 /**
@@ -42,7 +43,8 @@ export type PlantedRoot = 'hub' | 'engine' | 'lab';
 /** Where the config folder lies inside the hub when oculus's folder is inside the hub folder. */
 const CONFIG_IN_HUB = 'tools/oculus/config';
 
-export const CONFIG = portfolioConfigFrom(loadConfig(engineDir()).config);
+/** The settings the hub is built with: oculus's defaults and the test hubs' scan rules. */
+export const CONFIG = portfolioConfigFrom({ ...loadConfig(engineDir()).config, scan: HUB_SCAN });
 
 /** The planted hub's files by their path under the hub root, the data at oculus's own paths. */
 export const HUB_FILES: Record<string, string> = {

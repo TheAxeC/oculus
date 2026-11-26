@@ -5,11 +5,11 @@
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN } from '../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
-const CONFIG = portfolioConfigFrom(loadConfig(engineDir()).config);
+const CONFIG = portfolioConfigFrom({ ...loadConfig(engineDir()).config, scan: HUB_SCAN });
 
 type Row = {
     name: string;

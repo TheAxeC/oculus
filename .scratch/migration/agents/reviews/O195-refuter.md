@@ -79,3 +79,70 @@ All commands ran from the worktree root with `PATH=$HOME/.nvm/versions/node/v24.
 - The folder count by the script: `folder-check.sh` runs `git ls-files`; S1 rests on `ls` and `.gitignore`.
 - Whether the committed diagrams match the source: needs `npm run diagrams`, which writes outside `.agents/scratch`.
 - The readers of `BASE_CHAT_CONFIG` outside item 1 (`compose.test.ts`, `terminal-actions.test.ts`, `latex-approvals.test.ts`, `runs/commands/run.test.ts`, `pty/agent-pane.test.ts`): not run; by reading their input is unchanged, and `npm run check` is green.
+
+# Repair round 1, refuted
+
+Usage: a858fb2614d74b42d, claude-opus-5-5, 182603 tokens, 41 tool uses, 458 s.
+
+## Verification lines run
+
+All from the worktree root, each once.
+
+1. `unset TMPDIR; nice -n 10 npx vitest run --maxWorkers 4 --reporter dot <the first review's 35 files> tests/checks/tree/size.test.ts`: `Test Files  36 passed (36)`, `Tests  711 passed | 2 skipped (713)`.
+2. Prettier over the 48 changed files (docs/diagrams left out): `All matched files use Prettier code style!`, `prettier exit 0`.
+3. ESLint over the 35 changed .ts and .svelte files: no output, `eslint exit 0`.
+4. ASCII gate over the 48 files plus the four diagram files: nothing, `ascii exit 0`.
+5. `npm run check`: `COMPLETED 4690 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+6. unused-exports against the base list: `Unused exports (226)` to `(225)`, only `src/lib/state/feeds/feeds.ts: FEEDS, staleAfter` removed.
+7. `ls tests/fixtures/hubs | wc -l`: `10`; `grep -rn "hub-scan"` over src, tests, config, docs, utils, README.md: nothing.
+8. Verify 6a over src, config, docs, README.md: nothing; 6d: `0`.
+9. History-word grep with `still` and `always`: the report's five hits, none history.
+10. Added lines over 100 columns in src and tests: only string literals and test titles.
+
+## Closure check
+
+- S1 closed: `hub-scan.ts` gone, 10 items, `size.test.ts` passes.
+- P4 closed: `hub-build.ts:52-62` freezes the list and each rule; no src code writes an input scan rule.
+- S2 closed: the five comments and the new head comment of `hub-build.ts` wrap at 100 columns.
+- P1 closed by reading: the quoted failing lines (`hub-rows.test.ts:247`, `website-files.test.ts:253`, `:270`, `website-store.test.ts:96`) match the tests and the base code; 11 + 2 + 1 is the quoted 14 failed. The website-store row fails on the base at the missing catalog key, and the base `off()` returns null there too; the report says so.
+- P5 closed: case 6 gives `range`, `whole`, `number`.
+- SP1 closed as a report item; the code stays as built. The new G140 and G125 titles match `website.test.ts:475` and `audit.test.ts:620`.
+- SP2, S3, S4, B1, B2 closed.
+
+## Verdicts on "What to build"
+
+1 to 6: hold (whole diff since ff548136a).
+
+## Verdicts on Cases
+
+1 to 7, 9 to 12, 15, 16: met. 8, 13, 14: not verifiable here, left for the look (14 with `npm run docs:shots`). 17 to 20: met by reading (17 also by G54); the look is left.
+
+## Spec
+
+- SP3. The builder ran `sh utils/tree/folder-check.sh`, which runs `git rev-parse` and `git ls-files` (`utils/tree/folder-check.sh:16-17`), git commands `agents/spec.md` "Where you work" forbids a builder. No effect on the outcome: `size.test.ts` runs the same script and passes. Failure scenario: a builder treats a utility that wraps git as outside the git rule.
+
+## Proof
+
+none
+
+## Standards
+
+- S5. `tests/routes/sessions/website.test.ts:59-77` declares `SITE_PATH`, `CV_PATH`, `PAPERS_PATH`, `INDUSTRY_PATH` and a new `PATHS`, and `tests/state/sessions/source/website-store.test.ts:25-30` a new `PATHS`, beside the same constants exported by `tests/fixtures/hubs/website-hub.ts:30-52`, which both files already import from. Failure scenario: a fixture path changed in `website-hub.ts` alone leaves the two files testing other paths. Fix: import the constants from `website-hub.ts` and drop the local copies.
+
+## Behaviour
+
+none
+
+## Declined to judge
+
+- `folder-check.sh` run directly (it runs git beyond the review's three commands); the count rests on `ls` and `size.test.ts`.
+- Whether the committed diagrams match the source (needs `npm run diagrams`).
+- The readers of `BASE_CHAT_CONFIG` outside run 1 with the frozen `HUB_SCAN`: not run; by reading no src code writes a scan rule.
+- Whether any test file ran while the builder worked this round: no record to check.
+- Cases 1 to 5, 7, 11 and 15 as runs: the case program is deleted; judged by reading.
+
+## Closed
+
+- SP3: no change to the step; the run had no effect on the outcome. The spec's git rule already names `ls-files` and `rev-parse`.
+- S5: fixed at landing, inside the brief: both test files import the four paths and `PATHS` from `website-hub.ts` and drop their local copies.
+- First review P2 (the extra runs of the first build): the runs happened and cannot be undone; the spec's test rule is restated (`agents/spec.md:26`, `:34`) and every builder prompt restates it.

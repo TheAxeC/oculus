@@ -365,8 +365,14 @@ const ORDER_SETTINGS = [
 ].join('\n');
 
 /**
- * The projects of `orderHub` under side-projects/, a scan folder of oculus's that the demo hub
- * leaves empty, by folder: the manifest's lines.
+ * The scan rule `orderHub` adds to the demo hub's six, after `projects/ideas`: the folder its five
+ * projects lie in.
+ */
+const ORDER_SCAN = '  - { dir: side-projects, optional: true }\n';
+
+/**
+ * The projects of `orderHub` under side-projects/, the scan folder ORDER_SCAN adds to the demo
+ * hub's, by folder: the manifest's lines.
  */
 const ORDER_PROJECTS: Record<string, string[]> = {
     'a-review': ['stage: submitted', 'title: Review'],
@@ -378,9 +384,9 @@ const ORDER_PROJECTS: Record<string, string[]> = {
 
 /**
  * A hub copied from the demo hub whose settings give its own `publications` row and deck order
- * (ORDER_SETTINGS), with five projects at the stages of five categories, each with a deck, and a
- * deck `talks/order` whose one group discovers them, read through the deck reader of the hub over
- * the build's own input, as the build reads it.
+ * (ORDER_SETTINGS), with five projects at the stages of five categories in the scan folder it adds
+ * (ORDER_SCAN), each with a deck, and a deck `talks/order` whose one group discovers them, read
+ * through the deck reader of the hub over the build's own input, as the build reads it.
  */
 export function orderHub(): { dir: string; reader: DeckReader } {
     const dir = join(scratchDir('oculus-deck-order-'), 'hub');
@@ -390,6 +396,12 @@ export function orderHub(): { dir: string; reader: DeckReader } {
         '.oculus/config.yml',
         "# The hub's data files",
         `${ORDER_SETTINGS}# The hub's data files`
+    );
+    edit(
+        dir,
+        '.oculus/config.yml',
+        '  - { dir: projects/ideas }\n',
+        `  - { dir: projects/ideas }\n${ORDER_SCAN}`
     );
     for (const [folder, manifest] of Object.entries(ORDER_PROJECTS)) {
         put(join(dir, 'side-projects', folder), {

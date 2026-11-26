@@ -114,6 +114,7 @@ describe('updateTasks', () => {
         note: 'openings',
         view: 'leads',
         lastRun: null,
+        nudgeAfterDays: null,
         at,
         ...over
     });
@@ -129,6 +130,7 @@ describe('updateTasks', () => {
                     note: 'n',
                     view: 'radar',
                     lastRun: 'radar',
+                    nudgeAfterDays: null,
                     at: 'update_tasks[0]'
                 }
             ],
@@ -140,6 +142,36 @@ describe('updateTasks', () => {
             value: [task({ last_run: 'linkedin' })],
             rows: [row({ lastRun: 'linkedin' })],
             problems: []
+        },
+        {
+            input: 'a row with stale_days 31',
+            value: [task({ stale_days: 31 })],
+            rows: [row({ nudgeAfterDays: 31 })],
+            problems: []
+        },
+        {
+            input: 'a row with stale_days 0',
+            value: [task({ stale_days: 0 })],
+            rows: [row({ nudgeAfterDays: 0 })],
+            problems: []
+        },
+        {
+            input: 'a stale_days below 0',
+            value: [task({ stale_days: -1 })],
+            rows: [],
+            problems: ['update_tasks[0].stale_days: range']
+        },
+        {
+            input: 'a stale_days that is no whole number',
+            value: [task({ stale_days: 1.5 })],
+            rows: [],
+            problems: ['update_tasks[0].stale_days: whole']
+        },
+        {
+            input: 'a stale_days that is no number',
+            value: [task({ stale_days: 'soon' })],
+            rows: [],
+            problems: ['update_tasks[0].stale_days: number']
         },
         {
             input: 'two rows, read in their order',
@@ -205,6 +237,7 @@ describe('updateTasks', () => {
                     note: 'n',
                     view: 'radar',
                     lastRun: 'radar',
+                    nudgeAfterDays: null,
                     at: 'update_tasks[0]'
                 }
             ],

@@ -20,6 +20,7 @@ text:
         f_cwd: folder
         f_effort: effort
         f_hook: hook
+        f_id: id
         f_kind: kind
         f_mode: mode
         f_model: model

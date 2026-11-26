@@ -24,7 +24,7 @@
 import { basename } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import {
@@ -34,9 +34,13 @@ import {
 } from '../../../src/lib/data/snapshot/references/lookup.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
-/** The engine's configuration under a hub that reads its leads and radar registries as feeds. */
+/**
+ * The engine's configuration under a hub with the test hubs' scan rules that reads its leads and
+ * radar registries as feeds.
+ */
 const LOADED: Record<string, unknown> = {
     ...loadConfig(engineDir()).config,
+    scan: HUB_SCAN,
     feed_registries: ['leads', 'radar']
 };
 const CATALOG = textCatalog(LOADED);

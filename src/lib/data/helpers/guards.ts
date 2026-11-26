@@ -73,16 +73,6 @@ export function strings(value: unknown): string[] {
 }
 
 /**
- * A finite number from merged config, or null when that key is absent or invalid. The rail badges
- * and the Focus lanes both read a threshold this way, so the rule sits here, below every state
- * folder that reads one.
- */
-export function numericSetting(config: Record<string, unknown>, key: string): number | null {
-    const value = config[key];
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-/**
  * The map `focus:` of the merged config (config/defaults/behavior.yml): the Focus board's horizons,
  * thresholds, cadences and lists. A config whose `focus` is no map has an empty one.
  */

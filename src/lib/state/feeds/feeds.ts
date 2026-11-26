@@ -10,15 +10,10 @@
 // through the catalogs under config/text/.
 
 import type { HubTask, LastRun, Snapshot } from '../../data/model/index.ts';
-import { focusBlock, numericSetting } from '../../data/helpers/guards.ts';
 import { focusNumber } from '../../data/sources/config/sections/focus.ts';
-import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import { hasWord, recordWords, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { daysUntil } from '../boards/board/index.ts';
 import { venueLoad, venueWarn } from '../boards/ticker.ts';
-
-/** The three feeds a nudge can be about, in the order the group lists them. */
-export const FEEDS = ['litwatch', 'inbox', 'scout'];
 
 /**
  * One "needs attention" line. `kind` says what it is and the view words it: `inbox` counts threads
@@ -35,12 +30,12 @@ export type AttentionItem = {
 };
 
 /**
- * One "refresh live data" nudge: which of FEEDS, the offered task that refreshes it and its hub
- * (null for the inbox, whose date is the machine's), and how many days since it ran, or null for
- * never.
+ * One "refresh live data" nudge: the reader its feed's run date is read by (`radar`, `scout` or
+ * `inbox`), the offered task that refreshes it and its hub (null for the inbox, whose date is the
+ * machine's), and how many days since it ran, or null for never.
  */
 export type RefreshItem = {
-    feed: string;
+    feed: LastRun;
     task: HubTask;
     hub: string | null;
     days: number | null;
@@ -51,17 +46,6 @@ export function daysSince(date: string | null, now: number): number | null {
     if (date === null) return null;
     const ahead = daysUntil(date, now);
     return ahead === null ? null : -ahead;
-}
-
-/**
- * How many days old a feed may be before it is nudged: its number under `refresh_stale_days` of
- * `focus:`. A feed that key does not name, or names with a value that is not a finite number, is
- * never nudged, so the answer is `Infinity`; the config file is the only place a threshold comes
- * from.
- */
-export function staleAfter(config: Record<string, unknown>, feed: string): number {
-    const held = readAs(mapShape, focusBlock(config).refresh_stale_days);
-    return (held === null ? null : numericSetting(held, feed)) ?? Infinity;
 }
 
 /**
@@ -104,12 +88,12 @@ export function attention(
 }
 
 /**
- * The lines of the "Refresh live data" group, one per offered task whose feed is older than its
- * threshold, in the order of FEEDS and within one feed in the order of `offered`. A feed whose file
- * is not on this machine is not nudged about: there is nothing to refresh. A feed that
- * `refresh_stale_days` does not name is not nudged whether or not it has run. The radar is the one
- * feed a present file with no run date still nudges for, since a radar that has never run is
- * exactly what the nudge is for.
+ * The lines of the "Refresh live data" group, one per offered task whose feed is older than the
+ * task's own `stale_days` (`nudgeAfterDays`), the radar's first, then the inbox's, then the
+ * scout's, and within one reader in the order of `offered`. A task whose row sets no `stale_days`
+ * is never nudged, whether or not its feed has run. A feed whose file is not on this machine is not
+ * nudged about: there is nothing to refresh. The radar is the one feed a present file with no run
+ * date still nudges for, since a radar that has never run is exactly what the nudge is for.
  *
  * A line names the update task that refreshes its feed, so it is made for each row of `offered`
  * (the rows of a hub's `update_tasks` whose file the hub holds, with that hub) whose `last_run`
@@ -120,40 +104,45 @@ export function attention(
  * The inbox nudge is about the triage notes rather than a feed file: the plate itself is read live,
  * and what ages is the classification an update task whose `last_run` is `inbox` writes, whose own
  * run date the `inbox` channel carries and the caller passes. That date is the machine's, so the
- * inbox has one line, for the first offered task that reads it, whichever hubs offer one.
+ * inbox has one line, for the first offered task that reads it and sets `stale_days`, by that
+ * task's value, whichever hubs offer one.
  */
 export function refresh(
     snapshot: Snapshot,
-    config: Record<string, unknown>,
     now: number,
     notesRun: string | null,
     offered: readonly HubTask[]
 ): RefreshItem[] {
     const out: RefreshItem[] = [];
     const own = (hub: string) => snapshot.entities.feeds.byHub.find((one) => one.hub === hub);
-    const reading = (place: LastRun) => offered.filter((one) => one.lastRun === place);
+    // The offered tasks that read a place and set a threshold, each with its threshold.
+    const reading = (place: LastRun) =>
+        offered.flatMap((task) =>
+            task.lastRun === place && task.nudgeAfterDays !== null
+                ? [{ task, after: task.nudgeAfterDays }]
+                : []
+        );
 
-    const radarAfter = staleAfter(config, 'litwatch');
-    for (const task of radarAfter === Infinity ? [] : reading('radar')) {
+    for (const { task, after } of reading('radar')) {
         const radar = own(task.hub)?.radar ?? null;
         if (radar === null) continue;
         const days = daysSince(radar.lastRun, now);
-        if (days === null || days >= radarAfter) {
-            out.push({ feed: 'litwatch', task, hub: task.hub, days });
+        if (days === null || days >= after) {
+            out.push({ feed: 'radar', task, hub: task.hub, days });
         }
     }
     const inbox = reading('inbox').at(0);
     if (notesRun !== null && inbox !== undefined) {
         const days = daysSince(notesRun, now);
-        if (days !== null && days >= staleAfter(config, 'inbox')) {
-            out.push({ feed: 'inbox', task: inbox, hub: null, days });
+        if (days !== null && days >= inbox.after) {
+            out.push({ feed: 'inbox', task: inbox.task, hub: null, days });
         }
     }
-    for (const task of reading('scout')) {
+    for (const { task, after } of reading('scout')) {
         const scout = own(task.hub)?.scout ?? null;
         if (scout === null) continue;
         const days = daysSince(scout.lastRun, now);
-        if (days !== null && days >= staleAfter(config, 'scout')) {
+        if (days !== null && days >= after) {
             out.push({ feed: 'scout', task, hub: task.hub, days });
         }
     }

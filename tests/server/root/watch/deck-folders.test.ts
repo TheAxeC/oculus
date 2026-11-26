@@ -15,7 +15,7 @@
 // rebuild it would queue is run, or not, by the test's own clock. Every directory here is under the
 // system temporary directory.
 
-import { appendFileSync, globSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { globSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
@@ -79,13 +79,22 @@ function plantProject(dir: string, rel: string): void {
     plantFile(dir, `${rel}/present/main.md`, '# The slide\n');
 }
 
-/** A copy of the demo hub with the shape of the case: two scan folders and three projects. */
+/**
+ * A copy of the demo hub with the shape of the case: its `scan:` block replaced by two scan
+ * folders, and three projects.
+ */
 function plantHub(base: string, name: string): string {
     const dir = copyHub(base, name);
     rmSync(under(dir, 'projects'), { recursive: true, force: true });
-    appendFileSync(
+    const settings = readFileSync(under(dir, HUB_FILE), 'utf8');
+    const scan = /^scan:\n(?: {2}- .*\n)+/m;
+    if (!scan.test(settings)) throw new Error(`${HUB_FILE} of the demo hub holds no scan: block`);
+    writeFileSync(
         under(dir, HUB_FILE),
-        '\nscan:\n  - { dir: projects/active }\n  - { dir: projects/archive }\n'
+        settings.replace(
+            scan,
+            'scan:\n  - { dir: projects/active }\n  - { dir: projects/archive }\n'
+        )
     );
     writeFileSync(under(dir, 'deck/present.yml'), PORTFOLIO);
     for (const rel of ['projects/active/a', 'projects/active/b', 'projects/archive/z']) {

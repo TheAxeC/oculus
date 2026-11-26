@@ -45,7 +45,14 @@ import {
 import { noCredentials, pagePost } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { copyHub, published } from '../../data/hubs/hubs-fixture.ts';
-import { FIELD_LINES } from '../../fixtures/hubs/website-hub.ts';
+import {
+    CV_PATH,
+    FIELD_LINES,
+    INDUSTRY_PATH,
+    PAPERS_PATH,
+    PATHS,
+    SITE_PATH
+} from '../../fixtures/hubs/website-hub.ts';
 import { taskTmux } from '../../server/machine/runs/commands/commands-fixture.ts';
 import { WriteLog } from '../write-log.ts';
 import { HERE } from './terminal-fixture.ts';
@@ -55,18 +62,6 @@ const TOKEN = 'a-website-token';
 
 /** The website's folder inside the hub. */
 const FOLDER = 'site';
-
-/** The website's own file, as `website.files.site` ships it. */
-const SITE_PATH = '_data/website.yml';
-
-/** The CV's file, as `website.files.cv` ships it. */
-const CV_PATH = '_data/data.yml';
-
-/** The publications' file, as `website.files.papers` ships it. */
-const PAPERS_PATH = '_data/publications.yml';
-
-/** The employer CVs' file, as `website.files.industry` ships it. */
-const INDUSTRY_PATH = '_data/industry.yml';
 
 /** The three files a press writes, in the order it writes them. */
 const GENERATED = [CV_PATH, PAPERS_PATH, INDUSTRY_PATH];
@@ -105,8 +100,8 @@ const log = new WriteLog('hub', () => hub);
 
 /**
  * A hub whose settings file names the website folder `folder` (made unless `make` is false), the
- * command, the paths `files` of `website.files` and the lines `sections` of `website.cv_sections`
- * and of the fields of an entry, with the user set unless `self` is false.
+ * command, the four paths of `website.files` with `files` laid over them and the lines `sections`
+ * of `website.cv_sections` and of the fields of an entry, with the user set unless `self` is false.
  */
 function worldOf(
     folder = FOLDER,
@@ -116,10 +111,12 @@ function worldOf(
     sections = `${CV_SECTIONS}${PAPER_LINES}`
 ): World {
     hub = realpathSync(copyHub(scratchDir('oculus-website-'), 'hub'));
-    const paths = Object.entries(files).map(([key, path]) => `    ${key}: '${path}'\n`);
+    const paths = Object.entries({ ...PATHS, ...files }).map(
+        ([key, path]) => `    ${key}: '${path}'\n`
+    );
     appendFileSync(
         join(hub, HUB_FILE),
-        `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n${sections}  files:\n${paths.join('') || '    {}\n'}`
+        `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n${sections}  files:\n${paths.join('')}`
     );
     if (self) writeFileSync(localFile(hub), `self: ${SELF}\n`);
     const site = join(hub, folder);
@@ -348,10 +345,10 @@ describe('a press of Write the website that is refused', () => {
         mkdirSync(join(world.site, '_data', 'publications.yml'));
         expect((await press(world)).body).toEqual({
             error: 'website-unwritable',
-            names: ['_data/publications.yml']
+            names: [PAPERS_PATH]
         });
         expect(world.log.listed()).toEqual([]);
-        expect(onDisk(world)).toEqual(['_data/publications.yml']);
+        expect(onDisk(world)).toEqual([PAPERS_PATH]);
         expect(world.tmux.starts()).toEqual([]);
     });
 
@@ -422,7 +419,7 @@ describe('a press of Write the website that is refused', () => {
             ).body
         ).toEqual({
             error: 'website-unwritable',
-            names: ['_data/publications.yml']
+            names: [PAPERS_PATH]
         });
         expect(readFileSync(data, 'utf8')).toBe('before: 1\n');
         expect(existsSync(join(world.site, '_data', 'industry.yml'))).toBe(false);
@@ -462,7 +459,7 @@ describe('a press of Write the website that is taken', () => {
         }
     });
 
-    it('writes the file website.files names and not the shipped one', async () => {
+    it('writes the file website.files names and not the one at the path it replaces', async () => {
         const world = worldOf(FOLDER, true, true, { papers: 'data/papers.yml' });
         mkdirSync(join(world.site, 'data'));
         approve(world);

@@ -22,8 +22,10 @@ export type LastRun = (typeof LAST_RUNS)[number];
  * An update task of one hub, as a row of that hub's `update_tasks` describes it and the hub holds
  * its file: the task, the name of the hub, the words of its tray row and its note, the view a
  * notice of its run opens, where its last run is read from (null for a row that names no place, a
- * task whose last run oculus does not read), and the place of the row (the hub's settings file and
- * the dotted key of the row), which a finding about it names.
+ * task whose last run oculus does not read), the days after which the Focus refresh strip nudges
+ * to run it (the row's `stale_days`, null for a row that sets none and is never nudged), and the
+ * place of the row (the hub's settings file and the dotted key of the row), which a finding about
+ * it names.
  */
 export type HubTask = {
     task: UpdateTask;
@@ -32,6 +34,7 @@ export type HubTask = {
     note: string;
     view: string;
     lastRun: LastRun | null;
+    nudgeAfterDays: number | null;
     file: string;
     at: string;
 };

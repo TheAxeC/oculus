@@ -102,7 +102,7 @@ text:
             not_https_origin: This option takes an https origin, the scheme, the host and an optional port and nothing after, such as https://github.com
             not_row_key: This option takes lowercase letters, digits, dashes and underscores
             not_file_name: This option takes the name of one file, with no folder, such as main.tex
-            not_task_name: This option takes lowercase letters, digits and dashes starting with a letter, such as litwatch
+            not_task_name: This option takes lowercase letters, digits and dashes starting with a letter, such as weekly-digest
             not_inner_path: This option takes a path inside the folder it is read in, written relative to it, with no .. and no backslash, such as manuscript/main.tex
             not_folder_glob: This option takes a folder pattern inside the folder it is read in, of letters, digits, dots, dashes, underscores, stars and slashes, with no .., such as */logs
             not_absolute_folder: This option takes an absolute folder of letters, digits, dots, dashes, underscores and slashes, ending in no slash and with no . or .. part, such as /local

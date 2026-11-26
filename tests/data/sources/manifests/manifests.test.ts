@@ -9,7 +9,7 @@ import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { hubVocabOf, portfolioConfigFrom, readOtherHub } from '../../../../src/lib/data/index.ts';
 import { buildHubs } from '../../../../src/lib/server/root/watch/build.ts';
-import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
+import { buildOneHub, HUB_SCAN, HUB_SCAN_LINES } from '../../../fixtures/hubs/hub-build.ts';
 import { readCollections } from '../../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
@@ -83,7 +83,7 @@ type Places = {
 
 type Row = {
     name: string;
-    /** The scan list the row is read with, the engine's seven folders unless a row sets its own. */
+    /** The scan list the row is read with, the test hubs' HUB_SCAN unless a row sets its own. */
     scan?: unknown[];
     /** The folders of the workspace besides the hub, which is its primary. */
     entries?: (at: Places) => FolderSpec[];
@@ -612,10 +612,12 @@ function plant(row: Row): Places {
 function read(row: Row): Read {
     const at = plant(row);
     plantHub(at.hub);
-    const merged = { ...MERGED, ...(row.scan === undefined ? {} : { scan: row.scan }) };
+    const merged = { ...MERGED, scan: row.scan ?? HUB_SCAN };
     const config = portfolioConfigFrom(merged);
     const lab =
-        row.second === true ? plantHub(plantScratch('oculus-repository-lab-', HUB_FILES)) : null;
+        row.second === true
+            ? plantHub(plantScratch('oculus-repository-lab-', HUB_FILES), HUB_SCAN_LINES)
+            : null;
     const folders: FolderSpec[] = [
         { name: 'hub', dir: at.hub },
         ...(lab === null ? [] : [{ name: 'lab', dir: lab }]),
@@ -642,7 +644,7 @@ function joinedWith(
         '.oculus/config.yml': sources,
         ...files
     });
-    const config = portfolioConfigFrom(MERGED);
+    const config = portfolioConfigFrom({ ...MERGED, scan: HUB_SCAN });
     const open = workspaceWith(
         [
             { name: 'hub', dir: hub },

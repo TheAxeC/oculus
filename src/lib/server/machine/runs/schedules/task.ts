@@ -136,6 +136,7 @@ export function offeredTasks(open: TaskHubs): HubTask[] | null {
                 note: row.note,
                 view: row.view,
                 lastRun: row.lastRun,
+                nudgeAfterDays: row.nudgeAfterDays,
                 file: join(one.dir, HUB_FILE),
                 at: row.at
             }))

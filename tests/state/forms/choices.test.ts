@@ -15,6 +15,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import { choicesFor, type Choice, type FormField } from '../../../src/lib/state/forms/schema.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { HUB_SCAN_LINES } from '../../fixtures/hubs/hub-build.ts';
 
 /** The venues file every venue row reads: one venue with a `short`, one without. */
 function venues(short: number, name: number): string {
@@ -62,9 +63,12 @@ function people(key: string, name: string): string {
     ].join('\n');
 }
 
-/** The settings file of a hub whose `collections:` list holds the given rows. */
+/**
+ * The settings file of a hub with the test hubs' scan rules whose `collections:` list holds the
+ * given rows.
+ */
 function settings(rows: string[]): string {
-    return `collections:\n${rows.map((row) => `  - ${row}`).join('\n')}\n`;
+    return `${HUB_SCAN_LINES}collections:\n${rows.map((row) => `  - ${row}`).join('\n')}\n`;
 }
 
 /** A built workspace: its snapshot, the primary hub's merged config, and the primary's name. */
