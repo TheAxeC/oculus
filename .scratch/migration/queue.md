@@ -5,7 +5,8 @@ Queued, in order: none. Owed: none.
 Owed looks: none.
 
 Landed, newest first:
-- O196 (a Save that lands leaves no unsaved change; a card's text field refused at its box), 2026-11-26.
+- `~/Applications/oculus.app` replaced by the build of O196 (b03f42f3b), 2026-11-26, no release.
+- O196 (a Save that lands leaves no unsaved change; a card's text field refused at its box), 2026-11-26, b03f42f3b.
 - `~/Applications/oculus.app` replaced by the build of O195 (08bceadcc), 2026-11-26, no release.
 - O195 (no hub's settings in oculus's defaults), 2026-11-26, 08bceadcc.
 - `~/Applications/oculus.app` replaced by the build of O193 (92addae63), 2026-11-26, no release.
