@@ -33,7 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: af2d187765fd06503
   launched: 2026-11-26
   report: .scratch/migration/agents/reviews/O196-report.md
-  round: 0
+  builder_usage: 357427 tokens, 157 tool uses, 1654 s
+  reviewer_report: .scratch/migration/agents/reviews/O196-refuter.md (abbfb7cf823a685ea, claude-opus-5-5, 256793 tokens, 63 tool uses, 865 s)
+  round: 1
   brief_check: ".scratch/migration/agents/reviews/O196-brief-check.md (a2b2618a414f8f4c0, claude-opus-5-5, 217330 tokens, 50 tool uses, 441 s)"
 ```
 
