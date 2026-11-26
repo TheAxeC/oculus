@@ -33,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-25, on rulings README screenshots, 785, 786 and 787
   report: agents/reviews/O193-report.md
   builder_usage: 167790 tokens, 195 tool uses, 2391 s; round 1: 226845 tokens, 43 tool uses, 525 s; round 2: 325093 tokens, 55 tool uses, 514 s
-  reviewer_report: agents/reviews/O193-refuter.md (af103e2f15603e431, claude-opus-5-5, 268285 tokens, 110 tool uses, 1128 s); over round 1: ab8a03aa7a028303f, claude-opus-5-5, 193688 tokens, 61 tool uses, 623 s
+  reviewer_report: agents/reviews/O193-refuter.md (af103e2f15603e431, claude-opus-5-5, 268285 tokens, 110 tool uses, 1128 s); over round 1: ab8a03aa7a028303f, claude-opus-5-5, 193688 tokens, 61 tool uses, 623 s; over round 2: a5b0ce761f8719e2b, claude-opus-5-5, 234536 tokens, 61 tool uses, 646 s
   round: 2
   landing: not-started
   landing_fixes: agents/reviews/O193-landing-fixes.patch (the look of 2026-11-26, carried into the worktree for round 2; the gate returned to main's head)
@@ -46,7 +46,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a33a0018ecd3c3bfd
   launched: 2026-11-26, on ruling 788
   report: agents/reviews/O194-report.md
-  round: 0
+  builder_usage: 334508 tokens, 162 tool uses, 2587 s
+  round: 1
+  reviewer_report: agents/reviews/O194-refuter.md (a40f5b361cc792a2f, claude-opus-5-5, 215535 tokens, 67 tool uses, 1294 s)
   landing: not-started
   brief_check: agents/reviews/O194-brief-check.md (accc28dffde18681b, claude-opus-5-5, 206106 tokens, 62 tool uses, 604 s)
 ```

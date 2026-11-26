@@ -410,3 +410,41 @@ Usage: ab8a03aa7a028303f, claude-opus-5-5, 193688 tokens, 61 tool uses, 623 s.
 - Round 1, P-R1: the report's reason for `sync` is wrong (no remote, so nothing is drawn); no decision rests on it, and the look expects no Publish Branch control.
 - Round 1, B-R1: fixed at landing, inside item 2.4 and the ruling README screenshots: the workspace file's `settings:` set `status_bar.quiet: true`, so no toast is drawn, and `bell` joins the hidden items, so the quiet glyph is not drawn either; option 1 of the finding, option 3 (refusing while a toast shows) the lazy one.
 - Round 1, B-R2: fixed at landing, under the brief's Decision 4 ("the shot is the same on every run"): `blame` joins the hidden items, since its words count months from the fixed commit date; accepting the drift was the lazy option.
+
+## Repair round 2, refuted
+
+Reviewer over round 2, read-only, worktree `.agents/worktrees/migration-O193`, base b4c4dd9d9, snapshot `migration-O193-round-2/`. The round's delta: `README.md` (the Focus image at line 38, "three screenshots" at line 85), `utils/shots/page.mjs` (head comment, `SHOT_NAMES`, `focusSteps`, Focus taken first, the landing fix's `[rail, ...board]` split folded back into one loop), `utils/shots/shots.mjs` (head comment, `placeShots` and `run` doc comments, the closing line's join), `utils/shots/scratch.mjs:9`; `hub.mjs` and both PNGs byte-identical to the snapshot.
+
+Verification lines: prettier "All matched files use Prettier code style!"; eslint exit 0; `node --check` exit 0; ASCII gate exit 0; size exit=0, folder exit=0; vitest `Tests  18 passed (18)`; `npm run check` 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS; package.json parses; unused-exports diff against the base exit 0; old-path grep exit 1. Rerun of the round's quoted commands: `ls -la docs/images` lists explorer.png and projects-board.png, no focus.png; `git status --short -- tests/fixtures` prints nothing; line counts match the round's table.
+
+### Verdicts
+
+- Brief items 1, 2, 2.1 to 2.9, the manuscript text and the sentence, 3: hold (2.7 by reading; whether each state draws as intended is for the look).
+- Round 1 items 1 to 5: hold.
+- Round 2 item 1, the Focus capture: holds. The waited `[data-pane-view="focus"] [data-card]` is only `LaneCard.svelte:209` inside the Focus partials, drawn only from `page?.sections.lanes` (`Focus.svelte:391`), and `page` is null until the one whole `portfolio` snapshot arrives (`Focus.svelte:143-152`, `entities.svelte.ts:86`, `portfolio.ts:726-756`).
+- Round 2 item 2, the list of what the Focus page draws from the machine, the user or the day: violated, F1. Each row given reads true.
+- Round 2 items 3 and 4: hold.
+- Cases: the full run not verifiable until the look writes focus.png; every other case met (by reading, or unchanged).
+
+### Findings
+
+- F1 (behaviour): the item-2 list leaves out two parts that change with the day of the run or the checkout's file times. (1) The Needs attention line "manifests behind their documents" (`CommandCenterView.svelte:156-167`, `manifestsBehind` in `state/boards/focus/focus-lanes.ts:106-131`, `stale_lag_days: 1` at `config/defaults/behavior.yml:110`, `staleDays` in `src/lib/data/snapshot/normalise.ts:245-253`): `hub.mjs` writes `main.tex` and `main.pdf` at run time while the copy's `project.yml` keeps whatever mtime `cpSync` gives it (`scratch.mjs:110`), so a run a day after the checkout may draw "1 manifest behind its docs" for Streaming-Anomaly; this worktree's `project.yml` is dated Nov 25 22:36. Fix inside item 2.4: `hub.mjs` sets the copy's `project.yml` mtimes after it writes the manuscript. (2) Which follow-ups the tasks section lists changes with the day (`dueFollowups`, `state/boards/ticker.ts:426, 449, 476`), not only their tails. Fit for landing.
+- F2 (standards, low): the list does not name the status bar on the Focus page; it draws under the same `HIDDEN_ITEMS`, with no editor open the file items are not drawn. No verdict.
+- F3 (behaviour, low, no change recommended): a `renameSync` that throws after the first rename (`shots.mjs:136`) leaves a mixed set; the same structure the earlier reviews accepted, for an input that has not happened and whose cost is a rerun. 2.8 stays holds.
+- Other findings: none; no check removed, loosened or bypassed.
+
+### Declined to judge
+
+- Whether the lanes sit inside the first 900 CSS pixels of the Focus page (the look).
+- Whether `fs.cpSync` keeps mtimes on macOS under Electron 44's Node 24 (a run; the look shows the behind line directly).
+- Whether the Focus page shows an error box or a toast on the copy (the look).
+- Electron in a hidden window, and writes by Chromium or AppKit outside the two folders (as before).
+
+Usage: a5b0ce761f8719e2b, claude-opus-5-5, 234536 tokens, 61 tool uses, 646 s
+
+### Closed, over round 2
+
+- F1 (1): fixed at landing in `utils/shots/hub.mjs`, inside item 2.4 and Decision 4 (the shot the same on every run): after the manuscript is written, the copy's `project.yml` files get their mtime set to the run's time, so no manifest is behind its documents whatever the checkout's age.
+- F1 (2): the follow-ups due on the day of the run are the demo hub's dated data, as the command center's rows are; listed in the landing report with the other day-dependent parts for the person at the look.
+- F2: recorded; the look checks the Focus shot's status bar.
+- F3: accepted as the reviewer judges, no change.
