@@ -144,6 +144,20 @@ Each item below is missing from "Cases", with its expected result.
 
 ## Closed
 
-Not closed: O196 stopped at this check for open item 791 (a guarded entry for part 2). The next /spec of O196 closes every finding in the brief it writes, as the skill says of a report that stands.
+Every finding is closed in the brief written after ruling 791 (part 2 with no test, checked by a quoted render run and the look):
+
+- Names 1, top-level rows through `FieldControl`: decision 4 and item 2 have `Cards.svelte` ask for the form refusal through a prop of its own, so `Control.svelte`, `AppControl.svelte` and `Item.svelte` draw as today; case 21 checks a top-level row; `Cards.svelte` joins the paths.
+- Names 1, `NumberInput`'s `refused`: decision 3 leaves `TextInput`, `SuggestInput` and `NumberInput` unchanged and marks the box through `invalid`, so no prop has two meanings; decision 5 says a form refusal holds neither Enter nor blur.
+- Names 1, G96's Code line and head comments: item 1 names the comments made true (`writer.ts:8-10`, `scopes.svelte.ts:6-8`, `Settings.svelte:230-231`, `editor-saved.test.ts:4-6`, `FieldControl.svelte:18-19`); the report gives G96's new Code names. `sparse-card.test.ts` is no longer written.
+- The step line 3 and Premises 5, `project_docs.name` (`inner_path`): in the list and case 17.
+- Premises 6, the empty box: item 2 says the new function returns null for `''` itself; case 16.
+- Premises 8, the trigger of the old-value push: named as not pinned down; item 1 requires the fix not to depend on the order, and case 4 runs both orders.
+- Cases and checks 1, the bar and Save in a unit row: case 1 leaves the view parts to the look.
+- Cases and checks 2 and 3, case 5 and a refused Save with no real check: both are rows of the new scopes table (cases 5 and 6).
+- Cases and checks 4, a failure on a missing function: item 3 requires both rows to fail on an assertion about the held change, the scopes row passing the new dependency in its deps.
+- Cases and checks 6, G138: ruling 791, part 2 has no test.
+- The question 1, the wiring untested: the scopes row is required and drives the scopes and a writer together, with a hub scope row (case 8).
+- The question 7, the sentence already in the foot list: the render run must tell the box's status element from the foot line.
+- Implied inputs 1 to 12: cases 5, 9, 8, 10, 6, 11, 12, 13, 18 (list loading), 19, 17 and 21.
 
 Usage: a2b2618a414f8f4c0, claude-opus-5-5, 217330 tokens, 50 tool uses, 441 s.
