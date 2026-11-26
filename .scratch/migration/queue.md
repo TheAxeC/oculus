@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none. Owed: none.
+Queued, in order (1 step): O195 (no hub's settings in oculus's defaults: feed staleness, website files, scan folders, the LinkedIn tab). Owed: none.
 
 Owed looks: none.
 
