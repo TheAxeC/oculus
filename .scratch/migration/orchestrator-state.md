@@ -25,7 +25,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O195
-  landing: preparing
+  base: ff548136a
+  worktree: .agents/worktrees/migration-O195
+  executor: agent
+  worker: ordo-high on opus (claude-opus-5-5)
+  session_id: a0db48830a7bff490
+  launched: 2026-11-26, on the rulings Feed staleness on the task row and No hub's settings in oculus's defaults
+  report: agents/reviews/O195-report.md
+  round: 0
+  landing: not-started
   brief_check: agents/reviews/O195-brief-check.md (a9f9d46d8a75327c7, claude-opus-5-5, 268099 tokens, 107 tool uses, 831 s)
 ```
 
