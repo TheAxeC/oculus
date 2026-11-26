@@ -7,12 +7,13 @@
 // list is not a pass: an entry carries a number, the file may not pass it, a file that falls back
 // under the line comes off the list, and an entry naming a file the tree no longer holds fails too.
 //
-// utils/size-allow.txt is read by this and by utils/size-check.sh, which holds the same rule in
-// awk. The verification list runs no size command, so this test is what runs the script: its last
-// case runs it over the tree and checks that it reports nothing where this reports nothing.
+// utils/tree/size-allow.txt is read by this and by utils/tree/size-check.sh, which holds the same
+// rule in awk. The verification list runs no size command, so this test is what runs the script:
+// its last case runs it over the tree and checks that it reports nothing where this reports
+// nothing.
 //
-// The folder rule is utils/folder-check.sh's: a folder under src, tests, utils or config holds at
-// most ten items, and the last block runs it over the tree and over trees of its own.
+// The folder rule is utils/tree/folder-check.sh's: a folder under src, tests, utils or config holds
+// at most ten items, and the last block runs it over the tree and over trees of its own.
 
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -23,7 +24,7 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { treeFiles } from '../walk.ts';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
-const ALLOW = join(ROOT, 'utils', 'size-allow.txt');
+const ALLOW = join(ROOT, 'utils', 'tree', 'size-allow.txt');
 
 /** The line count a file may not pass, by the kind of file it is. */
 const LINES = 900;
@@ -131,8 +132,8 @@ describe('a file over the size line', () => {
         expect(findOversize(small, '', ['src'])).toEqual([]);
     });
 
-    it('runs utils/size-check.sh, which only this test runs, and reports nothing over the tree as it stands', () => {
-        const held = spawnSync('sh', [join(ROOT, 'utils', 'size-check.sh')], {
+    it('runs utils/tree/size-check.sh, which only this test runs, and reports nothing over the tree as it stands', () => {
+        const held = spawnSync('sh', [join(ROOT, 'utils', 'tree', 'size-check.sh')], {
             cwd: ROOT,
             encoding: 'utf8'
         });
@@ -144,8 +145,11 @@ describe('a file over the size line', () => {
 /** A tree of its own holding the folder check and, unless asked not to, a git repository. */
 function folderTree(files: string[], ignored: string[] = [], git = true): string {
     const dir = scratchDir('oculus-folders-');
-    mkdirSync(join(dir, 'utils'), { recursive: true });
-    copyFileSync(join(ROOT, 'utils', 'folder-check.sh'), join(dir, 'utils', 'folder-check.sh'));
+    mkdirSync(join(dir, 'utils', 'tree'), { recursive: true });
+    copyFileSync(
+        join(ROOT, 'utils', 'tree', 'folder-check.sh'),
+        join(dir, 'utils', 'tree', 'folder-check.sh')
+    );
     for (const rel of files) {
         const full = join(dir, rel);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
@@ -159,7 +163,7 @@ function folderTree(files: string[], ignored: string[] = [], git = true): string
 
 /** What the folder check says over a tree, and whether it passed. */
 function folders(dir: string): { out: string; status: number | null } {
-    const held = spawnSync('sh', [join(dir, 'utils', 'folder-check.sh')], {
+    const held = spawnSync('sh', [join(dir, 'utils', 'tree', 'folder-check.sh')], {
         cwd: dir,
         encoding: 'utf8'
     });

@@ -8,6 +8,8 @@ Oculus runs on your own machine, in a browser tab or in its own window, on macOS
 
 A researcher's work is spread over many places: manuscripts in LaTeX, code and data in repositories, grant deadlines in a spreadsheet, follow-ups in mail, papers to read in a reference manager. Oculus keeps all of it in one folder of plain text files that you own and can keep in git, and shows it in one window.
 
+![The Projects board in oculus's Dark Modern theme, showing the research projects of the made-up demo hub as cards, each with its stage, venue and next action.](docs/images/projects-board.png)
+
 - The Focus page lists what wants attention today: deadlines, the follow-ups that have come due, tasks, and the projects in each lane.
 - Each project is a card with its stage, venue and next action on the project boards, and it opens a page beside the board with its status, results, subtasks and documents, and the project's folder, manuscript and repository.
 - Funding, talks, teaching, position applications and tasks are each a YAML file that the views read and edit. Every write can be undone from History.
@@ -20,6 +22,8 @@ A researcher's work is spread over many places: manuscripts in LaTeX, code and d
 
 Oculus is an editor in the style of VS Code that also follows the coding agents working on your repositories.
 
+![The Explorer page in oculus's Dark Modern theme: Source Control on the left lists one changed file, the demo hub's LaTeX manuscript, which is open in the editor with its built PDF beside it in the PDF viewer, and the Problems view sits below them.](docs/images/explorer.png)
+
 - The Explorer page has the file tree, the Monaco editor with language servers, search across the files, and Source Control with every repository and worktree of the workspace.
 - Terminals run in tmux, so they keep running when the server or the window stops.
 - The Sessions tab follows every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes, and an agent's worktree is listed under its repository.
@@ -30,6 +34,8 @@ Oculus is an editor in the style of VS Code that also follows the coding agents 
 ## What it shows
 
 Each button on the rail at the left opens a page:
+
+![The Focus page in oculus's Dark Modern theme, listing what wants attention in the made-up demo hub: its command center of deadlines and dates, its tasks, the work awaiting a response, and its projects as cards on the lanes of their stages.](docs/images/focus.png)
 
 - **Focus**: see what wants attention now, such as deadlines, follow-ups, tasks and the lanes your projects sit on.
 - **Projects**: browse your projects as cards or a list, with separate tabs for coauthored, archived, personal and software projects.
@@ -75,6 +81,8 @@ npm run app    # opens oculus in its own window (Electron)
 Each start checks the Node version, that the installed packages match `package-lock.json`, and the programs listed above. It says what is missing and how to fix it. The port is 8790 unless the hub's `.oculus/local.yml` names another.
 
 `npm run app:release` builds the archives a release holds into `release/`. Add `-- --platform linux --arch x64` (or `darwin`, `arm64`) to choose the target. The macOS archive can only be built on a Mac.
+
+`npm run docs:shots` takes the three screenshots of this README again from a copy of the demo hub and writes them to `docs/images/`, and needs TeX's `latexmk`, git and tmux on the PATH.
 
 ## Start with a hub
 

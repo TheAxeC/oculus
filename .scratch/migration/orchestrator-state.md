@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O193
-  base: b4c4dd9d9
-  worktree: .agents/worktrees/migration-O193
-  executor: agent
-  worker: ordo-high on opus (claude-opus-5-5)
-  session_id: a204168451b37a205
-  launched: 2026-11-25, on rulings README screenshots, 785, 786 and 787
-  report: agents/reviews/O193-report.md
-  builder_usage: 167790 tokens, 195 tool uses, 2391 s; round 1: 226845 tokens, 43 tool uses, 525 s; round 2: 325093 tokens, 55 tool uses, 514 s
-  reviewer_report: agents/reviews/O193-refuter.md (af103e2f15603e431, claude-opus-5-5, 268285 tokens, 110 tool uses, 1128 s); over round 1: ab8a03aa7a028303f, claude-opus-5-5, 193688 tokens, 61 tool uses, 623 s; over round 2: a5b0ce761f8719e2b, claude-opus-5-5, 234536 tokens, 61 tool uses, 646 s
-  round: 2
-  landing: not-started
-  landing_fixes: agents/reviews/O193-landing-fixes.patch (the look of 2026-11-26, carried into the worktree for round 2; the gate returned to main's head)
-  brief_check: agents/reviews/O193-brief-check.md (ac32c8c7d99fe4d01, claude-opus-5-5, 209538 tokens, 57 tool uses, 627 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -922,6 +908,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-26 (O193 landed; app rebuild next). O193 landed on main from base b4c4dd9d9, the whole range (wip commits a7f45d5ed and 160b4c93e) with the three screenshots Axel approved ("Yes I approve them"), 18 paths, 1386 insertions and 17 deletions, booked and ticked in `plan.md` with its landing report `agents/reviews/O193-landing.md`; the gate at 071eb592b passed `test:quick` (313.5 s) and main's staged diff equals the gate's. Fixes at landing: `freshManifests` in `utils/shots/hub.mjs` (F1 of the review over round 2) and `agents/spec.md`'s two paths into `utils/tree/`. Next: the app rebuilt from main and copied over `~/Applications/oculus.app`. Open items: none.
 - 2026-11-26 (app replaced after O194). `~/Applications/oculus.app` is the build of 2645453a2 (`npm run app:release` in the gate, `oculus-1.1.0-darwin-arm64.zip`, 306750921 bytes): the running app quit, the old copy moved to the Trash by Finder, the new one copied with `ditto`, `codesign --verify --deep --strict` ok, `diff -rq` against the build identical, the catalog holding `tag_tip`, and the app opened. Next: O193's landing, its three screenshots taken again and shown to Axel for his approval. Open items: none.
 - 2026-11-26 (O194 landed; app rebuild next, then O193). O194 landed on main from base 55fa909a3, the whole range (wip commit ab8986eef, the build and repair round 1), 257 paths, 572 insertions and 370 deletions, booked and ticked in `plan.md` with its landing report `agents/reviews/O194-landing.md`. The review over round 1 a10e599f9abb66762 is appended to `agents/reviews/O194-refuter.md` with its Closed heading: R1 Spec 1 (the session row tip), R1 Standards 1 (Tag's head comment) and R1 Behaviour 1 (the double tip, ended by moving a card's cut-title hover words from the whole card to its title in Card, RecordCard and LaneCard) fixed at landing; R1 Standards 2 named in the booking. Gate at eec2a8c4f: `test:quick: 574.6 s; every command passed`; main's staged diff equals the gate's. The look on 8797 (the gate built first) in Dark Modern, Light and Gruvbox with brackets found no card element past its card on any page, nor at a 290 px column; the server is stopped and its folder removed. Next: the app rebuilt from main and put in `~/Applications`; then O193's landing: the gate brought to main's head with O193's range, its F1 mtime fix, `npm run docs:shots` (which runs `npm run build` itself), the three PNGs taken again and shown to Axel for his approval. In flight (1 of 6): O193 at round 2, landing not-started. Queued: none. Open items: none.
 - 2026-11-25 (app replaced after O192). `~/Applications/oculus.app` is the build of a2bc3c287 (`npm run app:release` in the gate, `oculus-1.1.0-darwin-arm64.zip`, 306743240 bytes): the running app quit, the old copy moved to the Trash by Finder, the new one copied with `ditto`, `codesign --verify --deep --strict` ok, `diff -rq` against the build identical, the catalog holding `group_not` and `Stop excluding`, and the app opened. Owed: none. Open items: none.

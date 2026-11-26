@@ -22,6 +22,7 @@
         "format:check": "prettier --check .",
         "diagrams": "node utils/diagrams/diagrams.mjs",
         "docs:palette": "node utils/diagrams/palette.mjs",
+        "docs:shots": "electron utils/shots/shots.mjs",
         "preapp": "node src/lib/server/root/process/start/first-run.ts --install",
         "app": "electron .",
         "app:release": "node src/desktop/release.ts"

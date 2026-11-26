@@ -8,7 +8,7 @@
 # tests/checks/tree/size.test.ts runs this script, and holds its rule on a tree of its own.
 
 set -e
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # The paths to count: what git tracks or would track, or, in a copy that is no git checkout, every
 # file on disk under the four folders.
