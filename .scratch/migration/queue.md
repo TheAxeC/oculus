@@ -1,10 +1,14 @@
-In flight (1 of 6 slots in use): O193 (two screenshots in the README), builder running.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none. Owed: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- `~/Applications/oculus.app` replaced by the build of O193 (92addae63), 2026-11-26, no release.
+- O193 (three screenshots of the demo hub in the README), 2026-11-26, 92addae63.
+- `~/Applications/oculus.app` replaced by the build of O194 (2645453a2), 2026-11-26, no release.
+- O194 (a card's long text kept inside its card), 2026-11-26, 2645453a2.
 - `~/Applications/oculus.app` replaced by the build of O192 (a2bc3c287), 2026-11-25, no release.
 - O192 (exclude in the board filters), 2026-11-25, a2bc3c287.
 - `~/Applications/oculus.app` replaced by the build of O191 (152af2547), 2026-11-25, no release.
