@@ -1,7 +1,8 @@
 // Layer 2, route tests. What the /api/write route does with an `app-setting` write: the value of a
 // setting an app declares, stored under `app_settings:` in the primary hub's settings file, the
 // refusals that leave the file as it was, the stored values the apps watcher judges, the values a
-// host reads, and the undo. These are the settings rows of G77.
+// host reads, and the undo; and the writer's own removal of a key, the reset a Settings Save sends.
+// These are the settings rows of G77.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts) and the hub and
 // apps are synthetic, so no case writes the checkout or the machine's own files. What this does NOT
@@ -21,6 +22,7 @@ import {
 } from '../../../../src/lib/data/helpers/files/apps/settings.ts';
 import { loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
+import { writeAppSetting } from '../../../../src/lib/server/edit/writes/apps/app-setting.ts';
 import type { PrimaryTarget } from '../../../../src/lib/server/edit/writes.ts';
 import { words } from '../../../../src/lib/server/core/words.ts';
 import { approveApp } from '../../../../src/lib/server/machine/approvals/approvals.ts';
@@ -101,6 +103,13 @@ describe('a setting an approved app declares', () => {
         expect(settingValues(settings, { 'notes.width': 100 })).toEqual({ 'notes.width': 100 });
         expect(settingValues(settings, { 'notes.width': 10 })).toEqual({ 'notes.width': 80 });
         expect(settingValues(settings, {})).toEqual({ 'notes.width': 80 });
+    });
+
+    it('takes the key out of the settings file at a reset, the one a Settings Save sends', async () => {
+        const { apps, into } = world();
+        await send(into, 'notes.width', 100);
+        const outcome = writeAppSetting(into, 'notes.width', undefined, apps.held());
+        expect([outcome.refused, readFileSync(layerOf(into), 'utf8')]).toEqual([[], EMPTY]);
     });
 
     it('takes the write back, leaving the settings file as the empty map it was', async () => {

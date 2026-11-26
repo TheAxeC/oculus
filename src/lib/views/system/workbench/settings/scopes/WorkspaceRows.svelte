@@ -5,9 +5,10 @@
     // and written by its Save, a renamed folder that is the primary carrying `primary` with it; a
     // name that is empty, not a folder name or the name of another folder is refused by the Save,
     // naming it, and the change is kept. A box holds its text until Enter or leaving it holds the
-    // change, and Escape drops the text. While a change is held the row shows it. A search hides
-    // the rows with the `hidden` attribute, so a keystroke mounts nothing and a text typed in a box
-    // is there when the search is cleared.
+    // change, and Escape drops the text. While a change is held the row shows it; a primary or a
+    // name brought back to the file's withdraws the change, held again once a Save already out with
+    // it lands. A search hides the rows with the `hidden` attribute, so a keystroke mounts nothing
+    // and a text typed in a box is there when the search is cleared.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -42,14 +43,16 @@
     }
 
     function pickPrimary(hub: string): void {
-        scopes.stageWorkspace(PRIMARY_NAME, hub === ground.primary ? null : { primary: hub });
+        if (hub === ground.primary) scopes.withdrawWorkspace(PRIMARY_NAME);
+        else scopes.stageWorkspace(PRIMARY_NAME, { primary: hub });
     }
 
     /** Hold the text typed for a folder as its new name, or drop the change for its own name. */
     function settle(folder: string, name: string): void {
         const { [folder]: _done, ...rest } = typed;
         typed = rest;
-        scopes.stageWorkspace(folderName(folder), name === folder ? null : { folder, name });
+        if (name === folder) scopes.withdrawWorkspace(folderName(folder));
+        else scopes.stageWorkspace(folderName(folder), { folder, name });
     }
 
     function revert(event: KeyboardEvent, folder: string): void {

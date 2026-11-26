@@ -16,7 +16,11 @@
     // writes as the box is left, when Enter is pressed or the box loses the focus (`onsettle`); a
     // pick, a toggle or an item list hands on the field's new value (`onpick`), undefined for a
     // field taken out of its record. A caller that refused the box's text hands its words as
-    // `invalid`, and every box drawn carries `aria-invalid` and the red border while they stand.
+    // `invalid`, and every box drawn carries `aria-invalid` and the red border while they stand. A
+    // caller that asks for it (`refusesForm`, as a card's field does) has a text box refuse a text
+    // that breaks its field's form as it stands, typed or held: the box is marked and titled with
+    // the sentence, the sentence is drawn under it at the box's width, the control carrying the
+    // class `form-refused` meanwhile, and Enter and the loss of focus are not held.
     //
     // A checkbox draws its label as the words beside it, as a Settings row's help is drawn. A
     // caller that draws the field's name beside the control itself (`named`), as a card of fields
@@ -62,6 +66,7 @@
         fromPick,
         fromWords,
         numberRefusal,
+        textFormRefusal,
         textOf,
         toggleOf,
         wordsOf,
@@ -123,6 +128,8 @@
          * box is marked as refused. Undefined while nothing is refused.
          */
         invalid?: string;
+        /** Whether a text box refuses a text that breaks its field's form, beside the box. */
+        refusesForm?: boolean;
     };
 
     let {
@@ -138,7 +145,8 @@
         onsettle,
         onpick,
         discards = 0,
-        invalid
+        invalid,
+        refusesForm = false
     }: Props = $props();
 
     const control = $derived(controlOf(spec));
@@ -261,6 +269,12 @@
         return refusal === null ? undefined : said(refusal);
     });
 
+    /** The words refusing a text box's text that breaks its field's form, while they are asked. */
+    const formWords = $derived.by(() => {
+        const refusal = refusesForm && control === 'text' ? textFormRefusal(spec, boxText) : null;
+        return refusal === null ? undefined : said(refusal);
+    });
+
     /** The hue a hue or colour control shows chosen: the held one, or the held text when stray. */
     const hueHeld = $derived(hueOf(spec, held, lists) ?? held);
 
@@ -296,7 +310,7 @@
     }
 </script>
 
-<div class="control" data-control={control}>
+<div class="control" class:form-refused={formWords !== undefined} data-control={control}>
     {#if control === 'toggle'}
         {#if optional}
             <Checkbox
@@ -431,7 +445,7 @@
             {label}
             suggestions={offer.items}
             note={offerNote}
-            {invalid}
+            invalid={invalid ?? formWords}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
@@ -440,11 +454,14 @@
         <TextInput
             value={boxText}
             {label}
-            {invalid}
+            invalid={invalid ?? formWords}
             oninput={(next: string) => ontext?.(next)}
             onenter={onsettle}
             onblur={onsettle}
         />
+    {/if}
+    {#if formWords !== undefined}
+        <span class="refused" role="status">{formWords}</span>
     {/if}
     {#if listNote !== ''}
         <p class="note">{listNote}</p>
@@ -483,6 +500,13 @@
     .caption {
         margin-top: 4px;
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .refused {
+        contain: inline-size;
+        flex: 1 0 100%;
+        color: var(--c-red-txt);
         font-size: var(--fs-sm);
     }
 

@@ -1,10 +1,13 @@
-In flight (1 of 6 slots in use): O195, builder running.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order: none. Owed: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O196 (a Save that lands leaves no unsaved change; a card's text field refused at its box), 2026-11-26.
+- `~/Applications/oculus.app` replaced by the build of O195 (08bceadcc), 2026-11-26, no release.
+- O195 (no hub's settings in oculus's defaults), 2026-11-26, 08bceadcc.
 - `~/Applications/oculus.app` replaced by the build of O193 (92addae63), 2026-11-26, no release.
 - O193 (three screenshots of the demo hub in the README), 2026-11-26, 92addae63.
 - `~/Applications/oculus.app` replaced by the build of O194 (2645453a2), 2026-11-26, no release.

@@ -43,6 +43,7 @@ import {
     type Form
 } from '../../../../data/sources/config/catalog/options.ts';
 import {
+    hasForm,
     itemProblem,
     valueProblem,
     type ValueProblem
@@ -543,6 +544,15 @@ export function numberRefusal(spec: CatalogEntry, text: string): Message | null 
     if (number === null) return null;
     const trouble = troubleOf(valueProblem(spec, number), spec);
     return trouble === null ? null : troubleMessage(trouble);
+}
+
+/**
+ * Why a card's text box's text breaks the form its field must have, or null. The empty text is no
+ * value of a card's field, which leaves the field out (`fromText`), so its form never refuses it.
+ */
+export function textFormRefusal(spec: CatalogEntry, text: string): Message | null {
+    if (text === '' || spec.form === undefined || hasForm(spec.form, text)) return null;
+    return formMessage(spec.form);
 }
 
 /** The hub folder's name and the folder it is in, for a path typed under the hub. */

@@ -13,7 +13,9 @@
 // that key changed, and the merged configuration holding it must give `loadConfig` and the readers
 // of the configuration no finding they did not give before (config-checks.ts `refusedBy`). A value
 // equal to the one in force writes nothing. A write whose value is `undefined` removes the key,
-// which is how an undo gives back a setting that was not stored.
+// which is how a Settings reset takes a setting back to its default and an undo gives back a
+// setting that was not stored; it has no value for the declaration to judge, so only its key must
+// be declared.
 
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, parseDocument } from 'yaml';
@@ -130,7 +132,7 @@ export function writeAppSetting(
         const setting = declared(declarations, key);
         if (setting === undefined)
             return refuse(words(text, 'server.app_setting.not_declared', key));
-        const flaw = settingFlaw(setting, value);
+        const flaw = value === undefined ? null : settingFlaw(setting, value);
         if (flaw !== null) return refuse(flawText(text, setting, flaw));
     }
     const place = placeOf(layers, FILE, APP_SETTINGS_KEY);

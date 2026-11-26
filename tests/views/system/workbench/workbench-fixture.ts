@@ -44,6 +44,7 @@ export function memoryStage(): Stage & { changes: Map<string, Held> } {
         set: (row, value) => void changes.set(heldKey(row), { value }),
         reset: (row) => void changes.set(heldKey(row), { reset: true }),
         drop: (row) => void changes.delete(heldKey(row)),
+        withdraw: (row) => void changes.delete(heldKey(row)),
         held: (row) => changes.get(heldKey(row))
     };
 }

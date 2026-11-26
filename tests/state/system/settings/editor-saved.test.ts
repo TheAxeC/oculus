@@ -8,10 +8,14 @@
 // the default. A draft held for a hub other than the primary is kept under that hub, and while
 // the hub's settings are being read the row's item (settings/Item.svelte, rendered on the server)
 // draws neither the draft nor the primary's value, so the draft is not drawn stale.
+// A draft whose field breaks its form, as '1x' in a box of numbers, holds no change, so
+// a Save writes nothing a box does not show, and the change comes back once the text reads back.
 //
 // It does not cover the line the editor draws, nor the empty family's line, which the look does,
 // nor the server's write of the emptied family into the workspace file as every one of oculus's
-// keys set to null (tests/server/edit/config-value.test.ts).
+// keys set to null (tests/server/edit/config-value.test.ts), nor the end of a draft once a Save
+// the scopes sent lands, whichever value the pushes around its answer bring
+// (tests/views/system/workbench/scopes.client.test.ts).
 
 import { describe, expect, it, vi } from 'vitest';
 import { fileRows, type ConfigRow } from '../../../../src/lib/state/system/config/rows.ts';
@@ -135,6 +139,27 @@ describe('a family whose last entry is removed', () => {
         const moved = writerOf(true);
         moved.writer.pushed(limits({ next: 500 }));
         expect(moved.stage.held(limits({ next: 500 }))).toBeUndefined();
+    });
+});
+
+describe('a draft whose text stops reading back', () => {
+    it('holds no change while a field breaks its form, and holds the change again once it reads back', () => {
+        const row = limits({ next: 300 });
+        const draft = draftOf(row);
+        if (draft === null) throw new Error('no draft');
+        const typed = (text: string) =>
+            applyEdit(draft, { do: 'set', index: 0, field: 'value', value: text });
+        const { writer, stage } = writerOf();
+        writer.save(row, typed('1'));
+        const first = stage.held(row);
+        writer.save(row, typed('1x'));
+        const refused = [stage.held(row), writer.unsaved(row)];
+        writer.save(row, typed('15'));
+        expect([first, refused, stage.held(row)]).toEqual([
+            { value: { next: 1 } },
+            [undefined, false],
+            { value: { next: 15 } }
+        ]);
     });
 });
 

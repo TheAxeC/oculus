@@ -7,7 +7,9 @@
     // Enter or leaving the box holds it, and Escape drops it. A value the setting's declaration
     // refuses (a number outside its bounds, a word it does not list) is marked under the box and
     // not held; the Save refuses one the server finds breaking it, in the words of its answer,
-    // under the scope bar. While a change is held the control shows it.
+    // under the scope bar. While a change is held the control shows it. A value brought back to
+    // the one in force withdraws the change, so the value is held again once a Save already out
+    // with the change lands.
 
     import { isEqual } from 'lodash-es';
     import {
@@ -68,7 +70,10 @@
         }
         typed = undefined;
         if (isEqual(next, row.value)) {
-            scopes?.stageApp(row.setting.key, null);
+            scopes?.withdrawApp(
+                row.setting.key,
+                row.modified ? { value: row.value } : { reset: true }
+            );
         } else {
             scopes?.stageApp(row.setting.key, { value: next });
         }

@@ -6,12 +6,15 @@
 // A Reset holds the taking out of the user's value, which a Save then takes out of its file.
 //
 // A value equal to the one the file gives the row, with no change held for it, holds nothing; one
-// equal to it with a change held drops the change, and so does an emptied box of a row whose
+// equal to it with a change held withdraws the change, and so does an emptied box of a row whose
 // scope's file holds no key for it, which says nothing, unless its option takes the empty value
-// (`empty:`), whose empty text is held as any value is. The row shows the value held (`shown`),
-// and is marked unsaved (`pending`) while one is held. A row that says why it writes nothing
-// (`row.blocked`) holds nothing. It is a plain closure with no runes; the view hands it a callback
-// that redraws. `answered` words the answer of a Save.
+// (`empty:`), whose empty text is held as any value is, and so does a Reset of such a row. A
+// change withdrawn by an edit (`withdraw`) is the reader's word that the row holds the file's
+// value, which a Save of the file already out with the change writes over, so the stage holds it
+// again once that Save lands; a Discard drops a change (`drop`). The row shows the value held
+// (`shown`), and is marked unsaved (`pending`) while one is held. A row that says why it writes
+// nothing (`row.blocked`) holds nothing. It is a plain closure with no runes; the view hands it a
+// callback that redraws. `answered` words the answer of a Save.
 
 import { isEqual } from 'lodash-es';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
@@ -68,8 +71,14 @@ export type Stage = {
     set: (row: ConfigRow, value: unknown) => void;
     /** Hold the taking out of the row's user value. */
     reset: (row: ConfigRow) => void;
-    /** Drop the change the row holds. */
+    /** Drop the change the row holds, as a Discard does. */
     drop: (row: ConfigRow) => void;
+    /**
+     * Drop the change the row holds, an edit having brought the row back to the value its file
+     * holds: a Save of the file already out with the change writes over that value, so the value
+     * is held again once that Save lands.
+     */
+    withdraw: (row: ConfigRow) => void;
     /** The change the row holds, or undefined. */
     held: (row: ConfigRow) => Held | undefined;
 };
@@ -120,7 +129,7 @@ export function createRowWriter(
     function hold(row: ConfigRow, value: unknown): void {
         saying.delete(heldKey(row));
         if (!isEqual(value, row.value)) stage.set(row, value);
-        else if (stage.held(row) !== undefined) stage.drop(row);
+        else if (stage.held(row) !== undefined) stage.withdraw(row);
         changed();
     }
 
@@ -133,7 +142,7 @@ export function createRowWriter(
         }
         if ('unset' in made) {
             saying.delete(heldKey(row));
-            if (stage.held(row) !== undefined) stage.drop(row);
+            if (stage.held(row) !== undefined) stage.withdraw(row);
             changed();
             return;
         }
@@ -147,7 +156,7 @@ export function createRowWriter(
         if (closed || row.blocked !== undefined) return;
         saying.delete(heldKey(row));
         if (row.own) stage.reset(row);
-        else stage.drop(row);
+        else stage.withdraw(row);
         changed();
     }
 

@@ -8,7 +8,9 @@
     // unsaved change of the Workspace scope (settings/scopes/scopes.svelte.ts), and the scope's
     // Save writes it into the workspace file's `settings:` through the rail's own write
     // (server/edit/writes/config/lists/rail.ts). The watcher pushes the file back within a second,
-    // and the rail redraws from that push, so the rail always shows the list in force.
+    // and the rail redraws from that push, so the rail always shows the list in force. A list
+    // brought back to the one in force withdraws the change, held again once a Save already out
+    // with it lands; Discard drops it.
     //
     // The rows are drawn under a disclosure line (editors/Fold.svelte) with the row's title and
     // their number, folded at first past five rows; the problems and the actions stay drawn under a
@@ -98,11 +100,16 @@
         kept && foundInside(settingsQuery(instanceState(id)), entryTexts(rows))
     );
 
-    /** Hold the list as the scope's change, or drop the change for the list in force. */
-    function hold(next: RailEntry[] | null): void {
+    /**
+     * Hold the list as the scope's change; for the list in force, withdraw the change, or drop it
+     * when the list was discarded (`discarded`).
+     */
+    function hold(next: RailEntry[] | null, discarded = false): void {
         if (scopes === null) return;
         if (next === null || sameRail(next, saved)) {
-            if (scopes.stage.held(row) !== undefined) scopes.stage.drop(row);
+            if (scopes.stage.held(row) === undefined) return;
+            if (discarded) scopes.stage.drop(row);
+            else scopes.stage.withdraw(row);
         } else {
             scopes.stage.set(row, next);
         }
@@ -164,7 +171,7 @@
     /** Forget the list being typed and its change; the file's list is shown again. */
     function revert(): void {
         setInstanceState(id, withRailDraft(instanceState(id), null));
-        hold(null);
+        hold(null, true);
     }
 </script>
 

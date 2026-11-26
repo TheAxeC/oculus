@@ -9,14 +9,15 @@
     // slots.ts), its file and key and the hub or folder of its scope when that is not the primary,
     // so it is there again after a tab switch or a reload, and a draft made in the scope of one hub
     // is drawn only in that scope. An edit that leaves the draft equal to the file's puts the
-    // file's own back, which holds nothing. Each edit whose draft reads back is held as an unsaved
-    // change of the scope on screen through the editors' write (state/system/config/editors/
-    // writer.ts), which the scope's Save writes; the save key on the tab (Cmd+S, Ctrl+S off macOS)
-    // is the scope's. With no draft the editor draws the change held, if any, else the file's
-    // value. A draft started over a value the file no longer holds is named, holds nothing more and
-    // can only be discarded, since its change would write over the other one. A list or family with
-    // no entry says so above its Add, so an empty family reads as one and not as a list that failed
-    // to draw.
+    // file's own back, which holds nothing, unless a Save of the earlier change is out: once that
+    // Save lands, the value the file held before it is held as the change again. Each edit whose
+    // draft reads back is held as an unsaved change of the scope on screen through the editors'
+    // write (state/system/config/editors/writer.ts), which the scope's Save writes; the save key on
+    // the tab (Cmd+S, Ctrl+S off macOS) is the scope's. With no draft the editor draws the change
+    // held, if any, else the file's value. A draft started over a value the file no longer holds is
+    // named, holds nothing more and can only be discarded, since its change would write over the
+    // other one. A list or family with no entry says so above its Add, so an empty family reads as
+    // one and not as a list that failed to draw.
     //
     // The entries are drawn under a disclosure line (Fold.svelte) with the row's title and their
     // number, folded at first past five entries; the problems, the refusal and Save and Discard

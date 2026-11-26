@@ -499,6 +499,7 @@ The options by scope, with a search over them.
   - This machine: [this machine's values](data-map.md#this-machines-values);
   - Repository: a folder's `.oculus/settings.yml` ([the files](data-map.md#the-files)).
 - A change is held as unsaved until Save, and a save is one write of the file, its comments and its other keys kept.
+- A field whose text breaks its form is marked, with the sentence saying what it must be, and holds no change, so Save writes nothing for it until the text fits.
 - Reset takes your value out of its file. An entry of oculus's you remove is written as `removed: true` in a list or `null` in a map.
 - The value of a `downloads` secret stays on the server.
 

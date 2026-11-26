@@ -302,6 +302,7 @@
                                 onpick={(value: FieldValue | undefined) =>
                                     onedit(aimed({ do: 'set', index: at, field: name, value }))}
                                 {discards}
+                                refusesForm
                             />
                         </span>
                     {/if}
@@ -449,6 +450,18 @@
     /* A word block is four lists tall, so a name drawn beside it stands at the block's top. */
     .field.tall {
         align-items: flex-start;
+    }
+
+    /* A text box whose form's sentence is drawn under it (`form-refused`, FieldControl.svelte)
+       keeps its place beside the field's name: the fields of its card stand at the card's top,
+       each name lowered by half of what a box is taller than it, so the boxes of a row and their
+       names stay level. */
+    .fields:has(:global(.form-refused)) > .field {
+        align-items: flex-start;
+    }
+
+    .fields:has(:global(.form-refused)) > .field > .word {
+        padding-top: 4px;
     }
 
     .card:not(.inline) .field {

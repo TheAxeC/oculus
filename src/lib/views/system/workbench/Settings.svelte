@@ -185,7 +185,8 @@
                 : held[hub].values?.downloads;
         },
         send: (body) => send(body, '/api/write', { said: true }),
-        saveWorkspace: (name) => saveWorkspace(name)
+        saveWorkspace: (name) => saveWorkspace(name),
+        wrote: (slots) => editors.saved(slots)
     });
     provideScopes(scopes);
 
@@ -228,8 +229,10 @@
     const writer = reactiveWriter(scopes.stage, (row) => listsFor(row));
     $effect(() => () => writer.close());
 
-    // A draft ends when the value in force is what it sent, another value, or a form the editor
-    // does not draw: the tab's state drops it.
+    // A draft ends when the value in force is the draft's with no change held, or a form the editor
+    // does not draw: the tab's state drops it. The scopes tell the editors the rows a Save that
+    // landed wrote: such a draft ends at the push of the value written, before the answer or after
+    // it, and a push of the value it replaced does not hold it again.
     const editors = reactiveEditors({
         stage: scopes.stage,
         ended: (row) =>
