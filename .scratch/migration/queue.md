@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order: O197 (deposit and reproduced statuses; filter groups that keep every project), waiting on the labels of open item 793. Owed: none.
+Queued, in order: O197 (deposit and reproduced statuses; filter groups that keep every project), to be prepared by /spec. Owed: none.
 
 Owed looks: none.
 
